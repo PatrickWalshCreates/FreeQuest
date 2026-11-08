@@ -119,6 +119,12 @@ export class Battle {
     return this.turnCount;
   }
 
+  /** Display name of a state, or null for ones not worth showing (knockout, unknown). */
+  stateName(id: string): string | null {
+    const entry = this.db.states.find(id);
+    return entry && !entry.knockout ? entry.name : null;
+  }
+
   /** How many of an item the party carries (for the item menu). */
   itemCount(itemId: string): number {
     return this.party.count('item', itemId);

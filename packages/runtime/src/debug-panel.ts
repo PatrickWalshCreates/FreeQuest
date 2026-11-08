@@ -10,7 +10,8 @@ const REFRESH_MS = 200;
  */
 export function createDebugPanel(
   parent: HTMLElement,
-  world: World,
+  /** Read on every refresh, so the panel follows a new game's world. */
+  getWorld: () => World,
   manifest: Manifest,
   toggleKey = 'F9',
 ): () => void {
@@ -37,7 +38,7 @@ export function createDebugPanel(
 
   let timer: ReturnType<typeof setInterval> | undefined;
   const refresh = () => {
-    panel.textContent = `${describeGame(world, manifest)}\n\n${toggleKey}: hide`;
+    panel.textContent = `${describeGame(getWorld(), manifest)}\n\n${toggleKey}: hide`;
   };
   const onKey = (e: KeyboardEvent) => {
     if (e.code !== toggleKey) return;

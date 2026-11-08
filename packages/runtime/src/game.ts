@@ -1,6 +1,8 @@
 import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from '@freequest/core';
 import type { Tileset } from '@freequest/schema';
-import { Application, Container, Graphics, type Texture } from 'pixi.js';
+import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
+import { BattleFlow } from './battle-flow.js';
+import { BattleView } from './battle-view.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
 import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
@@ -26,6 +28,7 @@ export interface StartGameOptions {
 
 export interface Game {
   readonly project: LoadedProject;
+  /** The current world (replaced when a new game starts after game over). */
   readonly world: World;
   readonly input: ActionState;
   readonly app: Application;
@@ -60,12 +63,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   ]);
   readyTiles.set(tileset.id, startTiles);
 
-  const world = new World({
-    manifest,
-    map,
-    tileset,
-    database: new DatabaseIndex(project.database),
-  });
+  const db = new DatabaseIndex(project.database);
+  const createWorld = () => new World({ manifest, map, tileset, database: db });
+  let world = createWorld();
   const input = new ActionState();
   const loop = new FixedTimestep();
 
@@ -116,7 +116,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   const dialog = new DialogController();
-  const dialogView = new DialogView(width, height, { ...DEFAULT_UI_THEME, ...options.ui });
+  const theme = { ...DEFAULT_UI_THEME, ...options.ui };
+  const dialogView = new DialogView(width, height, theme);
   app.stage.addChild(dialogView.container);
   const transfer = new TransferController(async (mapId) => {
     const target = await project.loadMap(mapId);
@@ -124,9 +125,41 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     readyTiles.set(targetTileset.id, await loadTiles(targetTileset));
     return { map: target, tileset: targetTileset };
   });
+  // Battles: enemy images load when a troop is first fought, then stay cached.
+  const enemyTextures = new Map<string, Texture>();
+  let battleView: BattleView | null = null;
+  const battles = new BattleFlow(db, {
+    async prepare(troopId) {
+      const enemies = db.troops.get(troopId).enemies.map((id) => db.enemies.get(id));
+      await Promise.all(
+        enemies.map(async (enemy) => {
+          if (enemy.image && !enemyTextures.has(enemy.id)) {
+            enemyTextures.set(enemy.id, await loadPixelTexture(project.resolve(enemy.image)));
+          }
+        }),
+      );
+    },
+    begin(battle) {
+      battleView = new BattleView(battle, width, height, enemyTextures, theme);
+      scene.visible = false;
+      dialogView.container.visible = false;
+      app.stage.addChildAt(battleView.container, app.stage.getChildIndex(fadeOverlay));
+    },
+    end() {
+      battleView?.destroy();
+      battleView = null;
+      scene.visible = true;
+      dialogView.container.visible = true;
+    },
+    gameOver() {
+      gameOverScreen.visible = true;
+    },
+  });
+  const gameOverScreen = createGameOverScreen(width, height, theme);
+
   const fadeOverlay = new Graphics().rect(0, 0, width, height).fill(0x000000);
   fadeOverlay.alpha = 0;
-  app.stage.addChild(fadeOverlay);
+  app.stage.addChild(fadeOverlay, gameOverScreen);
   let elapsed = 0;
 
   const fit = () => {
@@ -141,8 +174,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   const unbindKeyboard = bindKeyboard(window, input, options.keyBindings);
   const removeDebugPanel = options.debug
-    ? createDebugPanel(options.parent, world, manifest)
+    ? createDebugPanel(options.parent, () => world, manifest)
     : () => undefined;
+
+  /** Back to the title state: a fresh world on the start map. */
+  const newGame = () => {
+    world = createWorld();
+    battles.reset();
+    gameOverScreen.visible = false;
+    showCurrentMap();
+  };
 
   // Position before the most recent logic step, for interpolation.
   let prevX = world.player.realX;
@@ -172,24 +213,35 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
-      // Dialog and transfers first: they consume the input / answer the
-      // requests of the running event before the world steps.
-      dialog.update(dt, input, world.interpreter);
-      transfer.update(dt, world);
-      world.step(dt, input);
+      if (battles.isGameOver) {
+        if (input.justPressed('confirm')) newGame();
+      } else {
+        // Battles, dialog and transfers first: they consume the input and
+        // answer the running event's requests before the world steps.
+        battles.update(dt, world, input);
+        if (!battles.active) {
+          dialog.update(dt, input, world.interpreter);
+          transfer.update(dt, world);
+          world.step(dt, input);
+        }
+      }
       input.endStep();
       elapsed += dt;
     });
     render(alpha);
     dialogView.render(dialog, elapsed);
-    fadeOverlay.alpha = transfer.fade;
+    const controller = battles.controller;
+    if (battleView && controller) battleView.render(controller.state, elapsed);
+    fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
   };
   render(1);
   app.ticker.add(tick);
 
   return {
     project,
-    world,
+    get world() {
+      return world;
+    },
     input,
     app,
     destroy() {
@@ -220,4 +272,25 @@ async function loadCharacterGraphics(
     }),
   );
   return new Map(entries);
+}
+
+/** A plain "Game Over" screen; confirm starts a new game. */
+function createGameOverScreen(width: number, height: number, theme: UiTheme): Container {
+  const screen = new Container({ label: 'game-over' });
+  screen.addChild(new Graphics().rect(0, 0, width, height).fill(0x000000));
+  const title = new Text({
+    text: 'Game Over',
+    style: { fontFamily: theme.fontFamily, fontSize: 32, fontWeight: 'bold', fill: 0xd04040 },
+  });
+  title.anchor.set(0.5);
+  title.position.set(width / 2, height / 2 - 12);
+  const hint = new Text({
+    text: 'Press Enter to start again',
+    style: { fontFamily: theme.fontFamily, fontSize: theme.fontSize, fill: theme.textColor },
+  });
+  hint.anchor.set(0.5);
+  hint.position.set(width / 2, height / 2 + 24);
+  screen.addChild(title, hint);
+  screen.visible = false;
+  return screen;
 }

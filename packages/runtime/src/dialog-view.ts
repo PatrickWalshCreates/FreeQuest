@@ -33,7 +33,7 @@ export const DEFAULT_UI_THEME: UiTheme = {
   minLines: 3,
 };
 
-function drawWindow(g: Graphics, theme: UiTheme, w: number, h: number): void {
+export function drawWindow(g: Graphics, theme: UiTheme, w: number, h: number): void {
   g.clear()
     .roundRect(0, 0, w, h, 6)
     .fill({ color: theme.windowColor, alpha: theme.windowAlpha })

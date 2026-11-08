@@ -11,4 +11,6 @@ export * from './debug-text.js';
 export * from './debug-panel.js';
 export * from './battle-text.js';
 export * from './battle-controller.js';
+export * from './battle-view.js';
+export * from './battle-flow.js';
 export * from './textures.js';

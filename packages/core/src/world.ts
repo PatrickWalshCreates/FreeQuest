@@ -25,6 +25,8 @@ export interface WorldOptions {
   database?: DatabaseIndex;
   /** Defaults to the manifest's starting party and gold. */
   party?: Party;
+  /** Uniform random in [0, 1) for encounters. Inject a fixed one in tests. */
+  random?: () => number;
 }
 
 const OPPOSITE: Record<Direction, Direction> = {
@@ -53,8 +55,13 @@ export class World {
   private running: Interpreter | null = null;
   private runningEvent: EventInstance | null = null;
   private seenVersion: string;
+  private readonly random: () => number;
+  /** Steps left until the next random encounter on this map. */
+  private encounterCountdown = Infinity;
+  private pendingEncounter: string | null = null;
 
-  constructor({ manifest, map, tileset, state, database, party }: WorldOptions) {
+  constructor({ manifest, map, tileset, state, database, party, random }: WorldOptions) {
+    this.random = random ?? Math.random;
     this.state = state ?? new GameState(manifest);
     this.db = database ?? new DatabaseIndex(emptyDatabase());
     this.party = party ?? Party.start(this.db, manifest.start);
@@ -113,6 +120,8 @@ export class World {
     this.currentCollision = collision;
     this.currentEvents = map.events.map((e) => new EventInstance(e, this.eventContext));
     this.player.placeAt(x, y);
+    this.pendingEncounter = null;
+    this.encounterCountdown = this.rollEncounterSteps();
   }
 
   /**
@@ -124,6 +133,43 @@ export class World {
     this.enterMap(map, tileset, x, y);
     if (direction) this.player.direction = direction;
     this.runningEvent = null;
+  }
+
+  /**
+   * Steps until the next encounter: around the map's average (0.5× to 1.5×).
+   * Infinity on maps without encounters.
+   */
+  private rollEncounterSteps(): number {
+    const encounters = this.currentMap.encounters;
+    if (!encounters) return Infinity;
+    return Math.max(1, Math.round(encounters.steps * (0.5 + this.random())));
+  }
+
+  private countEncounterStep(): void {
+    const encounters = this.currentMap.encounters;
+    if (!encounters || this.pendingEncounter !== null) return;
+    this.encounterCountdown--;
+    if (this.encounterCountdown > 0) return;
+    const total = encounters.troops.reduce((sum, t) => sum + t.weight, 0);
+    let roll = this.random() * total;
+    const pick = encounters.troops.find((t) => (roll -= t.weight) < 0) ?? encounters.troops.at(-1);
+    this.pendingEncounter = pick?.troop ?? null;
+    this.encounterCountdown = this.rollEncounterSteps();
+  }
+
+  /** True while a random encounter is waiting to be taken. */
+  get hasPendingEncounter(): boolean {
+    return this.pendingEncounter !== null;
+  }
+
+  /**
+   * A random encounter the player just walked into (the troop id), handed
+   * over once. The player stays put until it is taken.
+   */
+  takeEncounter(): string | null {
+    const troop = this.pendingEncounter;
+    this.pendingEncounter = null;
+    return troop;
   }
 
   /** Map size in pixels. */
@@ -218,6 +264,8 @@ export class World {
     arrived: (x, y) => {
       this.party.onStep();
       this.triggerAt(x, y, (e) => e.page?.trigger === 'touch' && !e.blocks);
+      // A step that started an event never also starts a fight.
+      if (!this.running) this.countEncounterStep();
     },
     // Walking into a touch event that blocks.
     bumped: (x, y) => {
@@ -250,7 +298,10 @@ export class World {
     this.player.update(
       dt,
       this.passability,
-      () => (this.running || runningAtStart ? null : input.heldDirection()),
+      () =>
+        this.running || runningAtStart || this.pendingEncounter !== null
+          ? null
+          : input.heldDirection(),
       this.moveHooks,
     );
     // An event triggered during this step runs up to its first pause right
