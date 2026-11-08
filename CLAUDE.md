@@ -137,6 +137,8 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   assertions (lint error), use checked lookups such as `getOrThrow`.
 - ESM everywhere; relative imports use `.js` extensions.
 - Tests live in `packages/<pkg>/test/*.test.ts`. Core logic changes need tests.
+- `demo-quest.test.ts` is the demo's end-to-end script: when you change the demo's events, update
+  it so the quest stays completable.
 - New packages use the `@freequest/` npm scope. Future CLI command: `freequest`.
 
 ## Roadmap
@@ -148,7 +150,8 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   2. ~~Resumable command interpreter in core; message/choice/transfer are requests the runtime answers~~ (done)
   3. ~~NPCs: event sprites, event collision, action/touch/autorun triggers~~ (done; parallel deferred)
   4. ~~Message box + choice window in runtime~~ (done; system font via swappable `UiTheme`)
-  5. Conditionals and switch/variable commands wired through the interpreter
+  5. ~~Conditionals and switch/variable commands, end to end~~ (done; `core/test/demo-quest.test.ts`
+     plays the demo quest through real movement and triggers)
   6. Map transfers: lazy map loading, fade, second demo map (house interior; turn the
      `house-door` event into a transfer)
 - **M3** Database: actors, classes, items, skills, enemies, states.
