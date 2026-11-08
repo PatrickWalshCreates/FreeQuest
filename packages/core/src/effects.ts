@@ -14,7 +14,6 @@ import type { Party } from './party.js';
 /** Something usable on targets: a skill or an item. */
 export type Usable = SkillEntry | ItemEntry;
 
-export const CRITICAL_CHANCE = 0.05;
 export const CRITICAL_MULTIPLIER = 3;
 
 export interface UseContext {
@@ -69,6 +68,17 @@ export function resolveTargets(
   return target ? [target] : [];
 }
 
+/**
+ * Chance that a use lands on a target: the success rate, and for physical
+ * hits also the user's hit rate minus the target's evasion. Using something
+ * on yourself never misses.
+ */
+export function hitChance(usable: Usable, user: Battler, target: Battler): number {
+  if (user === target) return 1;
+  if (usable.hitType !== 'physical') return usable.successRate;
+  return usable.successRate * user.hitRate() - target.evasionRate();
+}
+
 /** Damage multiplier from elements: the explicit element, or the user's best attack element. */
 function elementMultiplier(
   effect: Extract<Effect, { type: 'damage' }>,
@@ -102,7 +112,7 @@ export function applyUsable(
       removedStates: [] as string[],
       learnedSkills: [] as string[],
     };
-    if (ctx.random() >= usable.successRate) return { ...result, missed: true };
+    if (ctx.random() >= hitChance(usable, user, target)) return { ...result, missed: true };
 
     const formulaCtx: FormulaContext = {
       a: user,
@@ -116,10 +126,11 @@ export function applyUsable(
           let amount =
             evaluateFormula(effect.formula, formulaCtx) * elementMultiplier(effect, user, target);
           amount *= 1 + (ctx.random() * 2 - 1) * effect.variance;
-          if (effect.critical && ctx.random() < CRITICAL_CHANCE) {
+          if (effect.critical && ctx.random() < user.criticalRate()) {
             amount *= CRITICAL_MULTIPLIER;
             result.critical = true;
           }
+          if (effect.pool === 'hp') amount *= target.damageTakenRate();
           const damage = Math.max(0, Math.round(amount));
           if (effect.pool === 'hp') {
             const before = target.hp;

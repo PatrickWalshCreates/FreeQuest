@@ -2,6 +2,10 @@ import { type Modifier, STAT_KEYS, type StatKey, type StateEntry } from '@freequ
 import type { DatabaseIndex } from './database.js';
 import type { FormulaSubject } from './formula.js';
 
+export const BASE_HIT_RATE = 0.95;
+export const BASE_EVASION_RATE = 0.05;
+export const BASE_CRITICAL_RATE = 0.04;
+
 /** A state on a battler, with whatever countdown it needs to wear off. */
 export interface StateInstance {
   readonly id: string;
@@ -226,6 +230,33 @@ export abstract class Battler implements FormulaSubject {
   /** Net fraction of max HP regained per turn (negative = poison). */
   hpRegenRate(): number {
     return this.modifiers().reduce((sum, m) => (m.type === 'hpRegen' ? sum + m.value : sum), 0);
+  }
+
+  private sumOf(type: 'hitRate' | 'evasionRate' | 'criticalRate'): number {
+    return this.modifiers().reduce((sum, m) => (m.type === type ? sum + m.value : sum), 0);
+  }
+
+  /** Chance multiplier for physical hits to land (base BASE_HIT_RATE). */
+  hitRate(): number {
+    return BASE_HIT_RATE + this.sumOf('hitRate');
+  }
+
+  /** Chance to dodge physical hits (base BASE_EVASION_RATE). */
+  evasionRate(): number {
+    return BASE_EVASION_RATE + this.sumOf('evasionRate');
+  }
+
+  /** Chance for a damage effect that can crit to do so (base BASE_CRITICAL_RATE). */
+  criticalRate(): number {
+    return BASE_CRITICAL_RATE + this.sumOf('criticalRate');
+  }
+
+  /** Multiplier on HP damage taken (product of damageTaken modifiers; guarding = 0.5). */
+  damageTakenRate(): number {
+    return this.modifiers().reduce(
+      (rate, m) => (m.type === 'damageTaken' ? rate * m.value : rate),
+      1,
+    );
   }
 
   /** For formulas: a.<key> / b.<key>. */

@@ -164,8 +164,14 @@ export class Actor extends Battler {
     return [...new Set([...fromClass, ...this.extraSkills])];
   }
 
+  /**
+   * Whether the actor can use a skill: learned ones, plus the system's Attack
+   * and Guard, which every actor has as battle commands (they are not listed
+   * in `skills`).
+   */
   hasSkill(id: string): boolean {
-    return this.skills.includes(id);
+    const { attackSkill, guardSkill } = this.db.system;
+    return id === attackSkill || id === guardSkill || this.skills.includes(id);
   }
 
   learnSkill(id: string): void {

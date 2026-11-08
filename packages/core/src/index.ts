@@ -14,5 +14,6 @@ export * from './actor.js';
 export * from './party.js';
 export * from './effects.js';
 export * from './enemy.js';
+export * from './battle.js';
 export * from './world.js';
 export type * from './plugin.js';

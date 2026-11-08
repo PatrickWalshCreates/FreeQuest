@@ -9,6 +9,7 @@ import type {
   LevelCurve,
   SkillEntry,
   StateEntry,
+  TroopEntry,
 } from '@freequest/schema';
 
 class Lookup<T extends { id: string }> {
@@ -46,6 +47,7 @@ export class DatabaseIndex {
   readonly equipment: Lookup<EquipmentEntry>;
   readonly states: Lookup<StateEntry>;
   readonly enemies: Lookup<EnemyEntry>;
+  readonly troops: Lookup<TroopEntry>;
   /** The state that means "knocked out", if the database defines one. */
   readonly knockoutState: StateEntry | undefined;
 
@@ -57,6 +59,7 @@ export class DatabaseIndex {
     this.equipment = new Lookup(data.equipment, 'equipment');
     this.states = new Lookup(data.states, 'state');
     this.enemies = new Lookup(data.enemies, 'enemy');
+    this.troops = new Lookup(data.troops, 'troop');
     this.knockoutState = data.states.find((s) => s.knockout);
   }
 
