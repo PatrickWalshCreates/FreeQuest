@@ -147,9 +147,47 @@
               ],
               "then": [
                 {
-                  "type": "message",
-                  "speaker": "Elder",
-                  "text": "You saw the bridge? Good, it still stands."
+                  "type": "if",
+                  "conditions": [
+                    {
+                      "type": "switch",
+                      "switch": "rewarded",
+                      "value": false
+                    }
+                  ],
+                  "then": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "You saw the bridge? Good, it still stands. Take these for your trouble."
+                    },
+                    {
+                      "id": "potion",
+                      "type": "changeItems",
+                      "amount": 2,
+                      "kind": "item"
+                    },
+                    {
+                      "type": "changeGold",
+                      "amount": 100
+                    },
+                    {
+                      "type": "setSwitch",
+                      "switch": "rewarded",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "text": "Received 2 Potions and 100 G."
+                    }
+                  ],
+                  "else": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Safe travels, friend."
+                    }
+                  ]
                 }
               ],
               "else": [

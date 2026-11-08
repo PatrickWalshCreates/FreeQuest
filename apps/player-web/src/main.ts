@@ -6,7 +6,7 @@ if (!parent) throw new Error('#game element missing');
 const projectUrl = new URL(`${import.meta.env.BASE_URL}demo-project/`, window.location.href);
 
 try {
-  const game = await startGame({ parent, projectUrl });
+  const game = await startGame({ parent, projectUrl, debug: import.meta.env.DEV });
   if (import.meta.env.DEV) {
     // Handy for poking at state from the browser console.
     (window as unknown as { freequest: typeof game }).freequest = game;

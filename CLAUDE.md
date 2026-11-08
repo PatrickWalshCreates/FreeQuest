@@ -106,6 +106,35 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
   default is the system font (no bundled font asset). Not yet in the project format.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
+
+### Database and battlers (M3)
+
+- **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
+  `schema/src/formula.ts` (`parseFormula`, `checkFormula`), evaluation in `core/src/formula.ts`
+  (`evaluateFormula`, cached by source). Numbers only; comparisons/logic yield 1/0; `a.<stat>`,
+  `b.<stat>` (also `hp`, `mp`, `level`), `v.<id>` / `v["id"]`; functions min, max, abs, floor, ceil,
+  round, clamp, random. Division by zero and non-finite results give 0. Length/nesting are capped.
+  `checkDatabase` validates every formula at load time.
+- **Modifiers** are the one way anything changes a battler (class, actor, equipment, state, enemy):
+  statRate, statFlat, elementRate, stateRate, attackElement, equipType, hpRegen. Stat =
+  `max(0, round((base + Σflat) × Πrate))`, max HP ≥ 1. Allowed equipment types come only from the
+  actor's and class's modifiers. Add new behaviours as new modifier types, not one-off fields.
+- **Effects** (damage, recover, addState, removeState, learnSkill) are shared by skills and items and
+  run in order per target (`core/src/effects.ts`). Damage = formula × element rate (`element:
+"attack"` = user's best attack element) × variance, 5% crit ×3, never negative. Recover heals.
+  State chance × target `stateRate`. Damage may remove states with `damageChance` (sleep).
+- **Battler** (`battler.ts`) is shared by `Actor` and `Enemy`: HP/MP clamped; 0 HP adds the
+  `knockout: true` state; removing knockout revives at ≥1 HP (so "remove knockout, recover 25%"
+  yields 1 + 25%). States sorted by priority, count down by battle turn (`tickTurn`) or map step.
+- **Party** (`party.ts`): members, gold (≤ 99,999,999), separate item/equipment bags (≤ 99 each),
+  equip/unequip through the bag. Every map step calls `party.onStep()`; poison/regen ticks every 20
+  steps and can't knock out on the map. `Party.version` (like `GameState.version`) drives page
+  refresh. `Actor.toData()` / `Party.toData()` are plain JSON for save files (M5).
+- Events see an `EventContext { state, party }`; conditions/commands that need the party throw a
+  clear error without one. Functions taking a context also accept a bare `GameState`.
+- The runtime loads the whole database up front (`project.database`) and runs `checkDatabase`.
+- **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
+  tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
   interface exists (`packages/core/src/plugin.ts`); not implemented yet.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
@@ -126,8 +155,14 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- Current versions: manifest 2 (adds `switches`/`variables`), map 2 (adds `events`), tileset 1,
-  character 1.
+- Current versions: manifest 3 (adds `database` paths, `start.party`/`start.gold`), map 3 (party
+  commands/conditions; v2→v3 is a no-op bump), tileset 1, character 1, every database file 1.
+- Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
+  `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
+  `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
+  files are empty categories. Ids are strings. Stat growth is a level curve (`{ "1": 450, "99": 9000 }`,
+  linear between points, must include level 1); exp needed for level L = `round(base × (L−1)^exponent)`.
+- Integer object keys serialize in numeric order (so level curves read 1, 5, 10, 99).
 - Validation layers: JSON Schema (`parseProjectFile`) → per-file structure (`checkMapShape`: layer
   sizes, event ids/bounds, choice cancel index) → cross-file references (`checkReferences`: tilesets,
   maps, characters, switches, variables, transfer targets).
@@ -166,7 +201,11 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
      plays the demo quest through real movement and triggers)
   6. ~~Map transfers: lazy map loading, fade, second demo map~~ (done; house interior via the door)
   - Deferred from M2: `parallel` trigger (non-blocking interpreters), moving NPCs / move routes.
-- **M3** Database: actors, classes, items, skills, enemies, states.
+- **M3 (done)** Database: actors, classes, skills, items, equipment, states, enemies; formula
+  language; battler model; party/inventory/equipment; effects engine; enemy battlers; party event
+  commands/conditions; demo rewards, Mira joining, resting hearth; F9 debug panel.
+  - Deferred to M4: troops (enemy groups), hit/evasion stats, turn order, enemy action conditions,
+    guard behaviour. Deferred to M5: menus to use items/skills/equipment, icons/iconset art.
 - **M4** Turn-based battle.
 - **M5** Menus, save/load, audio.
 - **M6** Tauri editor: map editor first, then event and database editors.

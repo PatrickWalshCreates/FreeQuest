@@ -55,6 +55,14 @@
     {
       "id": "accepted_request",
       "name": "Accepted the elder's request"
+    },
+    {
+      "id": "rewarded",
+      "name": "Elder gave the bridge reward"
+    },
+    {
+      "id": "mira_joined",
+      "name": "Mira joined the party"
     }
   ],
   "tilesets": [

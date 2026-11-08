@@ -121,17 +121,24 @@ describe('demo quest', () => {
     expect(visits()).toBe(2);
     expect(transcript.length).toBe(linesBefore);
 
-    // Back to the elder: his second page takes the `then` branch now.
+    // Back to the elder: his second page rewards the visit, once.
     walkTo('down', 11, 8);
     walkTo('right', 12, 8);
+    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([50, 0]);
     tap('confirm');
     finish();
+    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([150, 2]);
+    tap('confirm');
+    finish();
+    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([150, 2]);
 
     expect(transcript).toEqual([
       'Elder: Ah, a traveler! Would you check on the old bridge to the east?',
       'Elder: Thank you. Follow the path east.',
       'The planks creak, but the bridge holds.',
-      'Elder: You saw the bridge? Good, it still stands.',
+      'Elder: You saw the bridge? Good, it still stands. Take these for your trouble.',
+      'Received 2 Potions and 100 G.',
+      'Elder: Safe travels, friend.',
     ]);
   });
 
@@ -178,17 +185,45 @@ describe('demo quest', () => {
     walkTo('up', 2, 1);
     tap('confirm');
     finish();
+    // Mira stands below; talking to her adds her to the party and she steps aside.
+    walkTo('down', 2, 3); // stops at (2, 2): Mira blocks
+    expect(world.party.hasMember('mira')).toBe(false);
+    tap('confirm');
+    finish();
+    expect(world.party.members.map((m) => m.id)).toEqual(['hero', 'mira']);
     expect(transcript).toEqual([
       'The hearth is cold.',
       'A hand-drawn map of the Meadow. The bridge is circled twice.',
+      "Mira: Grandfather sent you to check the bridge? Then I'm coming too.",
+      'Mira joined the party!',
     ]);
 
-    // Leave through the gap in the bottom wall.
+    // Leave through the gap in the bottom wall (Mira no longer blocks).
     walkTo('down', 2, 5);
     walkTo('right', 4, 5);
     walkTo('down', 4, 6);
     finish();
     expect(world.map.id).toBe('map001');
     expect([world.player.x, world.player.y, world.player.direction]).toEqual([4, 5, 'down']);
+  });
+
+  it('rests by the hearth once the request is accepted', () => {
+    const { world, transcript, walkTo, tap, finish } = play();
+    world.state.setSwitch('accepted_request', true);
+    const hero = world.party.member('hero');
+    if (!hero) throw new Error('no hero');
+    hero.setHp(5);
+    hero.addState('poison');
+    walkTo('up', 7, 5);
+    walkTo('left', 4, 5);
+    walkTo('up', 4, 4);
+    finish();
+    walkTo('right', 7, 5);
+    walkTo('up', 7, 2);
+    tap('confirm');
+    finish();
+    expect(hero.hp).toBe(hero.maxHp);
+    expect(hero.states).toEqual([]);
+    expect(transcript.at(-1)).toBe('Everyone is fully rested.');
   });
 });

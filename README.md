@@ -5,8 +5,9 @@ alternative to RPG Maker MZ. It is a clean-room implementation: no RPG Maker cod
 used.
 
 > **Status: early pre-alpha.** FreeQuest can load a project, walk a character around tile maps,
-> talk to NPCs (messages, choices, switches, variables, conditional branches) and move between maps.
-> No battles, menus, saving or editor yet. File formats will change.
+> talk to NPCs (messages, choices, switches, variables, conditional branches), move between maps,
+> and has a full RPG database (heroes, classes, skills, items, equipment, states, enemies) with a
+> safe formula language for damage. No battles, menus, saving or editor yet. File formats will change.
 
 ## What's here
 
@@ -28,7 +29,8 @@ pnpm dev
 ```
 
 Open http://localhost:5173. Walk with the arrow keys or WASD, talk with Enter/Space/Z, cancel with
-Escape/X. Try the elder by the path and the house door.
+Escape/X. Try the elder by the path and the house door. In development builds, press F9 for a
+debug panel showing the party, inventory, switches and variables.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 

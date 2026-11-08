@@ -84,7 +84,14 @@
               "then": [
                 {
                   "type": "message",
-                  "text": "The fire crackles. Someone has left a kettle on."
+                  "text": "The fire crackles. You rest a while by the warmth."
+                },
+                {
+                  "type": "recoverAll"
+                },
+                {
+                  "type": "message",
+                  "text": "Everyone is fully rested."
                 }
               ],
               "else": [
@@ -95,6 +102,56 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "name": "Mira",
+      "x": 2,
+      "y": 3,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "mage",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Mira",
+              "text": "Grandfather sent you to check the bridge? Then I'm coming too."
+            },
+            {
+              "type": "changeParty",
+              "action": "add",
+              "actor": "mira"
+            },
+            {
+              "type": "setSwitch",
+              "switch": "mira_joined",
+              "value": true
+            },
+            {
+              "type": "message",
+              "text": "Mira joined the party!"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "mira_joined",
+              "value": true
+            }
+          ],
+          "layer": "below",
+          "trigger": "action",
+          "commands": []
         }
       ]
     }

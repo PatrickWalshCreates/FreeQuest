@@ -2,6 +2,7 @@ import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from 
 import type { Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, type Texture } from 'pixi.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
+import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
@@ -19,6 +20,8 @@ export interface StartGameOptions {
   keyBindings?: KeyBindings;
   /** Overrides for the message/choice window look (font, colors, spacing). */
   ui?: Partial<UiTheme>;
+  /** Enable the developer debug panel (toggle with F9). */
+  debug?: boolean;
 }
 
 export interface Game {
@@ -137,6 +140,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   fit();
 
   const unbindKeyboard = bindKeyboard(window, input, options.keyBindings);
+  const removeDebugPanel = options.debug
+    ? createDebugPanel(options.parent, world, manifest)
+    : () => undefined;
 
   // Position before the most recent logic step, for interpolation.
   let prevX = world.player.realX;
@@ -189,6 +195,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     destroy() {
       app.ticker.remove(tick);
       unbindKeyboard();
+      removeDebugPanel();
       resizeObserver.disconnect();
       app.destroy(true, { children: true });
     },
