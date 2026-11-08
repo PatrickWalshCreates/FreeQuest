@@ -1,4 +1,4 @@
-import { type Modifier, STAT_KEYS, type StatKey } from '@freequest/schema';
+import { type Modifier, STAT_KEYS, type StatKey, type StateEntry } from '@freequest/schema';
 import type { DatabaseIndex } from './database.js';
 import type { FormulaSubject } from './formula.js';
 
@@ -140,6 +140,64 @@ export abstract class Battler implements FormulaSubject {
     this.stateList.splice(index, 1);
     if (this.db.states.get(id).knockout) this.currentHp = Math.max(this.currentHp, 1);
     this.clampPools();
+  }
+
+  stateEntry(id: string): StateEntry {
+    return this.db.states.get(id);
+  }
+
+  /** False when knocked out or under a state that prevents acting. */
+  get canAct(): boolean {
+    return (
+      !this.isKnockedOut &&
+      !this.stateList.some((s) => this.stateEntry(s.id).restriction === 'cannotAct')
+    );
+  }
+
+  /** End of a battle turn: count down turn-limited states. Returns the ids removed. */
+  tickTurn(): string[] {
+    return this.countDown('turns');
+  }
+
+  /** The player took a step on the map: count down step-limited states. Returns the ids removed. */
+  tickStep(): string[] {
+    return this.countDown('steps');
+  }
+
+  private countDown(key: 'turns' | 'steps'): string[] {
+    const removed: string[] = [];
+    for (const state of [...this.stateList]) {
+      const left = state[key];
+      if (left === undefined) continue;
+      if (left <= 1) {
+        this.removeState(state.id);
+        removed.push(state.id);
+      } else {
+        state[key] = left - 1;
+      }
+    }
+    return removed;
+  }
+
+  /**
+   * Apply HP regeneration / poison once. `minHp` keeps slip damage from
+   * knocking out (1 on the map). Returns the HP change.
+   */
+  applyRegen(minHp = 0): number {
+    if (this.isKnockedOut) return 0;
+    const amount = Math.round(this.maxHp * this.hpRegenRate());
+    if (amount === 0) return 0;
+    const before = this.currentHp;
+    const floor = Math.min(before, minHp);
+    this.setHp(Math.max(before + amount, floor));
+    return this.currentHp - before;
+  }
+
+  /** Remove states that end with the battle. Returns the ids removed. */
+  onBattleEnd(): string[] {
+    const ending = this.stateList.filter((s) => this.stateEntry(s.id).removal.battleEnd);
+    for (const s of ending) this.removeState(s.id);
+    return ending.map((s) => s.id);
   }
 
   /** Damage taken multiplier for an element (product of elementRate modifiers). */

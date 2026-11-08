@@ -3,6 +3,8 @@ import type { DatabaseIndex } from './database.js';
 
 export const MAX_GOLD = 99_999_999;
 export const MAX_ITEM_COUNT = 99;
+/** On the map, HP regeneration/poison applies once every this many steps. */
+export const REGEN_STEP_INTERVAL = 20;
 
 /** Items and equipment are counted separately, so their ids may overlap. */
 export type InventoryKind = 'item' | 'equipment';
@@ -14,12 +16,23 @@ export interface PartyData {
   gold: number;
   items: Record<string, number>;
   equipment: Record<string, number>;
+  /** Total steps walked (drives step-based effects; handy for stats). */
+  steps: number;
+}
+
+/** What one map step did to the party. */
+export interface StepResult {
+  /** HP change per member id (only members whose HP changed). */
+  readonly regen: ReadonlyMap<string, number>;
+  /** States that wore off per member id. */
+  readonly expired: ReadonlyMap<string, readonly string[]>;
 }
 
 /** The player's party: members, gold and inventory. */
 export class Party {
   private readonly memberList: Actor[] = [];
   private currentGold = 0;
+  private stepCount = 0;
   private readonly bags: Record<InventoryKind, Map<string, number>> = {
     item: new Map(),
     equipment: new Map(),
@@ -41,6 +54,7 @@ export class Party {
     party.currentGold = data.gold;
     for (const [id, n] of Object.entries(data.items)) party.bags.item.set(id, n);
     for (const [id, n] of Object.entries(data.equipment)) party.bags.equipment.set(id, n);
+    party.stepCount = data.steps;
     return party;
   }
 
@@ -50,7 +64,32 @@ export class Party {
       gold: this.currentGold,
       items: Object.fromEntries(this.bags.item),
       equipment: Object.fromEntries(this.bags.equipment),
+      steps: this.stepCount,
     };
+  }
+
+  get steps(): number {
+    return this.stepCount;
+  }
+
+  /**
+   * The player finished a step on the map: step-limited states count down,
+   * and every REGEN_STEP_INTERVAL steps regeneration/poison applies (poison
+   * can't knock anyone out on the map; it stops at 1 HP).
+   */
+  onStep(): StepResult {
+    this.stepCount++;
+    const regen = new Map<string, number>();
+    const expired = new Map<string, readonly string[]>();
+    for (const member of this.memberList) {
+      const removed = member.tickStep();
+      if (removed.length > 0) expired.set(member.id, removed);
+      if (this.stepCount % REGEN_STEP_INTERVAL === 0) {
+        const change = member.applyRegen(1);
+        if (change !== 0) regen.set(member.id, change);
+      }
+    }
+    return { regen, expired };
   }
 
   // Members ---------------------------------------------------------------

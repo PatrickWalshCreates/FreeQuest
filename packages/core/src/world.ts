@@ -201,8 +201,10 @@ export class World {
   }
 
   private readonly moveHooks: MoveHooks = {
-    // Stepping onto a touch event that you can walk over.
+    // Every completed step counts for the party (states, poison), and
+    // stepping onto a walk-over touch event triggers it.
     arrived: (x, y) => {
+      this.party.onStep();
       this.triggerAt(x, y, (e) => e.page?.trigger === 'touch' && !e.blocks);
     },
     // Walking into a touch event that blocks.
