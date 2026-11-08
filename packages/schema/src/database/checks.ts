@@ -11,7 +11,9 @@ import type {
   SkillEntry,
   StateEntry,
   SystemData,
+  TroopEntry,
 } from './categories.js';
+import { DATABASE_FORMAT_VERSION } from './categories.js';
 import { STAT_KEYS } from './common.js';
 import type { Effect } from './effect.js';
 import type { Modifier } from './modifier.js';
@@ -26,11 +28,12 @@ export interface Database {
   readonly equipment: readonly EquipmentEntry[];
   readonly states: readonly StateEntry[];
   readonly enemies: readonly EnemyEntry[];
+  readonly troops: readonly TroopEntry[];
 }
 
 export function emptySystem(): SystemData {
   return {
-    formatVersion: 1,
+    formatVersion: DATABASE_FORMAT_VERSION,
     currency: 'G',
     elements: [],
     equipmentSlots: [],
@@ -49,6 +52,7 @@ export function emptyDatabase(): Database {
     equipment: [],
     states: [],
     enemies: [],
+    troops: [],
   };
 }
 
@@ -66,6 +70,7 @@ export function assembleDatabase(files: DatabaseFiles): Database {
     equipment: files.equipment?.entries ?? [],
     states: files.states?.entries ?? [],
     enemies: files.enemies?.entries ?? [],
+    troops: files.troops?.entries ?? [],
   };
 }
 
@@ -111,11 +116,17 @@ export function checkDatabase(
   const items = ids(db.items, 'items');
   const equipment = ids(db.equipment, 'equipment');
   const states = ids(db.states, 'states');
-  ids(db.enemies, 'enemies');
+  const enemies = ids(db.enemies, 'enemies');
+  ids(db.troops, 'troops');
 
   const need = (set: Set<string>, id: string, kind: string, where: string) => {
     if (!set.has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);
   };
+
+  for (const key of ['attackSkill', 'guardSkill'] as const) {
+    const id = db.system[key];
+    if (id !== undefined) need(skills, id, 'skill', `system ${key}`);
+  }
 
   const checkModifiers = (modifiers: readonly Modifier[], where: string) => {
     for (const m of modifiers) {
@@ -208,6 +219,10 @@ export function checkDatabase(
     );
     en.actions.forEach((act, i) => need(skills, act.skill, 'skill', `${where} actions[${i}]`));
     checkModifiers(en.modifiers, where);
+  }
+
+  for (const t of db.troops) {
+    t.enemies.forEach((id, i) => need(enemies, id, 'enemy', `troops "${t.id}" enemies[${i}]`));
   }
 
   if (context.manifest) {

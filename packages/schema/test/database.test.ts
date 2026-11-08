@@ -159,7 +159,7 @@ describe('checkDatabase', () => {
 
   it('checks the starting party against actors', () => {
     const manifest: Manifest = {
-      formatVersion: 3,
+      formatVersion: 4,
       name: 'T',
       screen: { width: 1, height: 1 },
       start: { map: 'a', x: 0, y: 0, direction: 'down', party: ['hero', 'ghost'], gold: 0 },
@@ -172,6 +172,19 @@ describe('checkDatabase', () => {
     };
     expect(checkDatabase(db(), { manifest })).toEqual([
       'project.json start.party: unknown actor "ghost"',
+    ]);
+  });
+});
+
+describe('checkDatabase battle data', () => {
+  it('checks troop members and the attack/guard skills', () => {
+    const d = db({
+      troops: [{ id: 'pack', name: 'Pack', enemies: ['wolf'] }],
+      system: { ...db().system, attackSkill: 'attack' },
+    });
+    expect(checkDatabase(d)).toEqual([
+      'system attackSkill: unknown skill "attack"',
+      'troops "pack" enemies[0]: unknown enemy "wolf"',
     ]);
   });
 });

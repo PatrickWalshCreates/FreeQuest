@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "entries": [
     {
       "id": "attack",
@@ -26,7 +26,13 @@
     {
       "id": "guard",
       "name": "Guard",
-      "effects": [],
+      "effects": [
+        {
+          "type": "addState",
+          "chance": 1,
+          "state": "guarding"
+        }
+      ],
       "hitType": "certain",
       "mpCost": 0,
       "occasion": "battle",

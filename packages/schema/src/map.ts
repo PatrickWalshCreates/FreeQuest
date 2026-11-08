@@ -2,7 +2,24 @@ import Type, { type Static } from 'typebox';
 import { Id, PositiveInt } from './common.js';
 import { MapEvent } from './event.js';
 
-export const MAP_FORMAT_VERSION = 3;
+export const MAP_FORMAT_VERSION = 4;
+
+/** Random battles while walking on a map. */
+export const Encounters = Type.Object(
+  {
+    /** Average steps between battles. */
+    steps: Type.Integer({ minimum: 1 }),
+    troops: Type.Array(
+      Type.Object(
+        { troop: Id, weight: Type.Integer({ minimum: 1, description: 'Relative chance.' }) },
+        { additionalProperties: false },
+      ),
+      { minItems: 1 },
+    ),
+  },
+  { additionalProperties: false },
+);
+export type Encounters = Static<typeof Encounters>;
 
 /** Tile index meaning "no tile in this cell". */
 export const EMPTY_TILE = -1;
@@ -32,6 +49,7 @@ export const GameMap = Type.Object(
     tileset: Id,
     layers: Type.Array(MapLayer, { minItems: 1 }),
     events: Type.Array(MapEvent),
+    encounters: Type.Optional(Encounters),
   },
   { title: 'FreeQuest map', additionalProperties: false },
 );

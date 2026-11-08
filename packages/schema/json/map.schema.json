@@ -555,6 +555,47 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Fight a troop, then branch on the outcome.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "battle"
+            },
+            "canEscape": {
+              "type": "boolean"
+            },
+            "canLose": {
+              "type": "boolean"
+            },
+            "onEscape": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onLose": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onWin": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "troop": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "troop", "canEscape", "canLose"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {
@@ -575,7 +616,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 3
+      "const": 4
     },
     "id": {
       "type": "string",
@@ -584,6 +625,38 @@
     },
     "name": {
       "type": "string"
+    },
+    "encounters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "troops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "troop": {
+                "type": "string",
+                "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "weight": {
+                "type": "integer",
+                "description": "Relative chance.",
+                "minimum": 1
+              }
+            },
+            "required": ["troop", "weight"]
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["steps", "troops"]
     },
     "height": {
       "type": "integer",

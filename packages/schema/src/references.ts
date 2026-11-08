@@ -43,10 +43,15 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
   const db = ctx.database;
   const dbIds = db && {
     item: new Set(db.items.map((e) => e.id)),
+    troop: new Set(db.troops.map((e) => e.id)),
     equipment: new Set(db.equipment.map((e) => e.id)),
     actor: new Set(db.actors.map((e) => e.id)),
   };
-  const checkEntry = (where: string, kind: 'item' | 'equipment' | 'actor', id: string) => {
+  const checkEntry = (
+    where: string,
+    kind: 'item' | 'equipment' | 'actor' | 'troop',
+    id: string,
+  ) => {
     if (dbIds && !dbIds[kind].has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);
   };
   const checkOperand = (where: string, operand: Operand) => {
@@ -107,6 +112,9 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
     makeChecks(ctx, problems);
   const file = `map "${map.id}"`;
   if (!ctx.tilesets.has(map.tileset)) problems.push(`${file}: unknown tileset "${map.tileset}"`);
+  map.encounters?.troops.forEach((t, i) =>
+    checkEntry(`${file} encounters.troops[${i}]`, 'troop', t.troop),
+  );
   for (const event of map.events) {
     event.pages.forEach((page, p) => {
       const where = `${file} event "${event.id}" pages[${p}]`;
@@ -146,6 +154,9 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
             break;
           case 'recoverAll':
             if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            break;
+          case 'battle':
+            checkEntry(at, 'troop', command.troop);
             break;
         }
       });

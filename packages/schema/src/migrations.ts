@@ -37,6 +37,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
       from: 2,
       migrate: (d) => ({ ...d, start: { ...(d['start'] as object), party: [], gold: 0 } }),
     },
+    // v4: troops database category. Additive.
+    { from: 3, migrate: (d) => d },
   ],
   tileset: [],
   map: [
@@ -44,8 +46,14 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 1, migrate: (d) => ({ ...d, events: [] }) },
     // v3: party/gold/item commands and conditions. Additive: v2 maps are valid v3.
     { from: 2, migrate: (d) => d },
+    // v4: random encounters and the battle command. Additive.
+    { from: 3, migrate: (d) => d },
   ],
   character: [],
+  // Database v2: combat modifiers, troops, attack/guard skills. Additive.
+  ...(Object.fromEntries(
+    DATABASE_KINDS.map((k) => [k, [{ from: 1, migrate: (d: Record<string, unknown>) => d }]]),
+  ) as Record<DatabaseKind, Migration[]>),
 };
 
 export class FormatVersionError extends Error {

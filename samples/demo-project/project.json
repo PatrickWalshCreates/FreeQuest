@@ -1,5 +1,5 @@
 {
-  "formatVersion": 3,
+  "formatVersion": 4,
   "name": "FreeQuest Demo",
   "characters": [
     {
@@ -23,7 +23,8 @@
     "items": "data/database/items.json",
     "skills": "data/database/skills.json",
     "states": "data/database/states.json",
-    "system": "data/database/system.json"
+    "system": "data/database/system.json",
+    "troops": "data/database/troops.json"
   },
   "maps": [
     {

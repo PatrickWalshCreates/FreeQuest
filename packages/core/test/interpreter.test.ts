@@ -295,3 +295,53 @@ describe('World.run', () => {
     expect(world.interpreter).toBeNull();
   });
 });
+
+describe('Interpreter battles', () => {
+  const battle = (canEscape: boolean, canLose: boolean): Command => ({
+    type: 'battle',
+    troop: 'slimes',
+    canEscape,
+    canLose,
+    onWin: [{ type: 'setSwitch', switch: 'a', value: true }],
+    onEscape: [{ type: 'setSwitch', switch: 'b', value: true }],
+    onLose: [{ type: 'setVariable', variable: 'n', op: 'set', value: -1 }],
+  });
+
+  it('asks the host to run the battle, then runs the outcome branch', () => {
+    const state = newState();
+    const it = new Interpreter([battle(true, true), say('after')], state);
+    it.update(DT);
+    expect(it.pending).toEqual({ type: 'battle', troop: 'slimes', canEscape: true, canLose: true });
+    expect(() => it.continue()).toThrow(/a battle is pending/);
+    it.finishBattle('escape');
+    it.update(DT);
+    expect([state.getSwitch('a'), state.getSwitch('b')]).toEqual([false, true]);
+    expect(it.pending).toMatchObject({ type: 'message', text: 'after' });
+  });
+
+  it('runs the win and lose branches', () => {
+    const winState = newState();
+    const win = new Interpreter([battle(false, true)], winState);
+    win.update(DT);
+    win.finishBattle('win');
+    win.update(DT);
+    expect(winState.getSwitch('a')).toBe(true);
+
+    const loseState = newState();
+    const lose = new Interpreter([battle(false, true)], loseState);
+    lose.update(DT);
+    lose.finishBattle('lose');
+    lose.update(DT);
+    expect(loseState.getVariable('n')).toBe(-1);
+  });
+
+  it('refuses outcomes the battle does not allow', () => {
+    const it = new Interpreter([battle(false, false)], newState());
+    expect(() => it.finishBattle('win')).toThrow(/no battle is pending/);
+    it.update(DT);
+    expect(() => it.finishBattle('escape')).toThrow(/cannot be escaped/);
+    expect(() => it.finishBattle('lose')).toThrow(/cannot be lost/);
+    it.finishBattle('win');
+    expect(it.pending).toBeNull();
+  });
+});

@@ -55,5 +55,30 @@ export const Modifier = Type.Union([
     },
     { additionalProperties: false },
   ),
+  Type.Object(
+    {
+      type: Type.Union([
+        Type.Literal('hitRate'),
+        Type.Literal('evasionRate'),
+        Type.Literal('criticalRate'),
+      ]),
+      value: Type.Number({
+        minimum: -1,
+        maximum: 1,
+        description: 'Added to the base chance (hit 0.95, evasion 0.05, critical 0.04).',
+      }),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('damageTaken'),
+      value: Type.Number({
+        minimum: 0,
+        description: 'Multiplier on HP damage taken, e.g. 0.5 when guarding.',
+      }),
+    },
+    { additionalProperties: false },
+  ),
 ]);
 export type Modifier = Static<typeof Modifier>;

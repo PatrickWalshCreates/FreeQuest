@@ -13,7 +13,7 @@ import {
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 1;
+export const DATABASE_FORMAT_VERSION = 2;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
@@ -29,6 +29,8 @@ export const SystemData = Type.Object(
     equipmentSlots: Type.Array(Named, { description: 'In menu order, e.g. weapon, shield, head.' }),
     equipmentTypes: Type.Array(Named, { description: 'e.g. sword, staff, light armor.' }),
     skillTypes: Type.Array(Named, { description: 'e.g. magic, techniques.' }),
+    attackSkill: Type.Optional(Id),
+    guardSkill: Type.Optional(Id),
     iconset: Type.Optional(
       Type.Object(
         { image: RelativePath, iconSize: PositiveInt, columns: PositiveInt },
@@ -199,6 +201,17 @@ export const EnemyEntry = Type.Object(
 );
 export type EnemyEntry = Static<typeof EnemyEntry>;
 
+/** A group of enemies fought together. */
+export const TroopEntry = Type.Object(
+  {
+    id: Id,
+    name: Type.String({ minLength: 1 }),
+    enemies: Type.Array(Id, { minItems: 1, maxItems: 8, description: 'Enemy ids, left to right.' }),
+  },
+  { additionalProperties: false },
+);
+export type TroopEntry = Static<typeof TroopEntry>;
+
 const V = DATABASE_FORMAT_VERSION;
 export const ActorsFile = DatabaseFile('FreeQuest actors', ActorEntry, V);
 export const ClassesFile = DatabaseFile('FreeQuest classes', ClassEntry, V);
@@ -207,3 +220,4 @@ export const ItemsFile = DatabaseFile('FreeQuest items', ItemEntry, V);
 export const EquipmentFile = DatabaseFile('FreeQuest equipment', EquipmentEntry, V);
 export const StatesFile = DatabaseFile('FreeQuest states', StateEntry, V);
 export const EnemiesFile = DatabaseFile('FreeQuest enemies', EnemyEntry, V);
+export const TroopsFile = DatabaseFile('FreeQuest troops', TroopEntry, V);

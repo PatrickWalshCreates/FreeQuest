@@ -141,6 +141,19 @@ export const Command = Type.Cyclic(
       ),
       Type.Object(
         {
+          type: Type.Literal('battle'),
+          troop: Id,
+          canEscape: Type.Boolean(),
+          /** When false, losing is game over. When true, the event continues with `onLose`. */
+          canLose: Type.Boolean(),
+          onWin: Type.Optional(CommandList),
+          onEscape: Type.Optional(CommandList),
+          onLose: Type.Optional(CommandList),
+        },
+        { additionalProperties: false, description: 'Fight a troop, then branch on the outcome.' },
+      ),
+      Type.Object(
+        {
           type: Type.Literal('comment'),
           text: Type.String(),
         },
@@ -170,6 +183,11 @@ export function walkCommands(
       command.options.forEach((option, j) =>
         walkCommands(option.commands, visit, `${here}.options[${j}].commands`),
       );
+    } else if (command.type === 'battle') {
+      for (const branch of ['onWin', 'onEscape', 'onLose'] as const) {
+        const list = command[branch];
+        if (list) walkCommands(list, visit, `${here}.${branch}`);
+      }
     }
   });
 }

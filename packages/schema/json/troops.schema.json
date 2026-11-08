@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enemies": {
+            "type": "array",
+            "description": "Enemy ids, left to right.",
+            "items": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "maxItems": 8,
+            "minItems": 1
+          }
+        },
+        "required": ["id", "name", "enemies"]
+      }
+    }
+  },
+  "required": ["formatVersion", "entries"],
+  "title": "FreeQuest troops"
+}

@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "entries": [
     {
       "id": "knockout",
@@ -44,6 +44,26 @@
         }
       },
       "restriction": "cannotAct"
+    },
+    {
+      "id": "guarding",
+      "name": "Guarding",
+      "knockout": false,
+      "modifiers": [
+        {
+          "type": "damageTaken",
+          "value": 0.5
+        }
+      ],
+      "priority": 0,
+      "removal": {
+        "battleEnd": true,
+        "turns": {
+          "max": 1,
+          "min": 1
+        }
+      },
+      "restriction": "none"
     }
   ]
 }

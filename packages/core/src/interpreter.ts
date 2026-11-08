@@ -16,7 +16,10 @@ import type { Party } from './party.js';
 export type InterpreterRequest =
   | { type: 'message'; speaker: string | null; text: string }
   | { type: 'choice'; options: readonly string[]; cancel: number | null }
-  | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null };
+  | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
+  | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean };
+
+export type BattleOutcome = 'win' | 'escape' | 'lose';
 
 /** Commands executed in one update before we assume a runaway loop. */
 const MAX_COMMANDS_PER_UPDATE = 10_000;
@@ -42,6 +45,7 @@ export class Interpreter {
   private readonly context: EventContext;
   private request: InterpreterRequest | null = null;
   private choiceCommand: CommandOf<'choice'> | null = null;
+  private battleCommand: CommandOf<'battle'> | null = null;
   private waitRemaining = 0;
 
   constructor(commands: readonly Command[], context: EventContext | GameState) {
@@ -83,10 +87,31 @@ export class Interpreter {
   /** Answer a pending message or transfer request. */
   continue(): void {
     const request = this.request;
-    if (request === null || request.type === 'choice') {
-      throw new Error(`continue() called while ${request ? 'a choice' : 'nothing'} is pending`);
+    if (request === null || request.type === 'choice' || request.type === 'battle') {
+      throw new Error(
+        `continue() called while ${request ? `a ${request.type}` : 'nothing'} is pending`,
+      );
     }
     this.request = null;
+  }
+
+  /**
+   * Answer a pending battle with its outcome; the matching branch runs next.
+   * A loss the event doesn't allow (`canLose: false`) is game over and must
+   * be handled by the host instead.
+   */
+  finishBattle(outcome: BattleOutcome): void {
+    const command = this.battleCommand;
+    if (this.request?.type !== 'battle' || command === null) {
+      throw new Error('finishBattle() called while no battle is pending');
+    }
+    if (outcome === 'escape' && !command.canEscape)
+      throw new Error('this battle cannot be escaped');
+    if (outcome === 'lose' && !command.canLose) throw new Error('this battle cannot be lost');
+    this.request = null;
+    this.battleCommand = null;
+    const branch = { win: command.onWin, escape: command.onEscape, lose: command.onLose }[outcome];
+    if (branch) this.stack.push({ commands: branch, index: 0 });
   }
 
   /** Answer a pending choice with the option at `index`. */
@@ -210,6 +235,15 @@ export class Interpreter {
       }
       case 'recoverAll':
         for (const member of this.targets(command.type, command.actor)) member.recoverAll();
+        break;
+      case 'battle':
+        this.battleCommand = command;
+        this.request = {
+          type: 'battle',
+          troop: command.troop,
+          canEscape: command.canEscape,
+          canLose: command.canLose,
+        };
         break;
       case 'comment':
         break;

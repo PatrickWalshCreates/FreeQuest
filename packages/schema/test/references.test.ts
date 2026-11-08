@@ -15,7 +15,7 @@ import {
 } from '../src/index.js';
 
 const manifest: Manifest = {
-  formatVersion: 3,
+  formatVersion: 4,
   name: 'T',
   screen: { width: 32, height: 32 },
   start: { map: 'a', x: 0, y: 0, direction: 'down', party: [], gold: 0 },
@@ -42,7 +42,7 @@ const hero = { id: 'hero' } as CharacterSheet;
 
 function mapWith(commands: Command[], extra: Partial<GameMap> = {}): GameMap {
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     id: 'a',
     name: 'A',
     width: 2,
@@ -220,6 +220,34 @@ describe('database-aware event checks', () => {
       expect.stringMatching(/commands\[1\]: unknown item "elixir"/),
       expect.stringMatching(/commands\[2\]: unknown actor "ghost"/),
       expect.stringMatching(/commands\[4\]: unknown equipment "potion"/),
+    ]);
+  });
+});
+
+describe('battle references', () => {
+  it('checks troops used by battle commands and encounters, including nested branches', () => {
+    const database = { ...emptyDatabase(), troops: [{ id: 'slimes' }] } as unknown as Database;
+    const map = mapWith(
+      [
+        {
+          type: 'battle',
+          troop: 'slimes',
+          canEscape: true,
+          canLose: false,
+          onWin: [{ type: 'battle', troop: 'dragons', canEscape: false, canLose: false }],
+        },
+      ],
+      { encounters: { steps: 30, troops: [{ troop: 'ghosts', weight: 1 }] } },
+    );
+    const ctx = {
+      manifest,
+      tilesets: new Map([['ts', tileset]]),
+      characters: new Map([['hero', hero]]),
+      database,
+    };
+    expect(checkMapReferences(map, ctx)).toEqual([
+      expect.stringMatching(/encounters\.troops\[0\]: unknown troop "ghosts"/),
+      expect.stringMatching(/onWin\[0\]: unknown troop "dragons"/),
     ]);
   });
 });

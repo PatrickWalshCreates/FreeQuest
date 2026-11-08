@@ -24,7 +24,7 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
   const layers = [{ name: 'ground', data: toData(rows, { '.': 0, '#': 1 }) }];
   if (overlay) layers.push({ name: 'overlay', data: toData(overlay, { T: 2, '#': 1, o: 3 }) });
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     id: 'test-map',
     name: 'Test map',
     width: rows[0]?.length ?? 0,
@@ -37,7 +37,7 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
 
 export function makeManifest(start: Partial<Manifest['start']> = {}): Manifest {
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     name: 'Test',
     screen: { width: 64, height: 64 },
     start: { map: 'test-map', x: 0, y: 0, direction: 'down', party: [], gold: 0, ...start },

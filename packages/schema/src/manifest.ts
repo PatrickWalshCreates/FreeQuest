@@ -1,7 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, FileRef, Id, NonNegativeInt, PositiveInt, RelativePath } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 3;
+export const MANIFEST_FORMAT_VERSION = 4;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -13,6 +13,7 @@ export const DATABASE_KINDS = [
   'equipment',
   'states',
   'enemies',
+  'troops',
 ] as const;
 export type DatabaseKind = (typeof DATABASE_KINDS)[number];
 

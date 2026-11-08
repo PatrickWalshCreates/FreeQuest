@@ -18,7 +18,7 @@ const tileset: Tileset = {
 
 function map(id: string, width: number, height: number): GameMap {
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     id,
     name: id,
     width,
@@ -30,7 +30,7 @@ function map(id: string, width: number, height: number): GameMap {
 }
 
 const manifest: Manifest = {
-  formatVersion: 3,
+  formatVersion: 4,
   name: 'T',
   screen: { width: 64, height: 64 },
   start: { map: 'a', x: 0, y: 0, direction: 'down', party: [], gold: 0 },

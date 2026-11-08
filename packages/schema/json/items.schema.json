@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "entries": {
       "type": "array",

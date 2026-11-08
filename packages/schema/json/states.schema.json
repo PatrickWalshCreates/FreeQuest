@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "entries": {
       "type": "array",
@@ -228,6 +228,51 @@
                       "description": "Fraction of max HP gained each turn; negative for poison.",
                       "maximum": 1,
                       "minimum": -1
+                    }
+                  },
+                  "required": ["type", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "hitRate"
+                        },
+                        {
+                          "type": "string",
+                          "const": "evasionRate"
+                        },
+                        {
+                          "type": "string",
+                          "const": "criticalRate"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Added to the base chance (hit 0.95, evasion 0.05, critical 0.04).",
+                      "maximum": 1,
+                      "minimum": -1
+                    }
+                  },
+                  "required": ["type", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "damageTaken"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Multiplier on HP damage taken, e.g. 0.5 when guarding.",
+                      "minimum": 0
                     }
                   },
                   "required": ["type", "value"]

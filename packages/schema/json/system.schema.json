@@ -5,7 +5,12 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 1
+      "const": 2
+    },
+    "attackSkill": {
+      "type": "string",
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "currency": {
       "type": "string",
@@ -70,6 +75,11 @@
         },
         "required": ["id", "name"]
       }
+    },
+    "guardSkill": {
+      "type": "string",
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "iconset": {
       "type": "object",
