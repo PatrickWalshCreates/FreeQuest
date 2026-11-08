@@ -1,4 +1,4 @@
-import { ActionState, FixedTimestep, World, computeCamera } from '@freequest/core';
+import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from '@freequest/core';
 import type { Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, type Texture } from 'pixi.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
@@ -57,7 +57,12 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   ]);
   readyTiles.set(tileset.id, startTiles);
 
-  const world = new World({ manifest, map, tileset });
+  const world = new World({
+    manifest,
+    map,
+    tileset,
+    database: new DatabaseIndex(project.database),
+  });
   const input = new ActionState();
   const loop = new FixedTimestep();
 

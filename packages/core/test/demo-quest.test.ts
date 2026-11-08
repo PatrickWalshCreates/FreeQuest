@@ -6,6 +6,7 @@ import rawManifest from '../../../samples/demo-project/project.json' with { type
 import rawHouse from '../../../samples/demo-project/data/maps/house.json' with { type: 'json' };
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
 import rawTileset from '../../../samples/demo-project/data/tilesets/overworld.json' with { type: 'json' };
+import { demoDb } from './demo-db.js';
 import { ActionState, type Direction, World } from '../src/index.js';
 
 const DT = 1 / 60;
@@ -15,6 +16,7 @@ function play() {
     manifest: parseProjectFile('manifest', rawManifest),
     map: parseProjectFile('map', rawMap),
     tileset: parseProjectFile('tileset', rawTileset),
+    database: demoDb(),
   });
   const input = new ActionState();
   /** Every line of dialogue shown, in order. */

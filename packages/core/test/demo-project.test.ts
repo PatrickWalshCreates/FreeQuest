@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import rawManifest from '../../../samples/demo-project/project.json' with { type: 'json' };
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
 import rawTileset from '../../../samples/demo-project/data/tilesets/overworld.json' with { type: 'json' };
+import { demoDb } from './demo-db.js';
 import { ActionState, World, activePage, activePageIndex } from '../src/index.js';
 
 describe('demo project', () => {
@@ -10,6 +11,7 @@ describe('demo project', () => {
     manifest: parseProjectFile('manifest', rawManifest),
     map: parseProjectFile('map', rawMap),
     tileset: parseProjectFile('tileset', rawTileset),
+    database: demoDb(),
   });
 
   it('starts the player on a passable tile', () => {
@@ -39,6 +41,7 @@ describe('demo project', () => {
       manifest: parseProjectFile('manifest', rawManifest),
       map: parseProjectFile('map', rawMap),
       tileset: parseProjectFile('tileset', rawTileset),
+      database: demoDb(),
     });
     const elder = fresh.map.events.find((e) => e.id === 'elder');
     const page = elder && activePage(elder, fresh.state);

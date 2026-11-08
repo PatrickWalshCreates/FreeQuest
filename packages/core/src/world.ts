@@ -1,11 +1,19 @@
-import type { Command, GameMap, Manifest, Tileset } from '@freequest/schema';
+import {
+  type Command,
+  type GameMap,
+  type Manifest,
+  type Tileset,
+  emptyDatabase,
+} from '@freequest/schema';
 import { CollisionMap, type Passability } from './collision.js';
+import { DatabaseIndex } from './database.js';
 import { DIRECTION_DELTA, type Direction } from './direction.js';
 import { EventInstance } from './events.js';
 import { GameState } from './game-state.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
 import type { InputState } from './input.js';
 import { Interpreter } from './interpreter.js';
+import { Party } from './party.js';
 
 export interface WorldOptions {
   manifest: Manifest;
@@ -13,6 +21,10 @@ export interface WorldOptions {
   tileset: Tileset;
   /** Shared across maps. Defaults to a fresh state for the manifest. */
   state?: GameState;
+  /** The project's database. Defaults to an empty one. */
+  database?: DatabaseIndex;
+  /** Defaults to the manifest's starting party and gold. */
+  party?: Party;
 }
 
 const OPPOSITE: Record<Direction, Direction> = {
@@ -29,6 +41,8 @@ const OPPOSITE: Record<Direction, Direction> = {
 export class World {
   readonly player: GridMover;
   readonly state: GameState;
+  readonly db: DatabaseIndex;
+  readonly party: Party;
   /** Tile collision plus events that block. What characters move against. */
   readonly passability: Passability;
 
@@ -40,8 +54,10 @@ export class World {
   private runningEvent: EventInstance | null = null;
   private seenStateVersion: number;
 
-  constructor({ manifest, map, tileset, state }: WorldOptions) {
+  constructor({ manifest, map, tileset, state, database, party }: WorldOptions) {
     this.state = state ?? new GameState(manifest);
+    this.db = database ?? new DatabaseIndex(emptyDatabase());
+    this.party = party ?? Party.start(this.db, manifest.start);
     const { start } = manifest;
     this.player = new GridMover({
       x: start.x,

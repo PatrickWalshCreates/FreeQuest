@@ -115,6 +115,47 @@ export class Actor extends Battler {
     return this.equipped;
   }
 
+  /**
+   * Equipment types this actor may wear: from its own and its class's
+   * `equipType` modifiers (deliberately not from equipment or states, so
+   * gear can't grant permission to wear itself).
+   */
+  allowedEquipmentTypes(): Set<string> {
+    return new Set(
+      [...this.entry.modifiers, ...this.classEntry.modifiers].flatMap((m) =>
+        m.type === 'equipType' ? [m.equipmentType] : [],
+      ),
+    );
+  }
+
+  /** Whether this actor could wear a piece of equipment (ignores inventory). */
+  canEquip(equipmentId: string): boolean {
+    const item = this.db.equipment.find(equipmentId);
+    return item !== undefined && this.allowedEquipmentTypes().has(item.equipmentType);
+  }
+
+  /**
+   * Put equipment in a slot (or empty it with null), without touching the
+   * inventory; `Party.equip` handles that. Returns what was there before.
+   */
+  setEquipment(slot: string, equipmentId: string | null): string | null {
+    const previous = this.equipped.get(slot) ?? null;
+    if (equipmentId === null) {
+      this.equipped.delete(slot);
+    } else {
+      const item = this.db.equipment.get(equipmentId);
+      if (item.slot !== slot) {
+        throw new Error(`"${equipmentId}" goes in slot "${item.slot}", not "${slot}"`);
+      }
+      if (!this.canEquip(equipmentId)) {
+        throw new Error(`${this.name} cannot equip "${equipmentId}" (${item.equipmentType})`);
+      }
+      this.equipped.set(slot, equipmentId);
+    }
+    this.clampPools();
+    return previous;
+  }
+
   /** Skills known: the class's skills up to this level, plus any learned otherwise. */
   get skills(): string[] {
     const fromClass = this.classEntry.skills
