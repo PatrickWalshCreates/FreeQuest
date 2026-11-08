@@ -1,0 +1,101 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  type FileKind,
+  FormatVersionError,
+  type Migration,
+  ProjectFileError,
+  checkMapShape,
+  migrate,
+  parseProjectFile,
+  stableStringify,
+} from '../src/index.js';
+
+const DEMO = join(import.meta.dirname, '..', '..', '..', 'samples', 'demo-project');
+
+describe('stableStringify', () => {
+  it('orders formatVersion, id, name first and the rest alphabetically', () => {
+    const out = stableStringify({ zeta: 1, name: 'n', alpha: 2, formatVersion: 1, id: 'x' });
+    expect(out).toBe(
+      '{\n  "formatVersion": 1,\n  "id": "x",\n  "name": "n",\n  "alpha": 2,\n  "zeta": 1\n}\n',
+    );
+  });
+
+  it('keeps primitive arrays on one line and nests others', () => {
+    expect(stableStringify({ data: [[1, 2], [3]] })).toBe(
+      '{\n  "data": [\n    [1, 2],\n    [3]\n  ]\n}\n',
+    );
+  });
+
+  it('is independent of input key order', () => {
+    expect(stableStringify({ b: 1, a: { d: 1, c: 2 } })).toBe(
+      stableStringify({ a: { c: 2, d: 1 }, b: 1 }),
+    );
+  });
+
+  it('omits undefined values', () => {
+    expect(stableStringify({ a: undefined, b: 1 })).toBe('{\n  "b": 1\n}\n');
+  });
+});
+
+describe('migrate', () => {
+  it('passes current-version data through', () => {
+    const data = { formatVersion: 1, x: 1 };
+    expect(migrate('map', data)).toBe(data);
+  });
+
+  it('rejects missing or future versions', () => {
+    expect(() => migrate('map', { x: 1 })).toThrow(FormatVersionError);
+    expect(() => migrate('map', { formatVersion: 999 })).toThrow(/newer/);
+  });
+
+  it('applies registered migrations in order', () => {
+    const steps: Migration[] = [
+      { from: 1, migrate: (d) => ({ ...d, a: 'added in 2' }) },
+      { from: 2, migrate: (d) => ({ ...d, b: 'added in 3' }) },
+    ];
+    const registry = { manifest: [], tileset: [], map: steps, character: [] } satisfies Record<
+      FileKind,
+      Migration[]
+    >;
+    const original = { formatVersion: 1 };
+    expect(migrate('map', original, registry, 3)).toEqual({
+      formatVersion: 3,
+      a: 'added in 2',
+      b: 'added in 3',
+    });
+    expect(original).toEqual({ formatVersion: 1 });
+    expect(() => migrate('map', original, { ...registry, map: [] }, 2)).toThrow(/no migration/);
+  });
+});
+
+describe('parseProjectFile', () => {
+  it('reports schema violations with paths', () => {
+    try {
+      parseProjectFile('tileset', { formatVersion: 1, id: 'Bad Id' }, 'x.json');
+      expect.unreachable();
+    } catch (e) {
+      expect(e).toBeInstanceOf(ProjectFileError);
+      expect((e as ProjectFileError).message).toMatch(/x\.json/);
+    }
+  });
+});
+
+describe('demo project', () => {
+  const files: [FileKind, string][] = [['manifest', 'project.json']];
+  for (const [dir, kind] of [
+    ['tilesets', 'tileset'],
+    ['maps', 'map'],
+    ['characters', 'character'],
+  ] as const) {
+    for (const f of readdirSync(join(DEMO, 'data', dir))) files.push([kind, `data/${dir}/${f}`]);
+  }
+
+  it.each(files)('%s %s is valid and in canonical form', (kind, path) => {
+    const text = readFileSync(join(DEMO, path), 'utf8');
+    const data = parseProjectFile(kind, JSON.parse(text), relative(DEMO, join(DEMO, path)));
+    expect(stableStringify(data)).toBe(text);
+    if (kind === 'map') expect(checkMapShape(data as never)).toEqual([]);
+  });
+});

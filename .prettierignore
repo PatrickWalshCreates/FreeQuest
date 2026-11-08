@@ -1,0 +1,6 @@
+dist/
+coverage/
+pnpm-lock.yaml
+# Project data is written by FreeQuest's own stable serializer, not Prettier.
+samples/**/*.json
+packages/schema/json/

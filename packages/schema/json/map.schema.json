@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "height": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "layers": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "data": {
+            "description": "Rows of tile indices, top to bottom. -1 means empty.",
+            "items": {
+              "items": {
+                "minimum": -1,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["name", "data"],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "tileset": {
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "width": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": ["formatVersion", "id", "name", "width", "height", "tileset", "layers"],
+  "title": "FreeQuest map",
+  "type": "object"
+}

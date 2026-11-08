@@ -1,0 +1,24 @@
+{
+  "name": "@freequest/core",
+  "version": "0.0.0",
+  "description": "Pure FreeQuest game logic. No rendering, no DOM.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@freequest/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@freequest/schema": "workspace:*"
+  }
+}

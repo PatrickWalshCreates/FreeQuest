@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "columns": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "image": {
+      "description": "Path relative to the project root, using \"/\" separators.",
+      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+      "type": "string"
+    },
+    "tileHeight": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "tileWidth": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "tiles": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "above": {
+            "description": "Drawn above characters and ignored for collision (e.g. treetops).",
+            "type": "boolean"
+          },
+          "passable": {
+            "description": "Whether characters can walk onto this tile.",
+            "type": "boolean"
+          }
+        },
+        "required": ["passable"],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": ["formatVersion", "id", "name", "image", "tileWidth", "tileHeight", "columns", "tiles"],
+  "title": "FreeQuest tileset",
+  "type": "object"
+}

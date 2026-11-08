@@ -1,0 +1,26 @@
+{
+  "name": "@freequest/runtime",
+  "version": "0.0.0",
+  "description": "PixiJS player that loads and runs a FreeQuest project.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@freequest/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@freequest/core": "workspace:*",
+    "@freequest/schema": "workspace:*",
+    "pixi.js": "^8.22.0"
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "characters": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "path": {
+            "description": "Path relative to the project root, using \"/\" separators.",
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+            "type": "string"
+          }
+        },
+        "required": ["id", "path"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "maps": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "path": {
+            "description": "Path relative to the project root, using \"/\" separators.",
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+            "type": "string"
+          }
+        },
+        "required": ["id", "path"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "player": {
+      "additionalProperties": false,
+      "properties": {
+        "character": {
+          "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "speed": {
+          "description": "Walking speed in tiles per second.",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      },
+      "required": ["character", "speed"],
+      "type": "object"
+    },
+    "screen": {
+      "additionalProperties": false,
+      "description": "Internal render resolution in pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": ["width", "height"],
+      "type": "object"
+    },
+    "start": {
+      "additionalProperties": false,
+      "description": "Where the player appears on a new game.",
+      "properties": {
+        "direction": {
+          "anyOf": [
+            {
+              "const": "down",
+              "type": "string"
+            },
+            {
+              "const": "left",
+              "type": "string"
+            },
+            {
+              "const": "right",
+              "type": "string"
+            },
+            {
+              "const": "up",
+              "type": "string"
+            }
+          ]
+        },
+        "map": {
+          "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        "x": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["map", "x", "y", "direction"],
+      "type": "object"
+    },
+    "tilesets": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "path": {
+            "description": "Path relative to the project root, using \"/\" separators.",
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+            "type": "string"
+          }
+        },
+        "required": ["id", "path"],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": ["formatVersion", "name", "screen", "start", "player", "tilesets", "maps", "characters"],
+  "title": "FreeQuest project manifest",
+  "type": "object"
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "frameHeight": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "frameWidth": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "frames": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "idleFrame": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "image": {
+      "description": "Path relative to the project root, using \"/\" separators.",
+      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+      "type": "string"
+    },
+    "rows": {
+      "items": {
+        "anyOf": [
+          {
+            "const": "down",
+            "type": "string"
+          },
+          {
+            "const": "left",
+            "type": "string"
+          },
+          {
+            "const": "right",
+            "type": "string"
+          },
+          {
+            "const": "up",
+            "type": "string"
+          }
+        ]
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "walkCycle": {
+      "items": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": ["formatVersion", "id", "name", "image", "frameWidth", "frameHeight", "frames", "rows", "idleFrame", "walkCycle"],
+  "title": "FreeQuest character sheet",
+  "type": "object"
+}

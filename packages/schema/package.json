@@ -1,0 +1,27 @@
+{
+  "name": "@freequest/schema",
+  "version": "0.0.0",
+  "description": "Types and JSON Schema for the FreeQuest project file format.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@freequest/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./json/*": "./json/*"
+  },
+  "files": [
+    "dist",
+    "json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "gen:schema": "tsx scripts/emit-json-schema.ts"
+  },
+  "dependencies": {
+    "typebox": "^1.4.6"
+  }
+}

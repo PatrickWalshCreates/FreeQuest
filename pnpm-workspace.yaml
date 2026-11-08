@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - apps/*
+minimumReleaseAgeExclude:
+  - typebox@1.4.6
+allowBuilds:
+  esbuild: true
