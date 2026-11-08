@@ -9,4 +9,6 @@ export * from './dialog-view.js';
 export * from './transfer.js';
 export * from './debug-text.js';
 export * from './debug-panel.js';
+export * from './battle-text.js';
+export * from './battle-controller.js';
 export * from './textures.js';

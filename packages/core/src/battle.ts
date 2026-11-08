@@ -119,6 +119,11 @@ export class Battle {
     return this.turnCount;
   }
 
+  /** How many of an item the party carries (for the item menu). */
+  itemCount(itemId: string): number {
+    return this.party.count('item', itemId);
+  }
+
   /** Living enemies, for target lists. */
   get livingEnemies(): Enemy[] {
     return this.enemies.filter((e) => !e.isKnockedOut);
