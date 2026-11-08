@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type CharacterSheet,
   type Command,
+  type Database,
   type GameMap,
   type Manifest,
   type ProjectData,
@@ -10,6 +11,7 @@ import {
   checkMapReferences,
   checkMapShape,
   checkReferences,
+  emptyDatabase,
 } from '../src/index.js';
 
 const manifest: Manifest = {
@@ -40,7 +42,7 @@ const hero = { id: 'hero' } as CharacterSheet;
 
 function mapWith(commands: Command[], extra: Partial<GameMap> = {}): GameMap {
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     id: 'a',
     name: 'A',
     width: 2,
@@ -184,5 +186,40 @@ describe('lazy map checks', () => {
   it('flags a start map missing from the manifest', () => {
     const ctx = { manifest, tilesets: new Map(), characters: new Map([['hero', hero]]) };
     expect(checkManifestReferences(ctx)).toEqual([expect.stringMatching(/unknown map "a"/)]);
+  });
+});
+
+describe('database-aware event checks', () => {
+  it('flags unknown items and actors used by events when the database is given', () => {
+    const database = {
+      ...emptyDatabase(),
+      items: [{ id: 'potion' }],
+      actors: [{ id: 'hero' }],
+    } as unknown as Database;
+    const map = mapWith([
+      { type: 'changeItems', kind: 'item', id: 'potion', amount: 1 },
+      { type: 'changeItems', kind: 'item', id: 'elixir', amount: 1 },
+      { type: 'changeParty', action: 'add', actor: 'ghost' },
+      { type: 'changeGold', amount: { variable: 'count' } },
+      {
+        type: 'if',
+        conditions: [
+          { type: 'hasItem', kind: 'equipment', id: 'potion' },
+          { type: 'inParty', actor: 'hero' },
+        ],
+        then: [],
+      },
+    ]);
+    const ctx = {
+      manifest,
+      tilesets: new Map([['ts', tileset]]),
+      characters: new Map([['hero', hero]]),
+      database,
+    };
+    expect(checkMapReferences(map, ctx)).toEqual([
+      expect.stringMatching(/commands\[1\]: unknown item "elixir"/),
+      expect.stringMatching(/commands\[2\]: unknown actor "ghost"/),
+      expect.stringMatching(/commands\[4\]: unknown equipment "potion"/),
+    ]);
   });
 });

@@ -9,7 +9,7 @@ import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
 import { DIRECTION_DELTA, type Direction } from './direction.js';
 import { EventInstance } from './events.js';
-import { GameState } from './game-state.js';
+import { type EventContext, GameState } from './game-state.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
 import type { InputState } from './input.js';
 import { Interpreter } from './interpreter.js';
@@ -52,7 +52,7 @@ export class World {
   private currentEvents: EventInstance[];
   private running: Interpreter | null = null;
   private runningEvent: EventInstance | null = null;
-  private seenStateVersion: number;
+  private seenVersion: string;
 
   constructor({ manifest, map, tileset, state, database, party }: WorldOptions) {
     this.state = state ?? new GameState(manifest);
@@ -71,7 +71,7 @@ export class World {
     this.currentCollision = CollisionMap.fromMap(map, tileset);
     this.currentEvents = [];
     this.enterMap(map, tileset, start.x, start.y);
-    this.seenStateVersion = this.state.version;
+    this.seenVersion = this.versionKey();
     const currentMap = () => this.currentMap;
     this.passability = {
       get width() {
@@ -111,7 +111,7 @@ export class World {
     this.currentMap = map;
     this.currentTileset = tileset;
     this.currentCollision = collision;
-    this.currentEvents = map.events.map((e) => new EventInstance(e, this.state));
+    this.currentEvents = map.events.map((e) => new EventInstance(e, this.eventContext));
     this.player.placeAt(x, y);
   }
 
@@ -151,7 +151,7 @@ export class World {
    */
   run(commands: readonly Command[], source: EventInstance | null = null): Interpreter {
     if (this.running) throw new Error('an event is already running');
-    this.running = new Interpreter(commands, this.state);
+    this.running = new Interpreter(commands, this.eventContext);
     this.runningEvent = source;
     return this.running;
   }
@@ -175,10 +175,22 @@ export class World {
     return true;
   }
 
+  /** What event conditions and commands see: switches, variables and the party. */
+  get eventContext(): EventContext {
+    return { state: this.state, party: this.party };
+  }
+
+  /** Changes whenever anything an event page condition can read changes. */
+  private versionKey(): string {
+    return `${this.state.version}:${this.party.version}`;
+  }
+
   private refreshEvents(): void {
-    if (this.state.version === this.seenStateVersion) return;
-    this.seenStateVersion = this.state.version;
-    for (const event of this.events) event.refresh(this.state, event === this.runningEvent);
+    const version = this.versionKey();
+    if (version === this.seenVersion) return;
+    this.seenVersion = version;
+    const context = this.eventContext;
+    for (const event of this.events) event.refresh(context, event === this.runningEvent);
   }
 
   /** Talk to / examine: the event in front of the player, or one underfoot that isn't on the same layer. */

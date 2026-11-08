@@ -102,7 +102,7 @@ export async function loadProject(projectUrl: string | URL): Promise<LoadedProje
   if (databaseProblems.length > 0) throw new ProjectFileError('database', databaseProblems);
   const maps = new Map<string, GameMap>();
   const pending = new Map<string, Promise<GameMap>>();
-  const context = { manifest, tilesets, characters, maps };
+  const context = { manifest, tilesets, characters, maps, database };
 
   const loadMap = (id: string): Promise<GameMap> => {
     let promise = pending.get(id);

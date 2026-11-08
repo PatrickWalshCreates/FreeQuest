@@ -30,5 +30,22 @@ export const Condition = Type.Union([
     },
     { additionalProperties: false },
   ),
+  Type.Object(
+    { type: Type.Literal('gold'), op: CompareOp, value: Type.Integer({ minimum: 0 }) },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('hasItem'),
+      kind: Type.Union([Type.Literal('item'), Type.Literal('equipment')]),
+      id: Id,
+      /** At least this many (default 1). */
+      count: Type.Optional(Type.Integer({ minimum: 1 })),
+      /** For equipment: also count pieces worn by party members. */
+      includeEquipped: Type.Optional(Type.Boolean()),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object({ type: Type.Literal('inParty'), actor: Id }, { additionalProperties: false }),
 ]);
 export type Condition = Static<typeof Condition>;

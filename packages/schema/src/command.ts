@@ -102,6 +102,44 @@ export const Command = Type.Cyclic(
         { additionalProperties: false },
       ),
       Type.Object(
+        { type: Type.Literal('changeGold'), amount: Operand },
+        { additionalProperties: false, description: 'Negative amounts take gold away.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeItems'),
+          kind: Type.Union([Type.Literal('item'), Type.Literal('equipment')]),
+          id: Id,
+          amount: Operand,
+        },
+        { additionalProperties: false, description: 'Negative amounts take items away.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeParty'),
+          action: Type.Union([Type.Literal('add'), Type.Literal('remove')]),
+          actor: Id,
+        },
+        { additionalProperties: false },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('gainExp'),
+          /** Omit for every party member. */
+          actor: Type.Optional(Id),
+          amount: Operand,
+        },
+        { additionalProperties: false },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('recoverAll'),
+          /** Omit for every party member. */
+          actor: Type.Optional(Id),
+        },
+        { additionalProperties: false, description: 'Full HP/MP and clear states (e.g. an inn).' },
+      ),
+      Type.Object(
         {
           type: Type.Literal('comment'),
           text: Type.String(),

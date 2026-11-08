@@ -2,7 +2,7 @@ import Type, { type Static } from 'typebox';
 import { Id, PositiveInt } from './common.js';
 import { MapEvent } from './event.js';
 
-export const MAP_FORMAT_VERSION = 2;
+export const MAP_FORMAT_VERSION = 3;
 
 /** Tile index meaning "no tile in this cell". */
 export const EMPTY_TILE = -1;

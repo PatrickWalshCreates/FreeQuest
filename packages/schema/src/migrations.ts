@@ -42,6 +42,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
   map: [
     // v2: events.
     { from: 1, migrate: (d) => ({ ...d, events: [] }) },
+    // v3: party/gold/item commands and conditions. Additive: v2 maps are valid v3.
+    { from: 2, migrate: (d) => d },
   ],
   character: [],
 };

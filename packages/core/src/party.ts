@@ -33,6 +33,7 @@ export class Party {
   private readonly memberList: Actor[] = [];
   private currentGold = 0;
   private stepCount = 0;
+  private changes = 0;
   private readonly bags: Record<InventoryKind, Map<string, number>> = {
     item: new Map(),
     equipment: new Map(),
@@ -72,6 +73,11 @@ export class Party {
     return this.stepCount;
   }
 
+  /** Increases on every change to members, gold or inventory (event pages watch it). */
+  get version(): number {
+    return this.changes;
+  }
+
   /**
    * The player finished a step on the map: step-limited states count down,
    * and every REGEN_STEP_INTERVAL steps regeneration/poison applies (poison
@@ -108,13 +114,17 @@ export class Party {
 
   /** Add an actor at the end of the party. Does nothing if already a member. */
   addMember(id: string): void {
-    if (!this.hasMember(id)) this.memberList.push(new Actor(this.db, id));
+    if (this.hasMember(id)) return;
+    this.memberList.push(new Actor(this.db, id));
+    this.changes++;
   }
 
   /** Remove an actor; their equipment goes with them (as in most RPGs). */
   removeMember(id: string): void {
     const index = this.memberList.findIndex((m) => m.id === id);
-    if (index !== -1) this.memberList.splice(index, 1);
+    if (index === -1) return;
+    this.memberList.splice(index, 1);
+    this.changes++;
   }
 
   // Gold ------------------------------------------------------------------
@@ -126,6 +136,7 @@ export class Party {
   /** Change gold by `amount` (negative to spend), clamped to 0..MAX_GOLD. */
   gainGold(amount: number): void {
     this.currentGold = Math.min(Math.max(this.currentGold + Math.round(amount), 0), MAX_GOLD);
+    this.changes++;
   }
 
   // Inventory -------------------------------------------------------------
@@ -145,6 +156,7 @@ export class Party {
     const next = Math.min(Math.max(this.count(kind, id) + Math.round(amount), 0), MAX_ITEM_COUNT);
     if (next === 0) this.bags[kind].delete(id);
     else this.bags[kind].set(id, next);
+    this.changes++;
   }
 
   /** Carried (and, for equipment, optionally also worn by a member). */

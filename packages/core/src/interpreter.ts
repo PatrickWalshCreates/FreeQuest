@@ -1,5 +1,12 @@
-import type { Command, CommandOf, Direction } from '@freequest/schema';
-import { type GameState, evaluateConditions } from './game-state.js';
+import type { Command, CommandOf, Direction, Operand } from '@freequest/schema';
+import {
+  type EventContext,
+  type GameState,
+  evaluateConditions,
+  requireParty,
+  toEventContext,
+} from './game-state.js';
+import type { Party } from './party.js';
 
 /**
  * Something the interpreter needs from outside core before it can continue.
@@ -32,14 +39,14 @@ interface Frame {
  */
 export class Interpreter {
   private readonly stack: Frame[];
-  private readonly state: GameState;
+  private readonly context: EventContext;
   private request: InterpreterRequest | null = null;
   private choiceCommand: CommandOf<'choice'> | null = null;
   private waitRemaining = 0;
 
-  constructor(commands: readonly Command[], state: GameState) {
+  constructor(commands: readonly Command[], context: EventContext | GameState) {
     this.stack = [{ commands, index: 0 }];
-    this.state = state;
+    this.context = toEventContext(context);
   }
 
   /** The request awaiting an answer, if any. */
@@ -105,6 +112,22 @@ export class Interpreter {
     return true;
   }
 
+  private party(what: string): Party {
+    return requireParty(this.context, `the ${what} command`);
+  }
+
+  private operand(operand: Operand): number {
+    return typeof operand === 'number' ? operand : this.context.state.getVariable(operand.variable);
+  }
+
+  /** One member (if they're in the party; nobody otherwise), or everyone. */
+  private targets(what: string, actorId: string | undefined) {
+    const party = this.party(what);
+    if (actorId === undefined) return party.members;
+    const member = party.member(actorId);
+    return member ? [member] : [];
+  }
+
   /** The next command without consuming it, dropping finished frames. */
   private peek(): Command | null {
     for (let i = this.stack.length - 1; i >= 0; i--) {
@@ -144,17 +167,17 @@ export class Interpreter {
         };
         break;
       case 'if': {
-        const branch = evaluateConditions(command.conditions, this.state)
+        const branch = evaluateConditions(command.conditions, this.context)
           ? command.then
           : command.else;
         if (branch) this.stack.push({ commands: branch, index: 0 });
         break;
       }
       case 'setSwitch':
-        this.state.setSwitch(command.switch, command.value);
+        this.context.state.setSwitch(command.switch, command.value);
         break;
       case 'setVariable':
-        this.state.applyVariable(command.variable, command.op, command.value);
+        this.context.state.applyVariable(command.variable, command.op, command.value);
         break;
       case 'transfer':
         this.request = {
@@ -167,6 +190,26 @@ export class Interpreter {
         break;
       case 'wait':
         this.waitRemaining = command.seconds;
+        break;
+      case 'changeGold':
+        this.party(command.type).gainGold(this.operand(command.amount));
+        break;
+      case 'changeItems':
+        this.party(command.type).gain(command.kind, command.id, this.operand(command.amount));
+        break;
+      case 'changeParty': {
+        const party = this.party(command.type);
+        if (command.action === 'add') party.addMember(command.actor);
+        else party.removeMember(command.actor);
+        break;
+      }
+      case 'gainExp': {
+        const amount = this.operand(command.amount);
+        for (const member of this.targets(command.type, command.actor)) member.gainExp(amount);
+        break;
+      }
+      case 'recoverAll':
+        for (const member of this.targets(command.type, command.actor)) member.recoverAll();
         break;
       case 'comment':
         break;

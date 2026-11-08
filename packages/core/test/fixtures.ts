@@ -24,7 +24,7 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
   const layers = [{ name: 'ground', data: toData(rows, { '.': 0, '#': 1 }) }];
   if (overlay) layers.push({ name: 'overlay', data: toData(overlay, { T: 2, '#': 1, o: 3 }) });
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     id: 'test-map',
     name: 'Test map',
     width: rows[0]?.length ?? 0,

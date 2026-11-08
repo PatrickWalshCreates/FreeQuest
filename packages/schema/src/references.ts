@@ -1,6 +1,7 @@
 import type { CharacterSheet } from './character.js';
-import { walkCommands } from './command.js';
+import { type Operand, walkCommands } from './command.js';
 import type { Condition } from './condition.js';
+import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
 import type { GameMap } from './map.js';
 import type { Tileset } from './tileset.js';
@@ -11,6 +12,7 @@ export interface ProjectData {
   readonly tilesets: ReadonlyMap<string, Tileset>;
   readonly maps: ReadonlyMap<string, GameMap>;
   readonly characters: ReadonlyMap<string, CharacterSheet>;
+  readonly database?: Database;
 }
 
 /**
@@ -23,6 +25,8 @@ export interface ReferenceContext {
   readonly tilesets: ReadonlyMap<string, Tileset>;
   readonly characters: ReadonlyMap<string, CharacterSheet>;
   readonly maps?: ReadonlyMap<string, GameMap>;
+  /** When given, item, equipment and actor ids used by events are checked too. */
+  readonly database?: Database;
 }
 
 function makeChecks(ctx: ReferenceContext, problems: string[]) {
@@ -36,9 +40,23 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
   const checkVariable = (where: string, id: string) => {
     if (!variables.has(id)) problems.push(`${where}: undeclared variable "${id}"`);
   };
+  const db = ctx.database;
+  const dbIds = db && {
+    item: new Set(db.items.map((e) => e.id)),
+    equipment: new Set(db.equipment.map((e) => e.id)),
+    actor: new Set(db.actors.map((e) => e.id)),
+  };
+  const checkEntry = (where: string, kind: 'item' | 'equipment' | 'actor', id: string) => {
+    if (dbIds && !dbIds[kind].has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);
+  };
+  const checkOperand = (where: string, operand: Operand) => {
+    if (typeof operand === 'object') checkVariable(where, operand.variable);
+  };
   return {
     checkSwitch,
     checkVariable,
+    checkEntry,
+    checkOperand,
     checkTile(where: string, mapId: string, x: number, y: number) {
       if (!mapIds.has(mapId)) {
         problems.push(`${where}: unknown map "${mapId}"`);
@@ -52,7 +70,9 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     checkConditions(where: string, conditions: readonly Condition[]) {
       for (const c of conditions) {
         if (c.type === 'switch') checkSwitch(where, c.switch);
-        else checkVariable(where, c.variable);
+        else if (c.type === 'variable') checkVariable(where, c.variable);
+        else if (c.type === 'hasItem') checkEntry(where, c.kind, c.id);
+        else if (c.type === 'inParty') checkEntry(where, 'actor', c.actor);
       }
     },
   };
@@ -83,7 +103,8 @@ export function checkManifestReferences(ctx: ReferenceContext): string[] {
 /** References made by one map: its tileset, event graphics, flags and transfer targets. */
 export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[] {
   const problems: string[] = [];
-  const { checkTile, checkSwitch, checkVariable, checkConditions } = makeChecks(ctx, problems);
+  const { checkTile, checkSwitch, checkVariable, checkConditions, checkEntry, checkOperand } =
+    makeChecks(ctx, problems);
   const file = `map "${map.id}"`;
   if (!ctx.tilesets.has(map.tileset)) problems.push(`${file}: unknown tileset "${map.tileset}"`);
   for (const event of map.events) {
@@ -104,10 +125,27 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
             break;
           case 'setVariable':
             checkVariable(at, command.variable);
-            if (typeof command.value === 'object') checkVariable(at, command.value.variable);
+            checkOperand(at, command.value);
             break;
           case 'transfer':
             checkTile(at, command.map, command.x, command.y);
+            break;
+          case 'changeGold':
+            checkOperand(at, command.amount);
+            break;
+          case 'changeItems':
+            checkEntry(at, command.kind, command.id);
+            checkOperand(at, command.amount);
+            break;
+          case 'changeParty':
+            checkEntry(at, 'actor', command.actor);
+            break;
+          case 'gainExp':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            checkOperand(at, command.amount);
+            break;
+          case 'recoverAll':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
             break;
         }
       });

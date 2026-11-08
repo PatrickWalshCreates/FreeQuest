@@ -137,6 +137,100 @@
                       }
                     },
                     "required": ["type", "variable", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "gold"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "hasItem"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "includeEquipped": {
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "item"
+                          },
+                          {
+                            "type": "string",
+                            "const": "equipment"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "kind", "id"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "inParty"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "actor"]
                   }
                 ]
               },
@@ -302,6 +396,165 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Negative amounts take gold away.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeGold"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Negative amounts take items away.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": {
+              "type": "string",
+              "const": "changeItems"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "item"
+                },
+                {
+                  "type": "string",
+                  "const": "equipment"
+                }
+              ]
+            }
+          },
+          "required": ["type", "kind", "id", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeParty"
+            },
+            "action": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "remove"
+                }
+              ]
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "action", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gainExp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Full HP/MP and clear states (e.g. an inn).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "recoverAll"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {
@@ -322,7 +575,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 2
+      "const": 3
     },
     "id": {
       "type": "string",
@@ -467,6 +720,100 @@
                           }
                         },
                         "required": ["type", "variable", "op", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "gold"
+                          },
+                          "op": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "const": "=="
+                              },
+                              {
+                                "type": "string",
+                                "const": "!="
+                              },
+                              {
+                                "type": "string",
+                                "const": "<"
+                              },
+                              {
+                                "type": "string",
+                                "const": "<="
+                              },
+                              {
+                                "type": "string",
+                                "const": ">"
+                              },
+                              {
+                                "type": "string",
+                                "const": ">="
+                              }
+                            ]
+                          },
+                          "value": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": ["type", "op", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "hasItem"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "includeEquipped": {
+                            "type": "boolean"
+                          },
+                          "kind": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "const": "item"
+                              },
+                              {
+                                "type": "string",
+                                "const": "equipment"
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["type", "kind", "id"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "inParty"
+                          },
+                          "actor": {
+                            "type": "string",
+                            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                          }
+                        },
+                        "required": ["type", "actor"]
                       }
                     ]
                   }

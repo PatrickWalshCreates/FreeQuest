@@ -1,4 +1,5 @@
 import type { CompareOp, Condition, Manifest, Operand, VariableOp } from '@freequest/schema';
+import type { Party } from './party.js';
 
 /**
  * Persistent game state that outlives any one map: switches and variables.
@@ -106,12 +107,59 @@ function compare(lhs: number, op: CompareOp, rhs: number): boolean {
   }
 }
 
-export function evaluateCondition(condition: Condition, state: GameState): boolean {
-  if (condition.type === 'switch') return state.getSwitch(condition.switch) === condition.value;
-  return compare(state.getVariable(condition.variable), condition.op, condition.value);
+/**
+ * What event conditions and commands read and change. `party` is optional so
+ * code that only deals with switches and variables can pass a bare GameState.
+ */
+export interface EventContext {
+  readonly state: GameState;
+  readonly party?: Party;
+}
+
+/** Accept either a full context or just a GameState. */
+export function toEventContext(context: EventContext | GameState): EventContext {
+  return context instanceof GameState ? { state: context } : context;
+}
+
+/** The party, or a clear error for party commands/conditions run without one. */
+export function requireParty(context: EventContext, what: string): Party {
+  if (!context.party) throw new Error(`${what} needs the party, but none was provided`);
+  return context.party;
+}
+
+export function evaluateCondition(
+  condition: Condition,
+  context: EventContext | GameState,
+): boolean {
+  const ctx = toEventContext(context);
+  switch (condition.type) {
+    case 'switch':
+      return ctx.state.getSwitch(condition.switch) === condition.value;
+    case 'variable':
+      return compare(ctx.state.getVariable(condition.variable), condition.op, condition.value);
+    case 'gold':
+      return compare(requireParty(ctx, 'a gold condition').gold, condition.op, condition.value);
+    case 'hasItem': {
+      const party = requireParty(ctx, 'an item condition');
+      const needed = condition.count ?? 1;
+      if (condition.includeEquipped && condition.kind === 'equipment') {
+        const worn = party.members.filter((m) =>
+          [...m.equipment.values()].includes(condition.id),
+        ).length;
+        return party.count('equipment', condition.id) + worn >= needed;
+      }
+      return party.count(condition.kind, condition.id) >= needed;
+    }
+    case 'inParty':
+      return requireParty(ctx, 'a party condition').hasMember(condition.actor);
+  }
 }
 
 /** True when every condition holds (and for an empty list). */
-export function evaluateConditions(conditions: readonly Condition[], state: GameState): boolean {
-  return conditions.every((c) => evaluateCondition(c, state));
+export function evaluateConditions(
+  conditions: readonly Condition[],
+  context: EventContext | GameState,
+): boolean {
+  const ctx = toEventContext(context);
+  return conditions.every((c) => evaluateCondition(c, ctx));
 }
