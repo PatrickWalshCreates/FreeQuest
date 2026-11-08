@@ -1,7 +1,8 @@
 import { ActionState, FixedTimestep, World, computeCamera } from '@freequest/core';
 import { Application, Container } from 'pixi.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
-import { answerRequestsInConsole } from './console-requests.js';
+import { DialogController } from './dialog.js';
+import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, getOrThrow, loadProject } from './loader.js';
@@ -14,6 +15,8 @@ export interface StartGameOptions {
   /** URL of the project folder (the one containing project.json). */
   projectUrl: string | URL;
   keyBindings?: KeyBindings;
+  /** Overrides for the message/choice window look (font, colors, spacing). */
+  ui?: Partial<UiTheme>;
 }
 
 export interface Game {
@@ -72,6 +75,10 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const scene = new Container({ label: 'scene' });
   scene.addChild(mapView.below, characters, mapView.above);
   app.stage.addChild(scene);
+  const dialog = new DialogController();
+  const dialogView = new DialogView(width, height, { ...DEFAULT_UI_THEME, ...options.ui });
+  app.stage.addChild(dialogView.container);
+  let elapsed = 0;
 
   const fit = () => {
     const { clientWidth, clientHeight } = options.parent;
@@ -111,11 +118,19 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
+      // Dialog first: it consumes the input that answers a pending request.
+      dialog.update(dt, input, world.interpreter);
+      // TODO(M2 step 6): replace with real map transfers.
+      if (world.interpreter?.pending?.type === 'transfer') {
+        console.warn('Map transfers are not implemented yet; skipping', world.interpreter.pending);
+        world.interpreter.continue();
+      }
       world.step(dt, input);
       input.endStep();
-      answerRequestsInConsole(world);
+      elapsed += dt;
     });
     render(alpha);
+    dialogView.render(dialog, elapsed);
   };
   render(1);
   app.ticker.add(tick);

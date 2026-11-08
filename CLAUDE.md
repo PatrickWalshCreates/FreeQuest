@@ -90,6 +90,15 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   - `parallel`: not implemented yet (needs non-blocking interpreters).
   - An event running at the start of a step owns that step's input: the confirm that closes the last
     message never re-triggers. A newly triggered event runs to its first pause in the same step.
+- **Dialog UI** is split into logic and view. `runtime/src/dialog.ts` (`DialogController`) is pure
+  (no PixiJS import, unit-tested in Node): text reveal, choice cursor (wraps), confirm/cancel → answers
+  the interpreter. `dialog-view.ts` (`DialogView`) only draws its state in screen space. Per fixed
+  step the order is `dialog.update` → `world.step` → `input.endStep`, so the dialog consumes the input
+  that answers a request. A message stays up until the next request arrives (no flicker between
+  messages) and stays visible under a following choice. Text is wrapped before revealing so words
+  never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
+  default is the system font (no bundled font asset). Not yet in the project format.
+- Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
   interface exists (`packages/core/src/plugin.ts`); not implemented yet.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
@@ -138,7 +147,7 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   1. ~~Game state (switches/variables), event + command schema, map/manifest v2 migrations~~ (done)
   2. ~~Resumable command interpreter in core; message/choice/transfer are requests the runtime answers~~ (done)
   3. ~~NPCs: event sprites, event collision, action/touch/autorun triggers~~ (done; parallel deferred)
-  4. Message box + choice window in runtime (text: web font first, keep it swappable)
+  4. ~~Message box + choice window in runtime~~ (done; system font via swappable `UiTheme`)
   5. Conditionals and switch/variable commands wired through the interpreter
   6. Map transfers: lazy map loading, fade, second demo map (house interior; turn the
      `house-door` event into a transfer)
@@ -151,7 +160,9 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 
 ## Known gaps / notes for next milestones
 
-- **Stopgap:** `packages/runtime/src/console-requests.ts` auto-answers messages/choices (always option 0) and logs them to the console. Delete it when step 4 adds the message box and choice window.
+- **Stopgap:** `transfer` requests are skipped with a console warning in `game.ts` (TODO for step 6).
+- Text renders at the internal resolution and is pixel-upscaled; fine for now, revisit (bitmap font
+  or high-res UI layer) if legibility suffers at small sizes.
 - The runtime loads every map listed in the manifest up front; switch to lazy loading with map transfers (M2).
 - Each tile is its own Sprite; fine for small maps, revisit (chunked render textures) for large ones.
 - Passability is a single boolean per tile; per-direction passability would be a format migration.

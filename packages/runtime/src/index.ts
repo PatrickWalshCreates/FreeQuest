@@ -4,4 +4,6 @@ export * from './keyboard.js';
 export * from './map-view.js';
 export * from './character-view.js';
 export * from './event-views.js';
+export * from './dialog.js';
+export * from './dialog-view.js';
 export * from './textures.js';
