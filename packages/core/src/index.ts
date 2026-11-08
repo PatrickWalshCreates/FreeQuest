@@ -8,5 +8,8 @@ export * from './game-state.js';
 export * from './events.js';
 export * from './interpreter.js';
 export * from './formula.js';
+export * from './database.js';
+export * from './battler.js';
+export * from './actor.js';
 export * from './world.js';
 export type * from './plugin.js';

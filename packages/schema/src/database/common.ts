@@ -12,8 +12,18 @@ export const STAT_KEYS = [
   'agility',
   'luck',
 ] as const;
-export const StatKey = Type.Union(STAT_KEYS.map((k) => Type.Literal(k)));
-export type StatKey = (typeof STAT_KEYS)[number];
+// Spelled out (not mapped from STAT_KEYS) so TypeScript keeps the literal types.
+export const StatKey = Type.Union([
+  Type.Literal('maxHp'),
+  Type.Literal('maxMp'),
+  Type.Literal('attack'),
+  Type.Literal('defense'),
+  Type.Literal('magicAttack'),
+  Type.Literal('magicDefense'),
+  Type.Literal('agility'),
+  Type.Literal('luck'),
+]);
+export type StatKey = Static<typeof StatKey>;
 
 /** A value for each stat. */
 export const StatBlock = Type.Object(
@@ -89,3 +99,8 @@ export function DatabaseFile<T extends TSchema>(title: string, entry: T, version
     { title, additionalProperties: false },
   );
 }
+
+// Compile-time check that StatKey and STAT_KEYS list the same stats.
+type SameKeys<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const statKeysAgree: SameKeys<StatKey, (typeof STAT_KEYS)[number]> = true;
+void statKeysAgree;
