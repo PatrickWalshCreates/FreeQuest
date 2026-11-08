@@ -6,5 +6,6 @@ export * from './loop.js';
 export * from './camera.js';
 export * from './game-state.js';
 export * from './events.js';
+export * from './interpreter.js';
 export * from './world.js';
 export type * from './plugin.js';

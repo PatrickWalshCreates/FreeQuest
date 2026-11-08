@@ -69,6 +69,13 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 - **Events**: an event has pages; the active page is the _last_ page whose conditions all hold (none
   → event absent). Commands are a **nested tree** (`if` holds `then`/`else`, `choice` options hold
   their own lists), not a flat indented list. Use `walkCommands` to traverse.
+- **Interpreter** (`interpreter.ts`): runs a command tree with an explicit stack of `{commands, index}`
+  frames (no generators, so it can be serialized for save/load). `update(dt)` runs until done, a timed
+  `wait` (counted down in core), or a **request** it can't satisfy itself: `message`, `choice`,
+  `transfer`. The runtime presents the request and answers with `continue()` / `choose(i)` /
+  `cancel()`. Every new command that needs the outside world should be a request, not a callback.
+  `World.run(commands)` starts the one blocking interpreter; while it runs the player finishes its
+  current tile but takes no new steps. Parallel events will get their own interpreters later.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
   interface exists (`packages/core/src/plugin.ts`); not implemented yet.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
@@ -115,7 +122,7 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   map, runtime with map rendering, grid movement with tweening, collision, clamped camera, core tests.
 - **M2 (in progress)** Event system. Steps:
   1. ~~Game state (switches/variables), event + command schema, map/manifest v2 migrations~~ (done)
-  2. Resumable command interpreter in core; waits (message, choice) are requests the runtime answers
+  2. ~~Resumable command interpreter in core; message/choice/transfer are requests the runtime answers~~ (done)
   3. NPCs: event sprites, event collision (`layer: same` blocks), action/touch triggers
   4. Message box + choice window in runtime (text: web font first, keep it swappable)
   5. Conditionals and switch/variable commands wired through the interpreter

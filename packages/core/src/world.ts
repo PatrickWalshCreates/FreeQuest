@@ -1,8 +1,9 @@
-import type { GameMap, Manifest, Tileset } from '@freequest/schema';
+import type { Command, GameMap, Manifest, Tileset } from '@freequest/schema';
 import { CollisionMap } from './collision.js';
 import { GameState } from './game-state.js';
 import { GridMover } from './grid-mover.js';
 import type { InputState } from './input.js';
+import { Interpreter } from './interpreter.js';
 
 export interface WorldOptions {
   manifest: Manifest;
@@ -19,6 +20,7 @@ export class World {
   readonly collision: CollisionMap;
   readonly player: GridMover;
   readonly state: GameState;
+  private running: Interpreter | null = null;
 
   constructor({ manifest, map, tileset, state }: WorldOptions) {
     if (map.tileset !== tileset.id) {
@@ -49,8 +51,28 @@ export class World {
     return this.map.height * this.tileset.tileHeight;
   }
 
+  /** The blocking event currently running, if any. */
+  get interpreter(): Interpreter | null {
+    return this.running;
+  }
+
+  /**
+   * Start running commands. While they run, the player finishes the tile it
+   * is on but takes no new steps. Only one blocking interpreter runs at a time.
+   */
+  run(commands: readonly Command[]): Interpreter {
+    if (this.running) throw new Error('an event is already running');
+    this.running = new Interpreter(commands, this.state);
+    return this.running;
+  }
+
   /** Advance the simulation by one fixed step of `dt` seconds. */
   step(dt: number, input: InputState): void {
-    this.player.update(dt, this.collision, () => input.heldDirection());
+    if (this.running) {
+      this.running.update(dt);
+      if (this.running.isDone) this.running = null;
+    }
+    const blocked = this.running !== null;
+    this.player.update(dt, this.collision, () => (blocked ? null : input.heldDirection()));
   }
 }
