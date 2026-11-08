@@ -7,7 +7,8 @@ used.
 > **Status: early pre-alpha.** FreeQuest can load a project, walk a character around tile maps,
 > talk to NPCs (messages, choices, switches, variables, conditional branches), move between maps,
 > and has a full RPG database (heroes, classes, skills, items, equipment, states, enemies) with a
-> safe formula language for damage. No battles, menus, saving or editor yet. File formats will change.
+> safe formula language for damage, and turn-based battles (random encounters and scripted fights).
+> No menus, saving, audio or editor yet. File formats will change.
 
 ## What's here
 

@@ -9,7 +9,7 @@ describe('Enemy', () => {
   it('uses its database stats and starts at full HP/MP', () => {
     const wolf = new Enemy(db, 'wolf');
     expect(wolf.stats()).toEqual(db.enemies.get('wolf').stats);
-    expect([wolf.hp, wolf.mp]).toEqual([120, 20]);
+    expect([wolf.hp, wolf.mp]).toEqual([90, 20]);
     expect(wolf.level).toBe(1);
   });
 

@@ -64,6 +64,10 @@
     {
       "id": "mira_joined",
       "name": "Mira joined the party"
+    },
+    {
+      "id": "wolf_defeated",
+      "name": "Defeated the wolf at the bridge"
     }
   ],
   "tilesets": [

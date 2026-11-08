@@ -133,6 +133,32 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 - Events see an `EventContext { state, party }`; conditions/commands that need the party throw a
   clear error without one. Functions taking a context also accept a bare `GameState`.
 - The runtime loads the whole database up front (`project.database`) and runs `checkDatabase`.
+
+### Battles (M4)
+
+- **Engine** (`core/src/battle.ts`, `Battle`): front `MAX_BATTLE_MEMBERS` (4) party members vs a
+  troop. The player sets an action per commandable actor (`actorsToCommand`: alive, can act, not
+  confused); `runTurn()` resolves everyone in speed order (agility + random up to agility/4+1; the
+  system Guard skill always first; party wins ties) and returns `BattleEvent[]`. Fallen targets are
+  replaced by the next valid one; enemies pick random targets (`Enemy.chooseAction` weights by
+  rating); confused battlers attack anyone. End of turn: regen/poison (can knock out in battle) and
+  turn countdowns. Escape = 0.5 × party/enemy average agility + 0.1 per failed try; failing gives
+  the enemies a free turn. Victory: full exp to every standing actor, gold, rolled drops; battle-end
+  states clear. Everything takes an injected `random` for tests.
+- **Combat rates**: physical hit = successRate × hitRate (0.95 base) − evasionRate (0.05 base);
+  crit = criticalRate (0.04 base); HP damage × `damageTaken`; self-targeted uses never miss. All
+  are modifiers. Guard is data: the guard skill adds a 1-turn `guarding` state with damageTaken 0.5.
+- The system `attackSkill` / `guardSkill` are always usable by actors (not in `Actor.skills`).
+- **Starting battles**: the `battle` command is an interpreter request answered with
+  `finishBattle('win' | 'escape' | 'lose')`, which runs `onWin` / `onEscape` / `onLose`. Maps with
+  `encounters` count steps (0.5–1.5 × average); `World.takeEncounter()` hands the troop over once and
+  the player waits meanwhile. A step that triggers an event never also starts a fight.
+- **Runtime**: `BattleFlow` (PixiJS-free) picks up battle requests and encounters, fades out while
+  `prepare` loads enemy images, runs the `BattleController` (menus, targets, log playback; tested
+  in Node), fades back, hands the outcome to the event, or shows game over (losing an encounter, or
+  an event battle with `canLose: false`). Game over → confirm → `newGame()` builds a fresh World in
+  place. `BattleView` only draws (rebuilds Text only when content changes).
+- PixiJS v8 `Text` objects share the `TextStyle` they're given: clone before changing a style.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
@@ -155,8 +181,10 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- Current versions: manifest 3 (adds `database` paths, `start.party`/`start.gold`), map 3 (party
-  commands/conditions; v2→v3 is a no-op bump), tileset 1, character 1, every database file 1.
+- Current versions: manifest 4 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file),
+  map 4 (v3: party commands/conditions; v4: `encounters`, `battle` command), tileset 1, character 1,
+  every database file 2 (v2: combat modifiers, troops, system attack/guard skills). Additive bumps
+  migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -204,9 +232,12 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 - **M3 (done)** Database: actors, classes, skills, items, equipment, states, enemies; formula
   language; battler model; party/inventory/equipment; effects engine; enemy battlers; party event
   commands/conditions; demo rewards, Mira joining, resting hearth; F9 debug panel.
-  - Deferred to M4: troops (enemy groups), hit/evasion stats, turn order, enemy action conditions,
-    guard behaviour. Deferred to M5: menus to use items/skills/equipment, icons/iconset art.
-- **M4** Turn-based battle.
+  - Deferred to M5: menus to use items/skills/equipment, icons/iconset art.
+- **M4 (done)** Turn-based battle: troops, combat modifiers, battle engine, battle screen
+  (controller + view), random encounters, event battles with outcome branches, transitions, game
+  over and new game; demo enemy art, meadow encounters, wolf ambush at the bridge.
+  - Deferred: enemy action conditions (e.g. "below 50% HP"), battle animations/effects art,
+    battle music (M5), multi-row/positioned troop layouts, a "can lose" recovery rule.
 - **M5** Menus, save/load, audio.
 - **M6** Tauri editor: map editor first, then event and database editors.
 - **M7** Export targets: web, desktop.

@@ -1,6 +1,7 @@
 // Generates FreeQuest's original placeholder art for the demo project:
 //   assets/tilesets/overworld.png  4x4 grid of 32px tiles
 //   assets/characters/<name>.png   3 frames x 4 directions, 32px frames
+//   assets/enemies/<id>.png        64x64 battle art
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -249,5 +250,141 @@ function drawCharacter(file: string, palette: CharacterPalette): void {
   c.save(join(ROOT, 'assets', 'characters', `${file}.png`));
 }
 
+/** Filled ellipse centered on (cx, cy). */
+function ellipse(c: Canvas, cx: number, cy: number, rx: number, ry: number, color: RGBA): void {
+  for (let y = -ry; y <= ry; y++) {
+    for (let x = -rx; x <= rx; x++) {
+      if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) c.set(cx + x, cy + y, color);
+    }
+  }
+}
+
+/** Filled triangle: a pixel is inside when all three edge functions share a sign. */
+function triangle(c: Canvas, pts: [number, number][], color: RGBA): void {
+  const [[ax, ay], [bx, by], [cx, cy]] = pts as [
+    [number, number],
+    [number, number],
+    [number, number],
+  ];
+  for (let y = Math.min(ay, by, cy); y <= Math.max(ay, by, cy); y++) {
+    for (let x = Math.min(ax, bx, cx); x <= Math.max(ax, bx, cx); x++) {
+      const w0 = (bx - x) * (cy - y) - (cx - x) * (by - y);
+      const w1 = (cx - x) * (ay - y) - (ax - x) * (cy - y);
+      const w2 = (ax - x) * (by - y) - (bx - x) * (ay - y);
+      const inside = (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0);
+      if (inside) c.set(x, y, color);
+    }
+  }
+}
+
+// Battle art: one 64x64 image per enemy, feet at the bottom center.
+const ENEMIES: Record<string, (c: Canvas) => void> = {
+  slime: (c) => {
+    ellipse(c, 32, 62, 20, 3, hex('#000000', 60));
+    ellipse(c, 32, 46, 22, 16, hex('#3fb8a8'));
+    ellipse(c, 32, 50, 22, 12, hex('#2f9a8c'));
+    ellipse(c, 24, 38, 5, 3, hex('#bff2ea'));
+    ellipse(c, 26, 46, 3, 4, hex('#10302c'));
+    ellipse(c, 38, 46, 3, 4, hex('#10302c'));
+  },
+  bat: (c) => {
+    ellipse(c, 32, 62, 12, 2, hex('#000000', 50));
+    triangle(
+      c,
+      [
+        [30, 30],
+        [4, 18],
+        [12, 42],
+      ],
+      hex('#5a3a7a'),
+    );
+    triangle(
+      c,
+      [
+        [34, 30],
+        [60, 18],
+        [52, 42],
+      ],
+      hex('#5a3a7a'),
+    );
+    ellipse(c, 32, 34, 9, 11, hex('#7a4fa0'));
+    triangle(
+      c,
+      [
+        [25, 26],
+        [28, 16],
+        [31, 25],
+      ],
+      hex('#7a4fa0'),
+    );
+    triangle(
+      c,
+      [
+        [33, 25],
+        [36, 16],
+        [39, 26],
+      ],
+      hex('#7a4fa0'),
+    );
+    ellipse(c, 28, 32, 2, 2, hex('#ffd24a'));
+    ellipse(c, 36, 32, 2, 2, hex('#ffd24a'));
+  },
+  wolf: (c) => {
+    ellipse(c, 32, 62, 24, 3, hex('#000000', 60));
+    ellipse(c, 30, 42, 20, 11, hex('#6e6e78'));
+    c.rect(14, 46, 5, 15, hex('#5a5a64'));
+    c.rect(22, 48, 5, 13, hex('#5a5a64'));
+    c.rect(36, 48, 5, 13, hex('#5a5a64'));
+    c.rect(43, 46, 5, 15, hex('#5a5a64'));
+    triangle(
+      c,
+      [
+        [10, 38],
+        [0, 30],
+        [8, 46],
+      ],
+      hex('#6e6e78'),
+    );
+    ellipse(c, 50, 32, 10, 9, hex('#7c7c86'));
+    triangle(
+      c,
+      [
+        [56, 34],
+        [64, 38],
+        [56, 40],
+      ],
+      hex('#7c7c86'),
+    );
+    triangle(
+      c,
+      [
+        [44, 26],
+        [46, 14],
+        [51, 25],
+      ],
+      hex('#5a5a64'),
+    );
+    triangle(
+      c,
+      [
+        [52, 25],
+        [56, 14],
+        [58, 27],
+      ],
+      hex('#5a5a64'),
+    );
+    ellipse(c, 53, 30, 2, 2, hex('#f05a3a'));
+  },
+};
+
+function drawEnemies(): void {
+  for (const [id, draw] of Object.entries(ENEMIES)) {
+    const c = new Canvas(64, 64);
+    draw(c);
+    c.save(join(ROOT, 'assets', 'enemies', `${id}.png`));
+  }
+}
+
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
+drawEnemies();

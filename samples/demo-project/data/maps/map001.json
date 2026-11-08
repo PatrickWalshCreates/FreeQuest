@@ -2,6 +2,23 @@
   "formatVersion": 4,
   "id": "map001",
   "name": "Meadow",
+  "encounters": {
+    "steps": 25,
+    "troops": [
+      {
+        "troop": "slimes",
+        "weight": 3
+      },
+      {
+        "troop": "bats",
+        "weight": 2
+      },
+      {
+        "troop": "slime-and-bat",
+        "weight": 2
+      }
+    ]
+  },
   "height": 15,
   "tileset": "overworld",
   "width": 20,
@@ -229,16 +246,36 @@
               "type": "if",
               "conditions": [
                 {
-                  "type": "variable",
-                  "op": "==",
-                  "value": 1,
-                  "variable": "bridge_visits"
+                  "type": "switch",
+                  "switch": "wolf_defeated",
+                  "value": false
                 }
               ],
               "then": [
                 {
                   "type": "message",
                   "text": "The planks creak, but the bridge holds."
+                },
+                {
+                  "type": "message",
+                  "text": "A wolf leaps out from under the bridge!"
+                },
+                {
+                  "type": "battle",
+                  "canEscape": false,
+                  "canLose": false,
+                  "onWin": [
+                    {
+                      "type": "setSwitch",
+                      "switch": "wolf_defeated",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "text": "The wolf limps away. The bridge is safe again."
+                    }
+                  ],
+                  "troop": "bridge-wolf"
                 }
               ]
             }

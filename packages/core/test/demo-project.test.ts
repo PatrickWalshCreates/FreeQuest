@@ -12,6 +12,7 @@ describe('demo project', () => {
     map: parseProjectFile('map', rawMap),
     tileset: parseProjectFile('tileset', rawTileset),
     database: demoDb(),
+    random: () => 0.5,
   });
 
   it('starts the player on a passable tile', () => {
@@ -42,6 +43,7 @@ describe('demo project', () => {
       map: parseProjectFile('map', rawMap),
       tileset: parseProjectFile('tileset', rawTileset),
       database: demoDb(),
+      random: () => 0.5,
     });
     const elder = fresh.map.events.find((e) => e.id === 'elder');
     const page = elder && activePage(elder, fresh.state);

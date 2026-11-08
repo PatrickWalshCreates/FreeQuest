@@ -7,7 +7,19 @@ import rawHouse from '../../../samples/demo-project/data/maps/house.json' with {
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
 import rawTileset from '../../../samples/demo-project/data/tilesets/overworld.json' with { type: 'json' };
 import { demoDb } from './demo-db.js';
-import { ActionState, type Direction, World } from '../src/index.js';
+import { ActionState, Battle, type BattleOutcome, type Direction, World } from '../src/index.js';
+
+/** Small seeded PRNG (mulberry32) so battles in this script are reproducible. */
+function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 const DT = 1 / 60;
 
@@ -17,8 +29,11 @@ function play() {
     map: parseProjectFile('map', rawMap),
     tileset: parseProjectFile('tileset', rawTileset),
     database: demoDb(),
+    random: () => 0.5,
   });
   const input = new ActionState();
+  /** Battles fought, with their outcomes. */
+  const battles: { troop: string; outcome: BattleOutcome }[] = [];
   /** Every line of dialogue shown, in order. */
   const transcript: string[] = [];
   let lastRequest: unknown = null;
@@ -26,6 +41,8 @@ function play() {
   const step = () => {
     world.step(DT, input);
     input.endStep();
+    // Random encounters are covered by their own tests; skip them here.
+    if (world.hasPendingEncounter) world.takeEncounter();
     const request = world.interpreter?.pending ?? null;
     if (request && request !== lastRequest && request.type === 'message') {
       transcript.push(request.speaker ? `${request.speaker}: ${request.text}` : request.text);
@@ -58,7 +75,27 @@ function play() {
     ['house', parseProjectFile('map', rawHouse)],
   ]);
 
-  /** Answer the pending request the way the dialog UI and transfer controller would. */
+  /** Fight with the real battle engine: everyone attacks the first enemy standing. */
+  const fight = (troop: string, canEscape: boolean): BattleOutcome => {
+    const battle = new Battle({
+      db: world.db,
+      party: world.party,
+      troop,
+      state: world.state,
+      canEscape,
+      random: seeded(42),
+    });
+    for (let turn = 0; turn < 100 && battle.phase === 'input'; turn++) {
+      for (const actor of battle.actorsToCommand()) {
+        const target = battle.livingEnemies[0];
+        battle.setAction(actor, { kind: 'skill', skill: 'attack', ...(target ? { target } : {}) });
+      }
+      battle.runTurn();
+    }
+    return battle.phase === 'won' ? 'win' : battle.phase === 'escaped' ? 'escape' : 'lose';
+  };
+
+  /** Answer the pending request the way the dialog UI, transfers and battles would. */
   const answer = (choice?: number) => {
     const interpreter = world.interpreter;
     const request = interpreter?.pending;
@@ -69,6 +106,10 @@ function play() {
       if (!target) throw new Error(`unknown map ${request.map}`);
       world.changeMap(target, world.tileset, request.x, request.y, request.direction ?? undefined);
       interpreter.continue();
+    } else if (request.type === 'battle') {
+      const outcome = fight(request.troop, request.canEscape);
+      battles.push({ troop: request.troop, outcome });
+      interpreter.finishBattle(outcome);
     } else interpreter.continue();
     step();
   };
@@ -83,12 +124,12 @@ function play() {
     }
   };
 
-  return { world, transcript, walkTo, tap, finish };
+  return { world, transcript, battles, walkTo, tap, finish };
 }
 
 describe('demo quest', () => {
   it('can be completed from start to finish', () => {
-    const { world, transcript, walkTo, tap, finish } = play();
+    const { world, transcript, battles, walkTo, tap, finish } = play();
     const visits = () => world.state.getVariable('bridge_visits');
 
     // Crossing the bridge before accepting the request does nothing:
@@ -111,6 +152,9 @@ describe('demo quest', () => {
     expect([world.player.x, world.player.y]).toEqual([15, 5]);
     finish();
     expect(visits()).toBe(1);
+    // The wolf ambush: fought and won at level 1.
+    expect(battles).toEqual([{ troop: 'bridge-wolf', outcome: 'win' }]);
+    expect(world.state.getSwitch('wolf_defeated')).toBe(true);
 
     // Cross back over it: counted again, but the `== 1` check keeps quiet
     // (the event has nothing to show, so it ends within the step).
@@ -124,18 +168,22 @@ describe('demo quest', () => {
     // Back to the elder: his second page rewards the visit, once.
     walkTo('down', 11, 8);
     walkTo('right', 12, 8);
-    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([50, 0]);
+    // 50 starting gold + 18 from the wolf; potions may have dropped too.
+    const potions = world.party.count('item', 'potion');
+    expect(world.party.gold).toBe(68);
     tap('confirm');
     finish();
-    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([150, 2]);
+    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([168, potions + 2]);
     tap('confirm');
     finish();
-    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([150, 2]);
+    expect([world.party.gold, world.party.count('item', 'potion')]).toEqual([168, potions + 2]);
 
     expect(transcript).toEqual([
       'Elder: Ah, a traveler! Would you check on the old bridge to the east?',
       'Elder: Thank you. Follow the path east.',
       'The planks creak, but the bridge holds.',
+      'A wolf leaps out from under the bridge!',
+      'The wolf limps away. The bridge is safe again.',
       'Elder: You saw the bridge? Good, it still stands. Take these for your trouble.',
       'Received 2 Potions and 100 G.',
       'Elder: Safe travels, friend.',
