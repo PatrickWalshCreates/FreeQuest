@@ -1,0 +1,112 @@
+{
+  "formatVersion": 1,
+  "entries": [
+    {
+      "id": "potion",
+      "name": "Potion",
+      "consumable": true,
+      "description": "Restores 30% of max HP, at least 100.",
+      "effects": [
+        {
+          "type": "recover",
+          "formula": "max(100, b.maxHp * 0.3)",
+          "pool": "hp"
+        }
+      ],
+      "hitType": "certain",
+      "key": false,
+      "occasion": "always",
+      "price": 50,
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "ally"
+      }
+    },
+    {
+      "id": "ether",
+      "name": "Ether",
+      "consumable": true,
+      "description": "Restores 50 MP.",
+      "effects": [
+        {
+          "type": "recover",
+          "formula": "50",
+          "pool": "mp"
+        }
+      ],
+      "hitType": "certain",
+      "key": false,
+      "occasion": "always",
+      "price": 150,
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "ally"
+      }
+    },
+    {
+      "id": "antidote",
+      "name": "Antidote",
+      "consumable": true,
+      "description": "Cures poison.",
+      "effects": [
+        {
+          "type": "removeState",
+          "state": "poison"
+        }
+      ],
+      "hitType": "certain",
+      "key": false,
+      "occasion": "always",
+      "price": 30,
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "ally"
+      }
+    },
+    {
+      "id": "revive-leaf",
+      "name": "Revive Leaf",
+      "consumable": true,
+      "description": "Revives a fallen ally.",
+      "effects": [
+        {
+          "type": "removeState",
+          "state": "knockout"
+        },
+        {
+          "type": "recover",
+          "formula": "b.maxHp * 0.25",
+          "pool": "hp"
+        }
+      ],
+      "hitType": "certain",
+      "key": false,
+      "occasion": "always",
+      "price": 300,
+      "successRate": 1,
+      "target": {
+        "dead": true,
+        "select": "one",
+        "side": "ally"
+      }
+    },
+    {
+      "id": "meadow-map",
+      "name": "Elder's Map",
+      "consumable": false,
+      "description": "A hand-drawn map of the Meadow.",
+      "effects": [],
+      "hitType": "certain",
+      "key": true,
+      "occasion": "never",
+      "price": 0,
+      "successRate": 1,
+      "target": {
+        "side": "none"
+      }
+    }
+  ]
+}

@@ -194,6 +194,7 @@ const CHARACTERS: Record<string, CharacterPalette> = {
     belt: '#4a3520',
     legs: '#5a4a3a',
   },
+  mage: { skin: '#f2d0b0', hair: '#7a3fa0', tunic: '#8a2f4f', belt: '#d8b04a', legs: '#3a2a3a' },
 };
 
 function drawCharacter(file: string, palette: CharacterPalette): void {

@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "entries": [
+    {
+      "id": "knockout",
+      "name": "Knocked out",
+      "knockout": true,
+      "modifiers": [],
+      "priority": 100,
+      "removal": {
+        "battleEnd": false
+      },
+      "restriction": "cannotAct"
+    },
+    {
+      "id": "poison",
+      "name": "Poison",
+      "knockout": false,
+      "modifiers": [
+        {
+          "type": "hpRegen",
+          "value": -0.1
+        }
+      ],
+      "priority": 50,
+      "removal": {
+        "battleEnd": false,
+        "steps": 40
+      },
+      "restriction": "none"
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep",
+      "knockout": false,
+      "modifiers": [],
+      "priority": 60,
+      "removal": {
+        "battleEnd": true,
+        "damageChance": 1,
+        "turns": {
+          "max": 4,
+          "min": 2
+        }
+      },
+      "restriction": "cannotAct"
+    }
+  ]
+}

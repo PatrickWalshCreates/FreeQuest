@@ -6,6 +6,7 @@ export * from './character.js';
 export * from './condition.js';
 export * from './command.js';
 export * from './event.js';
+export * from './database/index.js';
 export * from './references.js';
 export * from './migrations.js';
 export * from './validate.js';

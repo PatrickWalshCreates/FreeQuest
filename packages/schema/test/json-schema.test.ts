@@ -4,7 +4,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import { type FileKind, SCHEMAS, stableStringify, toJsonSchema } from '../src/index.js';
+import {
+  DATABASE_KINDS,
+  type FileKind,
+  SCHEMAS,
+  stableStringify,
+  toJsonSchema,
+} from '../src/index.js';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 const DEMO = join(ROOT, 'samples', 'demo-project');
@@ -15,6 +21,7 @@ const files: [FileKind, string][] = [
   ['map', 'data/maps/map001.json'],
   ['tileset', 'data/tilesets/overworld.json'],
   ['character', 'data/characters/hero.json'],
+  ...DATABASE_KINDS.map((kind): [FileKind, string] => [kind, `data/database/${kind}.json`]),
 ];
 
 describe('emitted JSON Schema', () => {

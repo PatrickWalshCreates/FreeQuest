@@ -1,6 +1,16 @@
 import type { Static, TSchema } from 'typebox';
 import Value from 'typebox/value';
 import { CharacterSheet } from './character.js';
+import {
+  ActorsFile,
+  ClassesFile,
+  EnemiesFile,
+  EquipmentFile,
+  ItemsFile,
+  SkillsFile,
+  StatesFile,
+  SystemData,
+} from './database/index.js';
 import { walkCommands } from './command.js';
 import { Manifest } from './manifest.js';
 import { GameMap } from './map.js';
@@ -12,6 +22,14 @@ export const SCHEMAS = {
   tileset: Tileset,
   map: GameMap,
   character: CharacterSheet,
+  system: SystemData,
+  actors: ActorsFile,
+  classes: ClassesFile,
+  skills: SkillsFile,
+  items: ItemsFile,
+  equipment: EquipmentFile,
+  states: StatesFile,
+  enemies: EnemiesFile,
 } satisfies Record<FileKind, TSchema>;
 
 export type FileData<K extends FileKind> = Static<(typeof SCHEMAS)[K]>;

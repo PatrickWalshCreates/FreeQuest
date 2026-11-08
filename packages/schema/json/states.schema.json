@@ -1,0 +1,300 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "knockout": {
+            "type": "boolean"
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "statRate"
+                    },
+                    "stat": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "maxHp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "maxMp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "attack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "defense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicAttack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicDefense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "agility"
+                        },
+                        {
+                          "type": "string",
+                          "const": "luck"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Multiplier, e.g. 1.1 for +10%.",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "stat", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Added to the stat after rates.",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "statFlat"
+                    },
+                    "stat": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "maxHp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "maxMp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "attack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "defense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicAttack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicDefense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "agility"
+                        },
+                        {
+                          "type": "string",
+                          "const": "luck"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["type", "stat", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "elementRate"
+                    },
+                    "element": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Damage taken multiplier.",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "element", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "stateRate"
+                    },
+                    "state": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Chance multiplier; 0 = immune.",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "state", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Element of normal attacks.",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "attackElement"
+                    },
+                    "element": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "element"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Allows equipping this equipment type.",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "equipType"
+                    },
+                    "equipmentType": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "equipmentType"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "hpRegen"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Fraction of max HP gained each turn; negative for poison.",
+                      "maximum": 1,
+                      "minimum": -1
+                    }
+                  },
+                  "required": ["type", "value"]
+                }
+              ]
+            }
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "removal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "battleEnd": {
+                "type": "boolean"
+              },
+              "damageChance": {
+                "type": "number",
+                "maximum": 1,
+                "minimum": 0
+              },
+              "steps": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "turns": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "max": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "min": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": ["min", "max"]
+              }
+            },
+            "required": ["battleEnd"]
+          },
+          "restriction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "none"
+              },
+              {
+                "type": "string",
+                "const": "cannotAct"
+              },
+              {
+                "type": "string",
+                "const": "confused"
+              }
+            ],
+            "description": "confused: acts on its own against random targets."
+          }
+        },
+        "required": ["id", "name", "priority", "restriction", "knockout", "removal", "modifiers"]
+      }
+    }
+  },
+  "required": ["formatVersion", "entries"],
+  "title": "FreeQuest states"
+}

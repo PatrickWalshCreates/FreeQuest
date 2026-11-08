@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 2
+      "const": 3
     },
     "name": {
       "type": "string",
@@ -29,6 +29,53 @@
           }
         },
         "required": ["id", "path"]
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Path of each database file. A missing category is empty.",
+      "properties": {
+        "actors": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "classes": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "enemies": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "equipment": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "items": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "skills": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "states": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "system": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        }
       }
     },
     "maps": {
@@ -109,10 +156,23 @@
             }
           ]
         },
+        "gold": {
+          "type": "integer",
+          "minimum": 0
+        },
         "map": {
           "type": "string",
           "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "party": {
+          "type": "array",
+          "description": "Actor ids in the starting party, in order.",
+          "items": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
         },
         "x": {
           "type": "integer",
@@ -123,7 +183,7 @@
           "minimum": 0
         }
       },
-      "required": ["map", "x", "y", "direction"]
+      "required": ["map", "x", "y", "direction", "party", "gold"]
     },
     "switches": {
       "type": "array",

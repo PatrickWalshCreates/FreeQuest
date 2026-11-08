@@ -1,0 +1,84 @@
+{
+  "formatVersion": 1,
+  "currency": "G",
+  "elements": [
+    {
+      "id": "physical",
+      "name": "Physical"
+    },
+    {
+      "id": "fire",
+      "name": "Fire"
+    },
+    {
+      "id": "ice",
+      "name": "Ice"
+    },
+    {
+      "id": "holy",
+      "name": "Holy"
+    }
+  ],
+  "equipmentSlots": [
+    {
+      "id": "weapon",
+      "name": "Weapon"
+    },
+    {
+      "id": "shield",
+      "name": "Shield"
+    },
+    {
+      "id": "head",
+      "name": "Head"
+    },
+    {
+      "id": "body",
+      "name": "Body"
+    },
+    {
+      "id": "accessory",
+      "name": "Accessory"
+    }
+  ],
+  "equipmentTypes": [
+    {
+      "id": "sword",
+      "name": "Sword"
+    },
+    {
+      "id": "staff",
+      "name": "Staff"
+    },
+    {
+      "id": "shield",
+      "name": "Shield"
+    },
+    {
+      "id": "light-armor",
+      "name": "Light armor"
+    },
+    {
+      "id": "robe",
+      "name": "Robe"
+    },
+    {
+      "id": "hat",
+      "name": "Hat"
+    },
+    {
+      "id": "accessory",
+      "name": "Accessory"
+    }
+  ],
+  "skillTypes": [
+    {
+      "id": "magic",
+      "name": "Magic"
+    },
+    {
+      "id": "technique",
+      "name": "Technique"
+    }
+  ]
+}

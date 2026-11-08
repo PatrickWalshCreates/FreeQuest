@@ -37,10 +37,10 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
 
 export function makeManifest(start: Partial<Manifest['start']> = {}): Manifest {
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     name: 'Test',
     screen: { width: 64, height: 64 },
-    start: { map: 'test-map', x: 0, y: 0, direction: 'down', ...start },
+    start: { map: 'test-map', x: 0, y: 0, direction: 'down', party: [], gold: 0, ...start },
     player: { character: 'hero', speed: 4 },
     tilesets: [],
     maps: [],

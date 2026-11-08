@@ -3,6 +3,10 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CURRENT_FORMAT_VERSION,
+  DATABASE_KINDS,
+  type DatabaseFiles,
+  assembleDatabase,
+  checkDatabase,
   type FileKind,
   FormatVersionError,
   type Migration,
@@ -48,6 +52,12 @@ describe('stableStringify', () => {
     );
   });
 
+  it('sorts integer keys numerically', () => {
+    expect(stableStringify({ '10': 3, '5': 2, '99': 4, '1': 1 })).toBe(
+      '{\n  "1": 1,\n  "5": 2,\n  "10": 3,\n  "99": 4\n}\n',
+    );
+  });
+
   it('omits undefined values', () => {
     expect(stableStringify({ a: undefined, b: 1 })).toBe('{\n  "b": 1\n}\n');
   });
@@ -78,10 +88,7 @@ describe('migrate', () => {
       { from: 1, migrate: (d) => ({ ...d, a: 'added in 2' }) },
       { from: 2, migrate: (d) => ({ ...d, b: 'added in 3' }) },
     ];
-    const registry = { manifest: [], tileset: [], map: steps, character: [] } satisfies Record<
-      FileKind,
-      Migration[]
-    >;
+    const registry: Partial<Record<FileKind, Migration[]>> = { map: steps };
     const original = { formatVersion: 1 };
     expect(migrate('map', original, registry, 3)).toEqual({
       formatVersion: 3,
@@ -114,6 +121,14 @@ describe('demo project', () => {
   ] as const) {
     for (const f of readdirSync(join(DEMO, 'data', dir))) files.push([kind, `data/${dir}/${f}`]);
   }
+  const demoManifest = parseProjectFile(
+    'manifest',
+    JSON.parse(readFileSync(join(DEMO, 'project.json'), 'utf8')),
+  );
+  for (const kind of DATABASE_KINDS) {
+    const path = demoManifest.database?.[kind];
+    if (path) files.push([kind, path]);
+  }
 
   it('has no broken references across all its files', () => {
     const load = (dir: string) =>
@@ -133,6 +148,16 @@ describe('demo project', () => {
       characters: byId('character', 'characters'),
     } as unknown as ProjectData;
     expect(checkReferences(project)).toEqual([]);
+    const databaseFiles = Object.fromEntries(
+      DATABASE_KINDS.flatMap((kind) => {
+        const path = project.manifest.database?.[kind];
+        return path ? [[kind, parseProjectFile(kind, read(path), path)]] : [];
+      }),
+    ) as DatabaseFiles;
+    const database = assembleDatabase(databaseFiles);
+    expect(database.actors.length).toBeGreaterThan(0);
+    expect(checkDatabase(database, project)).toEqual([]);
+    expect(readdirSync(join(DEMO, 'data', 'database')).length).toBe(DATABASE_KINDS.length);
     const listed = (refs: { path: string }[]) => refs.map((r) => r.path).sort();
     expect(listed(project.manifest.maps)).toEqual(load('maps').sort());
   });

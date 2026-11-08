@@ -30,10 +30,10 @@ function map(id: string, width: number, height: number): GameMap {
 }
 
 const manifest: Manifest = {
-  formatVersion: 2,
+  formatVersion: 3,
   name: 'T',
   screen: { width: 64, height: 64 },
-  start: { map: 'a', x: 0, y: 0, direction: 'down' },
+  start: { map: 'a', x: 0, y: 0, direction: 'down', party: [], gold: 0 },
   player: { character: 'hero', speed: 4 },
   tilesets: [],
   maps: [],

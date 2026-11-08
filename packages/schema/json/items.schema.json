@@ -1,0 +1,302 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "damage"
+                    },
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "element": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "formula": {
+                      "type": "string",
+                      "description": "e.g. \"a.attack * 4 - b.defense * 2\". a = user, b = target, v.<id> = variable.",
+                      "minLength": 1
+                    },
+                    "pool": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "hp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "mp"
+                        }
+                      ]
+                    },
+                    "variance": {
+                      "type": "number",
+                      "description": "0.2 = ±20%.",
+                      "maximum": 1,
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "pool", "formula", "variance", "critical"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "recover"
+                    },
+                    "formula": {
+                      "type": "string",
+                      "description": "e.g. \"a.attack * 4 - b.defense * 2\". a = user, b = target, v.<id> = variable.",
+                      "minLength": 1
+                    },
+                    "pool": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "hp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "mp"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["type", "pool", "formula"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "addState"
+                    },
+                    "chance": {
+                      "type": "number",
+                      "maximum": 1,
+                      "minimum": 0
+                    },
+                    "state": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "state", "chance"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "removeState"
+                    },
+                    "state": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "state"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "learnSkill"
+                    },
+                    "skill": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "skill"]
+                }
+              ]
+            }
+          },
+          "hitType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "certain"
+              },
+              {
+                "type": "string",
+                "const": "physical"
+              },
+              {
+                "type": "string",
+                "const": "magical"
+              }
+            ],
+            "description": "certain always hits; physical/magical can be evaded."
+          },
+          "icon": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "key": {
+            "type": "boolean",
+            "description": "Key items cannot be sold or discarded."
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "always"
+              },
+              {
+                "type": "string",
+                "const": "battle"
+              },
+              {
+                "type": "string",
+                "const": "menu"
+              },
+              {
+                "type": "string",
+                "const": "never"
+              }
+            ],
+            "description": "Where it can be used."
+          },
+          "price": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "successRate": {
+            "type": "number",
+            "maximum": 1,
+            "minimum": 0
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "side": {
+                    "type": "string",
+                    "const": "none"
+                  }
+                },
+                "required": ["side"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "side": {
+                    "type": "string",
+                    "const": "user"
+                  }
+                },
+                "required": ["side"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "dead": {
+                    "type": "boolean"
+                  },
+                  "select": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "one"
+                      },
+                      {
+                        "type": "string",
+                        "const": "all"
+                      }
+                    ]
+                  },
+                  "side": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "ally"
+                      },
+                      {
+                        "type": "string",
+                        "const": "enemy"
+                      }
+                    ]
+                  }
+                },
+                "required": ["side", "select"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "select": {
+                    "type": "string",
+                    "const": "random"
+                  },
+                  "side": {
+                    "type": "string",
+                    "const": "enemy"
+                  }
+                },
+                "required": ["side", "select", "count"]
+              }
+            ]
+          }
+        },
+        "required": ["id", "name", "price", "key", "consumable", "occasion", "target", "hitType", "successRate", "effects"]
+      }
+    }
+  },
+  "required": ["formatVersion", "entries"],
+  "title": "FreeQuest items"
+}

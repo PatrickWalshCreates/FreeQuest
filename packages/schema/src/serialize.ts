@@ -21,8 +21,14 @@ function rank(key: string): number {
   return trail === -1 ? 0 : trail + 1;
 }
 
+const INTEGER_KEY = /^(?:0|-?[1-9][0-9]*)$/;
+
+/** Integer keys (e.g. level curves) sort numerically, so "5" comes before "10". */
 function compareKeys(a: string, b: string): number {
-  return rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0);
+  const byRank = rank(a) - rank(b);
+  if (byRank !== 0) return byRank;
+  if (INTEGER_KEY.test(a) && INTEGER_KEY.test(b)) return Number(a) - Number(b);
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 function isPrimitive(value: unknown): boolean {

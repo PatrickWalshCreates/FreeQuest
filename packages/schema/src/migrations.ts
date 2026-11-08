@@ -1,15 +1,21 @@
+import { DATABASE_FORMAT_VERSION } from './database/categories.js';
+import { DATABASE_KINDS, type DatabaseKind } from './manifest.js';
 import { CHARACTER_FORMAT_VERSION } from './character.js';
 import { MANIFEST_FORMAT_VERSION } from './manifest.js';
 import { MAP_FORMAT_VERSION } from './map.js';
 import { TILESET_FORMAT_VERSION } from './tileset.js';
 
-export type FileKind = 'manifest' | 'tileset' | 'map' | 'character';
+export type FileKind = 'manifest' | 'tileset' | 'map' | 'character' | DatabaseKind;
 
 export const CURRENT_FORMAT_VERSION: Record<FileKind, number> = {
   manifest: MANIFEST_FORMAT_VERSION,
   tileset: TILESET_FORMAT_VERSION,
   map: MAP_FORMAT_VERSION,
   character: CHARACTER_FORMAT_VERSION,
+  ...(Object.fromEntries(DATABASE_KINDS.map((k) => [k, DATABASE_FORMAT_VERSION])) as Record<
+    DatabaseKind,
+    number
+  >),
 };
 
 /** Upgrades a file from version `from` to `from + 1`. Must not mutate its input. */
@@ -22,10 +28,15 @@ export interface Migration {
  * Registered migrations per file kind. When bumping a format version, add an
  * entry here (and a test with a fixture of the old format) in the same change.
  */
-export const MIGRATIONS: Record<FileKind, Migration[]> = {
+export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
   manifest: [
     // v2: switch and variable declarations.
     { from: 1, migrate: (d) => ({ ...d, switches: [], variables: [] }) },
+    // v3: starting party and gold (the database itself is optional).
+    {
+      from: 2,
+      migrate: (d) => ({ ...d, start: { ...(d['start'] as object), party: [], gold: 0 } }),
+    },
   ],
   tileset: [],
   map: [
@@ -43,7 +54,7 @@ export class FormatVersionError extends Error {
 export function migrate(
   kind: FileKind,
   data: unknown,
-  migrations: Record<FileKind, Migration[]> = MIGRATIONS,
+  migrations: Partial<Record<FileKind, Migration[]>> = MIGRATIONS,
   target: number = CURRENT_FORMAT_VERSION[kind],
 ): unknown {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
@@ -60,7 +71,7 @@ export function migrate(
     );
   }
   while (version < target) {
-    const step = migrations[kind].find((m) => m.from === version);
+    const step = migrations[kind]?.find((m) => m.from === version);
     if (!step) {
       throw new FormatVersionError(`${kind}: no migration from formatVersion ${version}`);
     }

@@ -1,0 +1,118 @@
+{
+  "formatVersion": 1,
+  "entries": [
+    {
+      "id": "bronze-sword",
+      "name": "Bronze Sword",
+      "equipmentType": "sword",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "attack",
+          "value": 10
+        }
+      ],
+      "price": 100,
+      "slot": "weapon"
+    },
+    {
+      "id": "oak-staff",
+      "name": "Oak Staff",
+      "equipmentType": "staff",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "attack",
+          "value": 4
+        },
+        {
+          "type": "statFlat",
+          "stat": "magicAttack",
+          "value": 10
+        }
+      ],
+      "price": 80,
+      "slot": "weapon"
+    },
+    {
+      "id": "wooden-shield",
+      "name": "Wooden Shield",
+      "equipmentType": "shield",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "defense",
+          "value": 6
+        }
+      ],
+      "price": 60,
+      "slot": "shield"
+    },
+    {
+      "id": "leather-vest",
+      "name": "Leather Vest",
+      "equipmentType": "light-armor",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "defense",
+          "value": 8
+        }
+      ],
+      "price": 80,
+      "slot": "body"
+    },
+    {
+      "id": "cloth-robe",
+      "name": "Cloth Robe",
+      "equipmentType": "robe",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "defense",
+          "value": 4
+        },
+        {
+          "type": "statFlat",
+          "stat": "magicDefense",
+          "value": 6
+        }
+      ],
+      "price": 70,
+      "slot": "body"
+    },
+    {
+      "id": "straw-hat",
+      "name": "Straw Hat",
+      "equipmentType": "hat",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "defense",
+          "value": 2
+        }
+      ],
+      "price": 30,
+      "slot": "head"
+    },
+    {
+      "id": "lucky-charm",
+      "name": "Lucky Charm",
+      "equipmentType": "accessory",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "luck",
+          "value": 10
+        },
+        {
+          "type": "stateRate",
+          "state": "poison",
+          "value": 0
+        }
+      ],
+      "price": 200,
+      "slot": "accessory"
+    }
+  ]
+}

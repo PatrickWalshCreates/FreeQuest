@@ -1,5 +1,8 @@
 import {
   type CharacterSheet,
+  DATABASE_KINDS,
+  type Database,
+  type DatabaseFiles,
   type FileKind,
   type FileData,
   type FileRef,
@@ -7,6 +10,8 @@ import {
   type Manifest,
   ProjectFileError,
   type Tileset,
+  assembleDatabase,
+  checkDatabase,
   checkManifestReferences,
   checkMapReferences,
   checkMapShape,
@@ -24,6 +29,8 @@ export interface LoadedProject {
   readonly manifest: Manifest;
   readonly tilesets: ReadonlyMap<string, Tileset>;
   readonly characters: ReadonlyMap<string, CharacterSheet>;
+  /** Every database category (missing files are empty). Loaded up front. */
+  readonly database: Database;
   /** Maps fetched so far. */
   readonly maps: ReadonlyMap<string, GameMap>;
   /** Fetch and validate a map (once; later calls reuse it). */
@@ -70,16 +77,29 @@ async function fetchAll<K extends 'tileset' | 'map' | 'character'>(
   return new Map(entries);
 }
 
+async function fetchDatabase(baseUrl: URL, manifest: Manifest): Promise<Database> {
+  const entries = await Promise.all(
+    DATABASE_KINDS.map(async (kind) => {
+      const path = manifest.database?.[kind];
+      return path ? [[kind, await fetchFile(baseUrl, kind, path)] as const] : [];
+    }),
+  );
+  return assembleDatabase(Object.fromEntries(entries.flat()) as DatabaseFiles);
+}
+
 /** Load a project folder served over HTTP. `projectUrl` points at the folder containing project.json. */
 export async function loadProject(projectUrl: string | URL): Promise<LoadedProject> {
   const baseUrl = new URL(projectUrl);
   if (!baseUrl.pathname.endsWith('/')) baseUrl.pathname += '/';
 
   const manifest = await fetchFile(baseUrl, 'manifest', 'project.json');
-  const [tilesets, characters] = await Promise.all([
+  const [tilesets, characters, database] = await Promise.all([
     fetchAll(baseUrl, 'tileset', manifest.tilesets),
     fetchAll(baseUrl, 'character', manifest.characters),
+    fetchDatabase(baseUrl, manifest),
   ]);
+  const databaseProblems = checkDatabase(database, { manifest, characters });
+  if (databaseProblems.length > 0) throw new ProjectFileError('database', databaseProblems);
   const maps = new Map<string, GameMap>();
   const pending = new Map<string, Promise<GameMap>>();
   const context = { manifest, tilesets, characters, maps };
@@ -123,6 +143,7 @@ export async function loadProject(projectUrl: string | URL): Promise<LoadedProje
     manifest,
     tilesets,
     characters,
+    database,
     maps,
     loadMap,
     resolve: (path) => new URL(path, baseUrl).href,

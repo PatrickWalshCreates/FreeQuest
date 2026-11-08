@@ -1,0 +1,117 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "currency": {
+      "type": "string",
+      "description": "Shown after gold amounts, e.g. \"G\".",
+      "minLength": 1
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["id", "name"]
+      }
+    },
+    "equipmentSlots": {
+      "type": "array",
+      "description": "In menu order, e.g. weapon, shield, head.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["id", "name"]
+      }
+    },
+    "equipmentTypes": {
+      "type": "array",
+      "description": "e.g. sword, staff, light armor.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["id", "name"]
+      }
+    },
+    "iconset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "iconSize": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "image": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        }
+      },
+      "required": ["image", "iconSize", "columns"]
+    },
+    "skillTypes": {
+      "type": "array",
+      "description": "e.g. magic, techniques.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["id", "name"]
+      }
+    }
+  },
+  "required": ["formatVersion", "currency", "elements", "equipmentSlots", "equipmentTypes", "skillTypes"],
+  "title": "FreeQuest system data"
+}

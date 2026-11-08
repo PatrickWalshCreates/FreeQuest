@@ -1,7 +1,20 @@
 import Type, { type Static } from 'typebox';
-import { Direction, FileRef, Id, NonNegativeInt, PositiveInt } from './common.js';
+import { Direction, FileRef, Id, NonNegativeInt, PositiveInt, RelativePath } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 2;
+export const MANIFEST_FORMAT_VERSION = 3;
+
+/** Database categories, each stored in its own file. */
+export const DATABASE_KINDS = [
+  'system',
+  'actors',
+  'classes',
+  'skills',
+  'items',
+  'equipment',
+  'states',
+  'enemies',
+] as const;
+export type DatabaseKind = (typeof DATABASE_KINDS)[number];
 
 /** Declares a switch or variable so it can be referenced by id and named in editors. */
 export const FlagDeclaration = Type.Object(
@@ -31,6 +44,8 @@ export const Manifest = Type.Object(
         x: NonNegativeInt,
         y: NonNegativeInt,
         direction: Direction,
+        party: Type.Array(Id, { description: 'Actor ids in the starting party, in order.' }),
+        gold: NonNegativeInt,
       },
       { additionalProperties: false, description: 'Where the player appears on a new game.' },
     ),
@@ -49,6 +64,21 @@ export const Manifest = Type.Object(
     characters: Type.Array(FileRef),
     switches: Type.Array(FlagDeclaration, { description: 'Named on/off flags.' }),
     variables: Type.Array(FlagDeclaration, { description: 'Named integer values.' }),
+    database: Type.Optional(
+      Type.Partial(
+        Type.Object(
+          Object.fromEntries(DATABASE_KINDS.map((k) => [k, RelativePath])) as Record<
+            DatabaseKind,
+            typeof RelativePath
+          >,
+          { additionalProperties: false },
+        ),
+        {
+          description: 'Path of each database file. A missing category is empty.',
+          additionalProperties: false,
+        },
+      ),
+    ),
   },
   { title: 'FreeQuest project manifest', additionalProperties: false },
 );

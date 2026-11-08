@@ -1,0 +1,159 @@
+{
+  "formatVersion": 1,
+  "entries": [
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "exp": {
+        "base": 30,
+        "exponent": 2.2
+      },
+      "modifiers": [
+        {
+          "type": "equipType",
+          "equipmentType": "sword"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "shield"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "light-armor"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "hat"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "accessory"
+        },
+        {
+          "type": "attackElement",
+          "element": "physical"
+        }
+      ],
+      "skills": [
+        {
+          "level": 3,
+          "skill": "power-strike"
+        }
+      ],
+      "stats": {
+        "agility": {
+          "1": 10,
+          "99": 240
+        },
+        "attack": {
+          "1": 14,
+          "99": 320
+        },
+        "defense": {
+          "1": 12,
+          "99": 300
+        },
+        "luck": {
+          "1": 10,
+          "99": 200
+        },
+        "magicAttack": {
+          "1": 6,
+          "99": 150
+        },
+        "magicDefense": {
+          "1": 8,
+          "99": 200
+        },
+        "maxHp": {
+          "1": 120,
+          "50": 2400,
+          "99": 5200
+        },
+        "maxMp": {
+          "1": 10,
+          "99": 400
+        }
+      }
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "exp": {
+        "base": 32,
+        "exponent": 2.25
+      },
+      "modifiers": [
+        {
+          "type": "equipType",
+          "equipmentType": "staff"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "robe"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "hat"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "accessory"
+        },
+        {
+          "type": "attackElement",
+          "element": "physical"
+        }
+      ],
+      "skills": [
+        {
+          "level": 1,
+          "skill": "fire"
+        },
+        {
+          "level": 1,
+          "skill": "heal"
+        },
+        {
+          "level": 5,
+          "skill": "blizzard"
+        }
+      ],
+      "stats": {
+        "agility": {
+          "1": 11,
+          "99": 250
+        },
+        "attack": {
+          "1": 7,
+          "99": 160
+        },
+        "defense": {
+          "1": 7,
+          "99": 180
+        },
+        "luck": {
+          "1": 12,
+          "99": 220
+        },
+        "magicAttack": {
+          "1": 16,
+          "99": 340
+        },
+        "magicDefense": {
+          "1": 14,
+          "99": 300
+        },
+        "maxHp": {
+          "1": 80,
+          "99": 3600
+        },
+        "maxMp": {
+          "1": 40,
+          "50": 500,
+          "99": 900
+        }
+      }
+    }
+  ]
+}

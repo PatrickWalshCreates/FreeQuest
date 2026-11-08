@@ -1,5 +1,5 @@
 {
-  "formatVersion": 2,
+  "formatVersion": 3,
   "name": "FreeQuest Demo",
   "characters": [
     {
@@ -9,8 +9,22 @@
     {
       "id": "villager",
       "path": "data/characters/villager.json"
+    },
+    {
+      "id": "mage",
+      "path": "data/characters/mage.json"
     }
   ],
+  "database": {
+    "actors": "data/database/actors.json",
+    "classes": "data/database/classes.json",
+    "enemies": "data/database/enemies.json",
+    "equipment": "data/database/equipment.json",
+    "items": "data/database/items.json",
+    "skills": "data/database/skills.json",
+    "states": "data/database/states.json",
+    "system": "data/database/system.json"
+  },
   "maps": [
     {
       "id": "map001",
@@ -31,7 +45,9 @@
   },
   "start": {
     "direction": "down",
+    "gold": 50,
     "map": "map001",
+    "party": ["hero"],
     "x": 7,
     "y": 7
   },
