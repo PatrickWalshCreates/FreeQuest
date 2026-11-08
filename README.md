@@ -4,8 +4,9 @@ FreeQuest is a free, open-source (MIT) toolkit for making classic 2D role-playin
 alternative to RPG Maker MZ. It is a clean-room implementation: no RPG Maker code, assets or UI are
 used.
 
-> **Status: early pre-alpha.** Right now FreeQuest can load a project, draw a tile map and let you
-> walk a character around it. No events, battles, menus or editor yet. File formats will change.
+> **Status: early pre-alpha.** FreeQuest can load a project, walk a character around tile maps,
+> talk to NPCs (messages, choices, switches, variables, conditional branches) and move between maps.
+> No battles, menus, saving or editor yet. File formats will change.
 
 ## What's here
 
@@ -26,7 +27,8 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 and walk around with the arrow keys or WASD.
+Open http://localhost:5173. Walk with the arrow keys or WASD, talk with Enter/Space/Z, cancel with
+Escape/X. Try the elder by the path and the house door.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 

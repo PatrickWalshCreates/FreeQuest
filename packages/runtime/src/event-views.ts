@@ -22,6 +22,12 @@ export class EventViews {
     private readonly container: Container,
   ) {}
 
+  /** Remove and destroy every sprite this created (e.g. when leaving the map). */
+  destroy(): void {
+    for (const view of this.views.values()) view.sprite.destroy();
+    this.views.clear();
+  }
+
   update(tileWidth: number, tileHeight: number): void {
     for (const event of this.events) {
       const page = event.page;

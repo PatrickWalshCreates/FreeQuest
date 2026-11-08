@@ -6,6 +6,8 @@ import {
   type Manifest,
   type ProjectData,
   type Tileset,
+  checkManifestReferences,
+  checkMapReferences,
   checkMapShape,
   checkReferences,
 } from '../src/index.js';
@@ -153,5 +155,34 @@ describe('checkMapShape events', () => {
         expect.stringMatching(/cancel index 3 has no option/),
       ]),
     );
+  });
+});
+
+describe('lazy map checks', () => {
+  it('accepts transfers to listed maps that are not loaded yet', () => {
+    const map = mapWith([{ type: 'transfer', map: 'b', x: 99, y: 99 }]);
+    const m = { ...manifest, maps: [{ id: 'b', path: 'data/maps/b.json' }] };
+    const ctx = {
+      manifest: m,
+      tilesets: new Map([['ts', tileset]]),
+      characters: new Map([['hero', hero]]),
+    };
+    expect(checkMapReferences(map, ctx)).toEqual([]);
+  });
+
+  it('bounds-checks transfer targets once their map is loaded', () => {
+    const map = mapWith([{ type: 'transfer', map: 'a', x: 99, y: 0 }]);
+    const ctx = {
+      manifest,
+      tilesets: new Map([['ts', tileset]]),
+      characters: new Map([['hero', hero]]),
+      maps: new Map([['a', map]]),
+    };
+    expect(checkMapReferences(map, ctx)).toEqual([expect.stringMatching(/outside map "a"/)]);
+  });
+
+  it('flags a start map missing from the manifest', () => {
+    const ctx = { manifest, tilesets: new Map(), characters: new Map([['hero', hero]]) };
+    expect(checkManifestReferences(ctx)).toEqual([expect.stringMatching(/unknown map "a"/)]);
   });
 });

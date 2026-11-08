@@ -6,4 +6,5 @@ export * from './character-view.js';
 export * from './event-views.js';
 export * from './dialog.js';
 export * from './dialog-view.js';
+export * from './transfer.js';
 export * from './textures.js';

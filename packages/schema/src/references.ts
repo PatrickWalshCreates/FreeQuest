@@ -14,36 +14,55 @@ export interface ProjectData {
 }
 
 /**
- * Check that every id one file uses to point at another actually exists:
- * tilesets, maps, characters, switches and variables. Returns human-readable
- * problems, each prefixed with the file it was found in.
+ * What reference checks resolve ids against. `maps` holds whichever maps are
+ * loaded: a map listed in the manifest but not loaded counts as existing,
+ * but positions on it can only be bounds-checked once it is loaded.
  */
-export function checkReferences(project: ProjectData): string[] {
-  const { manifest, tilesets, maps, characters } = project;
-  const problems: string[] = [];
-  const switches = new Set(manifest.switches.map((s) => s.id));
-  const variables = new Set(manifest.variables.map((v) => v.id));
+export interface ReferenceContext {
+  readonly manifest: Manifest;
+  readonly tilesets: ReadonlyMap<string, Tileset>;
+  readonly characters: ReadonlyMap<string, CharacterSheet>;
+  readonly maps?: ReadonlyMap<string, GameMap>;
+}
 
-  const checkTile = (where: string, mapId: string, x: number, y: number) => {
-    const map = maps.get(mapId);
-    if (!map) problems.push(`${where}: unknown map "${mapId}"`);
-    else if (x >= map.width || y >= map.height) {
-      problems.push(`${where}: (${x}, ${y}) is outside map "${mapId}"`);
-    }
-  };
+function makeChecks(ctx: ReferenceContext, problems: string[]) {
+  const switches = new Set(ctx.manifest.switches.map((s) => s.id));
+  const variables = new Set(ctx.manifest.variables.map((v) => v.id));
+  const mapIds = new Set([...ctx.manifest.maps.map((m) => m.id), ...(ctx.maps?.keys() ?? [])]);
+
   const checkSwitch = (where: string, id: string) => {
     if (!switches.has(id)) problems.push(`${where}: undeclared switch "${id}"`);
   };
   const checkVariable = (where: string, id: string) => {
     if (!variables.has(id)) problems.push(`${where}: undeclared variable "${id}"`);
   };
-  const checkConditions = (where: string, conditions: readonly Condition[]) => {
-    for (const c of conditions) {
-      if (c.type === 'switch') checkSwitch(where, c.switch);
-      else checkVariable(where, c.variable);
-    }
+  return {
+    checkSwitch,
+    checkVariable,
+    checkTile(where: string, mapId: string, x: number, y: number) {
+      if (!mapIds.has(mapId)) {
+        problems.push(`${where}: unknown map "${mapId}"`);
+        return;
+      }
+      const map = ctx.maps?.get(mapId);
+      if (map && (x >= map.width || y >= map.height)) {
+        problems.push(`${where}: (${x}, ${y}) is outside map "${mapId}"`);
+      }
+    },
+    checkConditions(where: string, conditions: readonly Condition[]) {
+      for (const c of conditions) {
+        if (c.type === 'switch') checkSwitch(where, c.switch);
+        else checkVariable(where, c.variable);
+      }
+    },
   };
+}
 
+/** References made by project.json itself: start position, player character, flag declarations. */
+export function checkManifestReferences(ctx: ReferenceContext): string[] {
+  const { manifest, characters } = ctx;
+  const problems: string[] = [];
+  const { checkTile } = makeChecks(ctx, problems);
   checkTile('project.json start', manifest.start.map, manifest.start.x, manifest.start.y);
   if (!characters.has(manifest.player.character)) {
     problems.push(`project.json player: unknown character "${manifest.player.character}"`);
@@ -58,37 +77,53 @@ export function checkReferences(project: ProjectData): string[] {
       ids.add(id);
     }
   }
+  return problems;
+}
 
-  for (const map of maps.values()) {
-    const file = `map "${map.id}"`;
-    if (!tilesets.has(map.tileset)) problems.push(`${file}: unknown tileset "${map.tileset}"`);
-    for (const event of map.events) {
-      event.pages.forEach((page, p) => {
-        const where = `${file} event "${event.id}" pages[${p}]`;
-        checkConditions(where, page.conditions);
-        if (page.graphic && !characters.has(page.graphic.character)) {
-          problems.push(`${where}: unknown character "${page.graphic.character}"`);
+/** References made by one map: its tileset, event graphics, flags and transfer targets. */
+export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[] {
+  const problems: string[] = [];
+  const { checkTile, checkSwitch, checkVariable, checkConditions } = makeChecks(ctx, problems);
+  const file = `map "${map.id}"`;
+  if (!ctx.tilesets.has(map.tileset)) problems.push(`${file}: unknown tileset "${map.tileset}"`);
+  for (const event of map.events) {
+    event.pages.forEach((page, p) => {
+      const where = `${file} event "${event.id}" pages[${p}]`;
+      checkConditions(where, page.conditions);
+      if (page.graphic && !ctx.characters.has(page.graphic.character)) {
+        problems.push(`${where}: unknown character "${page.graphic.character}"`);
+      }
+      walkCommands(page.commands, (command, path) => {
+        const at = `${where}.${path}`;
+        switch (command.type) {
+          case 'if':
+            checkConditions(at, command.conditions);
+            break;
+          case 'setSwitch':
+            checkSwitch(at, command.switch);
+            break;
+          case 'setVariable':
+            checkVariable(at, command.variable);
+            if (typeof command.value === 'object') checkVariable(at, command.value.variable);
+            break;
+          case 'transfer':
+            checkTile(at, command.map, command.x, command.y);
+            break;
         }
-        walkCommands(page.commands, (command, path) => {
-          const at = `${where}.${path}`;
-          switch (command.type) {
-            case 'if':
-              checkConditions(at, command.conditions);
-              break;
-            case 'setSwitch':
-              checkSwitch(at, command.switch);
-              break;
-            case 'setVariable':
-              checkVariable(at, command.variable);
-              if (typeof command.value === 'object') checkVariable(at, command.value.variable);
-              break;
-            case 'transfer':
-              checkTile(at, command.map, command.x, command.y);
-              break;
-          }
-        });
       });
-    }
+    });
   }
   return problems;
+}
+
+/**
+ * Check that every id one file uses to point at another actually exists:
+ * tilesets, maps, characters, switches and variables, across a fully loaded
+ * project. Returns human-readable problems, each prefixed with its file.
+ */
+export function checkReferences(project: ProjectData): string[] {
+  return [
+    ...checkManifestReferences(project),
+    ...[...project.maps.values()].flatMap((map) => checkMapReferences(map, project)),
+  ];
 }

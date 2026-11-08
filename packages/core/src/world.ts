@@ -22,46 +22,92 @@ const OPPOSITE: Record<Direction, Direction> = {
   right: 'left',
 };
 
-/** The live game state for one map. Advanced only through `step`. */
+/**
+ * The live game: the current map, its events, the player and the shared game
+ * state. Advanced only through `step`. `changeMap` swaps the map in place.
+ */
 export class World {
-  readonly map: GameMap;
-  readonly tileset: Tileset;
-  readonly collision: CollisionMap;
   readonly player: GridMover;
   readonly state: GameState;
-  readonly events: readonly EventInstance[];
   /** Tile collision plus events that block. What characters move against. */
   readonly passability: Passability;
 
+  private currentMap: GameMap;
+  private currentTileset: Tileset;
+  private currentCollision: CollisionMap;
+  private currentEvents: EventInstance[];
   private running: Interpreter | null = null;
   private runningEvent: EventInstance | null = null;
   private seenStateVersion: number;
 
   constructor({ manifest, map, tileset, state }: WorldOptions) {
-    if (map.tileset !== tileset.id) {
-      throw new Error(`map "${map.id}" uses tileset "${map.tileset}", got "${tileset.id}"`);
-    }
-    this.map = map;
-    this.tileset = tileset;
     this.state = state ?? new GameState(manifest);
-    this.collision = CollisionMap.fromMap(map, tileset);
     const { start } = manifest;
-    if (!this.collision.inBounds(start.x, start.y)) {
-      throw new Error(`start position (${start.x}, ${start.y}) is outside map "${map.id}"`);
-    }
     this.player = new GridMover({
       x: start.x,
       y: start.y,
       direction: start.direction,
       speed: manifest.player.speed,
     });
-    this.events = map.events.map((e) => new EventInstance(e, this.state));
+    // Assigned for the type checker; `enterMap` sets them for real.
+    this.currentMap = map;
+    this.currentTileset = tileset;
+    this.currentCollision = CollisionMap.fromMap(map, tileset);
+    this.currentEvents = [];
+    this.enterMap(map, tileset, start.x, start.y);
     this.seenStateVersion = this.state.version;
+    const currentMap = () => this.currentMap;
     this.passability = {
-      width: map.width,
-      height: map.height,
+      get width() {
+        return currentMap().width;
+      },
+      get height() {
+        return currentMap().height;
+      },
       isPassable: (x, y) => this.collision.isPassable(x, y) && !this.blockingEventAt(x, y),
     };
+  }
+
+  get map(): GameMap {
+    return this.currentMap;
+  }
+
+  get tileset(): Tileset {
+    return this.currentTileset;
+  }
+
+  get collision(): CollisionMap {
+    return this.currentCollision;
+  }
+
+  get events(): readonly EventInstance[] {
+    return this.currentEvents;
+  }
+
+  private enterMap(map: GameMap, tileset: Tileset, x: number, y: number): void {
+    if (map.tileset !== tileset.id) {
+      throw new Error(`map "${map.id}" uses tileset "${map.tileset}", got "${tileset.id}"`);
+    }
+    const collision = CollisionMap.fromMap(map, tileset);
+    if (!collision.inBounds(x, y)) {
+      throw new Error(`position (${x}, ${y}) is outside map "${map.id}"`);
+    }
+    this.currentMap = map;
+    this.currentTileset = tileset;
+    this.currentCollision = collision;
+    this.currentEvents = map.events.map((e) => new EventInstance(e, this.state));
+    this.player.placeAt(x, y);
+  }
+
+  /**
+   * Move the player to (x, y) on `map`, which becomes the current map. Its
+   * events start fresh. A running interpreter keeps running (so an event can
+   * transfer and then keep talking), but it no longer belongs to a map event.
+   */
+  changeMap(map: GameMap, tileset: Tileset, x: number, y: number, direction?: Direction): void {
+    this.enterMap(map, tileset, x, y);
+    if (direction) this.player.direction = direction;
+    this.runningEvent = null;
   }
 
   /** Map size in pixels. */

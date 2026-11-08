@@ -1,13 +1,15 @@
 import { ActionState, FixedTimestep, World, computeCamera } from '@freequest/core';
-import { Application, Container } from 'pixi.js';
+import type { Tileset } from '@freequest/schema';
+import { Application, Container, Graphics, type Texture } from 'pixi.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
 import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, getOrThrow, loadProject } from './loader.js';
-import { createMapView } from './map-view.js';
+import { type MapView, createMapView } from './map-view.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
+import { TransferController } from './transfer.js';
 
 export interface StartGameOptions {
   /** Element the canvas is added to. The game scales to fit it in whole-number steps. */
@@ -34,17 +36,26 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const map = getOrThrow(project.maps, manifest.start.map, 'map');
   const tileset = getOrThrow(project.tilesets, map.tileset, 'tileset');
 
-  const [tilesetTexture, characterGraphics] = await Promise.all([
-    loadPixelTexture(project.resolve(tileset.image)),
+  // Tileset images load when a map using them is first entered.
+  const tileTextures = new Map<string, Promise<Texture[]>>();
+  const loadTiles = (ts: Tileset): Promise<Texture[]> => {
+    let tiles = tileTextures.get(ts.id);
+    if (!tiles) {
+      tiles = loadPixelTexture(project.resolve(ts.image)).then((texture) =>
+        sliceGrid(texture, ts.tileWidth, ts.tileHeight, ts.columns, ts.tiles.length),
+      );
+      tileTextures.set(ts.id, tiles);
+    }
+    return tiles;
+  };
+  // Filled in before a map becomes current, so scene rebuilds never wait.
+  const readyTiles = new Map<string, Texture[]>();
+
+  const [startTiles, characterGraphics] = await Promise.all([
+    loadTiles(tileset),
     loadCharacterGraphics(project),
   ]);
-  const tileTextures = sliceGrid(
-    tilesetTexture,
-    tileset.tileWidth,
-    tileset.tileHeight,
-    tileset.columns,
-    tileset.tiles.length,
-  );
+  readyTiles.set(tileset.id, startTiles);
 
   const world = new World({ manifest, map, tileset });
   const input = new ActionState();
@@ -65,19 +76,49 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   canvas.tabIndex = 0;
   options.parent.appendChild(canvas);
 
-  const mapView = createMapView(map, tileset, tileTextures);
   const player = new CharacterView(
     getOrThrow(characterGraphics, manifest.player.character, 'character'),
   );
   const characters = new Container({ label: 'characters', sortableChildren: true });
   characters.addChild(player.sprite);
-  const eventViews = new EventViews(world.events, characterGraphics, characters);
   const scene = new Container({ label: 'scene' });
-  scene.addChild(mapView.below, characters, mapView.above);
+  scene.addChild(characters);
   app.stage.addChild(scene);
+
+  // Everything drawn for the current map. Rebuilt whenever the world's map changes.
+  let shown: { map: World['map']; view: MapView; events: EventViews } | null = null;
+  const showCurrentMap = () => {
+    if (shown) {
+      shown.view.below.destroy({ children: true });
+      shown.view.above.destroy({ children: true });
+      shown.events.destroy();
+    }
+    const tiles = getOrThrow(readyTiles, world.tileset.id, 'tileset');
+    const view = createMapView(world.map, world.tileset, tiles);
+    scene.addChildAt(view.below, 0);
+    scene.addChild(view.above);
+    shown = {
+      map: world.map,
+      view,
+      events: new EventViews(world.events, characterGraphics, characters),
+    };
+    // Don't interpolate the player across maps.
+    prevX = world.player.realX;
+    prevY = world.player.realY;
+  };
+
   const dialog = new DialogController();
   const dialogView = new DialogView(width, height, { ...DEFAULT_UI_THEME, ...options.ui });
   app.stage.addChild(dialogView.container);
+  const transfer = new TransferController(async (mapId) => {
+    const target = await project.loadMap(mapId);
+    const targetTileset = getOrThrow(project.tilesets, target.tileset, 'tileset');
+    readyTiles.set(targetTileset.id, await loadTiles(targetTileset));
+    return { map: target, tileset: targetTileset };
+  });
+  const fadeOverlay = new Graphics().rect(0, 0, width, height).fill(0x000000);
+  fadeOverlay.alpha = 0;
+  app.stage.addChild(fadeOverlay);
   let elapsed = 0;
 
   const fit = () => {
@@ -95,14 +136,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   // Position before the most recent logic step, for interpolation.
   let prevX = world.player.realX;
   let prevY = world.player.realY;
+  showCurrentMap();
 
   const render = (alpha: number) => {
-    const { tileWidth, tileHeight } = tileset;
+    if (shown?.map !== world.map) showCurrentMap();
+    const { tileWidth, tileHeight } = world.tileset;
     const rx = prevX + (world.player.realX - prevX) * alpha;
     const ry = prevY + (world.player.realY - prevY) * alpha;
     player.update(world.player, rx, ry, tileWidth, tileHeight);
     player.sprite.zIndex = depthFor(ry);
-    eventViews.update(tileWidth, tileHeight);
+    shown?.events.update(tileWidth, tileHeight);
     const camera = computeCamera({
       focusX: (rx + 0.5) * tileWidth,
       focusY: (ry + 0.5) * tileHeight,
@@ -118,19 +161,17 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
-      // Dialog first: it consumes the input that answers a pending request.
+      // Dialog and transfers first: they consume the input / answer the
+      // requests of the running event before the world steps.
       dialog.update(dt, input, world.interpreter);
-      // TODO(M2 step 6): replace with real map transfers.
-      if (world.interpreter?.pending?.type === 'transfer') {
-        console.warn('Map transfers are not implemented yet; skipping', world.interpreter.pending);
-        world.interpreter.continue();
-      }
+      transfer.update(dt, world);
       world.step(dt, input);
       input.endStep();
       elapsed += dt;
     });
     render(alpha);
     dialogView.render(dialog, elapsed);
+    fadeOverlay.alpha = transfer.fade;
   };
   render(1);
   app.ticker.add(tick);

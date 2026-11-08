@@ -220,12 +220,11 @@
           "trigger": "touch",
           "commands": [
             {
-              "type": "comment",
-              "text": "Becomes a transfer once the house interior map exists."
-            },
-            {
-              "type": "message",
-              "text": "The door is locked."
+              "type": "transfer",
+              "direction": "up",
+              "map": "house",
+              "x": 4,
+              "y": 5
             }
           ]
         }

@@ -3,6 +3,7 @@
 import { parseProjectFile } from '@freequest/schema';
 import { describe, expect, it } from 'vitest';
 import rawManifest from '../../../samples/demo-project/project.json' with { type: 'json' };
+import rawHouse from '../../../samples/demo-project/data/maps/house.json' with { type: 'json' };
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
 import rawTileset from '../../../samples/demo-project/data/tilesets/overworld.json' with { type: 'json' };
 import { ActionState, type Direction, World } from '../src/index.js';
@@ -50,13 +51,23 @@ function play() {
     step();
   };
 
-  /** Answer the pending request the way the dialog UI would. */
+  const maps = new Map([
+    ['map001', parseProjectFile('map', rawMap)],
+    ['house', parseProjectFile('map', rawHouse)],
+  ]);
+
+  /** Answer the pending request the way the dialog UI and transfer controller would. */
   const answer = (choice?: number) => {
     const interpreter = world.interpreter;
     const request = interpreter?.pending;
     if (!interpreter || !request) throw new Error('nothing to answer');
     if (request.type === 'choice') interpreter.choose(choice ?? 0);
-    else interpreter.continue();
+    else if (request.type === 'transfer') {
+      const target = maps.get(request.map);
+      if (!target) throw new Error(`unknown map ${request.map}`);
+      world.changeMap(target, world.tileset, request.x, request.y, request.direction ?? undefined);
+      interpreter.continue();
+    } else interpreter.continue();
     step();
   };
 
@@ -144,5 +155,38 @@ describe('demo quest', () => {
     tap('confirm');
     finish();
     expect(transcript).toEqual(['Elder: The bridge is east along the path.']);
+  });
+
+  it('goes into the house through the door and back out', () => {
+    const { world, transcript, walkTo, tap, finish } = play();
+    // The door is at (4, 4), up from the path at (4, 5).
+    walkTo('up', 7, 5);
+    walkTo('left', 4, 5);
+    walkTo('up', 4, 4);
+    finish();
+    expect(world.map.id).toBe('house');
+    expect([world.player.x, world.player.y, world.player.direction]).toEqual([4, 5, 'up']);
+
+    // Look at the hearth, then the map on the wall.
+    walkTo('right', 7, 5);
+    walkTo('up', 7, 2);
+    tap('confirm');
+    finish();
+    walkTo('left', 2, 2);
+    walkTo('up', 2, 1);
+    tap('confirm');
+    finish();
+    expect(transcript).toEqual([
+      'The hearth is cold.',
+      'A hand-drawn map of the Meadow. The bridge is circled twice.',
+    ]);
+
+    // Leave through the gap in the bottom wall.
+    walkTo('down', 2, 5);
+    walkTo('right', 4, 5);
+    walkTo('down', 4, 6);
+    finish();
+    expect(world.map.id).toBe('map001');
+    expect([world.player.x, world.player.y, world.player.direction]).toEqual([4, 5, 'down']);
   });
 });

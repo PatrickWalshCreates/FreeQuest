@@ -15,6 +15,10 @@
     {
       "id": "map001",
       "path": "data/maps/map001.json"
+    },
+    {
+      "id": "house",
+      "path": "data/maps/house.json"
     }
   ],
   "player": {

@@ -7,7 +7,9 @@ import {
   FormatVersionError,
   type Migration,
   ProjectFileError,
+  type ProjectData,
   checkMapShape,
+  checkReferences,
   migrate,
   parseProjectFile,
   stableStringify,
@@ -112,6 +114,28 @@ describe('demo project', () => {
   ] as const) {
     for (const f of readdirSync(join(DEMO, 'data', dir))) files.push([kind, `data/${dir}/${f}`]);
   }
+
+  it('has no broken references across all its files', () => {
+    const load = (dir: string) =>
+      readdirSync(join(DEMO, 'data', dir)).map((f) => join('data', dir, f));
+    const read = (path: string): unknown => JSON.parse(readFileSync(join(DEMO, path), 'utf8'));
+    const byId = <K extends FileKind>(kind: K, dir: string) =>
+      new Map(
+        load(dir).map((path) => {
+          const data = parseProjectFile(kind, read(path), path) as { id: string };
+          return [data.id, data] as const;
+        }),
+      );
+    const project = {
+      manifest: parseProjectFile('manifest', read('project.json')),
+      maps: byId('map', 'maps'),
+      tilesets: byId('tileset', 'tilesets'),
+      characters: byId('character', 'characters'),
+    } as unknown as ProjectData;
+    expect(checkReferences(project)).toEqual([]);
+    const listed = (refs: { path: string }[]) => refs.map((r) => r.path).sort();
+    expect(listed(project.manifest.maps)).toEqual(load('maps').sort());
+  });
 
   it.each(files)('%s %s is valid and in canonical form', (kind, path) => {
     const text = readFileSync(join(DEMO, path), 'utf8');
