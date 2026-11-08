@@ -76,6 +76,20 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   `cancel()`. Every new command that needs the outside world should be a request, not a callback.
   `World.run(commands)` starts the one blocking interpreter; while it runs the player finishes its
   current tile but takes no new steps. Parallel events will get their own interpreters later.
+- **Map events at runtime** (`EventInstance`): position, facing, active page. Pages are re-picked only
+  when `GameState.version` changes. Events with `layer: "same"` block movement
+  (`World.passability` = tiles + blocking events). A page change resets facing to the page graphic,
+  except for the event currently running (so an NPC doesn't turn away mid-conversation).
+- **Triggers** (all in `World.step`):
+  - `action`: confirm while idle → the blocking event ahead, else a non-blocking event underfoot. A
+    talked-to NPC with a graphic turns to face the player.
+  - `touch`: arriving on a non-blocking event (`MoveHooks.arrived`, fired inside `GridMover.update`
+    so chained steps can't skip it), or bumping into a blocking one. Not on the starting tile.
+  - `autorun`: first present autorun page runs whenever nothing else is. It must switch itself off
+    (e.g. set a switch its page conditions check) or it runs again forever, by design.
+  - `parallel`: not implemented yet (needs non-blocking interpreters).
+  - An event running at the start of a step owns that step's input: the confirm that closes the last
+    message never re-triggers. A newly triggered event runs to its first pause in the same step.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
   interface exists (`packages/core/src/plugin.ts`); not implemented yet.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
@@ -123,7 +137,7 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 - **M2 (in progress)** Event system. Steps:
   1. ~~Game state (switches/variables), event + command schema, map/manifest v2 migrations~~ (done)
   2. ~~Resumable command interpreter in core; message/choice/transfer are requests the runtime answers~~ (done)
-  3. NPCs: event sprites, event collision (`layer: same` blocks), action/touch triggers
+  3. ~~NPCs: event sprites, event collision, action/touch/autorun triggers~~ (done; parallel deferred)
   4. Message box + choice window in runtime (text: web font first, keep it swappable)
   5. Conditionals and switch/variable commands wired through the interpreter
   6. Map transfers: lazy map loading, fade, second demo map (house interior; turn the
@@ -137,6 +151,7 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
 
 ## Known gaps / notes for next milestones
 
+- **Stopgap:** `packages/runtime/src/console-requests.ts` auto-answers messages/choices (always option 0) and logs them to the console. Delete it when step 4 adds the message box and choice window.
 - The runtime loads every map listed in the manifest up front; switch to lazy loading with map transfers (M2).
 - Each tile is its own Sprite; fine for small maps, revisit (chunked render textures) for large ones.
 - Passability is a single boolean per tile; per-direction passability would be a format migration.

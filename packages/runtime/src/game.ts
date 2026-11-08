@@ -1,6 +1,8 @@
 import { ActionState, FixedTimestep, World, computeCamera } from '@freequest/core';
 import { Application, Container } from 'pixi.js';
-import { CharacterView } from './character-view.js';
+import { type CharacterGraphic, CharacterView } from './character-view.js';
+import { answerRequestsInConsole } from './console-requests.js';
+import { EventViews, depthFor } from './event-views.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, getOrThrow, loadProject } from './loader.js';
 import { createMapView } from './map-view.js';
@@ -28,11 +30,10 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const { manifest } = project;
   const map = getOrThrow(project.maps, manifest.start.map, 'map');
   const tileset = getOrThrow(project.tilesets, map.tileset, 'tileset');
-  const sheet = getOrThrow(project.characters, manifest.player.character, 'character');
 
-  const [tilesetTexture, heroTexture] = await Promise.all([
+  const [tilesetTexture, characterGraphics] = await Promise.all([
     loadPixelTexture(project.resolve(tileset.image)),
-    loadPixelTexture(project.resolve(sheet.image)),
+    loadCharacterGraphics(project),
   ]);
   const tileTextures = sliceGrid(
     tilesetTexture,
@@ -40,13 +41,6 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     tileset.tileHeight,
     tileset.columns,
     tileset.tiles.length,
-  );
-  const heroFrames = sliceGrid(
-    heroTexture,
-    sheet.frameWidth,
-    sheet.frameHeight,
-    sheet.frames,
-    sheet.frames * 4,
   );
 
   const world = new World({ manifest, map, tileset });
@@ -69,9 +63,12 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   options.parent.appendChild(canvas);
 
   const mapView = createMapView(map, tileset, tileTextures);
-  const player = new CharacterView(sheet, heroFrames);
-  const characters = new Container({ label: 'characters' });
+  const player = new CharacterView(
+    getOrThrow(characterGraphics, manifest.player.character, 'character'),
+  );
+  const characters = new Container({ label: 'characters', sortableChildren: true });
   characters.addChild(player.sprite);
+  const eventViews = new EventViews(world.events, characterGraphics, characters);
   const scene = new Container({ label: 'scene' });
   scene.addChild(mapView.below, characters, mapView.above);
   app.stage.addChild(scene);
@@ -97,6 +94,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const rx = prevX + (world.player.realX - prevX) * alpha;
     const ry = prevY + (world.player.realY - prevY) * alpha;
     player.update(world.player, rx, ry, tileWidth, tileHeight);
+    player.sprite.zIndex = depthFor(ry);
+    eventViews.update(tileWidth, tileHeight);
     const camera = computeCamera({
       focusX: (rx + 0.5) * tileWidth,
       focusY: (ry + 0.5) * tileHeight,
@@ -114,6 +113,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       prevY = world.player.realY;
       world.step(dt, input);
       input.endStep();
+      answerRequestsInConsole(world);
     });
     render(alpha);
   };
@@ -132,4 +132,24 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       app.destroy(true, { children: true });
     },
   };
+}
+
+/** Load and slice the image of every character sheet in the project. */
+async function loadCharacterGraphics(
+  project: LoadedProject,
+): Promise<Map<string, CharacterGraphic>> {
+  const entries = await Promise.all(
+    [...project.characters.values()].map(async (sheet) => {
+      const texture = await loadPixelTexture(project.resolve(sheet.image));
+      const frames = sliceGrid(
+        texture,
+        sheet.frameWidth,
+        sheet.frameHeight,
+        sheet.frames,
+        sheet.frames * sheet.rows.length,
+      );
+      return [sheet.id, { sheet, frames }] as const;
+    }),
+  );
+  return new Map(entries);
 }

@@ -8,6 +8,7 @@ import type { CompareOp, Condition, Manifest, Operand, VariableOp } from '@freeq
 export class GameState {
   private readonly switches = new Map<string, boolean>();
   private readonly variables = new Map<string, number>();
+  private changes = 0;
 
   /** Ids declared in the manifest. When set, unknown ids throw (catches typos at runtime). */
   private readonly declared: { switches: Set<string>; variables: Set<string> } | null;
@@ -33,6 +34,11 @@ export class GameState {
     }
   }
 
+  /** Increases on every write. Lets callers cheaply detect that state may have changed. */
+  get version(): number {
+    return this.changes;
+  }
+
   getSwitch(id: string): boolean {
     this.checkSwitch(id);
     return this.switches.get(id) ?? false;
@@ -41,6 +47,7 @@ export class GameState {
   setSwitch(id: string, value: boolean): void {
     this.checkSwitch(id);
     this.switches.set(id, value);
+    this.changes++;
   }
 
   getVariable(id: string): number {
@@ -54,6 +61,7 @@ export class GameState {
       throw new Error(`variable "${id}": ${value} is not an integer`);
     }
     this.variables.set(id, value);
+    this.changes++;
   }
 
   /** Apply `variable <op>= operand`. Division truncates toward zero; division by zero leaves the value unchanged. */

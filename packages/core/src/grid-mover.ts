@@ -1,6 +1,14 @@
 import type { Passability } from './collision.js';
 import { DIRECTION_DELTA, type Direction } from './direction.js';
 
+/** Notifications from movement, used to fire touch triggers at the right moment. */
+export interface MoveHooks {
+  /** Finished a step onto (x, y). Called before the next step can start. */
+  arrived?(x: number, y: number): void;
+  /** Tried to step onto (x, y) but it was impassable. */
+  bumped?(x: number, y: number): void;
+}
+
 export interface GridMoverOptions {
   x: number;
   y: number;
@@ -57,11 +65,14 @@ export class GridMover {
    * Turn to face `direction` and, if the next tile is passable, start moving
    * into it. Returns true if a step started. Ignored while already moving.
    */
-  tryStep(direction: Direction, passability: Passability): boolean {
+  tryStep(direction: Direction, passability: Passability, hooks?: MoveHooks): boolean {
     if (this.isMoving) return false;
     this.direction = direction;
     const { dx, dy } = DIRECTION_DELTA[direction];
-    if (!passability.isPassable(this.x + dx, this.y + dy)) return false;
+    if (!passability.isPassable(this.x + dx, this.y + dy)) {
+      hooks?.bumped?.(this.x + dx, this.y + dy);
+      return false;
+    }
     this.fromX = this.x;
     this.fromY = this.y;
     this.x += dx;
@@ -75,12 +86,17 @@ export class GridMover {
    * mover is (or becomes) idle, so holding a direction walks continuously
    * without a pause between tiles.
    */
-  update(dt: number, passability: Passability, nextDirection: () => Direction | null): void {
+  update(
+    dt: number,
+    passability: Passability,
+    nextDirection: () => Direction | null,
+    hooks?: MoveHooks,
+  ): void {
     let budget = dt * this.speed; // tiles of travel available this step
     for (;;) {
       if (!this.isMoving) {
         const dir = nextDirection();
-        if (dir === null || !this.tryStep(dir, passability)) return;
+        if (dir === null || !this.tryStep(dir, passability, hooks)) return;
       }
       const remaining = 1 - this.progress;
       if (budget < remaining) {
@@ -93,6 +109,7 @@ export class GridMover {
       this.progress = 1;
       this.fromX = this.x;
       this.fromY = this.y;
+      hooks?.arrived?.(this.x, this.y);
       if (budget <= 0) return;
     }
   }

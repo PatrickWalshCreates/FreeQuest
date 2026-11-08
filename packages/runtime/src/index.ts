@@ -3,4 +3,5 @@ export * from './loader.js';
 export * from './keyboard.js';
 export * from './map-view.js';
 export * from './character-view.js';
+export * from './event-views.js';
 export * from './textures.js';
