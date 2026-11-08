@@ -1,4 +1,5 @@
 import type { CharacterSheet } from '../character.js';
+import { checkFormula } from '../formula.js';
 import type { DatabaseKind, Manifest } from '../manifest.js';
 import type { FileData } from '../validate.js';
 import type {
@@ -74,7 +75,8 @@ export const ATTACK_ELEMENT = 'attack';
 /**
  * Check the database for duplicate ids and broken references between its
  * categories, the manifest's starting party, and character sheets.
- * `checkFormula` (optional) validates formula strings.
+ * Formulas are validated with `checkFormula` (against the manifest's
+ * variables when a manifest is given); pass `checkFormula` to override.
  */
 export function checkDatabase(
   db: Database,
@@ -85,6 +87,11 @@ export function checkDatabase(
   } = {},
 ): string[] {
   const problems: string[] = [];
+  const variables = context.manifest
+    ? new Set(context.manifest.variables.map((v) => v.id))
+    : undefined;
+  const formulaProblem =
+    context.checkFormula ?? ((formula: string) => checkFormula(formula, variables));
   const ids = (list: readonly { id: string }[], where: string): Set<string> => {
     const seen = new Set<string>();
     for (const { id } of list) {
@@ -124,7 +131,7 @@ export function checkDatabase(
     effects.forEach((e, i) => {
       const at = `${where} effects[${i}]`;
       if (e.type === 'damage' || e.type === 'recover') {
-        const error = context.checkFormula?.(e.formula);
+        const error = formulaProblem(e.formula);
         if (error) problems.push(`${at}: formula "${e.formula}": ${error}`);
       }
       if (e.type === 'damage' && e.element !== undefined && e.element !== ATTACK_ELEMENT) {
