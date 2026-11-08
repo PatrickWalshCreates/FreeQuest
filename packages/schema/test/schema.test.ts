@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  CURRENT_FORMAT_VERSION,
   type FileKind,
   FormatVersionError,
   type Migration,
@@ -13,6 +14,7 @@ import {
 } from '../src/index.js';
 
 const DEMO = join(import.meta.dirname, '..', '..', '..', 'samples', 'demo-project');
+const FIXTURES = join(import.meta.dirname, 'fixtures');
 
 describe('stableStringify', () => {
   it('orders formatVersion, id, name first and the rest alphabetically', () => {
@@ -20,6 +22,16 @@ describe('stableStringify', () => {
     expect(out).toBe(
       '{\n  "formatVersion": 1,\n  "id": "x",\n  "name": "n",\n  "alpha": 2,\n  "zeta": 1\n}\n',
     );
+  });
+
+  it('puts large nested blocks last', () => {
+    const out = stableStringify({ commands: [], trigger: 'action', conditions: [], label: 'x' });
+    expect(Object.keys(JSON.parse(out) as object)).toEqual([
+      'label',
+      'conditions',
+      'trigger',
+      'commands',
+    ]);
   });
 
   it('keeps primitive arrays on one line and nests others', () => {
@@ -41,8 +53,17 @@ describe('stableStringify', () => {
 
 describe('migrate', () => {
   it('passes current-version data through', () => {
-    const data = { formatVersion: 1, x: 1 };
+    const data = { formatVersion: CURRENT_FORMAT_VERSION.map, x: 1 };
     expect(migrate('map', data)).toBe(data);
+  });
+
+  it.each([
+    ['manifest', 'project.json'],
+    ['map', 'map001.json'],
+  ] as const)('upgrades a v1 %s (%s) to the current format', (kind, file) => {
+    const raw: unknown = JSON.parse(readFileSync(join(FIXTURES, 'v1', file), 'utf8'));
+    const data = parseProjectFile(kind, raw, file);
+    expect(data.formatVersion).toBe(CURRENT_FORMAT_VERSION[kind]);
   });
 
   it('rejects missing or future versions', () => {

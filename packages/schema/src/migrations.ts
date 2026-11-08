@@ -23,9 +23,15 @@ export interface Migration {
  * entry here (and a test with a fixture of the old format) in the same change.
  */
 export const MIGRATIONS: Record<FileKind, Migration[]> = {
-  manifest: [],
+  manifest: [
+    // v2: switch and variable declarations.
+    { from: 1, migrate: (d) => ({ ...d, switches: [], variables: [] }) },
+  ],
   tileset: [],
-  map: [],
+  map: [
+    // v2: events.
+    { from: 1, migrate: (d) => ({ ...d, events: [] }) },
+  ],
   character: [],
 };
 

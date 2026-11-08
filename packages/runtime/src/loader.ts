@@ -6,13 +6,15 @@ import {
   type GameMap,
   type Manifest,
   ProjectFileError,
+  type ProjectData,
   type Tileset,
   checkMapShape,
+  checkReferences,
   parseProjectFile,
 } from '@freequest/schema';
 
 /** A project with all data files fetched, migrated and validated. Images are not loaded yet. */
-export interface LoadedProject {
+export interface LoadedProject extends ProjectData {
   /** URL of the project folder (ends with "/"). */
   readonly baseUrl: URL;
   readonly manifest: Manifest;
@@ -74,19 +76,11 @@ export async function loadProject(projectUrl: string | URL): Promise<LoadedProje
   ]);
 
   for (const ref of manifest.maps) {
-    const map = getOrThrow(maps, ref.id, 'map');
-    const problems = checkMapShape(map);
-    if (!tilesets.has(map.tileset)) problems.push(`unknown tileset "${map.tileset}"`);
+    const problems = checkMapShape(getOrThrow(maps, ref.id, 'map'));
     if (problems.length > 0) throw new ProjectFileError(ref.path, problems);
   }
-  if (!maps.has(manifest.start.map)) {
-    throw new ProjectFileError('project.json', [`start map "${manifest.start.map}" is not listed`]);
-  }
-  if (!characters.has(manifest.player.character)) {
-    throw new ProjectFileError('project.json', [
-      `player character "${manifest.player.character}" is not listed`,
-    ]);
-  }
+  const problems = checkReferences({ manifest, tilesets, maps, characters });
+  if (problems.length > 0) throw new ProjectFileError('project', problems);
 
   return {
     baseUrl,

@@ -1,7 +1,17 @@
 import Type, { type Static } from 'typebox';
 import { Direction, FileRef, Id, NonNegativeInt, PositiveInt } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 1;
+export const MANIFEST_FORMAT_VERSION = 2;
+
+/** Declares a switch or variable so it can be referenced by id and named in editors. */
+export const FlagDeclaration = Type.Object(
+  {
+    id: Id,
+    name: Type.String(),
+  },
+  { additionalProperties: false },
+);
+export type FlagDeclaration = Static<typeof FlagDeclaration>;
 
 /** `project.json`: the entry point of every FreeQuest project. */
 export const Manifest = Type.Object(
@@ -37,6 +47,8 @@ export const Manifest = Type.Object(
     tilesets: Type.Array(FileRef),
     maps: Type.Array(FileRef),
     characters: Type.Array(FileRef),
+    switches: Type.Array(FlagDeclaration, { description: 'Named on/off flags.' }),
+    variables: Type.Array(FlagDeclaration, { description: 'Named integer values.' }),
   },
   { title: 'FreeQuest project manifest', additionalProperties: false },
 );

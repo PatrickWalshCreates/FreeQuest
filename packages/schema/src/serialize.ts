@@ -1,13 +1,28 @@
-/** Keys that always come first, in this order. Everything else is sorted alphabetically. */
-const LEADING_KEYS = ['formatVersion', 'id', 'name'];
+/** Keys that always come first, in this order: what a thing is. */
+const LEADING_KEYS = ['formatVersion', 'id', 'type', 'name', 'label'];
+/** Keys that always come last, in this order: large nested blocks, so the small fields stay visible. */
+const TRAILING_KEYS = [
+  'tiles',
+  'layers',
+  'events',
+  'pages',
+  'options',
+  'commands',
+  'then',
+  'else',
+  'data',
+];
+
+/** Leading keys rank below 0, trailing keys above 0, everything else 0 (then alphabetical). */
+function rank(key: string): number {
+  const lead = LEADING_KEYS.indexOf(key);
+  if (lead !== -1) return lead - LEADING_KEYS.length;
+  const trail = TRAILING_KEYS.indexOf(key);
+  return trail === -1 ? 0 : trail + 1;
+}
 
 function compareKeys(a: string, b: string): number {
-  const ia = LEADING_KEYS.indexOf(a);
-  const ib = LEADING_KEYS.indexOf(b);
-  if (ia !== -1 || ib !== -1) {
-    return (ia === -1 ? Infinity : ia) - (ib === -1 ? Infinity : ib);
-  }
-  return a < b ? -1 : a > b ? 1 : 0;
+  return rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0);
 }
 
 function isPrimitive(value: unknown): boolean {
@@ -42,7 +57,8 @@ function write(value: unknown, indent: string): string {
 }
 
 /**
- * Serialize project data deterministically: fixed key order, two-space indent,
+ * Serialize project data deterministically: fixed key order (leading keys,
+ * then alphabetical, then trailing blocks), two-space indent,
  * primitive arrays inline, trailing newline. Every tool that writes project
  * files must use this so diffs stay clean.
  */

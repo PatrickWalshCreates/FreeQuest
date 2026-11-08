@@ -1,76 +1,76 @@
 {
+  "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
     "formatVersion": {
-      "const": 1,
-      "type": "number"
+      "type": "number",
+      "const": 1
     },
     "id": {
+      "type": "string",
       "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-      "pattern": "^[a-z0-9][a-z0-9_-]*$",
-      "type": "string"
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "name": {
       "type": "string"
     },
     "frameHeight": {
-      "minimum": 1,
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "frameWidth": {
-      "minimum": 1,
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "frames": {
-      "minimum": 1,
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "idleFrame": {
-      "minimum": 0,
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0
     },
     "image": {
+      "type": "string",
       "description": "Path relative to the project root, using \"/\" separators.",
-      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
-      "type": "string"
+      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
     },
     "rows": {
+      "type": "array",
       "items": {
         "anyOf": [
           {
-            "const": "down",
-            "type": "string"
+            "type": "string",
+            "const": "down"
           },
           {
-            "const": "left",
-            "type": "string"
+            "type": "string",
+            "const": "left"
           },
           {
-            "const": "right",
-            "type": "string"
+            "type": "string",
+            "const": "right"
           },
           {
-            "const": "up",
-            "type": "string"
+            "type": "string",
+            "const": "up"
           }
         ]
       },
       "maxItems": 4,
       "minItems": 4,
-      "type": "array",
       "uniqueItems": true
     },
     "walkCycle": {
+      "type": "array",
       "items": {
-        "minimum": 0,
-        "type": "integer"
+        "type": "integer",
+        "minimum": 0
       },
-      "minItems": 1,
-      "type": "array"
+      "minItems": 1
     }
   },
   "required": ["formatVersion", "id", "name", "image", "frameWidth", "frameHeight", "frames", "rows", "idleFrame", "walkCycle"],
-  "title": "FreeQuest character sheet",
-  "type": "object"
+  "title": "FreeQuest character sheet"
 }

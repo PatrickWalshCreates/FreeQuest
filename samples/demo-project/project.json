@@ -1,10 +1,14 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "name": "FreeQuest Demo",
   "characters": [
     {
       "id": "hero",
       "path": "data/characters/hero.json"
+    },
+    {
+      "id": "villager",
+      "path": "data/characters/villager.json"
     }
   ],
   "maps": [
@@ -27,10 +31,22 @@
     "x": 7,
     "y": 7
   },
+  "switches": [
+    {
+      "id": "accepted_request",
+      "name": "Accepted the elder's request"
+    }
+  ],
   "tilesets": [
     {
       "id": "overworld",
       "path": "data/tilesets/overworld.json"
+    }
+  ],
+  "variables": [
+    {
+      "id": "bridge_visits",
+      "name": "Times the bridge was crossed"
     }
   ]
 }

@@ -1,151 +1,189 @@
 {
+  "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
     "formatVersion": {
-      "const": 1,
-      "type": "number"
+      "type": "number",
+      "const": 2
     },
     "name": {
-      "minLength": 1,
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "characters": {
+      "type": "array",
       "items": {
+        "type": "object",
         "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-            "pattern": "^[a-z0-9][a-z0-9_-]*$",
-            "type": "string"
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
           },
           "path": {
+            "type": "string",
             "description": "Path relative to the project root, using \"/\" separators.",
-            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
-            "type": "string"
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
           }
         },
-        "required": ["id", "path"],
-        "type": "object"
-      },
-      "type": "array"
+        "required": ["id", "path"]
+      }
     },
     "maps": {
+      "type": "array",
       "items": {
+        "type": "object",
         "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-            "pattern": "^[a-z0-9][a-z0-9_-]*$",
-            "type": "string"
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
           },
           "path": {
+            "type": "string",
             "description": "Path relative to the project root, using \"/\" separators.",
-            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
-            "type": "string"
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
           }
         },
-        "required": ["id", "path"],
-        "type": "object"
-      },
-      "type": "array"
+        "required": ["id", "path"]
+      }
     },
     "player": {
+      "type": "object",
       "additionalProperties": false,
       "properties": {
         "character": {
+          "type": "string",
           "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-          "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "type": "string"
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
         "speed": {
+          "type": "number",
           "description": "Walking speed in tiles per second.",
-          "exclusiveMinimum": 0,
-          "type": "number"
+          "exclusiveMinimum": 0
         }
       },
-      "required": ["character", "speed"],
-      "type": "object"
+      "required": ["character", "speed"]
     },
     "screen": {
+      "type": "object",
       "additionalProperties": false,
       "description": "Internal render resolution in pixels.",
       "properties": {
         "height": {
-          "minimum": 1,
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "width": {
-          "minimum": 1,
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         }
       },
-      "required": ["width", "height"],
-      "type": "object"
+      "required": ["width", "height"]
     },
     "start": {
+      "type": "object",
       "additionalProperties": false,
       "description": "Where the player appears on a new game.",
       "properties": {
         "direction": {
           "anyOf": [
             {
-              "const": "down",
-              "type": "string"
+              "type": "string",
+              "const": "down"
             },
             {
-              "const": "left",
-              "type": "string"
+              "type": "string",
+              "const": "left"
             },
             {
-              "const": "right",
-              "type": "string"
+              "type": "string",
+              "const": "right"
             },
             {
-              "const": "up",
-              "type": "string"
+              "type": "string",
+              "const": "up"
             }
           ]
         },
         "map": {
+          "type": "string",
           "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-          "pattern": "^[a-z0-9][a-z0-9_-]*$",
-          "type": "string"
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
         "x": {
-          "minimum": 0,
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "y": {
-          "minimum": 0,
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       },
-      "required": ["map", "x", "y", "direction"],
-      "type": "object"
+      "required": ["map", "x", "y", "direction"]
     },
-    "tilesets": {
+    "switches": {
+      "type": "array",
+      "description": "Named on/off flags.",
       "items": {
+        "type": "object",
         "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
-            "pattern": "^[a-z0-9][a-z0-9_-]*$",
-            "type": "string"
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
           },
-          "path": {
-            "description": "Path relative to the project root, using \"/\" separators.",
-            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$",
+          "name": {
             "type": "string"
           }
         },
-        "required": ["id", "path"],
-        "type": "object"
-      },
-      "type": "array"
+        "required": ["id", "name"]
+      }
+    },
+    "tilesets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to the project root, using \"/\" separators.",
+            "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+          }
+        },
+        "required": ["id", "path"]
+      }
+    },
+    "variables": {
+      "type": "array",
+      "description": "Named integer values.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      }
     }
   },
-  "required": ["formatVersion", "name", "screen", "start", "player", "tilesets", "maps", "characters"],
-  "title": "FreeQuest project manifest",
-  "type": "object"
+  "required": ["formatVersion", "name", "screen", "start", "player", "tilesets", "maps", "characters", "switches", "variables"],
+  "title": "FreeQuest project manifest"
 }

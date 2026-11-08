@@ -1,7 +1,8 @@
 import Type, { type Static } from 'typebox';
 import { Id, PositiveInt } from './common.js';
+import { MapEvent } from './event.js';
 
-export const MAP_FORMAT_VERSION = 1;
+export const MAP_FORMAT_VERSION = 2;
 
 /** Tile index meaning "no tile in this cell". */
 export const EMPTY_TILE = -1;
@@ -30,6 +31,7 @@ export const GameMap = Type.Object(
     height: PositiveInt,
     tileset: Id,
     layers: Type.Array(MapLayer, { minItems: 1 }),
+    events: Type.Array(MapEvent),
   },
   { title: 'FreeQuest map', additionalProperties: false },
 );

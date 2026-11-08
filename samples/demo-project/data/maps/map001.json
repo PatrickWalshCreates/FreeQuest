@@ -1,8 +1,10 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "id": "map001",
   "name": "Meadow",
   "height": 15,
+  "tileset": "overworld",
+  "width": 20,
   "layers": [
     {
       "name": "ground",
@@ -45,6 +47,189 @@
       ]
     }
   ],
-  "tileset": "overworld",
-  "width": 20
+  "events": [
+    {
+      "id": "sign",
+      "name": "Meadow sign",
+      "x": 6,
+      "y": 9,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "Welcome to the Meadow. The elder waits by the path."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elder",
+      "name": "Elder",
+      "x": 12,
+      "y": 8,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Elder",
+              "text": "Ah, a traveler! Would you check on the old bridge to the east?"
+            },
+            {
+              "type": "choice",
+              "cancel": 1,
+              "options": [
+                {
+                  "label": "Sure",
+                  "commands": [
+                    {
+                      "type": "setSwitch",
+                      "switch": "accepted_request",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Thank you. Follow the path east."
+                    }
+                  ]
+                },
+                {
+                  "label": "Not now",
+                  "commands": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Come back if you change your mind."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "accepted_request",
+              "value": true
+            }
+          ],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "if",
+              "conditions": [
+                {
+                  "type": "variable",
+                  "op": ">=",
+                  "value": 1,
+                  "variable": "bridge_visits"
+                }
+              ],
+              "then": [
+                {
+                  "type": "message",
+                  "speaker": "Elder",
+                  "text": "You saw the bridge? Good, it still stands."
+                }
+              ],
+              "else": [
+                {
+                  "type": "message",
+                  "speaker": "Elder",
+                  "text": "The bridge is east along the path."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Bridge check",
+      "x": 15,
+      "y": 5,
+      "pages": [
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "accepted_request",
+              "value": true
+            }
+          ],
+          "layer": "below",
+          "trigger": "touch",
+          "commands": [
+            {
+              "type": "setVariable",
+              "op": "add",
+              "value": 1,
+              "variable": "bridge_visits"
+            },
+            {
+              "type": "if",
+              "conditions": [
+                {
+                  "type": "variable",
+                  "op": "==",
+                  "value": 1,
+                  "variable": "bridge_visits"
+                }
+              ],
+              "then": [
+                {
+                  "type": "message",
+                  "text": "The planks creak, but the bridge holds."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "house-door",
+      "name": "House door",
+      "x": 4,
+      "y": 4,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "below",
+          "trigger": "touch",
+          "commands": [
+            {
+              "type": "comment",
+              "text": "Becomes a transfer once the house interior map exists."
+            },
+            {
+              "type": "message",
+              "text": "The door is locked."
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

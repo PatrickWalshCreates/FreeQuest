@@ -1,5 +1,6 @@
 import type { GameMap, Manifest, Tileset } from '@freequest/schema';
 import { CollisionMap } from './collision.js';
+import { GameState } from './game-state.js';
 import { GridMover } from './grid-mover.js';
 import type { InputState } from './input.js';
 
@@ -7,6 +8,8 @@ export interface WorldOptions {
   manifest: Manifest;
   map: GameMap;
   tileset: Tileset;
+  /** Shared across maps. Defaults to a fresh state for the manifest. */
+  state?: GameState;
 }
 
 /** The live game state for one map. Advanced only through `step`. */
@@ -15,13 +18,15 @@ export class World {
   readonly tileset: Tileset;
   readonly collision: CollisionMap;
   readonly player: GridMover;
+  readonly state: GameState;
 
-  constructor({ manifest, map, tileset }: WorldOptions) {
+  constructor({ manifest, map, tileset, state }: WorldOptions) {
     if (map.tileset !== tileset.id) {
       throw new Error(`map "${map.id}" uses tileset "${map.tileset}", got "${tileset.id}"`);
     }
     this.map = map;
     this.tileset = tileset;
+    this.state = state ?? new GameState(manifest);
     this.collision = CollisionMap.fromMap(map, tileset);
     const { start } = manifest;
     if (!this.collision.inBounds(start.x, start.y)) {

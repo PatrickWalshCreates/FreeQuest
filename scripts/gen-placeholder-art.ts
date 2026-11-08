@@ -1,6 +1,6 @@
 // Generates FreeQuest's original placeholder art for the demo project:
 //   assets/tilesets/overworld.png  4x4 grid of 32px tiles
-//   assets/characters/hero.png     3 frames x 4 directions, 32px frames
+//   assets/characters/<name>.png   3 frames x 4 directions, 32px frames
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -177,13 +177,32 @@ function drawTileset(): void {
 
 const ROWS = ['down', 'left', 'right', 'up'] as const;
 
-function drawHero(): void {
+interface CharacterPalette {
+  skin: string;
+  hair: string;
+  tunic: string;
+  belt: string;
+  legs: string;
+}
+
+const CHARACTERS: Record<string, CharacterPalette> = {
+  hero: { skin: '#f0c8a0', hair: '#3b2a1e', tunic: '#2f6fb5', belt: '#7a4a1e', legs: '#3a3a4a' },
+  villager: {
+    skin: '#e0b088',
+    hair: '#d8d8d8',
+    tunic: '#5e8c3a',
+    belt: '#4a3520',
+    legs: '#5a4a3a',
+  },
+};
+
+function drawCharacter(file: string, palette: CharacterPalette): void {
   const c = new Canvas(T * 3, T * 4);
-  const skin = hex('#f0c8a0');
-  const hair = hex('#3b2a1e');
-  const tunic = hex('#2f6fb5');
-  const belt = hex('#7a4a1e');
-  const legs = hex('#3a3a4a');
+  const skin = hex(palette.skin);
+  const hair = hex(palette.hair);
+  const tunic = hex(palette.tunic);
+  const belt = hex(palette.belt);
+  const legs = hex(palette.legs);
   const eye = hex('#1a1a1a');
 
   ROWS.forEach((dir, row) => {
@@ -226,8 +245,8 @@ function drawHero(): void {
       }
     }
   });
-  c.save(join(ROOT, 'assets', 'characters', 'hero.png'));
+  c.save(join(ROOT, 'assets', 'characters', `${file}.png`));
 }
 
 drawTileset();
-drawHero();
+for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);

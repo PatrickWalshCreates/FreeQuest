@@ -1,6 +1,7 @@
 import type { Static, TSchema } from 'typebox';
 import Value from 'typebox/value';
 import { CharacterSheet } from './character.js';
+import { walkCommands } from './command.js';
 import { Manifest } from './manifest.js';
 import { GameMap } from './map.js';
 import { type FileKind, migrate } from './migrations.js';
@@ -59,6 +60,26 @@ export function checkMapShape(map: GameMap): string[] {
         problems.push(`layers[${i}] row ${y} has ${row.length} tiles, expected ${map.width}`);
       }
     });
+  });
+  const seen = new Set<string>();
+  map.events.forEach((event, i) => {
+    const where = `events[${i}] "${event.id}"`;
+    if (seen.has(event.id)) problems.push(`${where}: duplicate event id`);
+    seen.add(event.id);
+    if (event.x >= map.width || event.y >= map.height) {
+      problems.push(`${where}: position (${event.x}, ${event.y}) is outside the map`);
+    }
+    event.pages.forEach((page, p) =>
+      walkCommands(page.commands, (command, path) => {
+        if (command.type === 'choice' && command.cancel !== undefined) {
+          if (command.cancel >= command.options.length) {
+            problems.push(
+              `${where} pages[${p}].${path}: cancel index ${command.cancel} has no option`,
+            );
+          }
+        }
+      }),
+    );
   });
   return problems;
 }
