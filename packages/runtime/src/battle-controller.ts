@@ -6,6 +6,7 @@ import {
   type Battle,
   type BattleEvent,
   type BattleOutcome,
+  type BattlePhase,
   type Battler,
   type DatabaseIndex,
   type InputState,
@@ -102,6 +103,11 @@ export class BattleController {
       event: line?.event ?? null,
       outcome: this.finalOutcome,
     };
+  }
+
+  /** The underlying battle's phase (e.g. 'won' while the victory lines play). */
+  get battlePhase(): BattlePhase {
+    return this.battle.phase;
   }
 
   /** The battle's result once everything has been shown, else null. */

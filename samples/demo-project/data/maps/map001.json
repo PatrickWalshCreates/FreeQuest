@@ -1,5 +1,5 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "id": "map001",
   "name": "Meadow",
   "encounters": {
@@ -20,6 +20,7 @@
     ]
   },
   "height": 15,
+  "music": "assets/audio/meadow.wav",
   "tileset": "overworld",
   "width": 20,
   "layers": [

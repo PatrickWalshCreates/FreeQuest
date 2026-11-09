@@ -169,3 +169,48 @@ describe('demo project', () => {
     if (kind === 'map') expect(checkMapShape(data as never)).toEqual([]);
   });
 });
+
+describe('demo assets', () => {
+  it('every image and audio file a project file references exists', () => {
+    const read = (path: string): unknown => JSON.parse(readFileSync(join(DEMO, path), 'utf8'));
+    const files = [
+      'project.json',
+      ...['maps', 'tilesets', 'characters', 'database'].flatMap((dir) =>
+        readdirSync(join(DEMO, 'data', dir)).map((f) => `data/${dir}/${f}`),
+      ),
+    ];
+    // Asset references are the string values under these keys (and every playSound/playMusic path).
+    const ASSET_KEYS = new Set([
+      'image',
+      'music',
+      'path',
+      'titleMusic',
+      'battleMusic',
+      'victoryMusic',
+      'gameOverMusic',
+    ]);
+    const found: string[] = [];
+    const visit = (value: unknown, key: string | null, parentKey: string | null): void => {
+      if (typeof value === 'string') {
+        if ((key && ASSET_KEYS.has(key) && value.startsWith('assets/')) || parentKey === 'sounds') {
+          found.push(value);
+        }
+      } else if (Array.isArray(value)) {
+        for (const v of value) visit(v, key, parentKey);
+      } else if (value && typeof value === 'object') {
+        for (const [k, v] of Object.entries(value)) visit(v, k, key);
+      }
+    };
+    for (const file of files) visit(read(file), null, null);
+    expect(found.length).toBeGreaterThan(20);
+    const missing = found.filter((path) => {
+      try {
+        readFileSync(join(DEMO, path));
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    expect(missing).toEqual([]);
+  });
+});

@@ -1,8 +1,9 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "id": "house",
   "name": "Elder's house",
   "height": 7,
+  "music": "assets/audio/house.wav",
   "tileset": "overworld",
   "width": 10,
   "layers": [
@@ -85,6 +86,10 @@
                 {
                   "type": "message",
                   "text": "The fire crackles. You rest a while by the warmth."
+                },
+                {
+                  "type": "playSound",
+                  "path": "assets/audio/sfx-heal.wav"
                 },
                 {
                   "type": "recoverAll"

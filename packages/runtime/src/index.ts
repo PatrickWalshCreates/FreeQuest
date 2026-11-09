@@ -19,4 +19,6 @@ export * from './menu-view.js';
 export * from './title-controller.js';
 export * from './title-view.js';
 export * from './list-window.js';
+export * from './audio-director.js';
+export * from './audio-player.js';
 export * from './textures.js';

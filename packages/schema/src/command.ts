@@ -1,5 +1,5 @@
 import Type, { type Static } from 'typebox';
-import { Direction, Id, NonNegativeInt } from './common.js';
+import { Direction, Id, NonNegativeInt, RelativePath } from './common.js';
 import { Condition } from './condition.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
@@ -151,6 +151,18 @@ export const Command = Type.Cyclic(
           onLose: Type.Optional(CommandList),
         },
         { additionalProperties: false, description: 'Fight a troop, then branch on the outcome.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('playMusic'),
+          /** null stops the music. The map's own music returns on the next map change. */
+          path: Type.Union([RelativePath, Type.Null()]),
+        },
+        { additionalProperties: false },
+      ),
+      Type.Object(
+        { type: Type.Literal('playSound'), path: RelativePath },
+        { additionalProperties: false },
       ),
       Type.Object(
         {

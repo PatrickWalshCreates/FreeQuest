@@ -50,11 +50,17 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 2, migrate: (d) => d },
     // v4: random encounters and the battle command. Additive.
     { from: 3, migrate: (d) => d },
+    // v5: map music and the playMusic/playSound commands. Additive.
+    { from: 4, migrate: (d) => d },
   ],
   character: [],
-  // Database v2: combat modifiers, troops, attack/guard skills. Additive.
+  // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
+  // Both additive.
   ...(Object.fromEntries(
-    DATABASE_KINDS.map((k) => [k, [{ from: 1, migrate: (d: Record<string, unknown>) => d }]]),
+    DATABASE_KINDS.map((k) => [
+      k,
+      [1, 2].map((from) => ({ from, migrate: (d: Record<string, unknown>) => d })),
+    ]),
   ) as Record<DatabaseKind, Migration[]>),
 };
 

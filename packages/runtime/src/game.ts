@@ -1,8 +1,10 @@
 import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from '@freequest/core';
-import type { SaveFile, Tileset } from '@freequest/schema';
+import type { SaveFile, SoundKey, Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
 import { BattleView } from './battle-view.js';
+import { type MenuLike, type MusicScene, musicFor, uiSoundFor } from './audio-director.js';
+import { AudioPlayer } from './audio-player.js';
 import { MenuController } from './menu-controller.js';
 import { MenuView } from './menu-view.js';
 import { type KeyValueStorage, MemoryStorage, SaveStore } from './save-store.js';
@@ -184,6 +186,66 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     ? createDebugPanel(options.parent, () => world, manifest)
     : () => undefined;
 
+  // Audio ------------------------------------------------------------------
+  const audio = new AudioPlayer((path) => project.resolve(path));
+  const unlockAudio = () => audio.unlock();
+  window.addEventListener('keydown', unlockAudio);
+  const sfx = (key: SoundKey | null) => {
+    const path = key && db.system.audio?.sounds?.[key];
+    if (path) audio.playSound(path);
+  };
+  let lastBattleEvent: unknown = null;
+  let hadBattle = false;
+
+  /** The list the player is moving through this step, for interface sounds. */
+  const activeMenu = (): MenuLike | null => {
+    if (mode === 'title') return title.state;
+    if (menu) return menu.state;
+    const controller = battles.controller;
+    if (controller) {
+      const state = controller.state;
+      if (state.menu) return state.menu;
+      // Target selection: treat as a list of valid choices.
+      if (state.target)
+        return {
+          options: [
+            { label: '', enabled: true },
+            { label: '', enabled: true },
+          ],
+          cursor: 0,
+        };
+      return null;
+    }
+    const choice = dialog.choice;
+    return choice
+      ? {
+          options: choice.options.map((label) => ({ label, enabled: true })),
+          cursor: choice.cursor,
+        }
+      : null;
+  };
+
+  const musicScene = (): MusicScene => {
+    if (mode !== 'playing') return 'title';
+    if (battles.isGameOver) return 'gameOver';
+    const controller = battles.controller;
+    if (controller) return controller.battlePhase === 'won' ? 'victory' : 'battle';
+    return 'map';
+  };
+
+  /** Battle sounds: a sting when a battle opens, hits and heals as the log plays. */
+  const battleSounds = () => {
+    const controller = battles.controller;
+    if (controller && !hadBattle) sfx('battleStart');
+    hadBattle = controller !== null;
+    const event = controller?.state.event ?? null;
+    if (event === lastBattleEvent) return;
+    lastBattleEvent = event;
+    if (event?.type !== 'hit' || event.result.missed) return;
+    if (event.result.hpDamage > 0) sfx('damage');
+    else if (event.result.hpDamage < 0) sfx('heal');
+  };
+
   // Title screen, menu and saves ---------------------------------------------
   const saves = new SaveStore(options.saveStorage ?? defaultStorage(), manifest.name);
   const title = new TitleController(manifest.name, saves);
@@ -251,6 +313,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       saves,
       game: manifest.name,
       playSeconds: () => playSeconds,
+      onSaved: () => sfx('save'),
     });
     menuView = new MenuView(() => world, width, height, theme);
     app.stage.addChildAt(menuView.container, app.stage.getChildIndex(titleView.container));
@@ -292,6 +355,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
+      // Judged on the state before this step's input is handled.
+      sfx(uiSoundFor(input, activeMenu()));
       if (mode === 'title') {
         title.update(input);
         const choice = title.choice;
@@ -321,6 +386,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         }
       }
       input.endStep();
+      for (const path of world.drainSounds()) audio.playSound(path);
       elapsed += dt;
     });
     if (mode === 'title' || mode === 'loading') {
@@ -333,6 +399,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const controller = battles.controller;
     if (battleView && controller) battleView.render(controller.state, elapsed);
     fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
+    battleSounds();
+    audio.setMusic(musicFor(musicScene(), db.system.audio, world.music));
   };
   render(1);
   app.ticker.add(tick);
@@ -347,6 +415,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     destroy() {
       app.ticker.remove(tick);
       unbindKeyboard();
+      window.removeEventListener('keydown', unlockAudio);
+      audio.destroy();
       removeDebugPanel();
       resizeObserver.disconnect();
       app.destroy(true, { children: true });

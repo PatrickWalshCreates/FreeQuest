@@ -11,7 +11,7 @@ import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
 import { DIRECTION_DELTA, type Direction } from './direction.js';
 import { EventInstance } from './events.js';
-import { type EventContext, GameState } from './game-state.js';
+import { type AudioSink, type EventContext, GameState } from './game-state.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
 import type { InputState } from './input.js';
 import { Interpreter } from './interpreter.js';
@@ -73,6 +73,17 @@ export class World {
   /** Steps left until the next random encounter on this map. */
   private encounterCountdown = Infinity;
   private pendingEncounter: string | null = null;
+  /** Music set by an event; undefined = use the map's own. Cleared on map change. */
+  private musicOverride: string | null | undefined = undefined;
+  private readonly sounds: string[] = [];
+  private readonly audio: AudioSink = {
+    playMusic: (path) => {
+      this.musicOverride = path;
+    },
+    playSound: (path) => {
+      this.sounds.push(path);
+    },
+  };
 
   constructor({ manifest, map, tileset, state, database, party, random, position }: WorldOptions) {
     this.random = random ?? Math.random;
@@ -136,6 +147,7 @@ export class World {
     this.player.placeAt(x, y);
     this.pendingEncounter = null;
     this.encounterCountdown = this.rollEncounterSteps();
+    this.musicOverride = undefined;
   }
 
   /**
@@ -288,7 +300,17 @@ export class World {
 
   /** What event conditions and commands see: switches, variables and the party. */
   get eventContext(): EventContext {
-    return { state: this.state, party: this.party };
+    return { state: this.state, party: this.party, audio: this.audio };
+  }
+
+  /** The music that should be playing on the map: an event's choice, else the map's, else none. */
+  get music(): string | null {
+    return this.musicOverride !== undefined ? this.musicOverride : (this.currentMap.music ?? null);
+  }
+
+  /** Sounds events asked for since the last call, in order. */
+  drainSounds(): string[] {
+    return this.sounds.splice(0);
   }
 
   /** Changes whenever anything an event page condition can read changes. */

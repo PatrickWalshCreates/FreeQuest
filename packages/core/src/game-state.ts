@@ -138,6 +138,14 @@ function compare(lhs: number, op: CompareOp, rhs: number): boolean {
 export interface EventContext {
   readonly state: GameState;
   readonly party?: Party;
+  /** Where playMusic/playSound commands go. Without one they are silent. */
+  readonly audio?: AudioSink;
+}
+
+/** Receives the audio an event asks for; the runtime turns it into sound. */
+export interface AudioSink {
+  playMusic(path: string | null): void;
+  playSound(path: string): void;
 }
 
 /** Accept either a full context or just a GameState. */

@@ -18,7 +18,7 @@ const tileset: Tileset = {
 
 function map(id: string, width: number, height: number): GameMap {
   return {
-    formatVersion: 4,
+    formatVersion: 5,
     id,
     name: id,
     width,

@@ -245,6 +245,12 @@ export class Interpreter {
           canLose: command.canLose,
         };
         break;
+      case 'playMusic':
+        this.context.audio?.playMusic(command.path);
+        break;
+      case 'playSound':
+        this.context.audio?.playSound(command.path);
+        break;
       case 'comment':
         break;
       default: {

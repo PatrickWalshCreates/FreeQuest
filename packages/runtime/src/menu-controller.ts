@@ -62,6 +62,8 @@ export interface MenuControllerOptions {
   /** Total play time so far, for save files. */
   readonly playSeconds: () => number;
   readonly random?: () => number;
+  /** Called after a successful save (e.g. to play a sound). */
+  readonly onSaved?: (slot: number) => void;
 }
 
 const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Quit'] as const;
@@ -389,6 +391,7 @@ export class MenuController {
       });
       this.options.saves.write(slot, save);
       this.feedback = `Saved to slot ${slot}.`;
+      this.options.onSaved?.(slot);
     } catch (error) {
       this.feedback = `Couldn't save: ${error instanceof Error ? error.message : String(error)}`;
     }

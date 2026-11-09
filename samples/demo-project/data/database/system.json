@@ -1,6 +1,22 @@
 {
-  "formatVersion": 2,
+  "formatVersion": 3,
   "attackSkill": "attack",
+  "audio": {
+    "battleMusic": "assets/audio/battle.wav",
+    "gameOverMusic": "assets/audio/gameover.wav",
+    "sounds": {
+      "battleStart": "assets/audio/sfx-battleStart.wav",
+      "buzzer": "assets/audio/sfx-buzzer.wav",
+      "cancel": "assets/audio/sfx-cancel.wav",
+      "confirm": "assets/audio/sfx-confirm.wav",
+      "cursor": "assets/audio/sfx-cursor.wav",
+      "damage": "assets/audio/sfx-damage.wav",
+      "heal": "assets/audio/sfx-heal.wav",
+      "save": "assets/audio/sfx-save.wav"
+    },
+    "titleMusic": "assets/audio/title.wav",
+    "victoryMusic": "assets/audio/victory.wav"
+  },
   "currency": "G",
   "elements": [
     {

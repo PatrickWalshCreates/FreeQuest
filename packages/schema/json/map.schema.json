@@ -596,6 +596,45 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playMusic"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playSound"
+            },
+            "path": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {
@@ -616,7 +655,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 4
+      "const": 5
     },
     "id": {
       "type": "string",
@@ -661,6 +700,11 @@
     "height": {
       "type": "integer",
       "minimum": 1
+    },
+    "music": {
+      "type": "string",
+      "description": "Path relative to the project root, using \"/\" separators.",
+      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
     },
     "tileset": {
       "type": "string",

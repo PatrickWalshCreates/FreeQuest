@@ -13,12 +13,49 @@ import {
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 2;
+export const DATABASE_FORMAT_VERSION = 3;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
   { additionalProperties: false },
 );
+
+/** Sound effects the engine plays itself. Any may be omitted (silence). */
+export const SOUND_KEYS = [
+  'cursor',
+  'confirm',
+  'cancel',
+  'buzzer',
+  'damage',
+  'heal',
+  'save',
+  'battleStart',
+] as const;
+export type SoundKey = (typeof SOUND_KEYS)[number];
+
+/** Music and sounds for the engine's own screens. Paths are project-relative audio files. */
+export const SystemAudio = Type.Object(
+  {
+    titleMusic: Type.Optional(RelativePath),
+    battleMusic: Type.Optional(RelativePath),
+    victoryMusic: Type.Optional(RelativePath),
+    gameOverMusic: Type.Optional(RelativePath),
+    sounds: Type.Optional(
+      Type.Partial(
+        Type.Object(
+          Object.fromEntries(SOUND_KEYS.map((k) => [k, RelativePath])) as Record<
+            SoundKey,
+            typeof RelativePath
+          >,
+          { additionalProperties: false },
+        ),
+        { additionalProperties: false },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+export type SystemAudio = Static<typeof SystemAudio>;
 
 /** `system.json`: the type lists other database files refer to. */
 export const SystemData = Type.Object(
@@ -31,6 +68,7 @@ export const SystemData = Type.Object(
     skillTypes: Type.Array(Named, { description: 'e.g. magic, techniques.' }),
     attackSkill: Type.Optional(Id),
     guardSkill: Type.Optional(Id),
+    audio: Type.Optional(SystemAudio),
     iconset: Type.Optional(
       Type.Object(
         { image: RelativePath, iconSize: PositiveInt, columns: PositiveInt },
