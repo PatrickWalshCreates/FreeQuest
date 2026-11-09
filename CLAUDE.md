@@ -26,6 +26,7 @@ Requires Node >= 22 and pnpm (version pinned in `package.json` `packageManager`)
 | `pnpm build`      | Build every package to `dist/` and the player app to `apps/player-web/dist` |
 | `pnpm gen:schema` | Regenerate `packages/schema/json/*.schema.json` from the TypeBox defs       |
 | `pnpm gen:art`    | Regenerate the demo project's placeholder PNGs (deterministic)              |
+| `pnpm gen:audio`  | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)     |
 
 Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
 GitHub yet, so nothing runs it automatically: run it locally.
@@ -159,6 +160,30 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   an event battle with `canLose: false`). Game over → confirm → `newGame()` builds a fresh World in
   place. `BattleView` only draws (rebuilds Text only when content changes).
 - PixiJS v8 `Text` objects share the `TextStyle` they're given: clone before changing a style.
+
+### Menus, saves and audio (M5)
+
+- **Game modes** (`runtime/src/game.ts`): the game boots to the title (`TitleController`: New Game,
+  Continue = newest save, Load). On the map, Escape or C opens the menu (`MenuController`) when no
+  event, transfer, movement or pending encounter is in progress; the world doesn't step while it's
+  open. Quit and game over return to the title. Controllers are PixiJS-free and tested; views
+  (`TitleView`, `MenuView`, shared `ListWindow`) only draw and rebuild Text only on change.
+- **Menu**: Items, Skills (out-of-battle skills), Equipment (through the bag), Status, Save (3
+  slots), Quit. Feedback lines reuse the battle log's wording (`describeEvent`).
+- **Saves** (`schema/src/save.ts`, `SaveFile` v1): game name, timestamp, play time, map/position,
+  switches/variables, party data, and a slot summary. `World.toSave()` refuses while an event runs
+  (so no interpreter state is ever saved); `World.fromSave()` rebuilds a world (the save's map must
+  be loaded first). Undeclared switches/variables are dropped on load. `SaveStore` keeps slots in any
+  `KeyValueStorage` (localStorage by default, `MemoryStorage` otherwise), namespaced per game; it
+  reads through migrate + validate and reports damaged or foreign saves as broken slots.
+- **Audio**: `system.json` `audio` (title/battle/victory/game-over music + engine sounds), map
+  `music`, `playMusic`/`playSound` commands. Core decides _what_ plays: `World.music` (event
+  override until the next map change, else the map's) and `World.drainSounds()`. Runtime decides
+  _when_: `musicFor(scene, …)` and `uiSoundFor(input, menu)` (DOM-free, tested), and `AudioPlayer`
+  (Web Audio) crossfades music, starts on the first key press (browser autoplay rules), and ignores
+  missing files after a warning. A demo test checks every referenced image/audio file exists.
+- **Testing in the browser pane**: when the pane is hidden, requestAnimationFrame doesn't fire, so
+  drive the game with `freequest.app.ticker.update(t)` from the console instead of real-time waits.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
@@ -182,9 +207,9 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
 - Current versions: manifest 4 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file),
-  map 4 (v3: party commands/conditions; v4: `encounters`, `battle` command), tileset 1, character 1,
-  every database file 2 (v2: combat modifiers, troops, system attack/guard skills). Additive bumps
-  migrate as no-ops.
+  map 5 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  `playMusic`/`playSound`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -238,7 +263,11 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   over and new game; demo enemy art, meadow encounters, wolf ambush at the bridge.
   - Deferred: enemy action conditions (e.g. "below 50% HP"), battle animations/effects art,
     battle music (M5), multi-row/positioned troop layouts, a "can lose" recovery rule.
-- **M5** Menus, save/load, audio.
+- **M5 (done)** Title screen, in-game menu (items, skills, equipment, status, save, quit), three
+  save slots in localStorage with a versioned save format, music and sound (format, core cues, Web
+  Audio player, generated chiptune assets).
+  - Deferred: options screen (volume, key rebinding), item/skill icons, shops, saving mid-event,
+    file-based saves for desktop builds (M7), formation/reordering the party.
 - **M6** Tauri editor: map editor first, then event and database editors.
 - **M7** Export targets: web, desktop.
 - **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.

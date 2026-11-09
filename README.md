@@ -7,8 +7,8 @@ used.
 > **Status: early pre-alpha.** FreeQuest can load a project, walk a character around tile maps,
 > talk to NPCs (messages, choices, switches, variables, conditional branches), move between maps,
 > and has a full RPG database (heroes, classes, skills, items, equipment, states, enemies) with a
-> safe formula language for damage, and turn-based battles (random encounters and scripted fights).
-> No menus, saving, audio or editor yet. File formats will change.
+> safe formula language for damage, turn-based battles (random encounters and scripted fights), an
+> in-game menu, save slots, and music and sound. No editor yet. File formats will change.
 
 ## What's here
 
@@ -29,9 +29,17 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173. Walk with the arrow keys or WASD, talk with Enter/Space/Z, cancel with
-Escape/X. Try the elder by the path and the house door. In development builds, press F9 for a
-debug panel showing the party, inventory, switches and variables.
+Open http://localhost:5173 and press a key to start (browsers only allow sound after a key press).
+
+| Key               | Action                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| Arrow keys / WASD | Walk, move cursors                                                         |
+| Enter / Space / Z | Talk, confirm                                                              |
+| Escape / X        | Cancel; on the map, open the menu (items, skills, equipment, status, save) |
+| C / Tab           | Open the menu                                                              |
+| F9                | Debug panel (development builds): party, inventory, switches, variables    |
+
+Try the elder by the path, the house door, and the bridge. Saves are kept in your browser.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 
