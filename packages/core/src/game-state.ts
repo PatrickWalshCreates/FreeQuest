@@ -35,6 +35,30 @@ export class GameState {
     }
   }
 
+  /** Plain data of every switch and variable that has been set (for save files). */
+  toData(): { switches: Record<string, boolean>; variables: Record<string, number> } {
+    return {
+      switches: Object.fromEntries(this.switches),
+      variables: Object.fromEntries(this.variables),
+    };
+  }
+
+  /**
+   * Restore from `toData()`. Ids the manifest no longer declares are dropped,
+   * so a save made before the project changed still loads.
+   */
+  loadData(data: { switches: Record<string, boolean>; variables: Record<string, number> }): void {
+    this.switches.clear();
+    this.variables.clear();
+    for (const [id, value] of Object.entries(data.switches)) {
+      if (!this.declared || this.declared.switches.has(id)) this.switches.set(id, value);
+    }
+    for (const [id, value] of Object.entries(data.variables)) {
+      if (!this.declared || this.declared.variables.has(id)) this.variables.set(id, value);
+    }
+    this.changes++;
+  }
+
   /** Increases on every write. Lets callers cheaply detect that state may have changed. */
   get version(): number {
     return this.changes;

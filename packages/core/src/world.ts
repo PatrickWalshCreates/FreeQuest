@@ -2,6 +2,8 @@ import {
   type Command,
   type GameMap,
   type Manifest,
+  SAVE_FORMAT_VERSION,
+  type SaveFile,
   type Tileset,
   emptyDatabase,
 } from '@freequest/schema';
@@ -26,6 +28,18 @@ export interface WorldOptions {
   /** Defaults to the manifest's starting party and gold. */
   party?: Party;
   /** Uniform random in [0, 1) for encounters. Inject a fixed one in tests. */
+  random?: () => number;
+  /** Where the player starts on `map`. Defaults to the manifest's start. */
+  position?: { x: number; y: number; direction: Direction };
+}
+
+/** Everything `World.fromSave` needs besides the save itself. */
+export interface RestoreOptions {
+  manifest: Manifest;
+  /** The saved map (its id must match the save). */
+  map: GameMap;
+  tileset: Tileset;
+  database: DatabaseIndex;
   random?: () => number;
 }
 
@@ -60,12 +74,12 @@ export class World {
   private encounterCountdown = Infinity;
   private pendingEncounter: string | null = null;
 
-  constructor({ manifest, map, tileset, state, database, party, random }: WorldOptions) {
+  constructor({ manifest, map, tileset, state, database, party, random, position }: WorldOptions) {
     this.random = random ?? Math.random;
     this.state = state ?? new GameState(manifest);
     this.db = database ?? new DatabaseIndex(emptyDatabase());
     this.party = party ?? Party.start(this.db, manifest.start);
-    const { start } = manifest;
+    const start = position ?? manifest.start;
     this.player = new GridMover({
       x: start.x,
       y: start.y,
@@ -170,6 +184,57 @@ export class World {
     const troop = this.pendingEncounter;
     this.pendingEncounter = null;
     return troop;
+  }
+
+  /**
+   * A save file of the game as it is now. Only valid when no event is
+   * running: saving happens from the menu.
+   */
+  toSave(options: { game: string; playSeconds: number; savedAt?: Date }): SaveFile {
+    if (this.running) throw new Error('cannot save while an event is running');
+    const party = this.party.toData();
+    return {
+      formatVersion: SAVE_FORMAT_VERSION,
+      game: options.game,
+      savedAt: (options.savedAt ?? new Date()).toISOString(),
+      playSeconds: Math.max(0, options.playSeconds),
+      map: this.map.id,
+      x: this.player.x,
+      y: this.player.y,
+      direction: this.player.direction,
+      ...this.state.toData(),
+      party: {
+        members: party.members,
+        gold: party.gold,
+        items: party.items,
+        equipment: party.equipment,
+        steps: party.steps,
+      },
+      summary: {
+        location: this.map.name,
+        members: this.party.members.map((m) => ({ name: m.name, level: m.level })),
+      },
+    };
+  }
+
+  /** Rebuild a game from a save file. Throws if the save doesn't fit the project. */
+  static fromSave(save: SaveFile, options: RestoreOptions): World {
+    if (options.map.id !== save.map) {
+      throw new Error(`save is on map "${save.map}" but map "${options.map.id}" was given`);
+    }
+    const state = new GameState(options.manifest);
+    state.loadData(save);
+    const party = Party.fromData(options.database, save.party);
+    return new World({
+      manifest: options.manifest,
+      map: options.map,
+      tileset: options.tileset,
+      database: options.database,
+      state,
+      party,
+      position: { x: save.x, y: save.y, direction: save.direction },
+      ...(options.random ? { random: options.random } : {}),
+    });
   }
 
   /** Map size in pixels. */

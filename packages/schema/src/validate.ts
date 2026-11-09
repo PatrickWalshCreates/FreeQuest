@@ -1,6 +1,7 @@
 import type { Static, TSchema } from 'typebox';
 import Value from 'typebox/value';
 import { CharacterSheet } from './character.js';
+import { SaveFile } from './save.js';
 import {
   ActorsFile,
   ClassesFile,
@@ -23,6 +24,7 @@ export const SCHEMAS = {
   tileset: Tileset,
   map: GameMap,
   character: CharacterSheet,
+  save: SaveFile,
   system: SystemData,
   actors: ActorsFile,
   classes: ClassesFile,

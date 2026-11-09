@@ -1,17 +1,19 @@
 import { DATABASE_FORMAT_VERSION } from './database/categories.js';
+import { SAVE_FORMAT_VERSION } from './save.js';
 import { DATABASE_KINDS, type DatabaseKind } from './manifest.js';
 import { CHARACTER_FORMAT_VERSION } from './character.js';
 import { MANIFEST_FORMAT_VERSION } from './manifest.js';
 import { MAP_FORMAT_VERSION } from './map.js';
 import { TILESET_FORMAT_VERSION } from './tileset.js';
 
-export type FileKind = 'manifest' | 'tileset' | 'map' | 'character' | DatabaseKind;
+export type FileKind = 'manifest' | 'tileset' | 'map' | 'character' | 'save' | DatabaseKind;
 
 export const CURRENT_FORMAT_VERSION: Record<FileKind, number> = {
   manifest: MANIFEST_FORMAT_VERSION,
   tileset: TILESET_FORMAT_VERSION,
   map: MAP_FORMAT_VERSION,
   character: CHARACTER_FORMAT_VERSION,
+  save: SAVE_FORMAT_VERSION,
   ...(Object.fromEntries(DATABASE_KINDS.map((k) => [k, DATABASE_FORMAT_VERSION])) as Record<
     DatabaseKind,
     number

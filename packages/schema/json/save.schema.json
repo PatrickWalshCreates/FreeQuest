@@ -1,0 +1,204 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "direction": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "down"
+        },
+        {
+          "type": "string",
+          "const": "left"
+        },
+        {
+          "type": "string",
+          "const": "right"
+        },
+        {
+          "type": "string",
+          "const": "up"
+        }
+      ]
+    },
+    "game": {
+      "type": "string"
+    },
+    "map": {
+      "type": "string",
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "party": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "equipment": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "gold": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "items": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "equipment": {
+                "type": "object",
+                "patternProperties": {
+                  "^.*$": {
+                    "type": "string",
+                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  }
+                }
+              },
+              "exp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "extraSkills": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                  "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                }
+              },
+              "hp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "level": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "mp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "states": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "steps": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "turns": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["id"]
+                }
+              }
+            },
+            "required": ["id", "level", "exp", "hp", "mp", "equipment", "extraSkills", "states"]
+          }
+        },
+        "steps": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["members", "gold", "items", "equipment", "steps"]
+    },
+    "playSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "savedAt": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": ["name", "level"]
+          }
+        }
+      },
+      "required": ["location", "members"]
+    },
+    "switches": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "boolean"
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "integer"
+        }
+      }
+    },
+    "x": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "y": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["formatVersion", "game", "savedAt", "playSeconds", "map", "x", "y", "direction", "switches", "variables", "party", "summary"],
+  "title": "FreeQuest save file"
+}
