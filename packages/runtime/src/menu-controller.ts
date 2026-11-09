@@ -148,12 +148,9 @@ export class MenuController {
     return actor.skills.map((id) => this.db.skills.get(id)).filter((s) => usableInMenu(s.occasion));
   }
 
+  /** Member rows show just the level: the party panel beside the list shows HP/MP. */
   private memberOption(actor: Actor, enabled = true): MenuOption {
-    return {
-      label: actor.name,
-      detail: `Lv ${actor.level}  HP ${actor.hp}/${actor.maxHp}  MP ${actor.mp}/${actor.maxMp}`,
-      enabled,
-    };
+    return { label: actor.name, detail: `Lv ${actor.level}`, enabled };
   }
 
   private optionsFor(screen: Screen): MenuOption[] {

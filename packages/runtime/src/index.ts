@@ -15,4 +15,8 @@ export * from './battle-view.js';
 export * from './battle-flow.js';
 export * from './save-store.js';
 export * from './menu-controller.js';
+export * from './menu-view.js';
+export * from './title-controller.js';
+export * from './title-view.js';
+export * from './list-window.js';
 export * from './textures.js';

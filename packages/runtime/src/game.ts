@@ -1,8 +1,13 @@
 import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from '@freequest/core';
-import type { Tileset } from '@freequest/schema';
+import type { SaveFile, Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
 import { BattleView } from './battle-view.js';
+import { MenuController } from './menu-controller.js';
+import { MenuView } from './menu-view.js';
+import { type KeyValueStorage, MemoryStorage, SaveStore } from './save-store.js';
+import { TitleController } from './title-controller.js';
+import { TitleView } from './title-view.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
 import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
@@ -24,6 +29,8 @@ export interface StartGameOptions {
   ui?: Partial<UiTheme>;
   /** Enable the developer debug panel (toggle with F9). */
   debug?: boolean;
+  /** Where save slots live. Defaults to localStorage (or memory if it's unavailable). */
+  saveStorage?: KeyValueStorage;
 }
 
 export interface Game {
@@ -115,7 +122,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     prevY = world.player.realY;
   };
 
-  const dialog = new DialogController();
+  let dialog = new DialogController();
   const theme = { ...DEFAULT_UI_THEME, ...options.ui };
   const dialogView = new DialogView(width, height, theme);
   app.stage.addChild(dialogView.container);
@@ -177,18 +184,90 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     ? createDebugPanel(options.parent, () => world, manifest)
     : () => undefined;
 
-  /** Back to the title state: a fresh world on the start map. */
-  const newGame = () => {
-    world = createWorld();
+  // Title screen, menu and saves ---------------------------------------------
+  const saves = new SaveStore(options.saveStorage ?? defaultStorage(), manifest.name);
+  const title = new TitleController(manifest.name, saves);
+  const titleView = new TitleView(width, height, theme);
+  app.stage.addChildAt(titleView.container, app.stage.getChildIndex(fadeOverlay));
+  let mode: 'title' | 'loading' | 'playing' = 'title';
+  let menu: MenuController | null = null;
+  let menuView: MenuView | null = null;
+  let playSeconds = 0;
+
+  const closeMenu = () => {
+    menuView?.destroy();
+    menuView = null;
+    menu = null;
+  };
+
+  /** Show the title screen (on boot, after "Quit", after game over). */
+  const toTitle = (message: string | null = null) => {
+    closeMenu();
     battles.reset();
     gameOverScreen.visible = false;
-    showCurrentMap();
+    scene.visible = false;
+    dialogView.container.visible = false;
+    titleView.container.visible = true;
+    title.reset(message);
+    mode = 'title';
   };
+
+  /** Begin playing a world (a new game or a loaded save). */
+  const play = (next: World, seconds: number) => {
+    world = next;
+    playSeconds = seconds;
+    dialog = new DialogController();
+    battles.reset();
+    gameOverScreen.visible = false;
+    titleView.container.visible = false;
+    scene.visible = true;
+    dialogView.container.visible = true;
+    showCurrentMap();
+    mode = 'playing';
+  };
+
+  /** Load a save: fetch its map and tileset first, then rebuild the world from it. */
+  const loadGame = async (save: SaveFile) => {
+    mode = 'loading';
+    try {
+      const savedMap = await project.loadMap(save.map);
+      const savedTileset = getOrThrow(project.tilesets, savedMap.tileset, 'tileset');
+      readyTiles.set(savedTileset.id, await loadTiles(savedTileset));
+      play(
+        World.fromSave(save, { manifest, map: savedMap, tileset: savedTileset, database: db }),
+        save.playSeconds,
+      );
+    } catch (error) {
+      console.error('Could not load the save', error);
+      toTitle(
+        `Could not load that save: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
+  const openMenu = () => {
+    menu = new MenuController({
+      world,
+      saves,
+      game: manifest.name,
+      playSeconds: () => playSeconds,
+    });
+    menuView = new MenuView(() => world, width, height, theme);
+    app.stage.addChildAt(menuView.container, app.stage.getChildIndex(titleView.container));
+  };
+
+  /** The menu opens only when nothing else is going on. */
+  const canOpenMenu = () =>
+    !world.interpreter &&
+    !transfer.isActive &&
+    !world.player.isMoving &&
+    !world.hasPendingEncounter;
 
   // Position before the most recent logic step, for interpolation.
   let prevX = world.player.realX;
   let prevY = world.player.realY;
   showCurrentMap();
+  toTitle();
 
   const render = (alpha: number) => {
     if (shown?.map !== world.map) showCurrentMap();
@@ -213,23 +292,44 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
-      if (battles.isGameOver) {
-        if (input.justPressed('confirm')) newGame();
-      } else {
-        // Battles, dialog and transfers first: they consume the input and
-        // answer the running event's requests before the world steps.
-        battles.update(dt, world, input);
-        if (!battles.active) {
-          dialog.update(dt, input, world.interpreter);
-          transfer.update(dt, world);
-          world.step(dt, input);
+      if (mode === 'title') {
+        title.update(input);
+        const choice = title.choice;
+        if (choice?.kind === 'new') play(createWorld(), 0);
+        else if (choice?.kind === 'load') void loadGame(choice.save);
+      } else if (mode === 'playing') {
+        playSeconds += dt;
+        if (battles.isGameOver) {
+          if (input.justPressed('confirm')) toTitle();
+        } else if (menu) {
+          menu.update(input);
+          if (menu.outcome === 'quit') toTitle();
+          else if (menu.outcome === 'closed') closeMenu();
+        } else {
+          // Battles, dialog and transfers first: they consume the input and
+          // answer the running event's requests before the world steps.
+          battles.update(dt, world, input);
+          if (!battles.active) {
+            dialog.update(dt, input, world.interpreter);
+            transfer.update(dt, world);
+            if ((input.justPressed('menu') || input.justPressed('cancel')) && canOpenMenu()) {
+              openMenu();
+            } else {
+              world.step(dt, input);
+            }
+          }
         }
       }
       input.endStep();
       elapsed += dt;
     });
-    render(alpha);
-    dialogView.render(dialog, elapsed);
+    if (mode === 'title' || mode === 'loading') {
+      titleView.render(title.state, manifest.name);
+    } else {
+      render(alpha);
+      dialogView.render(dialog, elapsed);
+      if (menu && menuView) menuView.render(menu.state);
+    }
     const controller = battles.controller;
     if (battleView && controller) battleView.render(controller.state, elapsed);
     fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
@@ -293,4 +393,18 @@ function createGameOverScreen(width: number, height: number, theme: UiTheme): Co
   screen.addChild(title, hint);
   screen.visible = false;
   return screen;
+}
+
+/** localStorage when the browser allows it, otherwise in-memory slots (lost on reload). */
+function defaultStorage(): KeyValueStorage {
+  try {
+    const storage = window.localStorage;
+    const probe = '__freequest_probe__';
+    storage.setItem(probe, '1');
+    storage.removeItem(probe);
+    return storage;
+  } catch {
+    console.warn('localStorage is unavailable; saves will not persist across reloads.');
+    return new MemoryStorage();
+  }
 }
