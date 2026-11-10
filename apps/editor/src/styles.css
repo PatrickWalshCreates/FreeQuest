@@ -285,3 +285,62 @@ button.primary {
   padding: 0;
   text-decoration: underline;
 }
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button:disabled:hover {
+  border-color: var(--border);
+}
+
+button.save.unsaved {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.status {
+  font-size: 12px;
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-text {
+  color: var(--danger);
+}
+
+.dirty {
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  max-width: 360px;
+  margin-bottom: 18px;
+}
+
+.field > span {
+  color: var(--muted);
+}
+
+input {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+}
+
+input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}

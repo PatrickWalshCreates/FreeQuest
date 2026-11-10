@@ -42,7 +42,7 @@ packages/schema     Project file format: TypeBox definitions (→ TS types + JSO
                     validation, migrations, stable serializer. Single source of truth.
 packages/core       Pure game logic. No rendering, no DOM, no Node APIs. Unit-tested in Node.
 packages/runtime    PixiJS v8 player: loads a project folder over HTTP and runs it on core.
-packages/editor-core  Editor logic: ProjectFs, opening projects, (later) edits and undo. No UI.
+packages/editor-core  Editor logic: ProjectFs, opening projects, edits, undo/redo, saving. No UI.
 apps/player-web     Minimal Vite app that boots runtime with samples/demo-project.
 apps/editor         React editor; Tauri 2 desktop shell in src-tauri/ (M6, in progress).
 samples/demo-project  Tiny sample game used for dev and tests.
@@ -214,6 +214,25 @@ Never the other way.
   past broken files (`ProjectFile.data` null + `problems`), flags older formats (`migrated`), and
   runs cross-file checks (`checkReferences`, `checkDatabase`) only when every file loaded. Only an
   unreadable `project.json` throws (`ProjectOpenError`).
+- **`ProjectDocument`** (`document.ts`) is the open project being edited. File data is immutable:
+  `doc.update(path, kind, label, fn)` replaces a file's data with `fn(data)` (sharing unchanged
+  parts; returning the same object is a no-op), so history entries are before/after references,
+  "dirty" is `data !== saved`, and undoing to the saved state makes a file clean. `coalesce` keys
+  merge edits into one undo step until `endCoalescing()` (a paint stroke, typing in a field); a
+  merged step that ends equal to its start (structural compare) is dropped. 200 undo steps.
+  `doc.project` is the current `OpenedProject` view (problems rechecked per version);
+  `subscribe`/`version` feed React's `useSyncExternalStore` (`use-document.ts`).
+- **Saving** writes only dirty files via `stableStringify`, data files before `project.json`, one
+  save at a time (an idle save snapshots immediately; edits made during a save stay dirty). Files
+  in an older format start dirty and are upgraded on save. A dirty file failing the schema blocks
+  the whole save (`SaveBlockedError`, nothing written); other problems (shape, references,
+  database) are only reported, so work is never stuck unsaved.
+- **Edit helpers** are pure functions over file data, e.g. `setTiles(map, layer, cells)` in
+  `map-edits.ts`; add new ones there (tested), not in React components.
+- **UI conventions**: Cmd/Ctrl+S, Z, Shift+Z (and Ctrl+Y) are global, text fields included, so undo
+  always means the document's history. Closing, reloading or quitting with unsaved changes asks
+  first (`confirmDiscard`, `guardWindowClose`; Tauri needs `dialog:allow-ask` and
+  `core:window:allow-destroy` for that).
 - **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
@@ -299,8 +318,8 @@ gen:icon`).
 - **M6** Tauri editor: map editor first, then event and database editors. Steps:
   1. ~~Scaffold: Tauri 2 + React app, `ProjectFs` (desktop/dev server/memory), open a project,
      browse its files and problems~~ (done)
-  2. Editing engine in editor-core: edit operations, undo/redo, dirty tracking, save via
-     `stableStringify` with the load-time checks
+  2. ~~Editing engine in editor-core: edit operations, undo/redo, dirty tracking, save via
+     `stableStringify` with the load-time checks~~ (done; names editable in the UI to exercise it)
   3. Map view: map drawn with the runtime's renderer, layers, grid, zoom/pan, tile palette
   4. Painting tools: pencil, rectangle, fill, eraser, eyedropper, layer choice, passability overlay
   5. Map management: new/rename/resize/delete maps, map properties (tileset, music, encounters)

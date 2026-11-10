@@ -16,7 +16,6 @@ export function summarize(file: ProjectFile): Row[] {
     case 'manifest': {
       const m = data as FileData<'manifest'>;
       rows.push(
-        ['Name', m.name],
         ['Screen', `${m.screen.width} × ${m.screen.height} px`],
         ['Start', `${m.start.map} at ${m.start.x}, ${m.start.y} facing ${m.start.direction}`],
         ['Party', m.start.party.join(', ') || '(empty)'],
@@ -28,7 +27,6 @@ export function summarize(file: ProjectFile): Row[] {
     case 'map': {
       const map = data as FileData<'map'>;
       rows.push(
-        ['Name', map.name],
         ['Size', `${map.width} × ${map.height} tiles`],
         ['Tileset', map.tileset],
         ['Layers', map.layers.map((l) => l.name).join(', ')],
@@ -46,7 +44,6 @@ export function summarize(file: ProjectFile): Row[] {
     case 'tileset': {
       const t = data as FileData<'tileset'>;
       rows.push(
-        ['Name', t.name],
         ['Image', t.image],
         ['Tile size', `${t.tileWidth} × ${t.tileHeight} px`],
         ['Tiles', `${t.tiles.length} in ${t.columns} columns`],
@@ -56,7 +53,6 @@ export function summarize(file: ProjectFile): Row[] {
     case 'character': {
       const c = data as FileData<'character'>;
       rows.push(
-        ['Name', c.name],
         ['Image', c.image],
         ['Frame size', `${c.frameWidth} × ${c.frameHeight} px`],
         ['Frames', `${c.frames} per direction`],

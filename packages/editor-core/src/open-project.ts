@@ -62,6 +62,31 @@ export class ProjectOpenError extends Error {
   override name = 'ProjectOpenError';
 }
 
+/**
+ * Why data that passed the schema still can't be used as-is: an id that
+ * doesn't match the manifest, or a map whose layers don't fit its size.
+ */
+export function contentProblems(kind: DataFileKind, data: unknown, id: string): string[] {
+  const problems: string[] = [];
+  const dataId = (data as { id?: unknown }).id;
+  if (typeof dataId === 'string' && dataId !== id) {
+    problems.push(`id "${dataId}" does not match the id "${id}" in ${MANIFEST_PATH}`);
+  }
+  if (kind === 'map') problems.push(...checkMapShape(data as FileData<'map'>));
+  return problems;
+}
+
+/** Schema violations in (already current-format) data; empty when it is valid. */
+export function schemaProblems(kind: DataFileKind, data: unknown, source: string): string[] {
+  try {
+    parseProjectFile(kind, data, source);
+    return [];
+  } catch (error) {
+    if (error instanceof ProjectFileError) return error.problems;
+    return [error instanceof Error ? error.message : String(error)];
+  }
+}
+
 async function readFile<K extends DataFileKind>(
   fs: ProjectFs,
   kind: K,
@@ -92,12 +117,7 @@ async function readFile<K extends DataFileKind>(
         : [error instanceof FormatVersionError ? error.message : String(error)];
     return { kind, path, id, data: null, migrated, problems };
   }
-  const problems: string[] = [];
-  const dataId = (data as { id?: unknown }).id;
-  if (typeof dataId === 'string' && dataId !== id) {
-    problems.push(`id "${dataId}" does not match the id "${id}" in ${MANIFEST_PATH}`);
-  }
-  if (kind === 'map') problems.push(...checkMapShape(data as FileData<'map'>));
+  const problems = contentProblems(kind, data, id);
   return { kind, path, id, data, migrated, problems };
 }
 
@@ -136,31 +156,8 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
     [K in DatabaseKind]?: ProjectFile<K>;
   };
 
-  const files = allFiles({ manifest: manifestFile, tilesets, maps, characters, database });
-  const problems: Problem[] = files.flatMap((file) =>
-    file.problems.map((message) => ({ source: file.path, message })),
-  );
-
-  // Cross-file checks only make sense once every file has loaded; otherwise
-  // they would repeat each missing file as a dangling reference.
-  if (files.every((file) => file.data !== null)) {
-    const loaded = <K extends DataFileKind>(source: ReadonlyMap<string, ProjectFile<K>>) =>
-      new Map([...source].map(([id, file]) => [id, file.data as FileData<K>]));
-    const db = assembleDatabase(
-      Object.fromEntries(databaseFiles.map((f) => [f.kind, f.data])) as DatabaseFiles,
-    );
-    const project = {
-      manifest: m,
-      tilesets: loaded(tilesets),
-      maps: loaded(maps),
-      characters: loaded(characters),
-      database: db,
-    };
-    for (const message of checkReferences(project))
-      problems.push({ source: 'references', message });
-    for (const message of checkDatabase(db, project))
-      problems.push({ source: 'database', message });
-  }
+  const files = { manifest: manifestFile, tilesets, maps, characters, database };
+  const problems = checkProject(files);
 
   return {
     fs,
@@ -173,10 +170,14 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
   };
 }
 
+/** The files of a project, grouped by kind (an `OpenedProject` minus its fs and problems). */
+export type ProjectFiles = Pick<
+  OpenedProject,
+  'manifest' | 'tilesets' | 'maps' | 'characters' | 'database'
+>;
+
 /** Every file of a project: manifest, tilesets, maps, characters, then database files. */
-export function allFiles(
-  project: Pick<OpenedProject, 'manifest' | 'tilesets' | 'maps' | 'characters' | 'database'>,
-): ProjectFile[] {
+export function allFiles(project: ProjectFiles): ProjectFile[] {
   return [
     project.manifest,
     ...project.tilesets.values(),
@@ -187,4 +188,38 @@ export function allFiles(
       return file ? [file as ProjectFile] : [];
     }),
   ];
+}
+
+/**
+ * Every problem in a project: each file's own `problems`, then the checks
+ * across files. Those run only once every file has loaded; otherwise they
+ * would repeat each missing file as a dangling reference.
+ */
+export function checkProject(project: ProjectFiles): Problem[] {
+  const files = allFiles(project);
+  const problems: Problem[] = files.flatMap((file) =>
+    file.problems.map((message) => ({ source: file.path, message })),
+  );
+  if (!files.every((file) => file.data !== null)) return problems;
+
+  const loaded = <K extends DataFileKind>(source: ReadonlyMap<string, ProjectFile<K>>) =>
+    new Map([...source].map(([id, file]) => [id, file.data as FileData<K>]));
+  const db = assembleDatabase(
+    Object.fromEntries(
+      DATABASE_KINDS.flatMap((kind) => {
+        const file = project.database[kind];
+        return file ? [[kind, file.data]] : [];
+      }),
+    ) as DatabaseFiles,
+  );
+  const data = {
+    manifest: project.manifest.data,
+    tilesets: loaded(project.tilesets),
+    maps: loaded(project.maps),
+    characters: loaded(project.characters),
+    database: db,
+  };
+  for (const message of checkReferences(data)) problems.push({ source: 'references', message });
+  for (const message of checkDatabase(db, data)) problems.push({ source: 'database', message });
+  return problems;
 }
