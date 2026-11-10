@@ -20,6 +20,7 @@ import {
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
 import { useMemo, useRef, useState } from 'react';
 import { type CanvasPoint, MapCanvas } from './MapCanvas.js';
+import { MapSettings } from './MapSettings.js';
 import { TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
 import type { RenderOptions } from './map-renderer.js';
@@ -334,6 +335,10 @@ export function MapEditor({ doc, file }: Props) {
       </div>
 
       <aside className="map-side">
+        <section>
+          <h2>Map</h2>
+          <MapSettings doc={doc} path={file.path} map={map} />
+        </section>
         <section>
           <h2>Layers</h2>
           <ul className="layers">

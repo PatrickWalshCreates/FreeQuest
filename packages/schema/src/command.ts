@@ -203,3 +203,45 @@ export function walkCommands(
     }
   });
 }
+
+/**
+ * Rebuild a command tree bottom-up: nested lists first, then `change` on
+ * each command. Unchanged lists and commands keep their identity, so
+ * `mapCommands(list, (c) => c) === list`.
+ */
+export function mapCommands(
+  commands: readonly Command[],
+  change: (command: Command) => Command,
+): Command[] {
+  let changed = false;
+  const result = commands.map((command) => {
+    let inner: Command = command;
+    if (command.type === 'if') {
+      const then = mapCommands(command.then, change);
+      const otherwise = command.else && mapCommands(command.else, change);
+      if (then !== command.then || otherwise !== command.else) {
+        inner = { ...command, then, ...(otherwise ? { else: otherwise } : {}) };
+      }
+    } else if (command.type === 'choice') {
+      const options = command.options.map((option) => {
+        const list = mapCommands(option.commands, change);
+        return list === option.commands ? option : { ...option, commands: list };
+      });
+      if (options.some((option, i) => option !== command.options[i]))
+        inner = { ...command, options };
+    } else if (command.type === 'battle') {
+      let next = command;
+      for (const branch of ['onWin', 'onEscape', 'onLose'] as const) {
+        const list = next[branch];
+        if (!list) continue;
+        const mapped = mapCommands(list, change);
+        if (mapped !== list) next = { ...next, [branch]: mapped };
+      }
+      inner = next;
+    }
+    const out = change(inner);
+    if (out !== command) changed = true;
+    return out;
+  });
+  return changed ? result : (commands as Command[]);
+}

@@ -10,14 +10,40 @@ import {
   contentProblems,
   schemaProblems,
 } from './open-project.js';
+import { normalizeProjectPath } from './paths.js';
 import type { ProjectFs } from './project-fs.js';
 
 /** How many undo steps are kept. */
 export const HISTORY_LIMIT = 200;
 
+/** Stands for "this file doesn't exist" in history entries and the saved snapshot. */
+const ABSENT = Symbol('absent');
+
 interface Change {
+  readonly kind: DataFileKind;
+  readonly id: string;
+  /** File data, or ABSENT for a file that didn't exist yet. */
   readonly before: unknown;
+  /** File data, or ABSENT for a deleted file. */
   after: unknown;
+}
+
+/**
+ * The edits one undo step makes, possibly across several files. Reads see
+ * the transaction's own pending changes.
+ */
+export interface Transaction {
+  file(path: string): ProjectFile | undefined;
+  /** Replace a file's data; returning the same object changes nothing. */
+  update<K extends DataFileKind>(
+    path: string,
+    kind: K,
+    change: (data: FileData<K>) => FileData<K>,
+  ): void;
+  /** Add a new file (written on the next save). */
+  create<K extends DataFileKind>(path: string, kind: K, id: string, data: FileData<K>): void;
+  /** Delete a file (removed from disk on the next save). */
+  remove(path: string): void;
 }
 
 interface HistoryEntry {
@@ -37,6 +63,8 @@ export interface EditOptions {
 export interface SaveResult {
   /** Paths written, in write order. */
   readonly written: readonly string[];
+  /** Paths deleted from disk (files removed in the editor), after the writes. */
+  readonly removed: readonly string[];
 }
 
 /** Saving was refused because some changed files don't match the schema (nothing was written). */
@@ -114,14 +142,66 @@ export class ProjectDocument {
     change: (data: FileData<K>) => FileData<K>,
     options: EditOptions = {},
   ): boolean {
-    const file = this.files.get(path);
-    if (!file) throw new Error(`"${path}" is not part of this project`);
-    if (file.kind !== kind) throw new Error(`"${path}" is a ${file.kind} file, not ${kind}`);
-    if (file.data === null) throw new Error(`"${path}" could not be loaded, so it can't be edited`);
-    const before = file.data as FileData<K>;
-    const after = change(before);
-    if (after === before) return false;
-    this.commit(label, new Map([[path, { before, after }]]), options.coalesce ?? null);
+    return this.edit(label, (tx) => tx.update(path, kind, change), options);
+  }
+
+  /**
+   * Make several changes, possibly creating and deleting files, as one undo
+   * step. If `build` throws, nothing changes. Returns whether anything did.
+   */
+  edit(label: string, build: (tx: Transaction) => void, options: EditOptions = {}): boolean {
+    const changes = new Map<string, Change>();
+    const current = (path: string): ProjectFile | undefined => {
+      const pending = changes.get(path);
+      if (!pending) return this.files.get(path);
+      if (pending.after === ABSENT) return undefined;
+      const file = this.files.get(path);
+      return {
+        kind: pending.kind,
+        id: pending.id,
+        path,
+        data: pending.after as ProjectFile['data'],
+        migrated: file?.migrated ?? false,
+        problems: [],
+      };
+    };
+    const record = (path: string, kind: DataFileKind, id: string, after: unknown) => {
+      const existing = changes.get(path);
+      const file = this.files.get(path);
+      changes.set(path, {
+        kind,
+        id,
+        before: existing ? existing.before : file ? file.data : ABSENT,
+        after,
+      });
+    };
+    const tx: Transaction = {
+      file: current,
+      update: (path, kind, change) => {
+        const file = current(path);
+        if (!file) throw new Error(`"${path}" is not part of this project`);
+        if (file.kind !== kind) throw new Error(`"${path}" is a ${file.kind} file, not ${kind}`);
+        if (file.data === null)
+          throw new Error(`"${path}" could not be loaded, so it can't be edited`);
+        const before = file.data as FileData<typeof kind>;
+        const after = change(before);
+        if (after !== before) record(path, kind, file.id, after);
+      },
+      create: (path, kind, id, data) => {
+        const normalized = normalizeProjectPath(path);
+        if (current(normalized)) throw new Error(`"${normalized}" already exists`);
+        record(normalized, kind, id, data);
+      },
+      remove: (path) => {
+        const file = current(path);
+        if (!file) throw new Error(`"${path}" is not part of this project`);
+        record(path, file.kind, file.id, ABSENT);
+      },
+    };
+    build(tx);
+    for (const [path, change] of changes) if (change.before === change.after) changes.delete(path);
+    if (changes.size === 0) return false;
+    this.commit(label, changes, options.coalesce ?? null);
     return true;
   }
 
@@ -152,7 +232,7 @@ export class ProjectDocument {
     const entry = this.undoStack.pop();
     if (!entry) return null;
     this.coalescing = null;
-    for (const [path, { before }] of entry.changes) this.setData(path, before);
+    for (const [path, change] of entry.changes) this.setData(path, change, change.before);
     this.redoStack.push(entry);
     this.changed();
     return entry.label;
@@ -162,19 +242,23 @@ export class ProjectDocument {
     const entry = this.redoStack.pop();
     if (!entry) return null;
     this.coalescing = null;
-    for (const [path, { after }] of entry.changes) this.setData(path, after);
+    for (const [path, change] of entry.changes) this.setData(path, change, change.after);
     this.undoStack.push(entry);
     this.changed();
     return entry.label;
   }
 
+  /** Whether a file differs from disk (including new and deleted files). */
   isDirty(path: string): boolean {
-    return this.saved.has(path) && this.saved.get(path) !== this.files.get(path)?.data;
+    const onDisk = this.saved.has(path) ? this.saved.get(path) : ABSENT;
+    const file = this.files.get(path);
+    return onDisk !== (file ? file.data : ABSENT);
   }
 
-  /** Files that differ from disk, in project order. */
+  /** Files that differ from disk, in project order, then deleted files. */
   get dirtyPaths(): string[] {
-    return [...this.files.keys()].filter((path) => this.isDirty(path));
+    const paths = new Set([...this.files.keys(), ...this.saved.keys()]);
+    return [...paths].filter((path) => this.isDirty(path));
   }
 
   get dirty(): boolean {
@@ -197,13 +281,15 @@ export class ProjectDocument {
 
   private async saveNow(): Promise<SaveResult> {
     this.endCoalescing();
-    const pending = this.dirtyPaths
+    const dirty = this.dirtyPaths;
+    const pending = dirty
       .sort((a, b) => Number(a === MANIFEST_PATH) - Number(b === MANIFEST_PATH))
-      .map((path) => {
+      .flatMap((path) => {
         const file = this.files.get(path);
-        if (!file) throw new Error(`"${path}" is not part of this project`);
-        return file;
+        return file ? [file] : [];
       });
+    // Deleted after the manifest stops listing them, so it never points at a missing file.
+    const removals = dirty.filter((path) => !this.files.has(path));
     const blocked = pending.flatMap((file) =>
       schemaProblems(file.kind, file.data, file.path).map((message) => ({
         source: file.path,
@@ -213,6 +299,7 @@ export class ProjectDocument {
     if (blocked.length > 0) throw new SaveBlockedError(blocked);
 
     const written: string[] = [];
+    const removed: string[] = [];
     try {
       for (const file of pending) {
         await this.fs.writeText(file.path, stableStringify(file.data));
@@ -221,10 +308,17 @@ export class ProjectDocument {
         if (current?.migrated) this.files.set(file.path, { ...current, migrated: false });
         written.push(file.path);
       }
+      for (const path of removals) {
+        // Re-created while saving: leave it for the next save.
+        if (this.files.has(path)) continue;
+        await this.fs.remove(path);
+        this.saved.delete(path);
+        removed.push(path);
+      }
     } finally {
-      if (written.length > 0) this.changed();
+      if (written.length > 0 || removed.length > 0) this.changed();
     }
-    return { written };
+    return { written, removed };
   }
 
   private commit(label: string, changes: Map<string, Change>, coalesce: string | null): void {
@@ -239,7 +333,7 @@ export class ProjectDocument {
       // drop it and restore the original objects, so the file is clean again.
       if ([...top.changes.values()].every((c) => deepEqual(c.before, c.after))) {
         this.undoStack.pop();
-        for (const [path, { before }] of top.changes) this.setData(path, before);
+        for (const [path, change] of top.changes) this.setData(path, change, change.before);
         this.coalescing = null;
         this.redoStack = [];
         this.changed();
@@ -251,16 +345,28 @@ export class ProjectDocument {
     }
     this.coalescing = coalesce;
     this.redoStack = [];
-    for (const [path, { after }] of changes) this.setData(path, after);
+    for (const [path, change] of changes) this.setData(path, change, change.after);
     this.changed();
   }
 
-  private setData(path: string, data: unknown): void {
+  /** Put a file in the given state (ABSENT deletes it), rechecking its own problems. */
+  private setData(path: string, meta: Pick<Change, 'kind' | 'id'>, data: unknown): void {
+    if (data === ABSENT) {
+      this.files.delete(path);
+      return;
+    }
     const file = this.files.get(path);
-    if (!file) throw new Error(`"${path}" is not part of this project`);
-    const invalid = schemaProblems(file.kind, data, path);
-    const problems = invalid.length > 0 ? invalid : contentProblems(file.kind, data, file.id);
-    this.files.set(path, { ...file, data: data as ProjectFile['data'], problems });
+    const { kind, id } = meta;
+    const invalid = schemaProblems(kind, data, path);
+    const problems = invalid.length > 0 ? invalid : contentProblems(kind, data, id);
+    this.files.set(path, {
+      kind,
+      id,
+      path,
+      migrated: file?.migrated ?? false,
+      data: data as ProjectFile['data'],
+      problems,
+    });
   }
 
   private changed(): void {

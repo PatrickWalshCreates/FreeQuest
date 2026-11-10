@@ -3,11 +3,13 @@
 //   GET  /__freequest/projects            → ["demo-project", ...]
 //   GET  /__freequest/fs/<project>/<path> → file contents
 //   PUT  /__freequest/fs/<project>/<path> → write the request body
+//   DELETE /__freequest/fs/<project>/<path> → delete the file
+//   GET  /__freequest/list/<project>/<dir> → ["<dir>/a.png", ...] (recursive)
 // Only active in `vite dev` (never in a build), and confined to samples/.
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
-import { dirname, extname, resolve, sep } from 'node:path';
+import { dirname, extname, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
 
 const MIME: Record<string, string> = {
@@ -55,6 +57,26 @@ export function devFsPlugin(samplesDir: string): Plugin {
             response.end(JSON.stringify(projects));
             return;
           }
+          if (url.pathname.startsWith('/list/') && request.method === 'GET') {
+            const rel = decodeURIComponent(url.pathname.slice('/list/'.length));
+            const dir = resolveInside(root, rel);
+            const project = resolveInside(root, `${rel.split('/')[0] ?? ''}/project.json`);
+            if (!dir || !project) {
+              response.statusCode = 400;
+              response.end('bad path');
+              return;
+            }
+            const base = dirname(project);
+            const files = existsSync(dir)
+              ? (await readdir(dir, { recursive: true, withFileTypes: true }))
+                  .filter((e) => e.isFile())
+                  .map((e) => relative(base, resolve(e.parentPath, e.name)).split(sep).join('/'))
+                  .sort()
+              : [];
+            response.setHeader('Content-Type', 'application/json');
+            response.end(JSON.stringify(files));
+            return;
+          }
           const prefix = '/fs/';
           const full = url.pathname.startsWith(prefix)
             ? resolveInside(root, decodeURIComponent(url.pathname.slice(prefix.length)))
@@ -73,6 +95,10 @@ export function devFsPlugin(samplesDir: string): Plugin {
             response.setHeader('Content-Type', MIME[extname(full)] ?? 'application/octet-stream');
             response.setHeader('Cache-Control', 'no-store');
             response.end(await readFile(full));
+          } else if (request.method === 'DELETE') {
+            await rm(full, { force: true });
+            response.statusCode = 204;
+            response.end();
           } else if (request.method === 'PUT') {
             await mkdir(dirname(full), { recursive: true });
             await writeFile(full, await body(request));

@@ -3,11 +3,16 @@ import {
   type ProjectFile,
   SaveBlockedError,
   allFiles,
+  deleteMap,
+  duplicateMap,
+  mapPath,
+  mapUsages,
 } from '@freequest/editor-core';
 import { DATABASE_KINDS, type GameMap } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { MapEditor } from './map/MapEditor.js';
-import { guardWindowClose } from './platform.js';
+import { NewMapDialog } from './map/NewMapDialog.js';
+import { confirmAction, guardWindowClose } from './platform.js';
 import { summarize } from './summary.js';
 import { useDocumentVersion } from './use-document.js';
 
@@ -20,6 +25,7 @@ interface Props {
 interface Group {
   readonly title: string;
   readonly files: readonly ProjectFile[];
+  readonly add?: { readonly label: string; readonly onClick: () => void };
 }
 
 interface Status {
@@ -47,15 +53,21 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const files = allFiles(project);
   const [selected, setSelected] = useState(project.manifest.path);
   const [status, setStatusState] = useState<Status | null>(null);
+  const [creating, setCreating] = useState(false);
   const setStatus = (next: Omit<Status, 'version'> | null) =>
     setStatusState(next && { ...next, version: doc.version });
 
   const save = async () => {
     try {
-      const { written } = await doc.save();
+      const { written, removed } = await doc.save();
+      const parts = [
+        ...(written.length > 0 ? [`saved ${plural(written.length, 'file')}`] : []),
+        ...(removed.length > 0 ? [`deleted ${plural(removed.length, 'file')}`] : []),
+      ];
+      const text = parts.join(', ');
       setStatus({
         kind: 'info',
-        text: written.length === 0 ? 'Nothing to save' : `Saved ${plural(written.length, 'file')}`,
+        text: text ? text.charAt(0).toUpperCase() + text.slice(1) : 'Nothing to save',
       });
     } catch (error) {
       setStatus({
@@ -65,6 +77,25 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
             ? `Not saved: ${error.problems.map((p) => `${p.source}: ${p.message}`).join('; ')}`
             : `Save failed: ${error instanceof Error ? error.message : String(error)}`,
       });
+    }
+  };
+  const removeMap = async (id: string) => {
+    const name = project.maps.get(id)?.data?.name ?? id;
+    const usages = mapUsages(project, id);
+    const warning =
+      usages.length > 0
+        ? `\n\nThese events transfer the player there and will need a new destination:\n${usages.map((u) => `• ${u}`).join('\n')}`
+        : '';
+    const ok = await confirmAction(
+      `Delete the map "${name}"? Its file is deleted when you save (you can undo until then).${warning}`,
+      { title: 'Delete map', okLabel: 'Delete map' },
+    );
+    if (!ok) return;
+    try {
+      deleteMap(doc, id);
+      setStatus({ kind: 'info', text: `Deleted ${name}` });
+    } catch (error) {
+      setStatus({ kind: 'error', text: error instanceof Error ? error.message : String(error) });
     }
   };
   const undo = () => {
@@ -104,7 +135,11 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
 
   const groups: Group[] = [
     { title: 'Project', files: [project.manifest] },
-    { title: 'Maps', files: [...project.maps.values()] },
+    {
+      title: 'Maps',
+      files: [...project.maps.values()],
+      add: { label: 'New map', onClick: () => setCreating(true) },
+    },
     { title: 'Tilesets', files: [...project.tilesets.values()] },
     { title: 'Characters', files: [...project.characters.values()] },
     { title: 'Database', files: files.filter(isDatabase) },
@@ -157,7 +192,19 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       <nav className="sidebar" aria-label="Project files">
         {groups.map((group) => (
           <section key={group.title}>
-            <h2>{group.title}</h2>
+            <h2>
+              {group.title}
+              {group.add && (
+                <button
+                  className="add"
+                  title={group.add.label}
+                  aria-label={group.add.label}
+                  onClick={group.add.onClick}
+                >
+                  +
+                </button>
+              )}
+            </h2>
             {group.files.length === 0 && <p className="muted empty">(none)</p>}
             <ul>
               {group.files.map((file) => {
@@ -197,10 +244,18 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         <main className="details map-details">
           <div className="map-header">
             <NameField doc={doc} file={current} />
-            <details className="properties">
-              <summary>Properties</summary>
-              <Summary file={current} />
-            </details>
+            <span className="spacer" />
+            <button
+              onClick={() => {
+                const id = duplicateMap(doc, current.id);
+                setSelected(mapPath(id));
+              }}
+            >
+              Duplicate
+            </button>
+            <button className="danger" onClick={() => void removeMap(current.id)}>
+              Delete…
+            </button>
           </div>
           <MapEditor
             key={current.path}
@@ -215,6 +270,17 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           <Summary file={current} />
           {!current.data && <p className="error">This file could not be loaded.</p>}
         </main>
+      )}
+
+      {creating && (
+        <NewMapDialog
+          doc={doc}
+          onClose={() => setCreating(false)}
+          onCreated={(id) => {
+            setCreating(false);
+            setSelected(mapPath(id));
+          }}
+        />
       )}
 
       <footer className="problems">

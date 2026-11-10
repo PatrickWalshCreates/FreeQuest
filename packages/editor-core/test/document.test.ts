@@ -168,7 +168,7 @@ describe('ProjectDocument saving', () => {
 
   it('saves nothing when nothing changed', async () => {
     const { doc } = await demoDocument();
-    expect(await doc.save()).toEqual({ written: [] });
+    expect(await doc.save()).toEqual({ written: [], removed: [] });
   });
 
   it('round-trips the demo byte for byte', async () => {

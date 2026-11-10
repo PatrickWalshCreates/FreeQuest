@@ -12,6 +12,8 @@
     "fs:allow-write-text-file",
     "fs:allow-mkdir",
     "dialog:allow-ask",
-    "core:window:allow-destroy"
+    "core:window:allow-destroy",
+    "fs:allow-remove",
+    "fs:allow-read-dir"
   ]
 }

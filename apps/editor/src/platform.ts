@@ -16,16 +16,24 @@ export async function devFs(project: string): Promise<ProjectFs> {
   return new DevServerFs(project);
 }
 
-/** Ask before throwing away unsaved changes. */
-export async function confirmDiscard(message: string): Promise<boolean> {
+/** Ask the user to confirm something destructive. Resolves true when they agree. */
+export async function confirmAction(
+  message: string,
+  options: { readonly title: string; readonly okLabel: string },
+): Promise<boolean> {
   if (!IN_DESKTOP_APP) return window.confirm(message);
   const { ask } = await import('@tauri-apps/plugin-dialog');
   return ask(message, {
-    title: 'Unsaved changes',
+    title: options.title,
     kind: 'warning',
-    okLabel: 'Discard changes',
+    okLabel: options.okLabel,
     cancelLabel: 'Cancel',
   });
+}
+
+/** Ask before throwing away unsaved changes. */
+export function confirmDiscard(message: string): Promise<boolean> {
+  return confirmAction(message, { title: 'Unsaved changes', okLabel: 'Discard changes' });
 }
 
 /** Warn before the window (or browser tab) closes while `isDirty()`. Returns an unregister function. */

@@ -27,6 +27,18 @@ export class DevServerFs implements ProjectFs {
     if (!response.ok) throw new Error(`Saving ${path} failed: HTTP ${response.status}`);
   }
 
+  async remove(path: string): Promise<void> {
+    const response = await fetch(this.url(path), { method: 'DELETE' });
+    if (!response.ok) throw new Error(`Deleting ${path} failed: HTTP ${response.status}`);
+  }
+
+  async list(dir: string): Promise<string[]> {
+    const segments = [this.project, ...normalizeProjectPath(dir).split('/')];
+    const response = await fetch(`${BASE}/list/${segments.map(encodeURIComponent).join('/')}`);
+    if (!response.ok) throw new Error(`Listing ${dir} failed: HTTP ${response.status}`);
+    return (await response.json()) as string[];
+  }
+
   async assetUrl(path: string): Promise<string> {
     return this.url(path);
   }

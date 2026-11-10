@@ -603,3 +603,173 @@ input:focus {
 .map-canvas:focus {
   outline: none;
 }
+
+/* Dialogs and forms */
+.dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 20px 22px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+/* Dialogs can open inside side panels, so reset their heading styles. */
+.dialog h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.form .field {
+  margin: 0;
+  max-width: none;
+}
+
+.form .row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.form .row .field {
+  flex: 1;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+select {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 6px;
+}
+
+input[type='number'] {
+  width: 100%;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+.anchor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  gap: 3px;
+}
+
+.anchor-grid button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+}
+
+.anchor-grid button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.sidebar h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar .add {
+  padding: 0 7px;
+  line-height: 18px;
+  font-size: 14px;
+  color: var(--muted);
+  background: none;
+  border-color: transparent;
+}
+
+.sidebar .add:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Map settings in the side panel */
+.settings {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.settings .field {
+  margin: 0;
+  max-width: none;
+}
+
+.settings select {
+  width: 100%;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inline button {
+  padding: 2px 10px;
+}
+
+.encounters {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.troops {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.troops th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 12px;
+  padding-bottom: 2px;
+}
+
+.troops td {
+  padding: 2px 4px 2px 0;
+}
+
+.troops td:nth-child(2) {
+  width: 64px;
+}
+
+.troops select {
+  width: 100%;
+}
+
+button.icon {
+  padding: 2px 8px;
+}

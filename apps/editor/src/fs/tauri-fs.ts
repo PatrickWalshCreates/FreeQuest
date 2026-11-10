@@ -3,7 +3,15 @@
 // touch folders the user chose.
 import { FileNotFoundError, type ProjectFs, normalizeProjectPath } from '@freequest/editor-core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { exists, mkdir, readFile, readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import {
+  exists,
+  mkdir,
+  readDir,
+  readFile,
+  readTextFile,
+  remove,
+  writeTextFile,
+} from '@tauri-apps/plugin-fs';
 
 const MIME: Record<string, string> = { png: 'image/png', wav: 'audio/wav', ogg: 'audio/ogg' };
 
@@ -30,6 +38,27 @@ export class TauriFs implements ProjectFs {
     const full = this.full(path);
     await mkdir(full.slice(0, full.lastIndexOf('/')), { recursive: true });
     await writeTextFile(full, text);
+  }
+
+  async remove(path: string): Promise<void> {
+    const full = this.full(path);
+    if (await exists(full)) await remove(full);
+  }
+
+  async list(dir: string): Promise<string[]> {
+    const start = normalizeProjectPath(dir);
+    const found: string[] = [];
+    const walk = async (rel: string): Promise<void> => {
+      const full = this.full(rel);
+      if (!(await exists(full))) return;
+      for (const entry of await readDir(full)) {
+        const child = `${rel}/${entry.name}`;
+        if (entry.isDirectory) await walk(child);
+        else if (entry.isFile) found.push(child);
+      }
+    };
+    await walk(start);
+    return found.sort();
   }
 
   /** Assets become blob URLs, cached for the life of the project. */

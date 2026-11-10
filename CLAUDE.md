@@ -205,7 +205,7 @@ Never the other way.
   clicks. React was chosen for contributor familiarity; no UI library, plain CSS with tokens in
   `styles.css`. The editor's look is our own (clean-room rule covers UI layout too).
 - **`ProjectFs`** is the only way the editor touches files: `readText` (rejects with
-  `FileNotFoundError`), `writeText`, `assetUrl`. Every implementation runs paths through
+  `FileNotFoundError`), `writeText`, `remove`, `list(dir)` (recursive, sorted), `assetUrl`. Every implementation runs paths through
   `normalizeProjectPath` (relative, `/`, no `..`), so project data can't escape its folder.
   Implementations: `TauriFs` (desktop; fs plugin, folders from the open dialog are the only scope;
   assets as blob URLs), `DevServerFs` (browser dev; `dev-fs-plugin.ts` is a `vite dev`-only
@@ -222,7 +222,18 @@ Never the other way.
   merged step that ends equal to its start (structural compare) is dropped. 200 undo steps.
   `doc.project` is the current `OpenedProject` view (problems rechecked per version);
   `subscribe`/`version` feed React's `useSyncExternalStore` (`use-document.ts`).
-- **Saving** writes only dirty files via `stableStringify`, data files before `project.json`, one
+- **Transactions**: `doc.edit(label, (tx) => …)` is one undo step across files; `tx.update`,
+  `tx.create`, `tx.remove` (reads via `tx.file` see pending changes; a throw rolls everything
+  back). History uses an internal ABSENT marker for files that don't exist, so creating and
+  deleting files undo like any edit. `update()` is a one-file transaction.
+- **Map operations** (`map-ops.ts`): `createMap` (ids `map001`…, files in `data/maps/`, ground
+  filled with one tile + empty `upper` layer), `duplicateMap`, `deleteMap` (never the start map;
+  `mapUsages` lists transfers into it for the warning), `resizeMap`/`applyResize` with a 9-way
+  anchor: new ground repeats edge tiles, events that fall off are reported, and when content
+  moves every transfer into the map (any map, via schema's `mapCommands`) and the start position
+  move with it. Maps are capped at `MAX_MAP_SIZE` (256) while each cell is a sprite.
+- **Saving** writes only dirty files via `stableStringify`, data files before `project.json`, then
+  deletes removed files (so the manifest never lists a missing file), one
   save at a time (an idle save snapshots immediately; edits made during a save stay dirty). Files
   in an older format start dirty and are upgraded on save. A dirty file failing the schema blocks
   the whole save (`SaveBlockedError`, nothing written); other problems (shape, references,
@@ -343,7 +354,9 @@ gen:icon`).
      (done; drag pans until step 4 gives the left button to the tools)
   4. ~~Painting tools: pencil, rectangle, fill, eraser, eyedropper, layer choice, passability
      overlay~~ (done; single-tile brush, multi-tile stamps later)
-  5. Map management: new/rename/resize/delete maps, map properties (tileset, music, encounters)
+  5. ~~Map management: new/rename/resize/delete maps, map properties (tileset, music,
+     encounters)~~ (done; map ids are generated and not renamable yet; the music picker lists
+     audio under `assets/`)
   6. Playtest from the editor with unsaved edits
   7. Event editor: place/move events, pages, conditions, graphic, trigger, nested command editor
   8. Database editor: all categories, forms generated from the TypeBox schemas

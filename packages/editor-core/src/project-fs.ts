@@ -11,6 +11,13 @@ export interface ProjectFs {
   /** Read a text file. Rejects with `FileNotFoundError` when it doesn't exist. */
   readText(path: string): Promise<string>;
   writeText(path: string, text: string): Promise<void>;
+  /** Delete a file. Deleting a file that doesn't exist is not an error. */
+  remove(path: string): Promise<void>;
+  /**
+   * Every file under a folder (recursively), as project-relative paths in
+   * sorted order. A missing folder lists as empty.
+   */
+  list(dir: string): Promise<string[]>;
   /** A URL an <img> or texture loader can use for a project asset (images, audio). */
   assetUrl(path: string): Promise<string>;
 }
@@ -43,6 +50,15 @@ export class MemoryFs implements ProjectFs {
 
   async writeText(path: string, text: string): Promise<void> {
     this.files.set(normalizeProjectPath(path), text);
+  }
+
+  async remove(path: string): Promise<void> {
+    this.files.delete(normalizeProjectPath(path));
+  }
+
+  async list(dir: string): Promise<string[]> {
+    const prefix = `${normalizeProjectPath(dir)}/`;
+    return [...this.files.keys()].filter((path) => path.startsWith(prefix)).sort();
   }
 
   async assetUrl(path: string): Promise<string> {
