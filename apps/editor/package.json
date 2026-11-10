@@ -22,7 +22,8 @@
     "@tauri-apps/plugin-fs": "^2.7.1",
     "pixi.js": "^8.22.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "typebox": "1.4.6"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.4",

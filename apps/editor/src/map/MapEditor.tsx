@@ -12,6 +12,12 @@ import {
   fitViewport,
   panBy,
   screenToTile,
+  addEvent,
+  editMap,
+  eventAt,
+  inBounds,
+  moveEvent,
+  removeEvent,
   screenToWorld,
   stepZoom,
   tileAt,
@@ -20,6 +26,7 @@ import {
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
 import { useMemo, useRef, useState } from 'react';
 import { type CanvasPoint, MapCanvas } from './MapCanvas.js';
+import { EventPanel } from '../events/EventPanel.js';
 import { MapSettings } from './MapSettings.js';
 import { TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
@@ -34,16 +41,28 @@ interface Props {
 
 const PALETTE_WIDTH = 256;
 
-const TOOLS: readonly { id: TileTool; label: string; key: string; hint: string }[] = [
+/** The painting tools, plus the event tool (select, move and add events). */
+type EditorTool = TileTool | 'event';
+
+const TOOLS: readonly { id: EditorTool; label: string; key: string; hint: string }[] = [
   { id: 'pencil', label: 'Pencil', key: 'b', hint: 'Paint tiles by clicking or dragging' },
   { id: 'rectangle', label: 'Rectangle', key: 'r', hint: 'Drag to fill a rectangle' },
   { id: 'fill', label: 'Fill', key: 'f', hint: 'Fill the connected area of the same tile' },
   { id: 'eraser', label: 'Eraser', key: 'e', hint: 'Clear tiles on this layer' },
   { id: 'eyedropper', label: 'Pick', key: 'i', hint: 'Pick a tile from the map (or right-click)' },
+  {
+    id: 'event',
+    label: 'Events',
+    key: 'v',
+    hint: 'Select, drag and double-click to add events',
+  },
 ];
 
+/** Two clicks on the same cell within this many ms add an event. */
+const DOUBLE_CLICK_MS = 400;
+
 /** Tools that paint the palette's tile, so the brush shows it under the pointer. */
-const PAINTS = new Set<TileTool>(['pencil', 'rectangle', 'fill']);
+const PAINTS = new Set<EditorTool>(['pencil', 'rectangle', 'fill']);
 
 /** The map editor: canvas, view controls, layers and the tile palette. */
 export function MapEditor({ doc, file, onPlayFrom }: Props) {
@@ -73,7 +92,15 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
   const [showEvents, setShowEvents] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const [selectedTile, setSelectedTile] = useState(0);
-  const [tool, setTool] = useState<TileTool>('pencil');
+  const [tool, setTool] = useState<EditorTool>('pencil');
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  /** The event being dragged, with the coalesce key that makes the drag one undo step. */
+  const eventDrag = useRef<{ readonly id: string; readonly key: string } | null>(null);
+  const lastClick = useRef<{
+    readonly time: number;
+    readonly x: number;
+    readonly y: number;
+  } | null>(null);
   const [showWalkable, setShowWalkable] = useState(false);
   const stroke = useRef<TileStroke | null>(null);
   const [preview, setPreview] = useState<readonly TileCell[] | null>(null);
@@ -153,18 +180,57 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
       }
       return;
     }
+    if (tool === 'event') {
+      eventDown(cell);
+      return;
+    }
     if (how.pick || tool === 'eyedropper') {
       pick(cell);
       if (tool === 'eyedropper') setTool('pencil');
       return;
     }
     stroke.current = new TileStroke(
-      { doc, path: file.path, layer: activeLayer, tool, tile: selectedTile },
+      { doc, path: file.path, layer: activeLayer, tool: tool as TileTool, tile: selectedTile },
       cell,
     );
     setPreview(stroke.current.preview);
   };
+  const eventDown = (cell: { x: number; y: number }) => {
+    const now = performance.now();
+    const last = lastClick.current;
+    lastClick.current = { time: now, ...cell };
+    const hit = eventAt(map, cell.x, cell.y);
+    if (hit) {
+      setSelectedEvent(hit.id);
+      eventDrag.current = { id: hit.id, key: `move-event:${hit.id}:${now}` };
+      return;
+    }
+    if (!inBounds(map, cell.x, cell.y)) return;
+    const double =
+      last && now - last.time < DOUBLE_CLICK_MS && last.x === cell.x && last.y === cell.y;
+    if (double) {
+      let added: string | null = null;
+      editMap(doc, file.path, 'Add event', (m) => {
+        const result = addEvent(m, cell.x, cell.y);
+        added = result.id;
+        return result.map;
+      });
+      setSelectedEvent(added);
+      lastClick.current = null;
+    } else setSelectedEvent(null);
+  };
+  const eventMove = (cell: { x: number; y: number }) => {
+    const drag = eventDrag.current;
+    if (!drag || !inBounds(map, cell.x, cell.y)) return;
+    editMap(doc, file.path, 'Move event', (m) => moveEvent(m, drag.id, cell.x, cell.y), {
+      coalesce: drag.key,
+    });
+  };
   const toolUp = () => {
+    if (eventDrag.current) {
+      eventDrag.current = null;
+      doc.endCoalescing();
+    }
     stroke.current?.finish();
     stroke.current = null;
     setPreview(null);
@@ -174,7 +240,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
     stroke.current = null;
     setPreview(null);
   };
-  const chooseTool = (next: TileTool) => {
+  const chooseTool = (next: EditorTool) => {
     if (stroke.current) return;
     setTool(next);
   };
@@ -199,13 +265,28 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
       className="map-editor"
       tabIndex={-1}
       onKeyDown={(event) => {
-        if (event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
+        const target = event.target;
+        const typing =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement;
+        if (typing || event.metaKey || event.ctrlKey) return;
         const key = event.key.toLowerCase();
+        const onCanvas = target instanceof HTMLElement && target.classList.contains('map-canvas');
         const shortcut = TOOLS.find((t) => t.key === key);
         if (key === 'escape' && pickingStart) setPickingStart(false);
         else if (key === 'escape' && stroke.current) cancelStroke();
         else if (shortcut) chooseTool(shortcut.id);
-        else if (key === '=' || key === '+') zoomTo(stepZoom(zoom, 1));
+        else if (
+          (key === 'delete' || key === 'backspace') &&
+          onCanvas &&
+          tool === 'event' &&
+          selectedEvent
+        ) {
+          const id = selectedEvent;
+          editMap(doc, file.path, 'Delete event', (m) => removeEvent(m, id));
+          setSelectedEvent(null);
+        } else if (key === '=' || key === '+') zoomTo(stepZoom(zoom, 1));
         else if (key === '-') zoomTo(stepZoom(zoom, -1));
         else if (key === '0') fit();
         else if (key === 'g') setShowGrid((v) => !v);
@@ -294,6 +375,9 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
             options={options}
             hover={hover}
             brush={brush}
+            selection={
+              tool === 'event' ? (map.events.find((e) => e.id === selectedEvent) ?? null) : null
+            }
             walkability={walkability}
             onToolDown={toolDown}
             onToolUp={toolUp}
@@ -325,6 +409,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
                   : null,
               );
               const cell = at && cellAt(at);
+              if (eventDrag.current && cell) eventMove(cell);
               if (stroke.current && cell) {
                 stroke.current.moveTo(cell);
                 setPreview(stroke.current.preview);
@@ -339,6 +424,11 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
             <span className="accent-text">
               Click where the player should start{hover ? ` (${hover.x}, ${hover.y})` : ''} · Esc
               cancels
+            </span>
+          ) : tool === 'event' && !hover ? (
+            <span className="muted">
+              Click an event to edit it, drag to move it, double-click an empty cell to add one,
+              Delete removes the selected event
             </span>
           ) : hover ? (
             <>
@@ -361,55 +451,67 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
         </div>
       </div>
 
-      <aside className="map-side">
-        <section>
-          <h2>Map</h2>
-          <MapSettings doc={doc} path={file.path} map={map} />
-        </section>
-        <section>
-          <h2>Layers</h2>
-          <ul className="layers">
-            {/* Top layer first, like the drawing order seen from above. */}
-            {map.layers
-              .map((layer, index) => ({ layer, index }))
-              .reverse()
-              .map(({ layer, index }) => (
-                <li key={index} className={index === activeLayer ? 'active' : undefined}>
-                  <button
-                    className="eye"
-                    aria-pressed={!hiddenLayers.has(index)}
-                    title={hiddenLayers.has(index) ? 'Show layer' : 'Hide layer'}
-                    onClick={() => toggleLayer(index)}
-                  >
-                    {hiddenLayers.has(index) ? '○' : '●'}
-                  </button>
-                  <button
-                    className="layer-name"
-                    aria-current={index === activeLayer}
-                    onClick={() => setActiveLayer(index)}
-                  >
-                    {layer.name}
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </section>
-        <section>
-          <h2>Tiles · {tileset.name}</h2>
-          {imageUrl.status === 'ready' && (
-            <TilePalette
-              tileset={tileset}
-              imageUrl={imageUrl.value}
-              selected={selectedTile}
-              onSelect={(tile) => {
-                setSelectedTile(tile);
-                if (!PAINTS.has(tool)) chooseTool('pencil');
-              }}
-              width={PALETTE_WIDTH}
-            />
-          )}
-        </section>
-      </aside>
+      {tool === 'event' ? (
+        <aside className="map-side wide">
+          <EventPanel
+            doc={doc}
+            path={file.path}
+            map={map}
+            selected={selectedEvent}
+            onSelect={setSelectedEvent}
+          />
+        </aside>
+      ) : (
+        <aside className="map-side">
+          <section>
+            <h2>Map</h2>
+            <MapSettings doc={doc} path={file.path} map={map} />
+          </section>
+          <section>
+            <h2>Layers</h2>
+            <ul className="layers">
+              {/* Top layer first, like the drawing order seen from above. */}
+              {map.layers
+                .map((layer, index) => ({ layer, index }))
+                .reverse()
+                .map(({ layer, index }) => (
+                  <li key={index} className={index === activeLayer ? 'active' : undefined}>
+                    <button
+                      className="eye"
+                      aria-pressed={!hiddenLayers.has(index)}
+                      title={hiddenLayers.has(index) ? 'Show layer' : 'Hide layer'}
+                      onClick={() => toggleLayer(index)}
+                    >
+                      {hiddenLayers.has(index) ? '○' : '●'}
+                    </button>
+                    <button
+                      className="layer-name"
+                      aria-current={index === activeLayer}
+                      onClick={() => setActiveLayer(index)}
+                    >
+                      {layer.name}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </section>
+          <section>
+            <h2>Tiles · {tileset.name}</h2>
+            {imageUrl.status === 'ready' && (
+              <TilePalette
+                tileset={tileset}
+                imageUrl={imageUrl.value}
+                selected={selectedTile}
+                onSelect={(tile) => {
+                  setSelectedTile(tile);
+                  if (!PAINTS.has(tool)) chooseTool('pencil');
+                }}
+                width={PALETTE_WIDTH}
+              />
+            )}
+          </section>
+        </aside>
+      )}
     </div>
   );
 }

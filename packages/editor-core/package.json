@@ -20,5 +20,8 @@
   },
   "dependencies": {
     "@freequest/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "typebox": "1.4.6"
   }
 }

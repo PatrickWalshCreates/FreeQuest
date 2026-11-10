@@ -31,6 +31,8 @@ interface Props {
   readonly onToolUp: () => void;
   readonly onToolCancel: () => void;
   readonly brush: readonly TileCell[];
+  /** The selected event's cell, outlined. */
+  readonly selection: { readonly x: number; readonly y: number } | null;
   readonly walkability: Passability | null;
 }
 
@@ -70,6 +72,8 @@ export function MapCanvas(props: Props) {
   }, []);
 
   const { map, tileset, textures, graphics, viewport, options, hover, brush, walkability } = props;
+  const selX = props.selection?.x;
+  const selY = props.selection?.y;
   useEffect(() => renderer?.setMap(map, tileset, textures), [renderer, map, tileset, textures]);
   useEffect(() => renderer?.setEvents(map.events, graphics), [renderer, map.events, graphics]);
   useEffect(() => renderer?.setOptions(options), [renderer, options]);
@@ -78,6 +82,13 @@ export function MapCanvas(props: Props) {
   }, [renderer, viewport]);
   useEffect(() => renderer?.setHover(hover), [renderer, hover]);
   useEffect(() => renderer?.setBrush(brush), [renderer, brush]);
+  useEffect(
+    () =>
+      renderer?.setSelection(
+        selX === undefined || selY === undefined ? null : { x: selX, y: selY },
+      ),
+    [renderer, selX, selY],
+  );
   useEffect(() => renderer?.setWalkability(walkability), [renderer, walkability]);
 
   // Size changes (the first one sets up the viewport).

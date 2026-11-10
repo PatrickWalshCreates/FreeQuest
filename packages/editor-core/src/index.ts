@@ -7,3 +7,5 @@ export * from './viewport.js';
 export * from './tools.js';
 export * from './map-ops.js';
 export * from './playtest.js';
+export * from './schema-form.js';
+export * from './event-edits.js';

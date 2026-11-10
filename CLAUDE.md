@@ -276,6 +276,26 @@ Never the other way.
   resources and breaks every other live app (the editor's map canvas). Use
   `destroy({ removeView: true }, …)`. Images load through `<img>` in runtime
   `loadPixelTexture` (not `Assets`, which can't load blob URLs); the editor reuses it.
+- **Schema-driven forms**: `editor-core/schema-form.ts` reads TypeBox schemas as plain JSON
+  Schema (`classify` → fixed/choice/nullable/union/string/number/integer/boolean/object/array/
+  ref; `defaultFor` with a `DefaultPicker` for references; `variantIndex` tells union variants
+  apart; `COMMAND_SCHEMAS`, `CONDITION_SCHEMA`). `apps/editor/src/forms/SchemaField.tsx` renders
+  any value from that; a `FormContext` supplies reference dropdowns by field name
+  (`project-context.ts`: map, switch, variable, troop, actor, character, `id` by sibling `kind`,
+  `path` = audio). Nested command lists are skipped (the tree editor owns them); an optional
+  one shows as a "“Else” branch" toggle. New fields in the format get controls for free; add
+  labels/refs in `project-context.ts` rather than special-casing forms. Dialog values are
+  validated against their own union variant (`events/validate.ts`) so errors are specific.
+- **Event editor**: pure edits in `editor-core/event-edits.ts` (add/move/duplicate/remove events,
+  ids `event1`…; pages add/copy/move/remove, never fewer than one; command tree by `ListPath`
+  steps `{index, branch: then|else|onWin|onEscape|onLose|option, option?}` with
+  `getList`/`updateList`/`insert`/`replace`/`remove`/`moveCommand`; `flattenCommands` → rows
+  with branch headings and end slots; `describeCommand`/`describeCondition` with a
+  `NameLookup`; `COMMAND_GROUPS`/`COMMAND_NAMES` for the add menu, tested to cover every type).
+  UI: the map's Events tool (V) selects (click), moves (drag, one undo step), adds (double-click
+  an empty cell) and deletes (Delete on the canvas); `EventPanel` edits name, pages, trigger,
+  layer, graphic, conditions and the `CommandList` (dialogs edit one command; nothing changes
+  until OK, so each edit is one undo step).
 - **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
@@ -371,7 +391,9 @@ gen:icon`).
      encounters)~~ (done; map ids are generated and not renamable yet; the music picker lists
      audio under `assets/`)
   6. ~~Playtest from the editor with unsaved edits~~ (done; Play, and Play from here)
-  7. Event editor: place/move events, pages, conditions, graphic, trigger, nested command editor
+  7. ~~Event editor: place/move events, pages, conditions, graphic, trigger, nested command
+     editor~~ (done; forms generated from the schema, reused by step 8; no copy/paste of commands
+     yet, no visual picker for transfer targets)
   8. Database editor: all categories, forms generated from the TypeBox schemas
 - **M7** Export targets: web, desktop.
 - **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.

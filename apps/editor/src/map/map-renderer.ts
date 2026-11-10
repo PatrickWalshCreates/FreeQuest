@@ -24,6 +24,7 @@ const COLORS = {
   border: 0x5fb3a1,
   hover: 0xffffff,
   event: 0xf4c44a,
+  selection: 0x5fb3a1,
 };
 
 interface LayerSprites {
@@ -51,6 +52,8 @@ export class MapRenderer {
   private textures: readonly Texture[] = [];
   private gridZoom = 0;
   private hoverCell: { x: number; y: number } | null = null;
+  private selectedCell: { x: number; y: number } | null = null;
+  private readonly selection = new Graphics();
   private options: RenderOptions | null = null;
 
   private constructor(readonly app: Application) {
@@ -62,6 +65,7 @@ export class MapRenderer {
       this.brush,
       this.grid,
       this.border,
+      this.selection,
       this.hover,
     );
     app.stage.addChild(this.world);
@@ -255,6 +259,24 @@ export class MapRenderer {
     this.render();
   }
 
+  /** Outline the selected event's cell (null clears it). */
+  setSelection(cell: { x: number; y: number } | null): void {
+    this.selectedCell = cell;
+    this.drawSelection();
+    this.render();
+  }
+
+  private drawSelection(): void {
+    const cell = this.selectedCell;
+    const tileset = this.tileset;
+    this.selection.clear();
+    if (!cell || !tileset) return;
+    const { tileWidth: tw, tileHeight: th } = tileset;
+    this.selection
+      .rect(cell.x * tw, cell.y * th, tw, th)
+      .stroke({ color: COLORS.selection, width: 2 * this.hairline, alignment: 1 });
+  }
+
   private drawHover(): void {
     const cell = this.hoverCell;
     const tileset = this.tileset;
@@ -279,6 +301,7 @@ export class MapRenderer {
     if (!map || !tileset || this.gridZoom === this.world.scale.x) return;
     this.gridZoom = this.world.scale.x;
     this.drawHover();
+    this.drawSelection();
     const { tileWidth: tw, tileHeight: th } = tileset;
     const w = map.width * tw;
     const h = map.height * th;
