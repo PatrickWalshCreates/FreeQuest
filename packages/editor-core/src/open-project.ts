@@ -69,7 +69,8 @@ export class ProjectOpenError extends Error {
 export function contentProblems(kind: DataFileKind, data: unknown, id: string): string[] {
   const problems: string[] = [];
   const dataId = (data as { id?: unknown }).id;
-  if (typeof dataId === 'string' && dataId !== id) {
+  // project.json's own id is the game's id, not a reference to itself.
+  if (kind !== 'manifest' && typeof dataId === 'string' && dataId !== id) {
     problems.push(`id "${dataId}" does not match the id "${id}" in ${MANIFEST_PATH}`);
   }
   if (kind === 'map') problems.push(...checkMapShape(data as FileData<'map'>));

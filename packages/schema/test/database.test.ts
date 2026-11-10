@@ -159,7 +159,8 @@ describe('checkDatabase', () => {
 
   it('checks the starting party against actors', () => {
     const manifest: Manifest = {
-      formatVersion: 4,
+      formatVersion: 5,
+      id: 'test-game',
       name: 'T',
       screen: { width: 1, height: 1 },
       start: { map: 'a', x: 0, y: 0, direction: 'down', party: ['hero', 'ghost'], gold: 0 },

@@ -36,10 +36,10 @@ const roundTrip = (save: SaveFile): SaveFile =>
 describe('saving and loading', () => {
   it('produces a valid save file with a slot summary', () => {
     const world = progressedWorld();
-    const save = world.toSave({ game: manifest.name, playSeconds: 754, savedAt: new Date(0) });
+    const save = world.toSave({ game: manifest.id, playSeconds: 754, savedAt: new Date(0) });
     expect(roundTrip(save)).toEqual(save);
     expect(save).toMatchObject({
-      game: 'FreeQuest Demo',
+      game: 'freequest-demo',
       savedAt: '1970-01-01T00:00:00.000Z',
       playSeconds: 754,
       map: 'house',
@@ -57,10 +57,10 @@ describe('saving and loading', () => {
 
   it('restores the same game', () => {
     const world = progressedWorld();
-    const save = roundTrip(world.toSave({ game: manifest.name, playSeconds: 10 }));
+    const save = roundTrip(world.toSave({ game: manifest.id, playSeconds: 10 }));
     const restored = World.fromSave(save, { manifest, map: house, tileset, database: db });
     expect(
-      restored.toSave({ game: manifest.name, playSeconds: 10, savedAt: new Date(save.savedAt) }),
+      restored.toSave({ game: manifest.id, playSeconds: 10, savedAt: new Date(save.savedAt) }),
     ).toEqual(save);
     expect([restored.player.x, restored.player.y, restored.player.direction]).toEqual([
       3,
@@ -77,14 +77,14 @@ describe('saving and loading', () => {
 
   it('drops switches and variables the project no longer declares', () => {
     const world = progressedWorld();
-    const save = world.toSave({ game: manifest.name, playSeconds: 0 });
+    const save = world.toSave({ game: manifest.id, playSeconds: 0 });
     const stale = { ...save, switches: { ...save.switches, removed_flag: true } };
     const restored = World.fromSave(stale, { manifest, map: house, tileset, database: db });
     expect(restored.state.toData().switches).toEqual({ accepted_request: true });
   });
 
   it('rejects a save for a different map than the one given', () => {
-    const save = progressedWorld().toSave({ game: manifest.name, playSeconds: 0 });
+    const save = progressedWorld().toSave({ game: manifest.id, playSeconds: 0 });
     expect(() => World.fromSave(save, { manifest, map: meadow, tileset, database: db })).toThrow(
       /save is on map "house"/,
     );
@@ -93,6 +93,6 @@ describe('saving and loading', () => {
   it('refuses to save while an event is running', () => {
     const world = progressedWorld();
     world.run([{ type: 'message', text: 'hi' }]);
-    expect(() => world.toSave({ game: manifest.name, playSeconds: 0 })).toThrow(/event is running/);
+    expect(() => world.toSave({ game: manifest.id, playSeconds: 0 })).toThrow(/event is running/);
   });
 });

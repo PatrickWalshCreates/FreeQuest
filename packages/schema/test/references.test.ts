@@ -15,7 +15,8 @@ import {
 } from '../src/index.js';
 
 const manifest: Manifest = {
-  formatVersion: 4,
+  formatVersion: 5,
+  id: 'test-game',
   name: 'T',
   screen: { width: 32, height: 32 },
   start: { map: 'a', x: 0, y: 0, direction: 'down', party: [], gold: 0 },

@@ -3,6 +3,7 @@ import {
   type ProjectFile,
   SaveBlockedError,
   allFiles,
+  MANIFEST_PATH,
   deleteMap,
   duplicateMap,
   mapPath,
@@ -10,7 +11,7 @@ import {
   type PlaytestSource,
   playtestSource,
 } from '@freequest/editor-core';
-import { DATABASE_KINDS, type DatabaseKind, type GameMap } from '@freequest/schema';
+import { DATABASE_KINDS, type DatabaseKind, type GameMap, ID_PATTERN } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
 import { MapEditor } from './map/MapEditor.js';
@@ -297,6 +298,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         <main className="details">
           <h1>{labelOf(current)}</h1>
           {current.data && 'name' in current.data && <NameField doc={doc} file={current} />}
+          {current.kind === 'manifest' && <GameIdField doc={doc} />}
           <Summary file={current} />
           {!current.data && <p className="error">This file could not be loaded.</p>}
         </main>
@@ -387,6 +389,33 @@ function NameField({ doc, file }: { readonly doc: ProjectDocument; readonly file
         }}
         onBlur={() => doc.endCoalescing()}
       />
+    </label>
+  );
+}
+
+/** The game's permanent id (keeps its saves apart from other games'). */
+function GameIdField({ doc }: { readonly doc: ProjectDocument }) {
+  const id = doc.project.manifest.data.id;
+  const valid = new RegExp(ID_PATTERN).test(id);
+  return (
+    <label className="field">
+      <span>Game id</span>
+      <input
+        value={id}
+        spellCheck={false}
+        onChange={(event) => {
+          const value = event.target.value;
+          doc.update(MANIFEST_PATH, 'manifest', 'Change game id', (m) => ({ ...m, id: value }), {
+            coalesce: 'game-id',
+          });
+        }}
+        onBlur={() => doc.endCoalescing()}
+      />
+      <span className={valid ? 'hint' : 'field-problem'}>
+        {valid
+          ? 'Keeps this game’s saves apart from other games. Don’t change it once players have saves.'
+          : 'Use lowercase letters, digits, "-" and "_", starting with a letter or digit.'}
+      </span>
     </label>
   );
 }

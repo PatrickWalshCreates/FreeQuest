@@ -1,6 +1,12 @@
 // Database entries (actors, items, enemies…): new, duplicate, delete,
 // reorder, all pure functions over a category file's data.
-import { DATABASE_KINDS, type DatabaseKind, SCHEMAS } from '@freequest/schema';
+import {
+  DATABASE_KINDS,
+  type DatabaseKind,
+  ID_PATTERN,
+  SCHEMAS,
+  idFromName,
+} from '@freequest/schema';
 import { type DefaultPicker, type JsonSchema, asSchema, defaultFor } from './schema-form.js';
 
 /** Categories stored as `{ formatVersion, entries: [...] }` (everything but system). */
@@ -21,17 +27,11 @@ export function entrySchema(kind: EntryKind): JsonSchema {
   return items;
 }
 
-export const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
+const ID_RE = new RegExp(ID_PATTERN);
 
-/** "Fire Ball!" → "fire-ball": a valid id from a display name. */
+/** "Fire Ball!" → "fire-ball": a valid id from a display name (schema's `idFromName`). */
 export function slugify(name: string): string {
-  const slug = name
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, '-')
-    .replace(/^[-_]+|[-_]+$/g, '');
-  return slug || 'entry';
+  return idFromName(name);
 }
 
 /** `base`, or `base-2`, `base-3`… whichever isn't taken. */
@@ -43,7 +43,7 @@ export function uniqueId(base: string, taken: Iterable<string>): string {
 
 /** Why `id` can't be a new entry's id, or null when it can. */
 export function idProblem(id: string, file: EntriesFile): string | null {
-  if (!ID_PATTERN.test(id))
+  if (!ID_RE.test(id))
     return 'Use lowercase letters, digits, "-" and "_" (starting with a letter or digit)';
   if (file.entries.some((e) => e.id === id)) return `"${id}" is already used`;
   return null;

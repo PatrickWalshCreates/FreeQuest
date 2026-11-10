@@ -5,7 +5,12 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 4
+      "const": 5
+    },
+    "id": {
+      "type": "string",
+      "description": "Permanent id of the game. Keeps its saves and desktop app data apart from other games; changing it after release makes players lose their saves.",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "name": {
       "type": "string",
@@ -249,6 +254,6 @@
       }
     }
   },
-  "required": ["formatVersion", "name", "screen", "start", "player", "tilesets", "maps", "characters", "switches", "variables"],
+  "required": ["formatVersion", "id", "name", "screen", "start", "player", "tilesets", "maps", "characters", "switches", "variables"],
   "title": "FreeQuest project manifest"
 }

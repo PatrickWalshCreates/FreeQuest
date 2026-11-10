@@ -1,5 +1,6 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
+  "id": "freequest-demo",
   "name": "FreeQuest Demo",
   "characters": [
     {

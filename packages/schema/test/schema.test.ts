@@ -9,6 +9,7 @@ import {
   checkDatabase,
   type FileKind,
   FormatVersionError,
+  idFromName,
   type Migration,
   ProjectFileError,
   type ProjectData,
@@ -76,6 +77,23 @@ describe('migrate', () => {
     const raw: unknown = JSON.parse(readFileSync(join(FIXTURES, 'v1', file), 'utf8'));
     const data = parseProjectFile(kind, raw, file);
     expect(data.formatVersion).toBe(CURRENT_FORMAT_VERSION[kind]);
+  });
+
+  it('gives a v4 manifest a game id made from its name', () => {
+    const raw: unknown = JSON.parse(readFileSync(join(FIXTURES, 'v4', 'project.json'), 'utf8'));
+    const manifest = parseProjectFile('manifest', raw, 'project.json');
+    expect(manifest.formatVersion).toBe(5);
+    expect(manifest.id).toBe('freequest-demo');
+    // Names with nothing usable still get a valid id.
+    const odd = parseProjectFile('manifest', { ...(raw as object), name: '★★★' });
+    expect(odd.id).toBe('game');
+  });
+
+  it('makes ids from names', () => {
+    expect(idFromName('Fire Ball!')).toBe('fire-ball');
+    expect(idFromName('  Ünïcode Sword ')).toBe('unicode-sword');
+    expect(idFromName('!!!')).toBe('entry');
+    expect(idFromName('!!!', 'game')).toBe('game');
   });
 
   it('rejects missing or future versions', () => {

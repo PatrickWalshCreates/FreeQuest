@@ -1,8 +1,11 @@
 import Type, { type Static } from 'typebox';
 
 /** Identifier used to reference one project file from another (e.g. a map's tileset). */
+/** The pattern every id follows (exported for schemas that need their own description). */
+export const ID_PATTERN = '^[a-z0-9][a-z0-9_-]*$';
+
 export const Id = Type.String({
-  pattern: '^[a-z0-9][a-z0-9_-]*$',
+  pattern: ID_PATTERN,
   description: 'Lowercase identifier: letters, digits, "_" and "-".',
 });
 
@@ -11,6 +14,20 @@ export const RelativePath = Type.String({
   pattern: '^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$',
   description: 'Path relative to the project root, using "/" separators.',
 });
+
+/**
+ * A valid id made from a display name: "Fire Ball!" → "fire-ball",
+ * "FreeQuest Demo" → "freequest-demo". Empty results become "entry".
+ */
+export function idFromName(name: string, fallback = 'entry'): string {
+  const slug = name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^[-_]+|[-_]+$/g, '');
+  return slug || fallback;
+}
 
 export const Direction = Type.Union([
   Type.Literal('down'),

@@ -1,7 +1,15 @@
 import Type, { type Static } from 'typebox';
-import { Direction, FileRef, Id, NonNegativeInt, PositiveInt, RelativePath } from './common.js';
+import {
+  Direction,
+  FileRef,
+  ID_PATTERN,
+  Id,
+  NonNegativeInt,
+  PositiveInt,
+  RelativePath,
+} from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 4;
+export const MANIFEST_FORMAT_VERSION = 5;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -31,6 +39,12 @@ export type FlagDeclaration = Static<typeof FlagDeclaration>;
 export const Manifest = Type.Object(
   {
     formatVersion: Type.Literal(MANIFEST_FORMAT_VERSION),
+    id: Type.String({
+      pattern: ID_PATTERN,
+      description:
+        'Permanent id of the game. Keeps its saves and desktop app data apart from other games; ' +
+        'changing it after release makes players lose their saves.',
+    }),
     name: Type.String({ minLength: 1 }),
     screen: Type.Object(
       {

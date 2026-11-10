@@ -15,11 +15,11 @@ function setup() {
     tileset: parseProjectFile('tileset', readDemo('data/tilesets/overworld.json')),
     database: db,
   });
-  const saves = new SaveStore(new MemoryStorage(), manifest.name);
+  const saves = new SaveStore(new MemoryStorage(), manifest);
   const menu = new MenuController({
     world,
     saves,
-    game: manifest.name,
+    game: manifest.id,
     playSeconds: () => 3725,
     random: () => 0.5,
   });
@@ -165,12 +165,12 @@ describe('MenuController', () => {
         },
         removeItem: () => undefined,
       },
-      manifest.name,
+      manifest,
     );
     const failing = new MenuController({
       world,
       saves: full,
-      game: manifest.name,
+      game: manifest.id,
       playSeconds: () => 0,
     });
     const input = new ActionState();

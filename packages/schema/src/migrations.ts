@@ -4,6 +4,7 @@ import { DATABASE_KINDS, type DatabaseKind } from './manifest.js';
 import { CHARACTER_FORMAT_VERSION } from './character.js';
 import { MANIFEST_FORMAT_VERSION } from './manifest.js';
 import { MAP_FORMAT_VERSION } from './map.js';
+import { idFromName } from './common.js';
 import { TILESET_FORMAT_VERSION } from './tileset.js';
 
 export type FileKind = 'manifest' | 'tileset' | 'map' | 'character' | 'save' | DatabaseKind;
@@ -41,6 +42,14 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     },
     // v4: troops database category. Additive.
     { from: 3, migrate: (d) => d },
+    // v5: a permanent game id, made from the name (it keeps saves apart).
+    {
+      from: 4,
+      migrate: (d) => ({
+        ...d,
+        id: idFromName(typeof d['name'] === 'string' ? d['name'] : '', 'game'),
+      }),
+    },
   ],
   tileset: [],
   map: [

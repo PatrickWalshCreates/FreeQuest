@@ -30,7 +30,8 @@ function map(id: string, width: number, height: number): GameMap {
 }
 
 const manifest: Manifest = {
-  formatVersion: 4,
+  formatVersion: 5,
+  id: 'test-game',
   name: 'T',
   screen: { width: 64, height: 64 },
   start: { map: 'a', x: 0, y: 0, direction: 'down', party: [], gold: 0 },

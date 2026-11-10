@@ -180,8 +180,10 @@ Never the other way.
   switches/variables, party data, and a slot summary. `World.toSave()` refuses while an event runs
   (so no interpreter state is ever saved); `World.fromSave()` rebuilds a world (the save's map must
   be loaded first). Undeclared switches/variables are dropped on load. `SaveStore` keeps slots in any
-  `KeyValueStorage` (localStorage by default, `MemoryStorage` otherwise), namespaced per game; it
-  reads through migrate + validate and reports damaged or foreign saves as broken slots.
+  `KeyValueStorage` (localStorage by default, `MemoryStorage` otherwise), keyed by the manifest
+  `id` (`freequest:game:<id>:save:<n>`; saves' `game` field is the id). Saves from before ids
+  (keyed and tagged by name) still load and move to the id key on their next save. It reads
+  through migrate + validate and reports damaged or foreign saves as broken slots.
 - **Loading**: `loadProject(urlOrSource)`; assets resolve through `project.assetUrl(path)`
   (async), so any source works (HTTP folder, editor document, later desktop files).
 - **Audio**: `system.json` `audio` (title/battle/victory/game-over music + engine sounds), map
@@ -343,7 +345,8 @@ gen:icon`).
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- Current versions: manifest 4 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file),
+- Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+  v5: `id`, the permanent game id, migrated from the name with `idFromName`),
   map 5 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
@@ -428,7 +431,8 @@ gen:icon`).
     close prompt) before M7 packaging.
 - **M7** Export: web, desktop (macOS first), `freequest` CLI. Steps:
   1. ~~Export core: collect referenced files, check, write~~ (done)
-  2. Game id in project.json (manifest v5) used to keep saves apart
+  2. ~~Game id in project.json (manifest v5) used to keep saves apart~~ (done; editable in
+     Project settings)
   3. Release player: loading screen, fullscreen, friendly errors, no debug; built once and bundled
   4. `freequest` CLI: `check` and `export web`
   5. Export dialog in the editor

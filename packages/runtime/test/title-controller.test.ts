@@ -15,12 +15,12 @@ function save(gold: number, savedAt: string) {
     database: demoDb(),
   });
   world.party.gainGold(gold);
-  return world.toSave({ game: manifest.name, playSeconds: 1, savedAt: new Date(savedAt) });
+  return world.toSave({ game: manifest.id, playSeconds: 1, savedAt: new Date(savedAt) });
 }
 
 function setup(fill: (store: SaveStore, storage: MemoryStorage) => void = () => undefined) {
   const storage = new MemoryStorage();
-  const store = new SaveStore(storage, manifest.name);
+  const store = new SaveStore(storage, manifest);
   fill(store, storage);
   const title = new TitleController(manifest.name, store);
   const input = new ActionState();

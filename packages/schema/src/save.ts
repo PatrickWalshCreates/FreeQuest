@@ -35,7 +35,7 @@ const SavedActor = Type.Object(
 export const SaveFile = Type.Object(
   {
     formatVersion: Type.Literal(SAVE_FORMAT_VERSION),
-    /** The project's name, to catch loading a save into the wrong game. */
+    /** The game's id (older saves: its name), to catch loading a save into the wrong game. */
     game: Type.String(),
     /** ISO 8601 timestamp. */
     savedAt: Type.String(),

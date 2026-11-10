@@ -273,7 +273,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   // Title screen, menu and saves ---------------------------------------------
-  const saves = new SaveStore(options.saveStorage ?? defaultStorage(), manifest.name);
+  const saves = new SaveStore(options.saveStorage ?? defaultStorage(), manifest);
   const title = new TitleController(manifest.name, saves);
   const titleView = new TitleView(width, height, theme);
   app.stage.addChildAt(titleView.container, app.stage.getChildIndex(fadeOverlay));
@@ -337,7 +337,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     menu = new MenuController({
       world,
       saves,
-      game: manifest.name,
+      game: manifest.id,
       playSeconds: () => playSeconds,
       onSaved: () => sfx('save'),
     });
