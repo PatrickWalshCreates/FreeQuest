@@ -2,9 +2,18 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defaultClientConditions, defineConfig } from 'vite';
 import { devFsPlugin } from './dev-fs-plugin.js';
+import { releasePlayerPlugin } from './release-player-plugin.js';
 
 export default defineConfig({
-  plugins: [react(), devFsPlugin(fileURLToPath(new URL('../../samples', import.meta.url)))],
+  plugins: [
+    react(),
+    devFsPlugin({
+      samples: fileURLToPath(new URL('../../samples', import.meta.url)),
+      // Browser-mode exports land here (git-ignored).
+      exports: fileURLToPath(new URL('../../exports', import.meta.url)),
+    }),
+    releasePlayerPlugin(fileURLToPath(new URL('../../packages/player/dist', import.meta.url))),
+  ],
   resolve: {
     // Resolve @freequest/* packages to their TypeScript sources: no prebuild needed.
     conditions: ['@freequest/source', ...defaultClientConditions],

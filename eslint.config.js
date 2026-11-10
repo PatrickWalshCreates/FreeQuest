@@ -8,6 +8,8 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      // Exports made by the editor in browser mode: built player code.
+      'exports/**',
       '**/src-tauri/target/**',
       '**/src-tauri/gen/**',
       '**/coverage/**',

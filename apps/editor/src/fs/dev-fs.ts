@@ -3,16 +3,22 @@ import { FileNotFoundError, type ProjectFs, normalizeProjectPath } from '@freequ
 
 const BASE = '/__freequest';
 
+/** Folders the dev server offers: sample projects, and where browser-mode exports go. */
+export type DevArea = 'samples' | 'exports';
+
 export class DevServerFs implements ProjectFs {
   readonly label: string;
 
-  constructor(private readonly project: string) {
-    this.label = `samples/${project}`;
+  constructor(
+    private readonly project: string,
+    private readonly area: DevArea = 'samples',
+  ) {
+    this.label = `${area}/${project}`;
   }
 
   private url(path: string): string {
     const segments = [this.project, ...normalizeProjectPath(path).split('/')];
-    return `${BASE}/fs/${segments.map(encodeURIComponent).join('/')}`;
+    return `${BASE}/${this.area}/fs/${segments.map(encodeURIComponent).join('/')}`;
   }
 
   async readText(path: string): Promise<string> {
@@ -45,8 +51,10 @@ export class DevServerFs implements ProjectFs {
   }
 
   async list(dir: string): Promise<string[]> {
-    const segments = [this.project, ...normalizeProjectPath(dir).split('/')];
-    const response = await fetch(`${BASE}/list/${segments.map(encodeURIComponent).join('/')}`);
+    const segments = [this.project, ...(dir === '' ? [] : normalizeProjectPath(dir).split('/'))];
+    const response = await fetch(
+      `${BASE}/${this.area}/list/${segments.map(encodeURIComponent).join('/')}`,
+    );
     if (!response.ok) throw new Error(`Listing ${dir} failed: HTTP ${response.status}`);
     return (await response.json()) as string[];
   }

@@ -14,6 +14,7 @@ import {
 import { DATABASE_KINDS, type DatabaseKind, type GameMap, ID_PATTERN } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
+import { ExportDialog } from './ExportDialog.js';
 import { MapEditor } from './map/MapEditor.js';
 import { NewMapDialog } from './map/NewMapDialog.js';
 import { Playtest, type PlaytestStart } from './Playtest.js';
@@ -59,6 +60,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [selected, setSelected] = useState(project.manifest.path);
   const [status, setStatusState] = useState<Status | null>(null);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [playtest, setPlaytest] = useState<{
     readonly source: PlaytestSource;
     readonly start: PlaytestStart | null;
@@ -207,6 +209,9 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         >
           ▶ Play
         </button>
+        <button onClick={() => setExporting(true)} title="Export the game for the web">
+          Export…
+        </button>
         <button onClick={onReload}>Reload</button>
         <button onClick={onClose}>Close</button>
       </header>
@@ -312,6 +317,8 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           onClose={() => setPlaytest(null)}
         />
       )}
+
+      {exporting && <ExportDialog doc={doc} onClose={() => setExporting(false)} />}
 
       {creating && (
         <NewMapDialog

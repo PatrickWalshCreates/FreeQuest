@@ -6,3 +6,4 @@ samples/**/*.json
 packages/schema/json/
 apps/editor/src-tauri/target/
 apps/editor/src-tauri/gen/
+exports/

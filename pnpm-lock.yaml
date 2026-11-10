@@ -245,6 +245,9 @@ importers:
         specifier: 1.4.6
         version: 1.4.6
     devDependencies:
+      '@freequest/player':
+        specifier: workspace:*
+        version: link:../../packages/player
       '@tauri-apps/cli':
         specifier: ^2.12.4
         version: 2.12.4

@@ -54,7 +54,7 @@ export class NodeFs implements ProjectFs {
   }
 
   async list(dir: string): Promise<string[]> {
-    const full = this.full(dir);
+    const full = dir === '' ? this.root : this.full(dir);
     if (!existsSync(full)) return [];
     const entries = await readdir(full, { recursive: true, withFileTypes: true });
     return entries

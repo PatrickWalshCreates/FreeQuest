@@ -1285,3 +1285,73 @@ input[type='search'] {
 .schema-fields.compact {
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
 }
+
+/* Export dialog */
+.export .export-target {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--selected);
+}
+
+.export-problems,
+.export-warnings {
+  font-size: 12px;
+  border-radius: var(--radius);
+  padding: 8px 12px;
+}
+
+.export-problems {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.export-warnings {
+  background: var(--panel-raised);
+}
+
+.export-problems ul,
+.export-warnings ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-raised);
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s;
+}
+
+.success {
+  margin: 0;
+  color: var(--accent);
+}
+
+a.button {
+  display: inline-block;
+  font: inherit;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 12px;
+  color: inherit;
+}
+
+a.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  padding: 8px 16px;
+}

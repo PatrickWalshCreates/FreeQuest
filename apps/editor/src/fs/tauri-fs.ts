@@ -59,13 +59,13 @@ export class TauriFs implements ProjectFs {
   }
 
   async list(dir: string): Promise<string[]> {
-    const start = normalizeProjectPath(dir);
+    const start = dir === '' ? '' : normalizeProjectPath(dir);
     const found: string[] = [];
     const walk = async (rel: string): Promise<void> => {
-      const full = this.full(rel);
+      const full = rel === '' ? this.root : this.full(rel);
       if (!(await exists(full))) return;
       for (const entry of await readDir(full)) {
-        const child = `${rel}/${entry.name}`;
+        const child = rel === '' ? entry.name : `${rel}/${entry.name}`;
         if (entry.isDirectory) await walk(child);
         else if (entry.isFile) found.push(child);
       }

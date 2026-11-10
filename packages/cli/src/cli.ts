@@ -1,17 +1,20 @@
 // The freequest command. `run` takes arguments and an Io so tests can drive
 // it without a terminal; main.ts wires it to the real process.
-import { existsSync, readdirSync } from 'node:fs';
-import { cp, readFile, rm } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
+  EXPORT_MARKER,
   type OpenedProject,
+  type PlayerFiles,
   type Problem,
   ProjectOpenError,
+  clearExport,
+  exportWeb,
+  inspectTarget,
   openProject,
   planExport,
-  writeExport,
 } from '@freequest/editor-core';
 import { NodeFs } from './node-fs.js';
 
@@ -26,7 +29,7 @@ export interface Io {
 export const VERSION = '0.0.0';
 
 /** Marks a folder as a FreeQuest export, so `--clean` only ever deletes exports. */
-export const EXPORT_MARKER = 'freequest-export.json';
+export { EXPORT_MARKER };
 
 const HELP = `freequest ${VERSION}: check and export FreeQuest projects
 
@@ -86,7 +89,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
               : 'Missing export target (web)',
           );
         }
-        return await exportWeb(more, values.out, values.clean === true, io);
+        return await exportWebCommand(more, values.out, values.clean === true, io);
       }
       default:
         throw new UsageError(`Unknown command "${command}"`);
@@ -142,8 +145,8 @@ function summary(project: OpenedProject, files: number): string {
   return `${count(project.maps.size, 'map')}, ${count(files, 'file')} to export`;
 }
 
-/** The built release player and its file list. */
-async function player(io: Io): Promise<{ dir: string; files: string[] }> {
+/** The built release player, read from disk. */
+async function player(io: Io): Promise<PlayerFiles> {
   let dir = io.playerDir;
   if (!dir) {
     try {
@@ -154,32 +157,38 @@ async function player(io: Io): Promise<{ dir: string; files: string[] }> {
       );
     }
   }
-  const list = JSON.parse(await readFile(join(dir, 'files.json'), 'utf8')) as { files: string[] };
-  return { dir, files: list.files };
+  const root = dir;
+  const list = JSON.parse(await readFile(join(root, 'files.json'), 'utf8')) as { files: string[] };
+  return {
+    files: list.files,
+    read: async (path) => new Uint8Array(await readFile(join(root, ...path.split('/')))),
+  };
 }
 
 /** Make sure `out` can receive an export: empty or missing, or a previous export with --clean. */
-async function prepareOut(out: string, project: string, clean: boolean): Promise<void> {
+async function prepareOut(out: string, project: string, clean: boolean): Promise<NodeFs> {
   const inside = (a: string, b: string) => {
     const rel = relative(b, a);
-    return rel === '' || (!rel.startsWith('..') && !rel.startsWith('/'));
+    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
   };
   if (inside(out, project) || inside(project, out)) {
     throw new UsageError('The output folder must be outside the project folder.');
   }
-  if (!existsSync(out) || readdirSync(out).length === 0) return;
-  if (!existsSync(join(out, EXPORT_MARKER))) {
+  const target = new NodeFs(out);
+  const state = await inspectTarget(target);
+  if (state.kind === 'other') {
     throw new UsageError(
       `${out} isn't empty and isn't a FreeQuest export. Choose an empty folder.`,
     );
   }
-  if (!clean) {
-    throw new UsageError(`${out} holds a previous export. Add --clean to replace it.`);
+  if (state.kind === 'export') {
+    if (!clean) throw new UsageError(`${out} holds a previous export. Add --clean to replace it.`);
+    await clearExport(target);
   }
-  await rm(out, { recursive: true, force: true });
+  return target;
 }
 
-async function exportWeb(
+async function exportWebCommand(
   args: readonly string[],
   out: string | undefined,
   clean: boolean,
@@ -196,30 +205,18 @@ async function exportWeb(
     return 1;
   }
   const built = await player(io);
-  await prepareOut(outDir, dir, clean);
-
-  const target = new NodeFs(outDir);
-  const written = await writeExport(result, fs, target, { prefix: 'game' });
-  for (const file of built.files) await cp(join(built.dir, file), join(outDir, file));
-  const manifest = project.manifest.data;
-  await target.writeText(
-    EXPORT_MARKER,
-    `${JSON.stringify(
-      {
-        formatVersion: 1,
-        target: 'web',
-        game: manifest.id,
-        name: manifest.name,
-        exportedAt: new Date().toISOString(),
-        freequest: VERSION,
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  const target = await prepareOut(outDir, dir, clean);
+  const written = await exportWeb({
+    project,
+    plan: result,
+    source: fs,
+    target,
+    player: built,
+    freequestVersion: VERSION,
+  });
   const size = (written.bytes / 1024 / 1024).toFixed(1);
   io.out(
-    `Exported ${manifest.name} for the web to ${outDir} (${count(written.files, 'game file')}, ${size} MB).`,
+    `Exported ${project.manifest.data.name} for the web to ${outDir} (${count(written.files, 'game file')}, ${size} MB).`,
   );
   io.out('Upload the whole folder to a web host (e.g. itch.io); index.html starts the game.');
   return 0;

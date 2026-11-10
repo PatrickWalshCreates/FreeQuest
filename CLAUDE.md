@@ -218,7 +218,8 @@ Never the other way.
   `normalizeProjectPath` (relative, `/`, no `..`), so project data can't escape its folder.
   Implementations: `TauriFs` (desktop; fs plugin, folders from the open dialog are the only scope;
   assets as blob URLs), `DevServerFs` (browser dev; `dev-fs-plugin.ts` is a `vite dev`-only
-  middleware confined to `samples/`), `MemoryFs` (tests).
+  middleware with two areas, `samples/` for projects and the git-ignored `exports/` for exports,
+  each confined to its folder), `MemoryFs` (tests). `list('')` lists a whole folder.
 - **`openProject(fs)`** reads every file (all maps, unlike the lazy runtime loader), keeps going
   past broken files (`ProjectFile.data` null + `problems`), flags older formats (`migrated`), and
   runs cross-file checks (`checkReferences`, `checkDatabase`) only when every file loaded. Only an
@@ -340,6 +341,17 @@ gen:icon`).
   toggles fullscreen with F11 / Alt+Enter, has no debug panel or `window.freequest`, and
   explains start failures to players (`src/messages.ts`, tested: opened from `file://`, missing
   files, anything else with a Details fold). `apps/player-web` stays the dev player.
+- **Web export steps** (`editor-core/web-export.ts`, tested), shared by the editor and the CLI:
+  `inspectTarget(fs)` → empty / previous export (has `freequest-export.json`) / other;
+  `clearExport` deletes only a previous export's files; `exportWeb({ project, plan, source,
+target, player, … })` writes `game/` + the player files + the marker into an empty folder.
+- **Export dialog** (`apps/editor/src/ExportDialog.tsx`, toolbar "Export…"): runs `planExport` on
+  the document (unsaved edits included), lists errors (Export disabled) and warnings, then
+  exports into a folder from the system picker (desktop) or `exports/<name>` (browser mode,
+  with a "Play the export" link served by the dev server). A previous export is replaced only
+  after a confirm; other non-empty folders are refused. The release player comes bundled:
+  `release-player-plugin.ts` serves `packages/player/dist` at `/player-release/` in dev and copies
+  it into the editor's build (so the desktop app has it offline); `bundledPlayer()` reads it.
 - **`freequest` CLI** (`packages/cli`): `run(argv, io)` in `cli.ts` (tested with a fake player
   dir and temp folders), `main.ts` wires it to the process; `NodeFs` is the Node `ProjectFs`.
   Exit codes: 0 ok, 1 problems (or not a project), 2 usage. `export web` writes `game/` via
@@ -459,7 +471,7 @@ gen:icon`).
   3. ~~Release player: loading screen, fullscreen, friendly errors, no debug; built once~~ (done;
      a scripted export of the demo played in the browser)
   4. ~~`freequest` CLI: `check` and `export web`~~ (done)
-  5. Export dialog in the editor
+  5. ~~Export dialog in the editor~~ (done; web target, tried in browser mode)
   6. Desktop player (file saves) and macOS export (copy the prebuilt app, add the game, rename,
      icon, ad-hoc sign); Windows/Linux shells need building on those systems later
   7. Docs and end-to-end runs of both exports

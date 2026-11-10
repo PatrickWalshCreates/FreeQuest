@@ -19,7 +19,7 @@ export interface ProjectFs {
   remove(path: string): Promise<void>;
   /**
    * Every file under a folder (recursively), as project-relative paths in
-   * sorted order. A missing folder lists as empty.
+   * sorted order. A missing folder lists as empty; `''` lists everything.
    */
   list(dir: string): Promise<string[]>;
   /** A URL an <img> or texture loader can use for a project asset (images, audio). */
@@ -86,7 +86,7 @@ export class MemoryFs implements ProjectFs {
   }
 
   async list(dir: string): Promise<string[]> {
-    const prefix = `${normalizeProjectPath(dir)}/`;
+    const prefix = dir === '' ? '' : `${normalizeProjectPath(dir)}/`;
     return [...this.files.keys(), ...this.binaries.keys()]
       .filter((path) => path.startsWith(prefix))
       .sort();

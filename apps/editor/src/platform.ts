@@ -67,3 +67,54 @@ export function guardWindowClose(isDirty: () => boolean): () => void {
     unlisten?.();
   };
 }
+
+/** Where an export goes: a folder the user picks (desktop) or a named folder under exports/ (browser). */
+export interface ExportFolder {
+  readonly fs: ProjectFs;
+  /** Shown to the user. */
+  readonly label: string;
+  /** In browser mode, where the dev server serves the export, so it can be played at once. */
+  readonly playUrl: string | null;
+}
+
+/** Ask for an export folder on the desktop. Null when the user cancels. */
+export async function pickExportFolder(): Promise<ExportFolder | null> {
+  const { TauriFs } = await import('./fs/tauri-fs.js');
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const picked = await open({ directory: true, recursive: true, title: 'Choose an export folder' });
+  if (typeof picked !== 'string') return null;
+  return { fs: new TauriFs(picked), label: picked, playUrl: null };
+}
+
+/** A folder under exports/ in browser mode. */
+export async function devExportFolder(name: string): Promise<ExportFolder> {
+  const { DevServerFs } = await import('./fs/dev-fs.js');
+  return {
+    fs: new DevServerFs(name, 'exports'),
+    label: `exports/${name}`,
+    playUrl: `/__freequest/exports/fs/${encodeURIComponent(name)}/index.html`,
+  };
+}
+
+/** The release player bundled with the editor (served at /player-release/). */
+export async function bundledPlayer(): Promise<{
+  files: string[];
+  read(path: string): Promise<Uint8Array>;
+}> {
+  const base = new URL('player-release/', window.location.href);
+  const response = await fetch(new URL('files.json', base));
+  if (!response.ok) {
+    throw new Error(
+      'The release player is missing from the editor. Build it with "pnpm --filter @freequest/player build".',
+    );
+  }
+  const { files } = (await response.json()) as { files: string[] };
+  return {
+    files,
+    read: async (path) => {
+      const file = await fetch(new URL(path, base));
+      if (!file.ok) throw new Error(`Player file ${path}: HTTP ${file.status}`);
+      return new Uint8Array(await file.arrayBuffer());
+    },
+  };
+}

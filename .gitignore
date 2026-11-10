@@ -14,3 +14,6 @@ coverage/
 
 # Machine-specific Claude Code preview config
 .claude/launch.json
+
+# Exports made by the editor in browser mode
+exports/
