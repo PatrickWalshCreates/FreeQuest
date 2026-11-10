@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="FreeQuest" />
+    <title>Loading…</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: #d8dbe2;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game canvas {
+        outline: none;
+        image-rendering: pixelated;
+      }
+      #loading {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        transition: opacity 0.3s;
+      }
+      #loading.done {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #333844;
+        border-top-color: #d8dbe2;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(1turn);
+        }
+      }
+      #problem {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        padding: 24px;
+      }
+      #problem.shown {
+        display: grid;
+      }
+      #problem div {
+        max-width: 560px;
+      }
+      #problem h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+      #problem p {
+        line-height: 1.5;
+        color: #a9afbd;
+      }
+      #problem details {
+        margin-top: 16px;
+        color: #8d94a3;
+        font-size: 13px;
+      }
+      #problem pre {
+        white-space: pre-wrap;
+        font:
+          12px/1.4 ui-monospace,
+          Menlo,
+          monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game" tabindex="-1"></div>
+    <div id="loading" role="status" aria-label="Loading"><div class="spinner"></div></div>
+    <div id="problem" role="alert">
+      <div>
+        <h1 id="problem-title"></h1>
+        <p id="problem-text"></p>
+        <details>
+          <summary>Details</summary>
+          <pre id="problem-details"></pre>
+        </details>
+      </div>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

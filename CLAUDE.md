@@ -42,7 +42,8 @@ packages/schema     Project file format: TypeBox definitions (→ TS types + JSO
                     validation, migrations, stable serializer. Single source of truth.
 packages/core       Pure game logic. No rendering, no DOM, no Node APIs. Unit-tested in Node.
 packages/runtime    PixiJS v8 player: loads a project folder over HTTP and runs it on core.
-packages/editor-core  Editor logic: ProjectFs, opening projects, edits, undo/redo, saving. No UI.
+packages/editor-core  Editor logic: ProjectFs, opening projects, edits, undo/redo, saving, export. No UI.
+packages/player     The release player page exported games run in (built once; exporters copy dist/).
 apps/player-web     Minimal Vite app that boots runtime with samples/demo-project.
 apps/editor         React editor; Tauri 2 desktop shell in src-tauri/.
 samples/demo-project  Tiny sample game used for dev and tests.
@@ -330,6 +331,16 @@ gen:icon`).
   refuses while there are errors, writes compact JSON, copies assets byte for byte, reports
   progress, and writes project.json last. Unused files never ship.
 - Add new asset-bearing fields to `assetReferences` (and its test) or exports will miss them.
+- **Release player** (`packages/player`, `@freequest/player`): `index.html` + `src/main.ts`, built
+  with `base: './'` into `dist/` (`index.html`, `player/*.js`) plus `dist/files.json` listing
+  every file, which exporters copy next to a `game/` folder of exported data. It loads
+  `./game/` over HTTP, sets the page title from the manifest, shows a spinner while loading,
+  toggles fullscreen with F11 / Alt+Enter, has no debug panel or `window.freequest`, and
+  explains start failures to players (`src/messages.ts`, tested: opened from `file://`, missing
+  files, anything else with a Details fold). `apps/player-web` stays the dev player.
+- Web export layout: `index.html`, `player/`, `game/project.json`, `game/data/…`,
+  `game/assets/…`. Must be served over HTTP (itch.io, any static host); `file://` shows the
+  "needs a website" message.
 
 ## Project file format
 
@@ -433,7 +444,8 @@ gen:icon`).
   1. ~~Export core: collect referenced files, check, write~~ (done)
   2. ~~Game id in project.json (manifest v5) used to keep saves apart~~ (done; editable in
      Project settings)
-  3. Release player: loading screen, fullscreen, friendly errors, no debug; built once and bundled
+  3. ~~Release player: loading screen, fullscreen, friendly errors, no debug; built once~~ (done;
+     a scripted export of the demo played in the browser)
   4. `freequest` CLI: `check` and `export web`
   5. Export dialog in the editor
   6. Desktop player (file saves) and macOS export (copy the prebuilt app, add the game, rename,

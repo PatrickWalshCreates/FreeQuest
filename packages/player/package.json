@@ -1,0 +1,20 @@
+{
+  "name": "@freequest/player",
+  "version": "0.0.0",
+  "description": "The release player: the page a FreeQuest game runs in once exported. Built once; exporters copy dist/.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./files.json": "./dist/files.json"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@freequest/runtime": "workspace:*"
+  }
+}

@@ -280,6 +280,12 @@ importers:
         specifier: 1.4.6
         version: 1.4.6
 
+  packages/player:
+    dependencies:
+      '@freequest/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+
   packages/runtime:
     dependencies:
       '@freequest/core':

@@ -27,7 +27,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/runtime/**/*.ts', 'apps/player-web/**/*.ts', 'apps/editor/src/**/*.{ts,tsx}'],
+    files: [
+      'packages/runtime/**/*.ts',
+      'apps/player-web/**/*.ts',
+      'apps/editor/src/**/*.{ts,tsx}',
+      'packages/player/src/**/*.ts',
+    ],
     languageOptions: { globals: { ...globals.browser } },
   },
   {
