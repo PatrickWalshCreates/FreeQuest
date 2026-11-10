@@ -1,6 +1,10 @@
+import { CollisionMap } from '@freequest/core';
 import {
   type ProjectDocument,
   type ProjectFile,
+  type TileCell,
+  TileStroke,
+  type TileTool,
   type Viewport,
   type ViewportBounds,
   ZOOM_LEVELS,
@@ -8,12 +12,13 @@ import {
   fitViewport,
   panBy,
   screenToTile,
+  screenToWorld,
   stepZoom,
   tileAt,
   zoomAt,
 } from '@freequest/editor-core';
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { type CanvasPoint, MapCanvas } from './MapCanvas.js';
 import { TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
@@ -25,6 +30,17 @@ interface Props {
 }
 
 const PALETTE_WIDTH = 256;
+
+const TOOLS: readonly { id: TileTool; label: string; key: string; hint: string }[] = [
+  { id: 'pencil', label: 'Pencil', key: 'b', hint: 'Paint tiles by clicking or dragging' },
+  { id: 'rectangle', label: 'Rectangle', key: 'r', hint: 'Drag to fill a rectangle' },
+  { id: 'fill', label: 'Fill', key: 'f', hint: 'Fill the connected area of the same tile' },
+  { id: 'eraser', label: 'Eraser', key: 'e', hint: 'Clear tiles on this layer' },
+  { id: 'eyedropper', label: 'Pick', key: 'i', hint: 'Pick a tile from the map (or right-click)' },
+];
+
+/** Tools that paint the palette's tile, so the brush shows it under the pointer. */
+const PAINTS = new Set<TileTool>(['pencil', 'rectangle', 'fill']);
 
 /** The map editor: canvas, view controls, layers and the tile palette. */
 export function MapEditor({ doc, file }: Props) {
@@ -54,11 +70,24 @@ export function MapEditor({ doc, file }: Props) {
   const [showEvents, setShowEvents] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const [selectedTile, setSelectedTile] = useState(0);
+  const [tool, setTool] = useState<TileTool>('pencil');
+  const [showWalkable, setShowWalkable] = useState(false);
+  const stroke = useRef<TileStroke | null>(null);
+  const [preview, setPreview] = useState<readonly TileCell[] | null>(null);
 
   const options: RenderOptions = useMemo(
     () => ({ hiddenLayers, activeLayer, highlightActive, showGrid, showEvents }),
     [hiddenLayers, activeLayer, highlightActive, showGrid, showEvents],
   );
+  // Exactly what the game uses for collision (tiles only; blocking events aren't included).
+  const walkability = useMemo(() => {
+    if (!showWalkable || !tileset) return null;
+    try {
+      return CollisionMap.fromMap(map, tileset);
+    } catch {
+      return null; // a tile missing from the tileset; the problems panel reports it
+    }
+  }, [showWalkable, map, tileset]);
 
   if (!tileset) {
     return <p className="error">This map's tileset "{map.tileset}" isn't available.</p>;
@@ -93,6 +122,61 @@ export function MapEditor({ doc, file }: Props) {
       return next;
     });
 
+  /** The cell under a canvas point, even outside the map (strokes clip it themselves). */
+  const cellAt = (at: CanvasPoint) => {
+    if (!viewport) return null;
+    const world = screenToWorld(viewport, at.sx, at.sy);
+    return {
+      x: Math.floor(world.x / tileset.tileWidth),
+      y: Math.floor(world.y / tileset.tileHeight),
+    };
+  };
+  const pick = (cell: { x: number; y: number }) => {
+    const picked = new TileStroke(
+      { doc, path: file.path, layer: activeLayer, tool: 'eyedropper', tile: selectedTile },
+      cell,
+    ).picked;
+    if (picked !== null && picked !== EMPTY_TILE) setSelectedTile(picked);
+  };
+  const toolDown = (at: CanvasPoint, how: { readonly pick: boolean }) => {
+    const cell = cellAt(at);
+    if (!cell) return;
+    if (how.pick || tool === 'eyedropper') {
+      pick(cell);
+      if (tool === 'eyedropper') setTool('pencil');
+      return;
+    }
+    stroke.current = new TileStroke(
+      { doc, path: file.path, layer: activeLayer, tool, tile: selectedTile },
+      cell,
+    );
+    setPreview(stroke.current.preview);
+  };
+  const toolUp = () => {
+    stroke.current?.finish();
+    stroke.current = null;
+    setPreview(null);
+  };
+  const cancelStroke = () => {
+    stroke.current?.cancel();
+    stroke.current = null;
+    setPreview(null);
+  };
+  const chooseTool = (next: TileTool) => {
+    if (stroke.current) return;
+    setTool(next);
+  };
+
+  // `preview` is non-null exactly while a stroke is in progress.
+  const brush: readonly TileCell[] =
+    preview && preview.length > 0
+      ? preview
+      : hover && !preview && PAINTS.has(tool)
+        ? [{ ...hover, tile: selectedTile }]
+        : hover && tool === 'eraser'
+          ? [{ ...hover, tile: EMPTY_TILE }]
+          : [];
+
   const hoveredTile = hover ? tileAt(map, activeLayer, hover.x, hover.y) : EMPTY_TILE;
   const eventsHere = hover ? map.events.filter((e) => e.x === hover.x && e.y === hover.y) : [];
   const zoom = viewport?.zoom ?? 1;
@@ -103,17 +187,36 @@ export function MapEditor({ doc, file }: Props) {
       tabIndex={-1}
       onKeyDown={(event) => {
         if (event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
-        const key = event.key;
-        if (key === '=' || key === '+') zoomTo(stepZoom(zoom, 1));
+        const key = event.key.toLowerCase();
+        const shortcut = TOOLS.find((t) => t.key === key);
+        if (key === 'escape' && stroke.current) cancelStroke();
+        else if (shortcut) chooseTool(shortcut.id);
+        else if (key === '=' || key === '+') zoomTo(stepZoom(zoom, 1));
         else if (key === '-') zoomTo(stepZoom(zoom, -1));
         else if (key === '0') fit();
         else if (key === 'g') setShowGrid((v) => !v);
+        else if (key === 'w') setShowWalkable((v) => !v);
         else return;
         event.preventDefault();
       }}
     >
       <div className="map-main">
-        <div className="map-toolbar" role="toolbar" aria-label="Map view">
+        <div className="map-toolbar" role="toolbar" aria-label="Map tools">
+          <div className="segmented" role="radiogroup" aria-label="Tool">
+            {TOOLS.map((t) => (
+              <button
+                key={t.id}
+                role="radio"
+                aria-checked={tool === t.id}
+                className={tool === t.id ? 'on' : undefined}
+                title={`${t.hint} (${t.key.toUpperCase()})`}
+                onClick={() => chooseTool(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <span className="divider" />
           <button onClick={() => zoomTo(stepZoom(zoom, -1))} title="Zoom out (-)">
             −
           </button>
@@ -146,6 +249,12 @@ export function MapEditor({ doc, file }: Props) {
           />
           <Toggle label="Events" checked={showEvents} onChange={setShowEvents} />
           <Toggle
+            label="Walkable"
+            checked={showWalkable}
+            onChange={setShowWalkable}
+            title="Tint walkable cells green and blocked cells red, as the game sees them (W)"
+          />
+          <Toggle
             label="Highlight layer"
             checked={highlightActive}
             onChange={setHighlightActive}
@@ -161,6 +270,11 @@ export function MapEditor({ doc, file }: Props) {
             viewport={viewport}
             options={options}
             hover={hover}
+            brush={brush}
+            walkability={walkability}
+            onToolDown={toolDown}
+            onToolUp={toolUp}
+            onToolCancel={cancelStroke}
             onResize={(width, height) => {
               const view = { width, height };
               setSize(view);
@@ -173,7 +287,7 @@ export function MapEditor({ doc, file }: Props) {
               for (let i = 0; i < Math.abs(steps); i++) next = stepZoom(next, steps > 0 ? 1 : -1);
               zoomTo(next, at);
             }}
-            onPointerMove={(at) =>
+            onPointerMove={(at) => {
               setHover(
                 at && viewport
                   ? screenToTile(
@@ -186,8 +300,13 @@ export function MapEditor({ doc, file }: Props) {
                       map.height,
                     )
                   : null,
-              )
-            }
+              );
+              const cell = at && cellAt(at);
+              if (stroke.current && cell) {
+                stroke.current.moveTo(cell);
+                setPreview(stroke.current.preview);
+              }
+            }}
           />
         ) : (
           <div className="map-canvas centered muted">Loading images…</div>
@@ -207,8 +326,8 @@ export function MapEditor({ doc, file }: Props) {
             </>
           ) : (
             <span className="muted">
-              {map.width} × {map.height} tiles · drag or scroll to move, Ctrl+scroll or pinch to
-              zoom
+              {map.width} × {map.height} tiles · Space+drag or scroll to move, Ctrl+scroll or pinch
+              to zoom, right-click to pick a tile
             </span>
           )}
         </div>
@@ -250,7 +369,10 @@ export function MapEditor({ doc, file }: Props) {
               tileset={tileset}
               imageUrl={imageUrl.value}
               selected={selectedTile}
-              onSelect={setSelectedTile}
+              onSelect={(tile) => {
+                setSelectedTile(tile);
+                if (!PAINTS.has(tool)) chooseTool('pencil');
+              }}
               width={PALETTE_WIDTH}
             />
           )}

@@ -242,6 +242,16 @@ Never the other way.
   selection), `TilePalette` is plain DOM. Wheel scrolls, Ctrl/pinch zooms, `=`/`-`/`0`/`G` keys.
   PixiJS `pixelLine` strokes don't render here: hairlines use `width: 1 / zoom` and are redrawn
   on zoom changes. Dev builds expose `window.mapRenderer` for console inspection.
+- **Painting tools** (`editor-core/tools.ts`, tested): `lineCells` (Bresenham, so fast drags
+  leave no gaps), `rectCells`, `floodCells` (4-neighbour, same tile, one layer). A `TileStroke`
+  is one press–drag–release and one undo step (its own coalesce key): pencil/eraser paint as
+  the pointer moves, rectangle previews until release, fill acts on press, eyedropper only
+  reads. `cancel()` (Escape) undoes the stroke's own step only. Pointer roles in `MapCanvas`:
+  left = tool, right or Alt = pick, middle or Space+drag = scroll. Keys B/R/F/E/I pick tools,
+  W toggles the walkable overlay, which is `core`'s `CollisionMap` (tiles only, not events).
+- Browser-pane note: the pane's page is 1024×768 but screenshots are 800×600, so convert
+  screenshot coordinates (×1.28) before reasoning about map cells; synthetic `PointerEvent`s
+  work for gestures the click tools can't do (e.g. Escape mid-drag).
 - **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
@@ -331,7 +341,8 @@ gen:icon`).
      `stableStringify` with the load-time checks~~ (done; names editable in the UI to exercise it)
   3. ~~Map view: map drawn with the runtime's renderer, layers, grid, zoom/pan, tile palette~~
      (done; drag pans until step 4 gives the left button to the tools)
-  4. Painting tools: pencil, rectangle, fill, eraser, eyedropper, layer choice, passability overlay
+  4. ~~Painting tools: pencil, rectangle, fill, eraser, eyedropper, layer choice, passability
+     overlay~~ (done; single-tile brush, multi-tile stamps later)
   5. Map management: new/rename/resize/delete maps, map properties (tileset, music, encounters)
   6. Playtest from the editor with unsaved edits
   7. Event editor: place/move events, pages, conditions, graphic, trigger, nested command editor

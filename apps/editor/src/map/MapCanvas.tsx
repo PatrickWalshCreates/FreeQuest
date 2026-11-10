@@ -1,4 +1,5 @@
-import type { Viewport } from '@freequest/editor-core';
+import type { Passability } from '@freequest/core';
+import type { TileCell, Viewport } from '@freequest/editor-core';
 import type { CharacterGraphic } from '@freequest/runtime';
 import type { GameMap, Tileset } from '@freequest/schema';
 import type { Texture } from 'pixi.js';
@@ -25,6 +26,12 @@ interface Props {
   /** Zoom by `steps` levels (positive zooms in) around a point. */
   readonly onZoom: (steps: number, at: CanvasPoint) => void;
   readonly onPointerMove: (at: CanvasPoint | null) => void;
+  /** Left (or right/Alt for picking) button pressed for the current tool; moves arrive via onPointerMove. */
+  readonly onToolDown: (at: CanvasPoint, how: { readonly pick: boolean }) => void;
+  readonly onToolUp: () => void;
+  readonly onToolCancel: () => void;
+  readonly brush: readonly TileCell[];
+  readonly walkability: Passability | null;
 }
 
 /** Pixels of pinch/Ctrl-wheel travel per zoom step. */
@@ -60,7 +67,7 @@ export function MapCanvas(props: Props) {
     };
   }, []);
 
-  const { map, tileset, textures, graphics, viewport, options, hover } = props;
+  const { map, tileset, textures, graphics, viewport, options, hover, brush, walkability } = props;
   useEffect(() => renderer?.setMap(map, tileset, textures), [renderer, map, tileset, textures]);
   useEffect(() => renderer?.setEvents(map.events, graphics), [renderer, map.events, graphics]);
   useEffect(() => renderer?.setOptions(options), [renderer, options]);
@@ -68,6 +75,8 @@ export function MapCanvas(props: Props) {
     if (viewport) renderer?.setViewport(viewport);
   }, [renderer, viewport]);
   useEffect(() => renderer?.setHover(hover), [renderer, hover]);
+  useEffect(() => renderer?.setBrush(brush), [renderer, brush]);
+  useEffect(() => renderer?.setWalkability(walkability), [renderer, walkability]);
 
   // Size changes (the first one sets up the viewport).
   useEffect(() => {
@@ -109,34 +118,92 @@ export function MapCanvas(props: Props) {
     return () => element.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Drag to pan (any button for now; step 4 gives the left button to the tools).
-  const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  // Space held = hand tool, like most drawing programs.
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  useEffect(() => {
+    const typing = (event: KeyboardEvent) =>
+      event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+    const down = (event: KeyboardEvent) => {
+      if (event.code === 'Space' && !typing(event)) {
+        event.preventDefault();
+        setSpaceHeld(true);
+      }
+    };
+    const up = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setSpaceHeld(false);
+    };
+    const blur = () => setSpaceHeld(false);
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', blur);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', blur);
+    };
+  }, []);
+
+  /** The pointer currently pressed: panning, or a tool gesture forwarded to the editor. */
+  const press = useRef<{ id: number; mode: 'pan' | 'tool'; x: number; y: number } | null>(null);
   const point = (event: React.PointerEvent): CanvasPoint => {
     const rect = event.currentTarget.getBoundingClientRect();
     return { sx: event.clientX - rect.left, sy: event.clientY - rect.top };
   };
+  const [panning, setPanning] = useState(false);
 
   return (
     <div
       ref={host}
-      className="map-canvas"
+      className={['map-canvas', spaceHeld || panning ? 'hand' : '', panning ? 'panning' : '']
+        .filter(Boolean)
+        .join(' ')}
+      onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
-        event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        if (press.current) return;
+        event.currentTarget.focus();
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // Synthetic or already-released pointers can't be captured; the press still works.
+        }
+        const pan = event.button === 1 || (event.button === 0 && spaceHeld);
+        press.current = {
+          id: event.pointerId,
+          mode: pan ? 'pan' : 'tool',
+          x: event.clientX,
+          y: event.clientY,
+        };
+        if (pan) setPanning(true);
+        else
+          props.onToolDown(point(event), {
+            pick: event.button === 2 || event.altKey,
+          });
       }}
       onPointerMove={(event) => {
-        const d = drag.current;
-        if (d?.id === event.pointerId) {
-          props.onPan(d.x - event.clientX, d.y - event.clientY);
-          drag.current = { id: d.id, x: event.clientX, y: event.clientY };
+        const p = press.current;
+        if (p?.id === event.pointerId && p.mode === 'pan') {
+          props.onPan(p.x - event.clientX, p.y - event.clientY);
+          press.current = { ...p, x: event.clientX, y: event.clientY };
         }
         props.onPointerMove(point(event));
       }}
       onPointerUp={(event) => {
-        if (drag.current?.id === event.pointerId) drag.current = null;
+        const p = press.current;
+        if (p?.id !== event.pointerId) return;
+        press.current = null;
+        if (p.mode === 'pan') setPanning(false);
+        else props.onToolUp();
       }}
-      onPointerCancel={() => (drag.current = null)}
-      onPointerLeave={() => props.onPointerMove(null)}
+      onPointerCancel={() => {
+        if (press.current?.mode === 'tool') props.onToolCancel();
+        press.current = null;
+        setPanning(false);
+      }}
+      onPointerLeave={() => {
+        if (!press.current) props.onPointerMove(null);
+      }}
+      tabIndex={0}
+      aria-label="Map canvas"
     />
   );
 }

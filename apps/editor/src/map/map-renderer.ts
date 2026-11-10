@@ -1,7 +1,8 @@
 // Draws a map for editing: one sprite per cell per layer (so an edit only
 // swaps textures), event markers, a grid, and the hovered cell. Purely a
 // view: it is told what to show and never changes data.
-import type { Viewport } from '@freequest/editor-core';
+import type { Passability } from '@freequest/core';
+import type { TileCell, Viewport } from '@freequest/editor-core';
 import { type CharacterGraphic, CharacterView } from '@freequest/runtime';
 import { EMPTY_TILE, type GameMap, type MapEvent, type Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, Sprite, type Texture } from 'pixi.js';
@@ -41,6 +42,9 @@ export class MapRenderer {
   private readonly grid = new Graphics();
   private readonly hover = new Graphics();
   private readonly border = new Graphics();
+  /** Ghost tiles: what the current tool would paint. */
+  private readonly brush = new Container();
+  private readonly walkable = new Graphics();
   private layers: LayerSprites[] = [];
   private map: GameMap | null = null;
   private tileset: Tileset | null = null;
@@ -54,6 +58,8 @@ export class MapRenderer {
       this.floor,
       this.tileLayers,
       this.events,
+      this.walkable,
+      this.brush,
       this.grid,
       this.border,
       this.hover,
@@ -197,6 +203,50 @@ export class MapRenderer {
     this.world.scale.set(view.zoom);
     // Whole screen pixels keep tile edges from shimmering.
     this.world.position.set(Math.round(-view.x * view.zoom), Math.round(-view.y * view.zoom));
+    this.render();
+  }
+
+  /** Show `cells` as half-transparent tiles over the map (empty clears it). */
+  setBrush(cells: readonly TileCell[]): void {
+    for (const child of this.brush.removeChildren()) child.destroy();
+    const tileset = this.tileset;
+    if (tileset) {
+      const { tileWidth: tw, tileHeight: th } = tileset;
+      for (const { x, y, tile } of cells) {
+        const texture = tile === EMPTY_TILE ? undefined : this.textures[tile];
+        if (texture) {
+          const sprite = new Sprite(texture);
+          sprite.position.set(x * tw, y * th);
+          sprite.alpha = 0.65;
+          this.brush.addChild(sprite);
+        } else {
+          // Erasing: a dark wash over the cell.
+          this.brush.addChild(
+            new Graphics().rect(x * tw, y * th, tw, th).fill({ color: 0x000000, alpha: 0.45 }),
+          );
+        }
+      }
+    }
+    this.render();
+  }
+
+  /** Tint cells green (walkable) or red (blocked); null hides the overlay. */
+  setWalkability(passability: Passability | null): void {
+    const tileset = this.tileset;
+    this.walkable.clear();
+    if (passability && tileset) {
+      const { tileWidth: tw, tileHeight: th } = tileset;
+      for (let y = 0; y < passability.height; y++) {
+        for (let x = 0; x < passability.width; x++) {
+          this.walkable.rect(x * tw, y * th, tw, th);
+          this.walkable.fill(
+            passability.isPassable(x, y)
+              ? { color: 0x3ddc84, alpha: 0.28 }
+              : { color: 0xff4d4d, alpha: 0.42 },
+          );
+        }
+      }
+    }
     this.render();
   }
 

@@ -406,6 +406,7 @@ input:focus {
 
 .map-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
@@ -434,6 +435,7 @@ input:focus {
 }
 
 .toggle {
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -452,12 +454,7 @@ input:focus {
   min-height: 0;
   position: relative;
   overflow: hidden;
-  cursor: grab;
   touch-action: none;
-}
-
-.map-canvas:active {
-  cursor: grabbing;
 }
 
 .map-canvas canvas {
@@ -565,4 +562,44 @@ input:focus {
 .palette-info strong {
   color: var(--text);
   margin-right: 4px;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.map-toolbar .segmented button {
+  border: none;
+  border-radius: 0;
+  background: none;
+  padding: 3px 10px;
+}
+
+.map-toolbar .segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.map-toolbar .segmented button.on {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.map-canvas {
+  cursor: crosshair;
+}
+
+.map-canvas.hand {
+  cursor: grab;
+}
+
+.map-canvas.panning {
+  cursor: grabbing;
+}
+
+.map-canvas:focus {
+  outline: none;
 }

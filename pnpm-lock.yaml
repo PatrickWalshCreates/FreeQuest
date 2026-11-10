@@ -211,6 +211,9 @@ importers:
 
   apps/editor:
     dependencies:
+      '@freequest/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@freequest/editor-core':
         specifier: workspace:*
         version: link:../../packages/editor-core

@@ -13,6 +13,7 @@
     "desktop": "tauri dev"
   },
   "dependencies": {
+    "@freequest/core": "workspace:*",
     "@freequest/editor-core": "workspace:*",
     "@freequest/runtime": "workspace:*",
     "@freequest/schema": "workspace:*",
