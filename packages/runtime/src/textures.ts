@@ -8,6 +8,10 @@ import { Rectangle, Texture } from 'pixi.js';
  */
 export async function loadPixelTexture(url: string | Promise<string>): Promise<Texture> {
   const image = new Image();
+  // Images from another origin (the desktop player's asset:// URLs) must be
+  // CORS-enabled, or WebGL refuses to upload them and the map draws black.
+  // Same-origin and blob: URLs are unaffected.
+  image.crossOrigin = 'anonymous';
   image.src = await url;
   try {
     await image.decode();

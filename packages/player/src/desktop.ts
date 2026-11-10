@@ -43,6 +43,46 @@ async function saveFiles(gameId: string): Promise<FileApi> {
   };
 }
 
+/**
+ * Make the space the page gets twice the game's resolution (or as many
+ * whole steps as fit the screen): the game scales in whole steps to stay
+ * crisp, so a space a few points too small would drop it to 1×. The window's
+ * own idea of its inside includes the title bar on macOS, so the page's
+ * viewport is measured after resizing and the window grown by the shortfall.
+ */
+async function fitWindow(width: number, height: number): Promise<void> {
+  const window = getCurrentWindow();
+  const room = Math.floor((screen.availHeight - 80) / height);
+  const scale = Math.max(1, Math.min(2, room));
+  const want = { width: width * scale, height: height * scale };
+  await window.setSize(new LogicalSize(want.width, want.height));
+  await viewportSettled();
+  const short = { width: want.width - innerWidth, height: want.height - innerHeight };
+  if (short.width > 0 || short.height > 0) {
+    await window.setSize(
+      new LogicalSize(
+        want.width + Math.max(0, short.width),
+        want.height + Math.max(0, short.height),
+      ),
+    );
+    await viewportSettled();
+  }
+  await window.center();
+}
+
+/** Wait for the page to see the window's new size (a resize event, or a moment). */
+function viewportSettled(): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      globalThis.removeEventListener('resize', done);
+      setTimeout(resolve, 50);
+    };
+    const timer = setTimeout(done, 400);
+    globalThis.addEventListener('resize', done);
+  });
+}
+
 /** Start the game in the desktop app. Throws like startGame when it can't. */
 export async function startDesktop(parent: HTMLElement): Promise<void> {
   const source = await bundledGame();
@@ -58,10 +98,7 @@ export async function startDesktop(parent: HTMLElement): Promise<void> {
   }
   const { width, height } = manifest.screen ?? {};
   if (typeof width === 'number' && typeof height === 'number') {
-    // Twice the game's resolution, unless that's bigger than the screen.
-    const scale = Math.min(2, Math.floor((screen.availHeight - 40) / height) || 1);
-    await window.setSize(new LogicalSize(width * scale, height * scale));
-    await window.center();
+    await fitWindow(width, height);
   }
   const id = typeof manifest.id === 'string' ? manifest.id : 'game';
   const saves = await FileSaveStorage.open(await saveFiles(id));

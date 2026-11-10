@@ -25,6 +25,7 @@ import { EventViews, depthFor } from './event-views.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
+import { fitScale } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
 import { TransferController } from './transfer.js';
 
@@ -199,7 +200,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   const fit = () => {
     const { clientWidth, clientHeight } = options.parent;
-    const scale = Math.max(1, Math.floor(Math.min(clientWidth / width, clientHeight / height)));
+    const scale = fitScale(width, height, clientWidth, clientHeight);
     canvas.style.width = `${width * scale}px`;
     canvas.style.height = `${height * scale}px`;
   };

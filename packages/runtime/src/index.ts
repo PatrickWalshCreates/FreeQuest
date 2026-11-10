@@ -27,3 +27,4 @@ export * from './list-window.js';
 export * from './audio-director.js';
 export * from './audio-player.js';
 export * from './textures.js';
+export * from './scale.js';

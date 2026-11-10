@@ -282,6 +282,8 @@ Never the other way.
   runs the game in an overlay with `MemoryStorage` saves (discarded), the debug panel on, and the
   editor's shortcuts off; Stop or Cmd/Ctrl+. ends it (Escape is the game's menu key). "Play from
   here" picks a cell and uses `startGame`'s `start` + `skipTitle`.
+- **Canvas scale** (`runtime/src/scale.ts`, tested): whole steps only (crisp pixels), with
+  `SCALE_SLACK` (2 px) of allowed overshoot so a hair-too-small space doesn't halve the picture.
 - **Two PixiJS apps on one page**: never `app.destroy(true)` — `true` releases PixiJS's global
   resources and breaks every other live app (the editor's map canvas). Use
   `destroy({ removeView: true }, …)`. Images load through `<img>` in runtime
@@ -367,8 +369,10 @@ target, player, … })` writes `game/` + the player files + the marker into an e
 - **Desktop player** (`apps/player-desktop`, Tauri): its page is `packages/player/dist` (the same
   build web exports use). `packages/player/src/main.ts` detects Tauri and loads `desktop.ts`
   lazily: the game comes from the bundle's `Resources/game` through the asset protocol (scope
-  `$RESOURCE/game/**`, CSP allows `asset:`), the window takes the game's title and 2× its
-  resolution, F11/Alt+Enter use native fullscreen, and saves are files: `FileSaveStorage`
+  `$RESOURCE/game/**`, CSP allows `asset:`; asset URLs are another origin, so
+  `loadPixelTexture` sets `crossOrigin = 'anonymous'` or WebGL refuses the images and maps draw
+  black), the window takes the game's title and is grown until the page's viewport (not the
+  window's "inner" size, which includes the macOS title bar) is 2× the resolution, F11/Alt+Enter use native fullscreen, and saves are files: `FileSaveStorage`
   (`file-saves.ts`, tested) reads every save into memory at start (SaveStore is synchronous) and
   writes through in order to `$APPDATA/saves/<game id>/` (fs scope limited to that). The shell is
   built with `pnpm build:mac-player` (release, LTO, ~6 MB) and staged at
@@ -389,7 +393,9 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   `pnpm editor:desktop` or an editor build; the Export dialog offers "macOS app" only there.
 - Checking a built desktop app without seeing it: the window list (Swift
   `CGWindowListCopyWindowInfo`) shows the owner and size but not titles without screen-recording
-  access; a temporary write to `$APPDATA/saves/` is the reliable "did the game start" probe.
+  access; a temporary write to `$APPDATA/saves/` is the reliable "did the game start" probe. A
+  probe can also press keys (`window.dispatchEvent(new KeyboardEvent('keydown', …))`) and
+  collect `error`/`console.error`; that is how the black map (a WebGL SecurityError) was found.
 - Web export layout: `index.html`, `player/`, `game/project.json`, `game/data/…`,
   `game/assets/…`. Must be served over HTTP (itch.io, any static host); `file://` shows the
   "needs a website" message.
