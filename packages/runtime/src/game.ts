@@ -1,4 +1,11 @@
-import { ActionState, DatabaseIndex, FixedTimestep, World, computeCamera } from '@freequest/core';
+import {
+  ActionState,
+  DatabaseIndex,
+  type Direction,
+  FixedTimestep,
+  World,
+  computeCamera,
+} from '@freequest/core';
 import type { SaveFile, SoundKey, Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
@@ -16,7 +23,7 @@ import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
-import { type LoadedProject, getOrThrow, loadProject } from './loader.js';
+import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
 import { TransferController } from './transfer.js';
@@ -24,8 +31,18 @@ import { TransferController } from './transfer.js';
 export interface StartGameOptions {
   /** Element the canvas is added to. The game scales to fit it in whole-number steps. */
   parent: HTMLElement;
-  /** URL of the project folder (the one containing project.json). */
-  projectUrl: string | URL;
+  /**
+   * The project: a URL of the folder containing project.json (served over
+   * HTTP), or any `ProjectSource` (e.g. the editor's unsaved document).
+   */
+  project: string | URL | ProjectSource;
+  /**
+   * Start somewhere other than the manifest's start position (playtesting
+   * "from here"). New games after a game over start here too.
+   */
+  start?: { map: string; x: number; y: number; direction?: Direction };
+  /** Begin playing at once instead of showing the title screen. */
+  skipTitle?: boolean;
   keyBindings?: KeyBindings;
   /** Overrides for the message/choice window look (font, colors, spacing). */
   ui?: Partial<UiTheme>;
@@ -46,9 +63,12 @@ export interface Game {
 
 /** Load a project and run it in a canvas inside `parent`. */
 export async function startGame(options: StartGameOptions): Promise<Game> {
-  const project = await loadProject(options.projectUrl);
+  const project = await loadProject(options.project);
   const { manifest } = project;
-  const map = getOrThrow(project.maps, manifest.start.map, 'map');
+  const start = options.start;
+  const map = start
+    ? await project.loadMap(start.map)
+    : getOrThrow(project.maps, manifest.start.map, 'map');
   const tileset = getOrThrow(project.tilesets, map.tileset, 'tileset');
 
   // Tileset images load when a map using them is first entered.
@@ -56,7 +76,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const loadTiles = (ts: Tileset): Promise<Texture[]> => {
     let tiles = tileTextures.get(ts.id);
     if (!tiles) {
-      tiles = loadPixelTexture(project.resolve(ts.image)).then((texture) =>
+      tiles = loadPixelTexture(project.assetUrl(ts.image)).then((texture) =>
         sliceGrid(texture, ts.tileWidth, ts.tileHeight, ts.columns, ts.tiles.length),
       );
       tileTextures.set(ts.id, tiles);
@@ -73,7 +93,13 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   readyTiles.set(tileset.id, startTiles);
 
   const db = new DatabaseIndex(project.database);
-  const createWorld = () => new World({ manifest, map, tileset, database: db });
+  const position = start && {
+    x: start.x,
+    y: start.y,
+    direction: start.direction ?? manifest.start.direction,
+  };
+  const createWorld = () =>
+    new World({ manifest, map, tileset, database: db, ...(position ? { position } : {}) });
   let world = createWorld();
   const input = new ActionState();
   const loop = new FixedTimestep();
@@ -143,7 +169,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       await Promise.all(
         enemies.map(async (enemy) => {
           if (enemy.image && !enemyTextures.has(enemy.id)) {
-            enemyTextures.set(enemy.id, await loadPixelTexture(project.resolve(enemy.image)));
+            enemyTextures.set(enemy.id, await loadPixelTexture(project.assetUrl(enemy.image)));
           }
         }),
       );
@@ -187,7 +213,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     : () => undefined;
 
   // Audio ------------------------------------------------------------------
-  const audio = new AudioPlayer((path) => project.resolve(path));
+  const audio = new AudioPlayer((path) => project.assetUrl(path));
   const unlockAudio = () => audio.unlock();
   window.addEventListener('keydown', unlockAudio);
   const sfx = (key: SoundKey | null) => {
@@ -330,7 +356,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   let prevX = world.player.realX;
   let prevY = world.player.realY;
   showCurrentMap();
-  toTitle();
+  if (options.skipTitle) play(createWorld(), 0);
+  else toTitle();
 
   const render = (alpha: number) => {
     if (shown?.map !== world.map) showCurrentMap();
@@ -419,7 +446,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       audio.destroy();
       removeDebugPanel();
       resizeObserver.disconnect();
-      app.destroy(true, { children: true });
+      // Not `destroy(true)`: that also releases PixiJS's global resources and breaks any
+      // other PixiJS app on the page (the editor's map canvas behind a playtest).
+      app.destroy({ removeView: true }, { children: true });
     },
   };
 }
@@ -430,7 +459,7 @@ async function loadCharacterGraphics(
 ): Promise<Map<string, CharacterGraphic>> {
   const entries = await Promise.all(
     [...project.characters.values()].map(async (sheet) => {
-      const texture = await loadPixelTexture(project.resolve(sheet.image));
+      const texture = await loadPixelTexture(project.assetUrl(sheet.image));
       const frames = sliceGrid(
         texture,
         sheet.frameWidth,

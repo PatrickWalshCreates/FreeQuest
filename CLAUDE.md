@@ -182,6 +182,8 @@ Never the other way.
   be loaded first). Undeclared switches/variables are dropped on load. `SaveStore` keeps slots in any
   `KeyValueStorage` (localStorage by default, `MemoryStorage` otherwise), namespaced per game; it
   reads through migrate + validate and reports damaged or foreign saves as broken slots.
+- **Loading**: `loadProject(urlOrSource)`; assets resolve through `project.assetUrl(path)`
+  (async), so any source works (HTTP folder, editor document, later desktop files).
 - **Audio**: `system.json` `audio` (title/battle/victory/game-over music + engine sounds), map
   `music`, `playMusic`/`playSound` commands. Core decides _what_ plays: `World.music` (event
   override until the next map change, else the map's) and `World.drainSounds()`. Runtime decides
@@ -263,6 +265,17 @@ Never the other way.
 - Browser-pane note: the pane's page is 1024×768 but screenshots are 800×600, so convert
   screenshot coordinates (×1.28) before reasoning about map cells; synthetic `PointerEvent`s
   work for gestures the click tools can't do (e.g. Escape mid-drag).
+- **Playtest**: `startGame({ project })` takes a URL or any `ProjectSource` (`readJson`,
+  `assetUrl`; runtime `loader.ts`, `httpSource` for URLs). The editor passes
+  `playtestSource(doc)` (editor-core): a snapshot of the document at Play time (unsaved edits
+  included, later edits don't leak in, copies so the game can't touch editor data). `Playtest`
+  runs the game in an overlay with `MemoryStorage` saves (discarded), the debug panel on, and the
+  editor's shortcuts off; Stop or Cmd/Ctrl+. ends it (Escape is the game's menu key). "Play from
+  here" picks a cell and uses `startGame`'s `start` + `skipTitle`.
+- **Two PixiJS apps on one page**: never `app.destroy(true)` — `true` releases PixiJS's global
+  resources and breaks every other live app (the editor's map canvas). Use
+  `destroy({ removeView: true }, …)`. Images load through `<img>` in runtime
+  `loadPixelTexture` (not `Assets`, which can't load blob URLs); the editor reuses it.
 - **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
@@ -357,7 +370,7 @@ gen:icon`).
   5. ~~Map management: new/rename/resize/delete maps, map properties (tileset, music,
      encounters)~~ (done; map ids are generated and not renamable yet; the music picker lists
      audio under `assets/`)
-  6. Playtest from the editor with unsaved edits
+  6. ~~Playtest from the editor with unsaved edits~~ (done; Play, and Play from here)
   7. Event editor: place/move events, pages, conditions, graphic, trigger, nested command editor
   8. Database editor: all categories, forms generated from the TypeBox schemas
 - **M7** Export targets: web, desktop.

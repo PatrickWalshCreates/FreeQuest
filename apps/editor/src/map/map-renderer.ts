@@ -82,8 +82,6 @@ export class MapRenderer {
     parent.appendChild(app.canvas);
     const renderer = new MapRenderer(app);
     app.renderer.on('resize', () => renderer.render());
-    // Handy for inspecting the scene from the console during development.
-    if (import.meta.env.DEV) (window as { mapRenderer?: MapRenderer }).mapRenderer = renderer;
     return renderer;
   }
 

@@ -19,13 +19,41 @@ import {
 } from '@freequest/schema';
 
 /**
+ * Where a project's files come from: a folder served over HTTP
+ * (`httpSource`), or anything else that can hand over parsed JSON and asset
+ * URLs, such as the editor's unsaved document when playtesting.
+ */
+export interface ProjectSource {
+  /** Parse a project-relative JSON file. Rejects with an Error naming the problem. */
+  readJson(path: string): Promise<unknown>;
+  /** A URL an image or audio loader can fetch for a project-relative asset path. */
+  assetUrl(path: string): Promise<string>;
+}
+
+/** A project folder served over HTTP. `projectUrl` points at the folder containing project.json. */
+export function httpSource(projectUrl: string | URL): ProjectSource {
+  const baseUrl = new URL(projectUrl);
+  if (!baseUrl.pathname.endsWith('/')) baseUrl.pathname += '/';
+  return {
+    async readJson(path) {
+      const response = await fetch(new URL(path, baseUrl));
+      if (!response.ok) throw new Error(`Failed to load ${path}: HTTP ${response.status}`);
+      try {
+        return (await response.json()) as unknown;
+      } catch (e) {
+        throw new ProjectFileError(path, [`invalid JSON: ${(e as Error).message}`]);
+      }
+    },
+    assetUrl: (path) => Promise.resolve(new URL(path, baseUrl).href),
+  };
+}
+
+/**
  * A project with its manifest, tilesets and character sheets fetched,
  * migrated and validated. Maps load on demand through `loadMap`, so large
  * projects don't fetch every map up front. Images are not loaded here.
  */
 export interface LoadedProject {
-  /** URL of the project folder (ends with "/"). */
-  readonly baseUrl: URL;
   readonly manifest: Manifest;
   readonly tilesets: ReadonlyMap<string, Tileset>;
   readonly characters: ReadonlyMap<string, CharacterSheet>;
@@ -35,37 +63,26 @@ export interface LoadedProject {
   readonly maps: ReadonlyMap<string, GameMap>;
   /** Fetch and validate a map (once; later calls reuse it). */
   loadMap(id: string): Promise<GameMap>;
-  /** Resolve a project-relative path to an absolute URL. */
-  resolve(path: string): string;
+  /** A URL for a project-relative asset (images, audio). */
+  assetUrl(path: string): Promise<string>;
 }
 
 async function fetchFile<K extends FileKind>(
-  baseUrl: URL,
+  source: ProjectSource,
   kind: K,
   path: string,
 ): Promise<FileData<K>> {
-  const url = new URL(path, baseUrl);
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to load ${path}: HTTP ${response.status}`);
-  }
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch (e) {
-    throw new ProjectFileError(path, [`invalid JSON: ${(e as Error).message}`]);
-  }
-  return parseProjectFile(kind, json, path);
+  return parseProjectFile(kind, await source.readJson(path), path);
 }
 
 async function fetchAll<K extends 'tileset' | 'map' | 'character'>(
-  baseUrl: URL,
+  source: ProjectSource,
   kind: K,
   refs: FileRef[],
 ): Promise<Map<string, FileData<K>>> {
   const entries = await Promise.all(
     refs.map(async (ref) => {
-      const data = await fetchFile(baseUrl, kind, ref.path);
+      const data = await fetchFile(source, kind, ref.path);
       if (data.id !== ref.id) {
         throw new ProjectFileError(ref.path, [
           `id "${data.id}" does not match manifest id "${ref.id}"`,
@@ -77,26 +94,28 @@ async function fetchAll<K extends 'tileset' | 'map' | 'character'>(
   return new Map(entries);
 }
 
-async function fetchDatabase(baseUrl: URL, manifest: Manifest): Promise<Database> {
+async function fetchDatabase(source: ProjectSource, manifest: Manifest): Promise<Database> {
   const entries = await Promise.all(
     DATABASE_KINDS.map(async (kind) => {
       const path = manifest.database?.[kind];
-      return path ? [[kind, await fetchFile(baseUrl, kind, path)] as const] : [];
+      return path ? [[kind, await fetchFile(source, kind, path)] as const] : [];
     }),
   );
   return assembleDatabase(Object.fromEntries(entries.flat()) as DatabaseFiles);
 }
 
-/** Load a project folder served over HTTP. `projectUrl` points at the folder containing project.json. */
-export async function loadProject(projectUrl: string | URL): Promise<LoadedProject> {
-  const baseUrl = new URL(projectUrl);
-  if (!baseUrl.pathname.endsWith('/')) baseUrl.pathname += '/';
+/**
+ * Load a project: from a URL (the folder containing project.json, served
+ * over HTTP) or from any `ProjectSource`.
+ */
+export async function loadProject(from: string | URL | ProjectSource): Promise<LoadedProject> {
+  const source = typeof from === 'string' || from instanceof URL ? httpSource(from) : from;
 
-  const manifest = await fetchFile(baseUrl, 'manifest', 'project.json');
+  const manifest = await fetchFile(source, 'manifest', 'project.json');
   const [tilesets, characters, database] = await Promise.all([
-    fetchAll(baseUrl, 'tileset', manifest.tilesets),
-    fetchAll(baseUrl, 'character', manifest.characters),
-    fetchDatabase(baseUrl, manifest),
+    fetchAll(source, 'tileset', manifest.tilesets),
+    fetchAll(source, 'character', manifest.characters),
+    fetchDatabase(source, manifest),
   ]);
   const databaseProblems = checkDatabase(database, { manifest, characters });
   if (databaseProblems.length > 0) throw new ProjectFileError('database', databaseProblems);
@@ -110,7 +129,7 @@ export async function loadProject(projectUrl: string | URL): Promise<LoadedProje
       const ref = manifest.maps.find((m) => m.id === id);
       if (!ref) return Promise.reject(new Error(`map "${id}" is not listed in project.json`));
       promise = (async () => {
-        const map = await fetchFile(baseUrl, 'map', ref.path);
+        const map = await fetchFile(source, 'map', ref.path);
         if (map.id !== ref.id) {
           throw new ProjectFileError(ref.path, [
             `id "${map.id}" does not match manifest id "${ref.id}"`,
@@ -139,14 +158,13 @@ export async function loadProject(projectUrl: string | URL): Promise<LoadedProje
   if (startProblems.length > 0) throw new ProjectFileError('project.json', startProblems);
 
   return {
-    baseUrl,
     manifest,
     tilesets,
     characters,
     database,
     maps,
     loadMap,
-    resolve: (path) => new URL(path, baseUrl).href,
+    assetUrl: (path) => source.assetUrl(path),
   };
 }
 

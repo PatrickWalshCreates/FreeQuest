@@ -1,8 +1,20 @@
-import { Assets, Rectangle, Texture } from 'pixi.js';
+import { Rectangle, Texture } from 'pixi.js';
 
-/** Load an image as a texture with nearest-neighbour filtering (crisp pixel art). */
-export async function loadPixelTexture(url: string): Promise<Texture> {
-  const texture = await Assets.load<Texture>(url);
+/**
+ * Load an image as a texture with nearest-neighbour filtering (crisp pixel
+ * art). Goes through an <img> rather than PixiJS `Assets`, which picks its
+ * loader from the URL's extension and so can't load blob URLs (desktop
+ * builds and the editor's playtest use those).
+ */
+export async function loadPixelTexture(url: string | Promise<string>): Promise<Texture> {
+  const image = new Image();
+  image.src = await url;
+  try {
+    await image.decode();
+  } catch {
+    throw new Error(`Could not load image ${image.src}`);
+  }
+  const texture = Texture.from(image);
   texture.source.scaleMode = 'nearest';
   return texture;
 }

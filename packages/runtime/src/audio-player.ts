@@ -25,7 +25,7 @@ export class AudioPlayer {
   musicVolume = 0.5;
   soundVolume = 0.7;
 
-  constructor(private readonly resolve: (path: string) => string) {}
+  constructor(private readonly resolve: (path: string) => Promise<string>) {}
 
   /** Call from a user gesture (key press). Safe to call repeatedly. */
   unlock(): void {
@@ -98,7 +98,7 @@ export class AudioPlayer {
       buffer = (async () => {
         if (!context) return null;
         try {
-          const response = await fetch(this.resolve(path));
+          const response = await fetch(await this.resolve(path));
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return await context.decodeAudioData(await response.arrayBuffer());
         } catch (error) {

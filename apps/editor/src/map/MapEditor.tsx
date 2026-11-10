@@ -28,6 +28,8 @@ import type { RenderOptions } from './map-renderer.js';
 interface Props {
   readonly doc: ProjectDocument;
   readonly file: ProjectFile<'map'> & { readonly data: GameMap };
+  /** Playtest with the player starting on this map at a cell. */
+  readonly onPlayFrom: (x: number, y: number) => void;
 }
 
 const PALETTE_WIDTH = 256;
@@ -44,7 +46,7 @@ const TOOLS: readonly { id: TileTool; label: string; key: string; hint: string }
 const PAINTS = new Set<TileTool>(['pencil', 'rectangle', 'fill']);
 
 /** The map editor: canvas, view controls, layers and the tile palette. */
-export function MapEditor({ doc, file }: Props) {
+export function MapEditor({ doc, file, onPlayFrom }: Props) {
   const map = file.data;
   const tilesetFile = doc.project.tilesets.get(map.tileset);
   const tileset = tilesetFile?.data ?? null;
@@ -75,6 +77,8 @@ export function MapEditor({ doc, file }: Props) {
   const [showWalkable, setShowWalkable] = useState(false);
   const stroke = useRef<TileStroke | null>(null);
   const [preview, setPreview] = useState<readonly TileCell[] | null>(null);
+  /** "Play from here": the next click on the map picks where the player starts. */
+  const [pickingStart, setPickingStart] = useState(false);
 
   const options: RenderOptions = useMemo(
     () => ({ hiddenLayers, activeLayer, highlightActive, showGrid, showEvents }),
@@ -142,6 +146,13 @@ export function MapEditor({ doc, file }: Props) {
   const toolDown = (at: CanvasPoint, how: { readonly pick: boolean }) => {
     const cell = cellAt(at);
     if (!cell) return;
+    if (pickingStart) {
+      if (cell.x >= 0 && cell.y >= 0 && cell.x < map.width && cell.y < map.height) {
+        setPickingStart(false);
+        onPlayFrom(cell.x, cell.y);
+      }
+      return;
+    }
     if (how.pick || tool === 'eyedropper') {
       pick(cell);
       if (tool === 'eyedropper') setTool('pencil');
@@ -169,8 +180,9 @@ export function MapEditor({ doc, file }: Props) {
   };
 
   // `preview` is non-null exactly while a stroke is in progress.
-  const brush: readonly TileCell[] =
-    preview && preview.length > 0
+  const brush: readonly TileCell[] = pickingStart
+    ? []
+    : preview && preview.length > 0
       ? preview
       : hover && !preview && PAINTS.has(tool)
         ? [{ ...hover, tile: selectedTile }]
@@ -190,7 +202,8 @@ export function MapEditor({ doc, file }: Props) {
         if (event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
         const key = event.key.toLowerCase();
         const shortcut = TOOLS.find((t) => t.key === key);
-        if (key === 'escape' && stroke.current) cancelStroke();
+        if (key === 'escape' && pickingStart) setPickingStart(false);
+        else if (key === 'escape' && stroke.current) cancelStroke();
         else if (shortcut) chooseTool(shortcut.id);
         else if (key === '=' || key === '+') zoomTo(stepZoom(zoom, 1));
         else if (key === '-') zoomTo(stepZoom(zoom, -1));
@@ -240,6 +253,15 @@ export function MapEditor({ doc, file }: Props) {
           </button>
           <button onClick={fit} title="Fit the map in the window (0)">
             Fit
+          </button>
+          <span className="divider" />
+          <button
+            className={pickingStart ? 'play on' : 'play'}
+            aria-pressed={pickingStart}
+            onClick={() => setPickingStart((v) => !v)}
+            title="Click a cell on the map to start the game there (Esc cancels)"
+          >
+            ▶ Play from here
           </button>
           <span className="divider" />
           <Toggle
@@ -313,7 +335,12 @@ export function MapEditor({ doc, file }: Props) {
           <div className="map-canvas centered muted">Loading images…</div>
         )}
         <div className="map-status" aria-live="polite">
-          {hover ? (
+          {pickingStart ? (
+            <span className="accent-text">
+              Click where the player should start{hover ? ` (${hover.x}, ${hover.y})` : ''} · Esc
+              cancels
+            </span>
+          ) : hover ? (
             <>
               <span>
                 {hover.x}, {hover.y}

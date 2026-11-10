@@ -7,11 +7,14 @@ import {
   duplicateMap,
   mapPath,
   mapUsages,
+  type PlaytestSource,
+  playtestSource,
 } from '@freequest/editor-core';
 import { DATABASE_KINDS, type GameMap } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { MapEditor } from './map/MapEditor.js';
 import { NewMapDialog } from './map/NewMapDialog.js';
+import { Playtest, type PlaytestStart } from './Playtest.js';
 import { confirmAction, guardWindowClose } from './platform.js';
 import { summarize } from './summary.js';
 import { useDocumentVersion } from './use-document.js';
@@ -54,6 +57,14 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [selected, setSelected] = useState(project.manifest.path);
   const [status, setStatusState] = useState<Status | null>(null);
   const [creating, setCreating] = useState(false);
+  const [playtest, setPlaytest] = useState<{
+    readonly source: PlaytestSource;
+    readonly start: PlaytestStart | null;
+  } | null>(null);
+  const play = (start: PlaytestStart | null = null) => {
+    doc.endCoalescing();
+    setPlaytest({ source: playtestSource(doc), start });
+  };
   const setStatus = (next: Omit<Status, 'version'> | null) =>
     setStatusState(next && { ...next, version: doc.version });
 
@@ -112,6 +123,8 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const handlers = { save, undo, redo };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // While playtesting, keys belong to the game.
+      if (playtest) return;
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
       const key = event.key.toLowerCase();
       const action =
@@ -184,6 +197,13 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           title={`Save (${shortcut}S)`}
         >
           {unsaved > 0 ? `Save (${unsaved})` : 'Saved'}
+        </button>
+        <button
+          className="play"
+          onClick={() => play()}
+          title="Play the game from the title screen, with your unsaved changes"
+        >
+          ▶ Play
         </button>
         <button onClick={onReload}>Reload</button>
         <button onClick={onClose}>Close</button>
@@ -261,6 +281,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
             key={current.path}
             doc={doc}
             file={current as ProjectFile<'map'> & { data: GameMap }}
+            onPlayFrom={(x, y) => play({ map: current.id, x, y, label: labelOf(current) })}
           />
         </main>
       ) : (
@@ -270,6 +291,15 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           <Summary file={current} />
           {!current.data && <p className="error">This file could not be loaded.</p>}
         </main>
+      )}
+
+      {playtest && (
+        <Playtest
+          gameName={project.manifest.data.name}
+          source={playtest.source}
+          start={playtest.start}
+          onClose={() => setPlaytest(null)}
+        />
       )}
 
       {creating && (

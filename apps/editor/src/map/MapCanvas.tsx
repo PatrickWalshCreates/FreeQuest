@@ -58,6 +58,8 @@ export function MapCanvas(props: Props) {
       if (alive) {
         created = r;
         setRenderer(r);
+        // Handy for inspecting the scene from the console during development.
+        if (import.meta.env.DEV) (window as { mapRenderer?: MapRenderer }).mapRenderer = r;
       } else r.destroy();
     });
     return () => {

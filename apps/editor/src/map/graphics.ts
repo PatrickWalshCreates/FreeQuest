@@ -1,18 +1,14 @@
 // Textures for the map canvas, loaded through the project's ProjectFs so the
 // same code works on the desktop (blob URLs) and the dev server.
 import type { ProjectDocument } from '@freequest/editor-core';
-import { type CharacterGraphic, sliceGrid } from '@freequest/runtime';
+import { type CharacterGraphic, loadPixelTexture, sliceGrid } from '@freequest/runtime';
 import type { CharacterSheet, Tileset } from '@freequest/schema';
-import { Texture } from 'pixi.js';
+import type { Texture } from 'pixi.js';
 import { useEffect, useState } from 'react';
 
 const images = new WeakMap<ProjectDocument, Map<string, Promise<Texture>>>();
 
-/**
- * Load a project image as a crisp (nearest-neighbour) texture, once per
- * document. Uses an <img> rather than PixiJS Assets, which picks a loader
- * from the URL's extension and so can't read blob URLs.
- */
+/** Load a project image as a crisp texture (the runtime's loader), once per document. */
 export function loadImage(doc: ProjectDocument, path: string): Promise<Texture> {
   let cache = images.get(doc);
   if (!cache) {
@@ -21,14 +17,7 @@ export function loadImage(doc: ProjectDocument, path: string): Promise<Texture> 
   }
   let texture = cache.get(path);
   if (!texture) {
-    texture = (async () => {
-      const image = new Image();
-      image.src = await doc.fs.assetUrl(path);
-      await image.decode();
-      const result = Texture.from(image);
-      result.source.scaleMode = 'nearest';
-      return result;
-    })();
+    texture = loadPixelTexture(doc.fs.assetUrl(path));
     texture.catch(() => cache.delete(path));
     cache.set(path, texture);
   }
