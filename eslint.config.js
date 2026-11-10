@@ -1,10 +1,19 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/coverage/**', 'packages/schema/json/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/src-tauri/target/**',
+      '**/src-tauri/gen/**',
+      '**/coverage/**',
+      'packages/schema/json/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
@@ -15,8 +24,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/runtime/**/*.ts', 'apps/player-web/**/*.ts'],
+    files: ['packages/runtime/**/*.ts', 'apps/player-web/**/*.ts', 'apps/editor/src/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
+  },
+  {
+    files: ['apps/editor/src/**/*.tsx'],
+    ...reactHooks.configs.flat['recommended-latest'],
   },
   {
     // core must stay pure: no rendering, no DOM, no runtime.

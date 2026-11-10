@@ -12,21 +12,25 @@ implementation, art, names of internals, or UI layout is not. All art is origina
 
 ## Commands
 
-Requires Node >= 22 and pnpm (version pinned in `package.json` `packageManager`).
+Requires Node >= 22 and pnpm (version pinned in `package.json` `packageManager`). The desktop
+editor also needs a Rust toolchain (stable) and, on macOS, Xcode command line tools; nothing else
+in the repo does.
 
-| Command           | What it does                                                                |
-| ----------------- | --------------------------------------------------------------------------- |
-| `pnpm install`    | Install everything                                                          |
-| `pnpm dev`        | Run apps/player-web with the demo project at http://localhost:5173          |
-| `pnpm test`       | Run all unit tests once (Vitest); `pnpm test:watch` to watch                |
-| `pnpm check`      | lint + typecheck + test: run before every commit (CI runs this + build)     |
-| `pnpm lint`       | ESLint + Prettier check                                                     |
-| `pnpm format`     | Prettier write                                                              |
-| `pnpm typecheck`  | `tsc` in every package                                                      |
-| `pnpm build`      | Build every package to `dist/` and the player app to `apps/player-web/dist` |
-| `pnpm gen:schema` | Regenerate `packages/schema/json/*.schema.json` from the TypeBox defs       |
-| `pnpm gen:art`    | Regenerate the demo project's placeholder PNGs (deterministic)              |
-| `pnpm gen:audio`  | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)     |
+| Command               | What it does                                                                |
+| --------------------- | --------------------------------------------------------------------------- |
+| `pnpm install`        | Install everything                                                          |
+| `pnpm dev`            | Run apps/player-web with the demo project at http://localhost:5173          |
+| `pnpm editor`         | Run the editor in a browser at http://localhost:5174 (opens samples/)       |
+| `pnpm editor:desktop` | Run the editor as the Tauri desktop app (needs Rust; see below)             |
+| `pnpm test`           | Run all unit tests once (Vitest); `pnpm test:watch` to watch                |
+| `pnpm check`          | lint + typecheck + test: run before every commit (CI runs this + build)     |
+| `pnpm lint`           | ESLint + Prettier check                                                     |
+| `pnpm format`         | Prettier write                                                              |
+| `pnpm typecheck`      | `tsc` in every package                                                      |
+| `pnpm build`          | Build every package to `dist/` and the player app to `apps/player-web/dist` |
+| `pnpm gen:schema`     | Regenerate `packages/schema/json/*.schema.json` from the TypeBox defs       |
+| `pnpm gen:art`        | Regenerate the demo project's placeholder PNGs (deterministic)              |
+| `pnpm gen:audio`      | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)     |
 
 Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
 GitHub yet, so nothing runs it automatically: run it locally.
@@ -38,13 +42,15 @@ packages/schema     Project file format: TypeBox definitions (→ TS types + JSO
                     validation, migrations, stable serializer. Single source of truth.
 packages/core       Pure game logic. No rendering, no DOM, no Node APIs. Unit-tested in Node.
 packages/runtime    PixiJS v8 player: loads a project folder over HTTP and runs it on core.
+packages/editor-core  Editor logic: ProjectFs, opening projects, (later) edits and undo. No UI.
 apps/player-web     Minimal Vite app that boots runtime with samples/demo-project.
-apps/editor         Placeholder only (Tauri editor, milestone 6). Do not build yet.
+apps/editor         React editor; Tauri 2 desktop shell in src-tauri/ (M6, in progress).
 samples/demo-project  Tiny sample game used for dev and tests.
 scripts/            Repo-level tooling (placeholder art generator).
 ```
 
-Dependency direction: `schema ← core ← runtime ← apps`. Never the other way.
+Dependency direction: `schema ← core ← runtime ← apps`, and `schema ← editor-core ← apps/editor`.
+Never the other way.
 
 ## Architecture principles
 
@@ -192,6 +198,28 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   `src/index.ts`. Vite, Vitest and `tsc --noEmit` use it (`customConditions`); `tsconfig.build.json`
   disables it so published `dist/` resolves dependencies' `dist/`.
 
+### Editor (M6)
+
+- **Split like the runtime**: `packages/editor-core` holds everything testable (no DOM, no React,
+  no Tauri, no Node APIs); `apps/editor` (React 19) only draws editor-core state and forwards
+  clicks. React was chosen for contributor familiarity; no UI library, plain CSS with tokens in
+  `styles.css`. The editor's look is our own (clean-room rule covers UI layout too).
+- **`ProjectFs`** is the only way the editor touches files: `readText` (rejects with
+  `FileNotFoundError`), `writeText`, `assetUrl`. Every implementation runs paths through
+  `normalizeProjectPath` (relative, `/`, no `..`), so project data can't escape its folder.
+  Implementations: `TauriFs` (desktop; fs plugin, folders from the open dialog are the only scope;
+  assets as blob URLs), `DevServerFs` (browser dev; `dev-fs-plugin.ts` is a `vite dev`-only
+  middleware confined to `samples/`), `MemoryFs` (tests).
+- **`openProject(fs)`** reads every file (all maps, unlike the lazy runtime loader), keeps going
+  past broken files (`ProjectFile.data` null + `problems`), flags older formats (`migrated`), and
+  runs cross-file checks (`checkReferences`, `checkDatabase`) only when every file loaded. Only an
+  unreadable `project.json` throws (`ProjectOpenError`).
+- **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
+  `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
+- **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
+  the desktop app minus `TauriFs`). The app icon is generated (`pnpm --filter @freequest/editor
+gen:icon`).
+
 ## Project file format
 
 - Plain JSON, written **only** via `stableStringify` (`packages/schema/src/serialize.ts`): leading keys
@@ -268,7 +296,17 @@ Dependency direction: `schema ← core ← runtime ← apps`. Never the other wa
   Audio player, generated chiptune assets).
   - Deferred: options screen (volume, key rebinding), item/skill icons, shops, saving mid-event,
     file-based saves for desktop builds (M7), formation/reordering the party.
-- **M6** Tauri editor: map editor first, then event and database editors.
+- **M6** Tauri editor: map editor first, then event and database editors. Steps:
+  1. ~~Scaffold: Tauri 2 + React app, `ProjectFs` (desktop/dev server/memory), open a project,
+     browse its files and problems~~ (done)
+  2. Editing engine in editor-core: edit operations, undo/redo, dirty tracking, save via
+     `stableStringify` with the load-time checks
+  3. Map view: map drawn with the runtime's renderer, layers, grid, zoom/pan, tile palette
+  4. Painting tools: pencil, rectangle, fill, eraser, eyedropper, layer choice, passability overlay
+  5. Map management: new/rename/resize/delete maps, map properties (tileset, music, encounters)
+  6. Playtest from the editor with unsaved edits
+  7. Event editor: place/move events, pages, conditions, graphic, trigger, nested command editor
+  8. Database editor: all categories, forms generated from the TypeBox schemas
 - **M7** Export targets: web, desktop.
 - **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.
 

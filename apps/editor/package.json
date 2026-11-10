@@ -1,0 +1,30 @@
+{
+  "name": "@freequest/editor",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "tauri": "tauri",
+    "gen:icon": "tsx scripts/gen-icon.ts",
+    "desktop": "tauri dev"
+  },
+  "dependencies": {
+    "@freequest/editor-core": "workspace:*",
+    "@freequest/schema": "workspace:*",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-dialog": "^2.8.4",
+    "@tauri-apps/plugin-fs": "^2.7.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1"
+  }
+}
