@@ -4,8 +4,9 @@ import {
   SaveBlockedError,
   allFiles,
 } from '@freequest/editor-core';
-import { DATABASE_KINDS } from '@freequest/schema';
+import { DATABASE_KINDS, type GameMap } from '@freequest/schema';
 import { useEffect, useState } from 'react';
+import { MapEditor } from './map/MapEditor.js';
 import { guardWindowClose } from './platform.js';
 import { summarize } from './summary.js';
 import { useDocumentVersion } from './use-document.js';
@@ -192,19 +193,29 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         ))}
       </nav>
 
-      <main className="details">
-        <h1>{labelOf(current)}</h1>
-        {current.data && 'name' in current.data && <NameField doc={doc} file={current} />}
-        <dl>
-          {summarize(current).map(([label, value], i) => (
-            <div key={i}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-        {!current.data && <p className="error">This file could not be loaded.</p>}
-      </main>
+      {current.kind === 'map' && current.data ? (
+        <main className="details map-details">
+          <div className="map-header">
+            <NameField doc={doc} file={current} />
+            <details className="properties">
+              <summary>Properties</summary>
+              <Summary file={current} />
+            </details>
+          </div>
+          <MapEditor
+            key={current.path}
+            doc={doc}
+            file={current as ProjectFile<'map'> & { data: GameMap }}
+          />
+        </main>
+      ) : (
+        <main className="details">
+          <h1>{labelOf(current)}</h1>
+          {current.data && 'name' in current.data && <NameField doc={doc} file={current} />}
+          <Summary file={current} />
+          {!current.data && <p className="error">This file could not be loaded.</p>}
+        </main>
+      )}
 
       <footer className="problems">
         <h2>
@@ -231,6 +242,19 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         </ul>
       </footer>
     </div>
+  );
+}
+
+function Summary({ file }: { readonly file: ProjectFile }) {
+  return (
+    <dl className="summary">
+      {summarize(file).map(([label, value], i) => (
+        <div key={i}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

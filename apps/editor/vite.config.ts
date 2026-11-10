@@ -13,5 +13,6 @@ export default defineConfig({
   clearScreen: false,
   server: { port: 5174, strictPort: true },
   envPrefix: ['VITE_', 'TAURI_ENV_'],
-  build: { target: 'es2023' },
+  // A desktop app loads from disk, so one large bundle (PixiJS + React) is fine.
+  build: { target: 'es2023', chunkSizeWarningLimit: 2000 },
 });

@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@freequest/editor-core": "workspace:*",
+    "@freequest/runtime": "workspace:*",
     "@freequest/schema": "workspace:*",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.4",
     "@tauri-apps/plugin-fs": "^2.7.1",
+    "pixi.js": "^8.22.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

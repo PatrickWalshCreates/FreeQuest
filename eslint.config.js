@@ -28,7 +28,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
-    files: ['apps/editor/src/**/*.tsx'],
+    files: ['apps/editor/src/**/*.{ts,tsx}'],
     ...reactHooks.configs.flat['recommended-latest'],
   },
   {
