@@ -10,6 +10,7 @@ import {
   readFile,
   readTextFile,
   remove,
+  writeFile,
   writeTextFile,
 } from '@tauri-apps/plugin-fs';
 
@@ -32,6 +33,18 @@ export class TauriFs implements ProjectFs {
     const full = this.full(path);
     if (!(await exists(full))) throw new FileNotFoundError(path);
     return readTextFile(full);
+  }
+
+  async readBytes(path: string): Promise<Uint8Array> {
+    const full = this.full(path);
+    if (!(await exists(full))) throw new FileNotFoundError(path);
+    return readFile(full);
+  }
+
+  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
+    const full = this.full(path);
+    await mkdir(full.slice(0, full.lastIndexOf('/')), { recursive: true });
+    await writeFile(full, bytes);
   }
 
   async writeText(path: string, text: string): Promise<void> {

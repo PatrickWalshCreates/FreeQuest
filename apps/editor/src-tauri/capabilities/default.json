@@ -14,6 +14,7 @@
     "dialog:allow-ask",
     "core:window:allow-destroy",
     "fs:allow-remove",
-    "fs:allow-read-dir"
+    "fs:allow-read-dir",
+    "fs:allow-write-file"
   ]
 }

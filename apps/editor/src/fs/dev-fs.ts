@@ -22,6 +22,18 @@ export class DevServerFs implements ProjectFs {
     return response.text();
   }
 
+  async readBytes(path: string): Promise<Uint8Array> {
+    const response = await fetch(this.url(path));
+    if (response.status === 404) throw new FileNotFoundError(path);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
+    const response = await fetch(this.url(path), { method: 'PUT', body: bytes as BodyInit });
+    if (!response.ok) throw new Error(`Saving ${path} failed: HTTP ${response.status}`);
+  }
+
   async writeText(path: string, text: string): Promise<void> {
     const response = await fetch(this.url(path), { method: 'PUT', body: text });
     if (!response.ok) throw new Error(`Saving ${path} failed: HTTP ${response.status}`);

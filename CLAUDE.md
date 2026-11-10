@@ -203,11 +203,13 @@ Never the other way.
 ### Editor (M6)
 
 - **Split like the runtime**: `packages/editor-core` holds everything testable (no DOM, no React,
-  no Tauri, no Node APIs); `apps/editor` (React 19) only draws editor-core state and forwards
+  no Tauri, no Node APIs; its `tsconfig.json` checks `src` without Node types so globals like
+  `TextEncoder` or `structuredClone` fail typecheck: use `utf8.ts` / JSON copies); `apps/editor` (React 19) only draws editor-core state and forwards
   clicks. React was chosen for contributor familiarity; no UI library, plain CSS with tokens in
   `styles.css`. The editor's look is our own (clean-room rule covers UI layout too).
 - **`ProjectFs`** is the only way the editor touches files: `readText` (rejects with
-  `FileNotFoundError`), `writeText`, `remove`, `list(dir)` (recursive, sorted), `assetUrl`. Every implementation runs paths through
+  `FileNotFoundError`), `writeText`, `readBytes`/`writeBytes` (assets), `remove`, `list(dir)`
+  (recursive, sorted), `assetUrl`. Every implementation runs paths through
   `normalizeProjectPath` (relative, `/`, no `..`), so project data can't escape its folder.
   Implementations: `TauriFs` (desktop; fs plugin, folders from the open dialog are the only scope;
   assets as blob URLs), `DevServerFs` (browser dev; `dev-fs-plugin.ts` is a `vite dev`-only
@@ -314,6 +316,19 @@ Never the other way.
   the desktop app minus `TauriFs`). The app icon is generated (`pnpm --filter @freequest/editor
 gen:icon`).
 
+### Export (M7)
+
+- **Export core** (`editor-core/export.ts`, tested): `assetReferences(project)` finds every
+  asset the data uses (tileset/character/enemy images, iconset, map music, system music and
+  sounds, `playMusic`/`playSound` in events) with where it's used. `planExport(project, fs)`
+  lists every data file (from the document, so unsaved edits are included) plus exactly those
+  assets, and sorts problems: every project problem and every missing image is an **error**
+  (the game runs the same checks at start and would refuse to run); a missing sound is a
+  **warning** (the game plays on in silence). `writeExport(plan, source, target, { prefix })`
+  refuses while there are errors, writes compact JSON, copies assets byte for byte, reports
+  progress, and writes project.json last. Unused files never ship.
+- Add new asset-bearing fields to `assetReferences` (and its test) or exports will miss them.
+
 ## Project file format
 
 - Plain JSON, written **only** via `stableStringify` (`packages/schema/src/serialize.ts`): leading keys
@@ -411,7 +426,15 @@ gen:icon`).
     picker for transfer targets, multi-tile stamps, tileset/character-sheet editors, an asset
     importer, remembering the last project, testing the desktop build by hand (file dialogs,
     close prompt) before M7 packaging.
-- **M7** Export targets: web, desktop.
+- **M7** Export: web, desktop (macOS first), `freequest` CLI. Steps:
+  1. ~~Export core: collect referenced files, check, write~~ (done)
+  2. Game id in project.json (manifest v5) used to keep saves apart
+  3. Release player: loading screen, fullscreen, friendly errors, no debug; built once and bundled
+  4. `freequest` CLI: `check` and `export web`
+  5. Export dialog in the editor
+  6. Desktop player (file saves) and macOS export (copy the prebuilt app, add the game, rename,
+     icon, ad-hoc sign); Windows/Linux shells need building on those systems later
+  7. Docs and end-to-end runs of both exports
 - **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.
 
 ## Known gaps / notes for next milestones
