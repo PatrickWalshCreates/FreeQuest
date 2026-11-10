@@ -1,3 +1,8 @@
+// PixiJS normally compiles some shader and uniform code at run time with
+// new Function(), which a strict Content Security Policy (the desktop apps')
+// forbids. This module installs pre-built replacements; importing it here
+// covers every page that uses the runtime (player, editor).
+import 'pixi.js/unsafe-eval';
 export * from './game.js';
 export * from './loader.js';
 export * from './keyboard.js';

@@ -1,7 +1,12 @@
 // ProjectFs over the desktop file system (Tauri fs plugin). Folders picked
 // in the open dialog are added to the plugin's scope, so the app can only
 // touch folders the user chose.
-import { FileNotFoundError, type ProjectFs, normalizeProjectPath } from '@freequest/editor-core';
+import {
+  FileNotFoundError,
+  type ProjectFs,
+  type WriteOptions,
+  normalizeProjectPath,
+} from '@freequest/editor-core';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   exists,
@@ -41,10 +46,10 @@ export class TauriFs implements ProjectFs {
     return readFile(full);
   }
 
-  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
+  async writeBytes(path: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
     const full = this.full(path);
     await mkdir(full.slice(0, full.lastIndexOf('/')), { recursive: true });
-    await writeFile(full, bytes);
+    await writeFile(full, bytes, options.executable ? { mode: 0o755 } : {});
   }
 
   async writeText(path: string, text: string): Promise<void> {

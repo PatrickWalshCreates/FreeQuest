@@ -14,7 +14,8 @@ export interface ProjectFs {
   writeText(path: string, text: string): Promise<void>;
   /** Read any file as bytes (images, audio). Rejects with `FileNotFoundError` when missing. */
   readBytes(path: string): Promise<Uint8Array>;
-  writeBytes(path: string, bytes: Uint8Array): Promise<void>;
+  /** Write bytes; `executable` marks a program file (e.g. inside a Mac app) runnable. */
+  writeBytes(path: string, bytes: Uint8Array, options?: WriteOptions): Promise<void>;
   /** Delete a file. Deleting a file that doesn't exist is not an error. */
   remove(path: string): Promise<void>;
   /**
@@ -24,6 +25,10 @@ export interface ProjectFs {
   list(dir: string): Promise<string[]>;
   /** A URL an <img> or texture loader can use for a project asset (images, audio). */
   assetUrl(path: string): Promise<string>;
+}
+
+export interface WriteOptions {
+  readonly executable?: boolean;
 }
 
 export class FileNotFoundError extends Error {
@@ -39,6 +44,8 @@ export class MemoryFs implements ProjectFs {
   readonly files = new Map<string, string>();
   /** Binary files by path (kept apart so tests can treat `files` as text). */
   readonly binaries = new Map<string, Uint8Array>();
+  /** Paths written as executable. */
+  readonly executables = new Set<string>();
 
   constructor(
     files: Record<string, string> = {},
@@ -67,10 +74,12 @@ export class MemoryFs implements ProjectFs {
     throw new FileNotFoundError(path);
   }
 
-  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
+  async writeBytes(path: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
     const key = normalizeProjectPath(path);
     this.files.delete(key);
     this.binaries.set(key, bytes);
+    if (options.executable) this.executables.add(key);
+    else this.executables.delete(key);
   }
 
   async writeText(path: string, text: string): Promise<void> {

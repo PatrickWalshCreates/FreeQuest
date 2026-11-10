@@ -15,6 +15,15 @@
     "core:window:allow-destroy",
     "fs:allow-remove",
     "fs:allow-read-dir",
-    "fs:allow-write-file"
+    "fs:allow-write-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$RESOURCE/mac-player/**"
+        }
+      ]
+    },
+    "core:path:default"
   ]
 }

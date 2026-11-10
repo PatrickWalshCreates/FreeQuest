@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -39,7 +40,21 @@ function fakePlayer(): string {
   return dir;
 }
 
-async function cli(args: string[], cwd = DEMO) {
+/** A stand-in for the desktop player app. */
+function fakeShell(): string {
+  const app = join(temp(), 'FreeQuest Player.app');
+  mkdirSync(join(app, 'Contents', 'MacOS'), { recursive: true });
+  writeFileSync(
+    join(app, 'Contents', 'Info.plist'),
+    '<plist><dict>\n\t<key>CFBundleName</key>\n\t<string>FreeQuest Player</string>\n</dict></plist>\n',
+  );
+  writeFileSync(join(app, 'Contents', 'MacOS', 'freequest-player'), 'binary');
+  return app;
+}
+
+const signed: string[][] = [];
+
+async function cli(args: string[], cwd = DEMO, platform = 'darwin') {
   const out: string[] = [];
   const err: string[] = [];
   const code = await run(args, {
@@ -47,6 +62,9 @@ async function cli(args: string[], cwd = DEMO) {
     err: (l) => err.push(l),
     cwd,
     playerDir: fakePlayer(),
+    macShell: fakeShell(),
+    platform,
+    sign: async (command, a) => void signed.push([command, ...a]),
   });
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
@@ -130,6 +148,36 @@ describe('freequest export web', () => {
     expect(broken.code).toBe(1);
     expect(broken.err).toMatch(/Not exported/);
     expect(existsSync(out)).toBe(false);
+  });
+});
+
+describe('freequest export mac', () => {
+  it('builds a signed app named after the game, with the game inside', async () => {
+    signed.length = 0;
+    const out = join(temp(), 'mac');
+    const result = await cli(['export', 'mac', '-o', out]);
+    expect(result.code).toBe(0);
+    const app = join(out, 'FreeQuest Demo.app');
+    expect(result.out).toContain(`as ${app}`);
+    expect(result.out).toMatch(/Signed ad-hoc/);
+    expect(signed).toEqual([['/usr/bin/codesign', '--force', '--deep', '--sign', '-', app]]);
+    expect(statSync(join(app, 'Contents/MacOS/freequest-player')).mode & 0o111).toBeTruthy();
+    expect(readFileSync(join(app, 'Contents/Info.plist'), 'utf8')).toContain(
+      '<string>FreeQuest Demo</string>',
+    );
+    const game = await openProject(new NodeFs(join(app, 'Contents/Resources/game')));
+    expect(game.problems).toEqual([]);
+  });
+
+  it('skips signing off macOS and explains a missing shell', async () => {
+    signed.length = 0;
+    const linux = await cli(['export', 'mac', '-o', join(temp(), 'mac')], DEMO, 'linux');
+    expect(linux.code).toBe(0);
+    expect(linux.err).toMatch(/Not signed/);
+    expect(signed).toEqual([]);
+    await expect(
+      cli(['export', 'mac', '-o', join(temp(), 'm'), '--shell', temp()]),
+    ).rejects.toThrow(/No desktop player app/);
   });
 });
 

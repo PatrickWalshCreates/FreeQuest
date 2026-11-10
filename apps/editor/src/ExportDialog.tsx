@@ -2,6 +2,7 @@ import {
   type ExportPlan,
   type ProjectDocument,
   clearExport,
+  exportMac,
   exportWeb,
   inspectTarget,
   planExport,
@@ -9,13 +10,18 @@ import {
 import { useEffect, useState } from 'react';
 import { Dialog, Field } from './Dialog.js';
 import {
+  CAN_EXPORT_MAC,
   type ExportFolder,
   IN_DESKTOP_APP,
   bundledPlayer,
   confirmAction,
   devExportFolder,
+  macShell,
   pickExportFolder,
+  signMacApp,
 } from './platform.js';
+
+type Target = 'web' | 'mac';
 
 /** The editor's version, recorded in each export's marker file. */
 const FREEQUEST_VERSION = '0.0.0';
@@ -25,7 +31,10 @@ type Phase =
   | { readonly step: 'exporting'; readonly done: number; readonly total: number }
   | {
       readonly step: 'done';
+      readonly target: Target;
       readonly folder: ExportFolder;
+      /** The exported app's name, for Mac exports. */
+      readonly app: string | null;
       readonly files: number;
       readonly bytes: number;
     }
@@ -47,6 +56,7 @@ export function ExportDialog({
   const [plan, setPlan] = useState<ExportPlan | null>(null);
   const [phase, setPhase] = useState<Phase>({ step: 'review' });
   const [folder, setFolder] = useState<ExportFolder | null>(null);
+  const [target, setTarget] = useState<Target>('web');
   const [devName, setDevName] = useState(`${manifest.id}-web`);
 
   useEffect(() => {
@@ -62,9 +72,11 @@ export function ExportDialog({
 
   const run = async () => {
     if (!plan) return;
+    const kind = target;
     try {
-      const target = IN_DESKTOP_APP ? folder : await devExportFolder(devName);
-      if (!target) return;
+      const chosen = IN_DESKTOP_APP ? folder : await devExportFolder(devName);
+      if (!chosen) return;
+      const target = chosen;
       if (IN_DESKTOP_APP && doc.fs.label && target.label.startsWith(doc.fs.label)) {
         throw new Error('Choose a folder outside the project folder.');
       }
@@ -82,18 +94,40 @@ export function ExportDialog({
         if (!ok) return;
         await clearExport(target.fs);
       }
-      const player = await bundledPlayer();
-      setPhase({ step: 'exporting', done: 0, total: plan.files.length + player.files.length });
-      const result = await exportWeb({
-        project,
-        plan,
-        source: doc.fs,
-        target: target.fs,
-        player,
-        freequestVersion: FREEQUEST_VERSION,
-        onProgress: (p) => setPhase({ step: 'exporting', done: p.done, total: p.total }),
-      });
-      setPhase({ step: 'done', folder: target, files: result.files, bytes: result.bytes });
+      setPhase({ step: 'exporting', done: 0, total: 1 });
+      const onProgress = (p: { done: number; total: number }) =>
+        setPhase({ step: 'exporting', done: p.done, total: p.total });
+      if (kind === 'mac') {
+        const result = await exportMac({
+          project,
+          plan,
+          source: doc.fs,
+          shell: await macShell(),
+          target: target.fs,
+          freequestVersion: FREEQUEST_VERSION,
+          onProgress,
+        });
+        await signMacApp(`${target.label.replace(/\/+$/, '')}/${result.app}`);
+        setPhase({
+          step: 'done',
+          target: kind,
+          folder: target,
+          app: result.app,
+          files: result.files,
+          bytes: result.bytes,
+        });
+      } else {
+        const result = await exportWeb({
+          project,
+          plan,
+          source: doc.fs,
+          target: target.fs,
+          player: await bundledPlayer(),
+          freequestVersion: FREEQUEST_VERSION,
+          onProgress,
+        });
+        setPhase({ step: 'done', target: kind, folder: target, app: null, ...result });
+      }
     } catch (error) {
       setPhase({ step: 'failed', message: error instanceof Error ? error.message : String(error) });
     }
@@ -109,14 +143,24 @@ export function ExportDialog({
         {phase.step === 'done' ? (
           <>
             <p className="success">
-              Exported {plural(phase.files, 'game file')} ({megabytes(phase.bytes)}) to{' '}
+              {phase.app
+                ? `Exported ${phase.app} (${megabytes(phase.bytes)}) to `
+                : `Exported ${plural(phase.files, 'game file')} (${megabytes(phase.bytes)}) to `}
               <code>{phase.folder.label}</code>.
             </p>
-            <p className="hint">
-              Upload the whole folder to a web host (itch.io works: zip it and choose “This file
-              will be played in the browser”). index.html starts the game. Opening index.html
-              straight from your disk won’t work: browsers need it served.
-            </p>
+            {phase.target === 'mac' ? (
+              <p className="hint">
+                Double-click it to play. To share it, zip the app. Because it isn’t signed with an
+                Apple developer ID, players open it the first time with right-click → Open (or
+                System Settings → Privacy &amp; Security → Open Anyway).
+              </p>
+            ) : (
+              <p className="hint">
+                Upload the whole folder to a web host (itch.io works: zip it and choose “This file
+                will be played in the browser”). index.html starts the game. Opening index.html
+                straight from your disk won’t work: browsers need it served.
+              </p>
+            )}
             <div className="actions">
               {phase.folder.playUrl && (
                 <a
@@ -133,12 +177,33 @@ export function ExportDialog({
           </>
         ) : (
           <>
-            <div className="export-target">
-              <strong>Web</strong>
-              <span className="hint">
-                A folder for any web host. Players open a link and play; saves stay in their
-                browser.
-              </span>
+            <div className="export-targets" role="radiogroup" aria-label="Export as">
+              <button
+                role="radio"
+                aria-checked={target === 'web'}
+                className={target === 'web' ? 'export-target on' : 'export-target'}
+                onClick={() => setTarget('web')}
+              >
+                <strong>Web</strong>
+                <span className="hint">
+                  A folder for any web host. Players open a link and play; saves stay in their
+                  browser.
+                </span>
+              </button>
+              <button
+                role="radio"
+                aria-checked={target === 'mac'}
+                className={target === 'mac' ? 'export-target on' : 'export-target'}
+                disabled={!CAN_EXPORT_MAC}
+                onClick={() => setTarget('mac')}
+              >
+                <strong>macOS app</strong>
+                <span className="hint">
+                  {CAN_EXPORT_MAC
+                    ? 'A double-clickable app that plays offline and keeps saves as files.'
+                    : 'Needs the desktop editor on a Mac (or “freequest export mac”).'}
+                </span>
+              </button>
             </div>
 
             {!plan ? (

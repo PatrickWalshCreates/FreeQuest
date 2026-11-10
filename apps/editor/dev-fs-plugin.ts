@@ -9,7 +9,7 @@
 //                                                        relative to <folder>)
 // Every path is confined to its area's folder.
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { dirname, extname, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
@@ -106,6 +106,7 @@ export function devFsPlugin(areas: Readonly<Record<string, string>>): Plugin {
           } else if (request.method === 'PUT') {
             await mkdir(dirname(full), { recursive: true });
             await writeFile(full, await body(request));
+            if (request.headers['x-freequest-executable'] === '1') await chmod(full, 0o755);
             reply(response, 204);
           } else reply(response, 405);
         })().catch((error: unknown) => reply(response, 500, String(error)));

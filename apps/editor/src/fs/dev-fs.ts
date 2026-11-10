@@ -1,5 +1,10 @@
 // ProjectFs over the dev server's /__freequest endpoints (see dev-fs-plugin.ts).
-import { FileNotFoundError, type ProjectFs, normalizeProjectPath } from '@freequest/editor-core';
+import {
+  FileNotFoundError,
+  type ProjectFs,
+  type WriteOptions,
+  normalizeProjectPath,
+} from '@freequest/editor-core';
 
 const BASE = '/__freequest';
 
@@ -35,8 +40,12 @@ export class DevServerFs implements ProjectFs {
     return new Uint8Array(await response.arrayBuffer());
   }
 
-  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
-    const response = await fetch(this.url(path), { method: 'PUT', body: bytes as BodyInit });
+  async writeBytes(path: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
+    const response = await fetch(this.url(path), {
+      method: 'PUT',
+      body: bytes as BodyInit,
+      headers: options.executable ? { 'X-Freequest-Executable': '1' } : {},
+    });
     if (!response.ok) throw new Error(`Saving ${path} failed: HTTP ${response.status}`);
   }
 

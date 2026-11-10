@@ -1,9 +1,14 @@
 // ProjectFs over a folder on disk, for the command line.
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { FileNotFoundError, type ProjectFs, normalizeProjectPath } from '@freequest/editor-core';
+import {
+  FileNotFoundError,
+  type ProjectFs,
+  type WriteOptions,
+  normalizeProjectPath,
+} from '@freequest/editor-core';
 
 export class NodeFs implements ProjectFs {
   readonly label: string;
@@ -43,10 +48,11 @@ export class NodeFs implements ProjectFs {
     await writeFile(full, text);
   }
 
-  async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
+  async writeBytes(path: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
     const full = this.full(path);
     await mkdir(dirname(full), { recursive: true });
     await writeFile(full, bytes);
+    if (options.executable) await chmod(full, 0o755);
   }
 
   async remove(path: string): Promise<void> {

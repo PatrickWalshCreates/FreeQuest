@@ -1,0 +1,26 @@
+[package]
+name = "freequest-player"
+version = "0.0.0"
+description = "FreeQuest Player"
+license = "MIT"
+edition = "2021"
+publish = false
+
+[lib]
+name = "freequest_player_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# protocol-asset: the page reads the game's files from the app bundle.
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-fs = "2"
+
+[profile.release]
+# Smaller apps for players to download.
+lto = true
+opt-level = "s"
+codegen-units = 1
+strip = true

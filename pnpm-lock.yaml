@@ -261,6 +261,15 @@ importers:
         specifier: ^6.2.1
         version: 6.2.1(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
 
+  apps/player-desktop:
+    devDependencies:
+      '@freequest/player':
+        specifier: workspace:*
+        version: link:../../packages/player
+      '@tauri-apps/cli':
+        specifier: ^2.12.4
+        version: 2.12.4
+
   apps/player-web:
     dependencies:
       '@freequest/runtime':
@@ -300,6 +309,12 @@ importers:
       '@freequest/runtime':
         specifier: workspace:*
         version: link:../runtime
+      '@tauri-apps/api':
+        specifier: ^2.12.4
+        version: 2.12.4
+      '@tauri-apps/plugin-fs':
+        specifier: ^2.7.1
+        version: 2.7.1
 
   packages/runtime:
     dependencies:

@@ -13,3 +13,4 @@ export * from './database-edits.js';
 export * from './export.js';
 export * from './utf8.js';
 export * from './web-export.js';
+export * from './mac-export.js';

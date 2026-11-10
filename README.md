@@ -70,6 +70,16 @@ pnpm freequest export web samples/demo-project --out ../my-game-web
 The web export is a folder to upload to any static host (itch.io works); `index.html` starts the
 game. It has to be served by a web server, so double-clicking `index.html` won't work.
 
+On a Mac, games can also be exported as an app (needs Rust once, to build the player app):
+
+```sh
+pnpm build:mac-player
+pnpm freequest export mac samples/demo-project --out ../my-game-mac
+```
+
+The app plays offline and keeps saves as files. It's signed ad-hoc, not with an Apple developer ID,
+so players open it the first time with right-click → Open.
+
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 
 ## Project files

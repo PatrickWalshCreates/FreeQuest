@@ -1,6 +1,7 @@
 // The release player: loads the game from ./game/ next to this page and
 // runs it full-window. No debug tools; problems are explained to players.
 import { type ProjectSource, httpSource, startGame } from '@freequest/runtime';
+import { isTauri } from '@tauri-apps/api/core';
 import { isFullscreenKey, startProblem } from './messages.js';
 
 const parent = document.getElementById('game');
@@ -36,18 +37,23 @@ function gameSource(): ProjectSource {
   };
 }
 
+/** Inside the desktop player app (apps/player-desktop) rather than a browser. */
+const desktop = isTauri();
+
 window.addEventListener('keydown', (event) => {
   if (!isFullscreenKey(event)) return;
   event.preventDefault();
-  if (document.fullscreenElement) void document.exitFullscreen();
+  if (desktop) void import('./desktop.js').then((d) => d.toggleDesktopFullscreen());
+  else if (document.fullscreenElement) void document.exitFullscreen();
   else void document.documentElement.requestFullscreen().catch(() => undefined);
 });
 
-if (location.protocol === 'file:') {
+if (!desktop && location.protocol === 'file:') {
   showProblem(new Error('opened from file://'));
 } else {
   try {
-    await startGame({ parent, project: gameSource() });
+    if (desktop) await (await import('./desktop.js')).startDesktop(parent);
+    else await startGame({ parent, project: gameSource() });
     loading.classList.add('done');
     parent.focus();
   } catch (error) {

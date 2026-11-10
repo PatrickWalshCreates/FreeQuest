@@ -118,3 +118,19 @@ export async function bundledPlayer(): Promise<{
     },
   };
 }
+
+/** Mac apps can be exported only from the desktop editor on a Mac (signing needs codesign). */
+export const CAN_EXPORT_MAC = IN_DESKTOP_APP && /Mac/i.test(navigator.userAgent);
+
+/** The desktop player app bundled with the editor, which Mac exports are made from. */
+export async function macShell(): Promise<ProjectFs> {
+  const { resourceDir, join } = await import('@tauri-apps/api/path');
+  const { TauriFs } = await import('./fs/tauri-fs.js');
+  return new TauriFs(await join(await resourceDir(), 'mac-player', 'FreeQuest Player.app'));
+}
+
+/** Ad-hoc sign an exported app (runs codesign through the editor's Rust side). */
+export async function signMacApp(appPath: string): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('sign_mac_app', { path: appPath });
+}

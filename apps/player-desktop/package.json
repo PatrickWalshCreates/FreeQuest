@@ -1,0 +1,17 @@
+{
+  "name": "@freequest/player-desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The desktop player app exported games are made from (the \"shell\"). Its page is @freequest/player.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build:shell": "tauri build --bundles app && node scripts/stage-shell.mjs",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@freequest/player": "workspace:*",
+    "@tauri-apps/cli": "^2.12.4"
+  }
+}

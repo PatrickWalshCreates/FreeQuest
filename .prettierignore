@@ -7,3 +7,6 @@ packages/schema/json/
 apps/editor/src-tauri/target/
 apps/editor/src-tauri/gen/
 exports/
+apps/player-desktop/src-tauri/target/
+apps/player-desktop/src-tauri/gen/
+apps/player-desktop/dist/
