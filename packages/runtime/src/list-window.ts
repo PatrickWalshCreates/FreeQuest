@@ -1,6 +1,10 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { MenuOption } from './battle-controller.js';
 import { type UiTheme, drawWindow } from './dialog-view.js';
+import { fitText } from './text-fit.js';
+
+/** Space kept between a row's label and its detail. */
+const DETAIL_GAP = 10;
 
 export interface ListWindowLayout {
   x: number;
@@ -103,12 +107,19 @@ export class ListWindow {
       label.alpha = option.enabled ? 1 : 0.4;
       label.position.set(theme.padding + 12, y);
       this.content.addChild(label);
+      let labelRight = layout.width - theme.padding;
       if (option.detail) {
         const detail = new Text({ text: option.detail, style: small });
         detail.alpha = label.alpha;
         detail.position.set(layout.width - theme.padding - detail.width, y + 1);
         this.content.addChild(detail);
+        labelRight = detail.x - DETAIL_GAP;
       }
+      // A long label (a long map name in a save slot) shortens instead of running into the detail.
+      label.text = fitText(option.label, labelRight - label.x, (text) => {
+        label.text = text;
+        return label.width;
+      });
     });
   }
 

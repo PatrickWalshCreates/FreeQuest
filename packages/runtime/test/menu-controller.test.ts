@@ -148,7 +148,8 @@ describe('MenuController', () => {
     expect(menu.state.message).toBe('Saved to slot 2.');
     expect(menu.state.options[1]).toEqual({
       label: 'Slot 2: Meadow',
-      detail: 'Hero Lv 1  1:02:05',
+      // The menu's list is narrow (the party is shown beside it): place and play time only.
+      detail: '1:02:05',
       enabled: true,
     });
     const slot = saves.read(2);

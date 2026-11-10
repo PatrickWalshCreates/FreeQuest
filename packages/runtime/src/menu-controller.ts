@@ -211,7 +211,7 @@ export class MenuController {
         return this.party.members.map((m) => this.memberOption(m, canTarget(use.entry.target, m)));
       }
       case 'save':
-        return this.options.saves.list().map((info) => slotOption(info));
+        return this.options.saves.list().map((info) => slotOption(info, { withParty: false }));
       case 'quit':
         return [
           { label: 'Yes', enabled: true },
@@ -399,15 +399,24 @@ export class MenuController {
 }
 
 /** "Meadow · Hero Lv 3, Mira Lv 4 · 0:12:34" style label for a save slot. */
-export function slotOption(info: SlotInfo): MenuOption {
+/**
+ * A save slot as a list row: "Slot 1: <place>" and the play time, plus the
+ * party when there's room for it (`withParty`; the title's Load list is wide,
+ * the in-game menu's list is narrow and shows the party beside it anyway).
+ */
+export function slotOption(
+  info: SlotInfo,
+  options: { readonly withParty?: boolean } = {},
+): MenuOption {
   if (info.kind === 'empty') return { label: `Slot ${info.slot}`, detail: 'Empty', enabled: true };
   if (info.kind === 'broken')
     return { label: `Slot ${info.slot}`, detail: 'Unreadable', enabled: true };
   const { summary, playSeconds } = info.save;
+  const time = formatPlayTime(playSeconds);
   const members = summary.members.map((m) => `${m.name} Lv ${m.level}`).join(', ');
   return {
     label: `Slot ${info.slot}: ${summary.location}`,
-    detail: `${members}  ${formatPlayTime(playSeconds)}`,
+    detail: options.withParty === false ? time : `${members}  ${time}`,
     enabled: true,
   };
 }

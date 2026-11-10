@@ -180,7 +180,9 @@ Never the other way.
   open. Quit and game over return to the title. Controllers are PixiJS-free and tested; views
   (`TitleView`, `MenuView`, shared `ListWindow`) only draw and rebuild Text only on change.
 - **Menu**: Items, Skills (out-of-battle skills), Equipment (through the bag), Status, Save (3
-  slots), Quit. Feedback lines reuse the battle log's wording (`describeEvent`).
+  slots), Quit. Save rows in the menu show place + play time (`slotOption(info, { withParty:
+false })`, the list is narrow); the title's Load list adds the party. `ListWindow` shortens a
+  label with "…" (`fitText`, tested) rather than letting it run into the row's detail. Feedback lines reuse the battle log's wording (`describeEvent`).
 - **Saves** (`schema/src/save.ts`, `SaveFile` v1): game name, timestamp, play time, map/position,
   switches/variables, party data, and a slot summary. `World.toSave()` refuses while an event runs
   (so no interpreter state is ever saved); `World.fromSave()` rebuilds a world (the save's map must
