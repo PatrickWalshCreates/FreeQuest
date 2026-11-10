@@ -61,24 +61,18 @@ pnpm editor:desktop   # as a desktop app; needs Rust (https://rustup.rs)
 
 ### Exporting a game
 
+In the editor, **Export…** checks the game and exports it as a web game (upload the folder to
+itch.io or any web host) or, on a Mac, as an app. The same works from the command line:
+
 ```sh
-pnpm build                                                     # once: builds the player games run in
-pnpm freequest check samples/demo-project                      # list any problems
+pnpm build                                          # once: builds the player games run in
+pnpm freequest check samples/demo-project
 pnpm freequest export web samples/demo-project --out ../my-game-web
-```
-
-The web export is a folder to upload to any static host (itch.io works); `index.html` starts the
-game. It has to be served by a web server, so double-clicking `index.html` won't work.
-
-On a Mac, games can also be exported as an app (needs Rust once, to build the player app):
-
-```sh
-pnpm build:mac-player
+pnpm build:mac-player                               # once, needs Rust: the Mac player app
 pnpm freequest export mac samples/demo-project --out ../my-game-mac
 ```
 
-The app plays offline and keeps saves as files. It's signed ad-hoc, not with an Apple developer ID,
-so players open it the first time with right-click → Open.
+See [docs/exporting.md](docs/exporting.md) for uploading to itch.io and sharing Mac apps.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 

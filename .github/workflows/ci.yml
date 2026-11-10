@@ -18,3 +18,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm build
+
+  # The macOS player app and a Mac export of the demo, checked the way players' Macs check it.
+  mac-export:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm build:mac-player
+      - run: node packages/cli/dist/main.js export mac samples/demo-project --out "$RUNNER_TEMP/mac"
+      - run: codesign --verify --deep --strict "$RUNNER_TEMP/mac/FreeQuest Demo.app"

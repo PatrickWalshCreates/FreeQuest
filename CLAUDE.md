@@ -500,7 +500,7 @@ target, player, … })` writes `game/` + the player files + the marker into an e
     picker for transfer targets, multi-tile stamps, tileset/character-sheet editors, an asset
     importer, remembering the last project, testing the desktop build by hand (file dialogs,
     close prompt) before M7 packaging.
-- **M7** Export: web, desktop (macOS first), `freequest` CLI. Steps:
+- **M7 (done)** Export: web, desktop (macOS first), `freequest` CLI. Steps:
   1. ~~Export core: collect referenced files, check, write~~ (done)
   2. ~~Game id in project.json (manifest v5) used to keep saves apart~~ (done; editable in
      Project settings)
@@ -511,8 +511,16 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   6. ~~Desktop player (file saves) and macOS export (copy the prebuilt app, add the game, rename,
      ad-hoc sign)~~ (done; CLI export launched and started the game; editor target and playing
      by hand still to be tried by a person; custom app icons and Windows/Linux shells later)
-  7. Docs and end-to-end runs of both exports
-- **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.
+  7. ~~Docs and end-to-end runs of both exports~~ (done; `docs/exporting.md` is the user guide,
+     CI has a macOS job that builds the player app and verifies a Mac export's signature)
+  - Deferred: Windows/Linux player apps (build on those systems, e.g. in CI), installers (DMG,
+    setup programs), a packaged editor app, custom app icons per game, Developer ID signing and
+    notarization, uploading to itch.io, mobile, one shared FreeQuest version constant (the CLI
+    and the editor each declare `0.0.0`).
+- **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,
+  move routes, shops, options screen, icons, copy/paste and id renaming in the editor), getting the
+  repo onto GitHub so CI runs, Windows/Linux exports, an RPG Maker MZ project importer (reads
+  user's own projects; still clean-room), the plugin API.
 
 ## Known gaps / notes for next milestones
 
