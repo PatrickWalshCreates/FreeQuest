@@ -44,7 +44,7 @@ packages/core       Pure game logic. No rendering, no DOM, no Node APIs. Unit-te
 packages/runtime    PixiJS v8 player: loads a project folder over HTTP and runs it on core.
 packages/editor-core  Editor logic: ProjectFs, opening projects, edits, undo/redo, saving. No UI.
 apps/player-web     Minimal Vite app that boots runtime with samples/demo-project.
-apps/editor         React editor; Tauri 2 desktop shell in src-tauri/ (M6, in progress).
+apps/editor         React editor; Tauri 2 desktop shell in src-tauri/.
 samples/demo-project  Tiny sample game used for dev and tests.
 scripts/            Repo-level tooling (placeholder art generator).
 ```
@@ -296,6 +296,18 @@ Never the other way.
   an empty cell) and deletes (Delete on the canvas); `EventPanel` edits name, pages, trigger,
   layer, graphic, conditions and the `CommandList` (dialogs edit one command; nothing changes
   until OK, so each edit is one undo step).
+- **Database editor** (`apps/editor/src/database/`): every category but system is an entry list
+  (search, New with name + id, Duplicate, Delete, reorder) beside a form generated from the
+  entry schema (`entrySchema(kind)`); system.json is one form. Entry edits live in
+  `editor-core/database-edits.ts` (`newEntry` fills required fields through the picker,
+  `slugify`/`uniqueId`/`idProblem`; ids are fixed once created because events and entries
+  refer to them). Forms also handle records (`classify` → `record`: level curves with integer
+  keys, slot → equipment with refs asked as `<field>:key` / `<field>:value`), optional groups
+  as an on/off toggle, compact grids for number-only objects (stat blocks), and live
+  `check(field, value)` problems (formulas via `checkFormula`). The picker supplies scalar
+  starting values too (`NUMBER_DEFAULTS`: success rate 1, rating 5…). Typing in an entry is one
+  undo step until the field loses focus. Problems whose message starts with `<kind> "<id>"`
+  show on that entry.
 - **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
@@ -378,7 +390,7 @@ gen:icon`).
   Audio player, generated chiptune assets).
   - Deferred: options screen (volume, key rebinding), item/skill icons, shops, saving mid-event,
     file-based saves for desktop builds (M7), formation/reordering the party.
-- **M6** Tauri editor: map editor first, then event and database editors. Steps:
+- **M6 (done)** Tauri editor: map editor first, then event and database editors. Steps:
   1. ~~Scaffold: Tauri 2 + React app, `ProjectFs` (desktop/dev server/memory), open a project,
      browse its files and problems~~ (done)
   2. ~~Editing engine in editor-core: edit operations, undo/redo, dirty tracking, save via
@@ -394,7 +406,11 @@ gen:icon`).
   7. ~~Event editor: place/move events, pages, conditions, graphic, trigger, nested command
      editor~~ (done; forms generated from the schema, reused by step 8; no copy/paste of commands
      yet, no visual picker for transfer targets)
-  8. Database editor: all categories, forms generated from the TypeBox schemas
+  8. ~~Database editor: all categories, forms generated from the TypeBox schemas~~ (done)
+  - Deferred: renaming ids with reference updates, copy/paste of commands and entries, a map
+    picker for transfer targets, multi-tile stamps, tileset/character-sheet editors, an asset
+    importer, remembering the last project, testing the desktop build by hand (file dialogs,
+    close prompt) before M7 packaging.
 - **M7** Export targets: web, desktop.
 - **Later**: RPG Maker MZ project importer (reads user's own projects; still clean-room), plugin API.
 

@@ -9,3 +9,4 @@ export * from './map-ops.js';
 export * from './playtest.js';
 export * from './schema-form.js';
 export * from './event-edits.js';
+export * from './database-edits.js';

@@ -10,8 +10,9 @@ import {
   type PlaytestSource,
   playtestSource,
 } from '@freequest/editor-core';
-import { DATABASE_KINDS, type GameMap } from '@freequest/schema';
+import { DATABASE_KINDS, type DatabaseKind, type GameMap } from '@freequest/schema';
 import { useEffect, useState } from 'react';
+import { DatabaseEditor } from './database/DatabaseEditor.js';
 import { MapEditor } from './map/MapEditor.js';
 import { NewMapDialog } from './map/NewMapDialog.js';
 import { Playtest, type PlaytestStart } from './Playtest.js';
@@ -282,6 +283,14 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
             doc={doc}
             file={current as ProjectFile<'map'> & { data: GameMap }}
             onPlayFrom={(x, y) => play({ map: current.id, x, y, label: labelOf(current) })}
+          />
+        </main>
+      ) : isDatabase(current) && current.data ? (
+        <main className="details db-details">
+          <DatabaseEditor
+            key={current.path}
+            doc={doc}
+            file={current as ProjectFile<DatabaseKind>}
           />
         </main>
       ) : (

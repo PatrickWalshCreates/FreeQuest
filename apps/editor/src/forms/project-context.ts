@@ -1,6 +1,7 @@
 // What the project offers to forms: the dropdown choices for fields that
 // refer to maps, switches, items…, and display names for command rows.
 import type { NameLookup, OpenedProject } from '@freequest/editor-core';
+import { ATTACK_ELEMENT, SOUND_KEYS, checkFormula } from '@freequest/schema';
 import type { FormContext, RefOption } from './SchemaField.js';
 
 interface Named {
@@ -27,20 +28,55 @@ const LABELS: Record<string, string> = {
   else: 'Else',
   canLose: 'Can lose (the event continues)',
   cancel: 'Cancel picks option (0 = first)',
+  maxHp: 'Max HP',
+  maxMp: 'Max MP',
+  mpCost: 'MP cost',
+  hpRegen: 'HP regeneration',
+  successRate: 'Success rate (0–1)',
+  chance: 'Chance (0–1)',
 };
 
 export interface ProjectLists {
   /** Audio files in the project, for music and sound fields. */
   readonly audio: readonly string[];
+  /** Image files, for enemy pictures and the iconset. */
+  readonly images?: readonly string[];
 }
+
+/** Starting values that make new entries useful at once (an item that works, a normal enemy action). */
+const NUMBER_DEFAULTS: Record<string, number | boolean> = {
+  successRate: 1,
+  rating: 5,
+  chance: 1,
+  variance: 0.2,
+  level: 1,
+  maxLevel: 99,
+  consumable: true,
+};
+
+const AUDIO_FIELDS = new Set<string>([
+  'path',
+  'titleMusic',
+  'battleMusic',
+  'victoryMusic',
+  'gameOverMusic',
+  ...SOUND_KEYS,
+]);
 
 export function projectFormContext(project: OpenedProject, lists: ProjectLists): FormContext {
   const m = project.manifest.data;
-  const db = (kind: 'actors' | 'items' | 'equipment' | 'troops'): Named[] =>
+  type EntryKind =
+    'actors' | 'classes' | 'skills' | 'items' | 'equipment' | 'states' | 'enemies' | 'troops';
+  const db = (kind: EntryKind): Named[] =>
     (project.database[kind]?.data?.entries as Named[] | undefined) ?? [];
+  const system = project.database.system?.data;
   const maps = [...project.maps].map(([id, f]) => ({ id, name: f.data?.name ?? id }));
   const characters = [...project.characters].map(([id, f]) => ({ id, name: f.data?.name ?? id }));
-  const audio = lists.audio.map((p) => ({ value: p, label: p.replace(/^assets\//, '') }));
+  const files = (paths: readonly string[]) =>
+    paths.map((p) => ({ value: p, label: p.replace(/^assets\//, '') }));
+  const audio = files(lists.audio);
+  const images = files(lists.images ?? []);
+  const variables = new Set(m.variables.map((v) => v.id));
 
   const refs: FormContext['refs'] = (field, parent) => {
     switch (field) {
@@ -58,17 +94,48 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return options(characters);
       case 'id':
         return options(parent?.['kind'] === 'equipment' ? db('equipment') : db('items'));
-      case 'path':
-        return audio;
+      case 'class':
+        return options(db('classes'));
+      case 'skill':
+      case 'attackSkill':
+      case 'guardSkill':
+        return options(db('skills'));
+      case 'state':
+        return options(db('states'));
+      case 'enemies':
+        return options(db('enemies'));
+      case 'element': {
+        const elements = options(system?.elements ?? []);
+        // Damage can use whatever element the user attacks with.
+        return parent?.['type'] === 'damage'
+          ? [{ value: ATTACK_ELEMENT, label: '(the user’s attack element)' }, ...elements]
+          : elements;
+      }
+      case 'equipmentType':
+        return options(system?.equipmentTypes ?? []);
+      case 'slot':
+      case 'equipment:key':
+        return options(system?.equipmentSlots ?? []);
+      case 'equipment:value':
+        return options(db('equipment'));
+      case 'skillType':
+        return options(system?.skillTypes ?? []);
+      case 'image':
+        return images;
       default:
-        return null;
+        return AUDIO_FIELDS.has(field) ? audio : null;
     }
   };
   return {
     refs,
-    multiline: (field) => field === 'text',
+    multiline: (field) => field === 'text' || field === 'description',
+    check: (field, value) =>
+      field === 'formula' && typeof value === 'string' && value !== ''
+        ? checkFormula(value, variables)
+        : null,
     label: (field) => LABELS[field],
     pick: (field) => {
+      if (field in NUMBER_DEFAULTS) return NUMBER_DEFAULTS[field];
       const first = refs(field, null)?.[0];
       return first ? first.value : undefined;
     },

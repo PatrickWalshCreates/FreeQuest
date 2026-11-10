@@ -41,17 +41,23 @@ Open http://localhost:5173 and press a key to start (browsers only allow sound a
 | C / Tab           | Open the menu                                                              |
 | F9                | Debug panel (development builds): party, inventory, switches, variables    |
 
-### The editor (work in progress)
+Try the elder by the path, the house door, and the bridge. Saves are kept in your browser.
+
+### The editor
 
 ```sh
 pnpm editor           # in the browser at http://localhost:5174, with the sample projects
 pnpm editor:desktop   # as a desktop app; needs Rust (https://rustup.rs)
 ```
 
-So far it opens a project and lists its maps, tilesets, characters and database, with any problems
-found. Map painting comes next.
-
-Try the elder by the path, the house door, and the bridge. Saves are kept in your browser.
+- **Maps**: paint tiles (pencil, rectangle, fill, eraser, pick), layers, a walkable overlay, and
+  new / duplicate / resize / delete maps with their music and random battles.
+- **Events**: place NPCs, signs and doors (Events tool, V), with pages, conditions and a command
+  list (messages, choices, branches, battles, transfers…).
+- **Database**: actors, classes, skills, items, equipment, states, enemies, troops and system
+  settings, with formulas checked as you type.
+- **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
+- Undo/redo (⌘Z / ⇧⌘Z) for everything, problems listed as you work, and ⌘S saves.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 

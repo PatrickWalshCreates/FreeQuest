@@ -35,6 +35,8 @@ export interface FormContext {
   label?(field: string): string | undefined;
   /** Starting values for new objects (e.g. the first switch for a new condition). */
   pick: DefaultPicker;
+  /** A problem with a field's current value to show under it (e.g. a formula that won't parse). */
+  check?(field: string, value: unknown): string | null;
 }
 
 type Record_ = Readonly<Record<string, unknown>>;
@@ -71,19 +73,29 @@ export function ObjectFields(props: {
   readonly value: Record_;
   readonly onChange: (value: Record_) => void;
   readonly ctx: FormContext;
+  /** Fields not to show (edited elsewhere, like an entry's fixed id). */
+  readonly omit?: readonly string[];
 }) {
-  const { schema, value, onChange, ctx } = props;
+  const { schema, value, onChange, ctx, omit } = props;
   const set = (name: string, next: unknown) => {
     if (next === undefined) {
       const { [name]: _removed, ...rest } = value;
       onChange(rest);
     } else onChange({ ...value, [name]: next });
   };
+  const fields = fieldsOf(schema);
+  const visible = fields.filter(
+    (f) => classify(f.schema).kind !== 'fixed' && !omit?.includes(f.name),
+  );
+  if (visible.length === 0) return null;
+  const numbersOnly =
+    fields.length > 2 &&
+    fields.every((f) => ['number', 'integer'].includes(classify(f.schema).kind));
   return (
-    <div className="schema-fields">
-      {fieldsOf(schema).map((field) => {
+    <div className={numbersOnly ? 'schema-fields compact' : 'schema-fields'}>
+      {fields.map((field) => {
         const shape = classify(field.schema);
-        if (shape.kind === 'fixed') return null;
+        if (shape.kind === 'fixed' || omit?.includes(field.name)) return null;
         // Nested command lists: required ones are always there; optional ones are a toggle.
         if (isRefList(field.schema)) {
           if (field.required) return null;
@@ -98,12 +110,43 @@ export function ObjectFields(props: {
             </label>
           );
         }
+        // An optional group of fields (e.g. the iconset): on/off, filled with defaults when on.
+        if (!field.required && shape.kind === 'object') {
+          const present = value[field.name] !== undefined;
+          return (
+            <div key={field.name} className="schema-field">
+              <label className="toggle" title={field.schema.description}>
+                <input
+                  type="checkbox"
+                  checked={present}
+                  onChange={(e) =>
+                    set(
+                      field.name,
+                      e.target.checked ? defaultFor(field.schema, ctx.pick, field.name) : undefined,
+                    )
+                  }
+                />
+                {labelFor(ctx, field.name)}
+              </label>
+              {present && (
+                <ObjectFields
+                  schema={field.schema}
+                  value={value[field.name] as Record_}
+                  onChange={(next) => set(field.name, next)}
+                  ctx={ctx}
+                />
+              )}
+            </div>
+          );
+        }
+        const problem = ctx.check?.(field.name, value[field.name]) ?? null;
         return (
           <Labeled
             key={field.name}
             label={labelFor(ctx, field.name)}
             hint={field.schema.description}
             inline={shape.kind === 'boolean'}
+            problem={problem}
           >
             {(id) => (
               <Control
@@ -128,6 +171,7 @@ function Labeled(props: {
   readonly label: string;
   readonly hint: string | undefined;
   readonly inline?: boolean;
+  readonly problem?: string | null;
   readonly children: (id: string) => React.ReactNode;
 }) {
   const id = useId();
@@ -137,6 +181,7 @@ function Labeled(props: {
         {props.label}
       </label>
       {props.children(id)}
+      {props.problem && <span className="field-problem">{props.problem}</span>}
     </div>
   );
 }
@@ -290,6 +335,19 @@ function Control(props: FieldProps & { readonly id: string; readonly optional: b
           ctx={ctx}
         />
       );
+    case 'record':
+      return (
+        <RecordControl
+          id={id}
+          name={name}
+          keys={shape.keys}
+          valueSchema={shape.value}
+          minimum={schema.minProperties ?? 0}
+          value={(value ?? {}) as Readonly<Record<string, unknown>>}
+          onChange={onChange}
+          ctx={ctx}
+        />
+      );
     case 'array': {
       const items = Array.isArray(value) ? (value as unknown[]) : [];
       const min = schema.minItems ?? 0;
@@ -345,5 +403,103 @@ function Select(props: {
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Key → value rows: a level curve (level → value, sorted by level) or a
+ * map like slot → equipment. Refs for keys and values are asked for as
+ * "<field>:key" and "<field>:value".
+ */
+function RecordControl(props: {
+  readonly id: string;
+  readonly name: string;
+  readonly keys: 'integer' | 'string';
+  readonly valueSchema: JsonSchema;
+  readonly minimum: number;
+  readonly value: Readonly<Record<string, unknown>>;
+  readonly onChange: (value: unknown) => void;
+  readonly ctx: FormContext;
+}) {
+  const { id, name, keys, valueSchema, minimum, value, onChange, ctx } = props;
+  // Integer-like keys always come out in numeric order, so level curves read 1, 5, 10.
+  const entries = Object.entries(value);
+  const keyRefs = ctx.refs(`${name}:key`, null);
+  const rebuild = (next: [string, unknown][]) => onChange(Object.fromEntries(next));
+  const freeKey = (): string | null => {
+    if (keys === 'integer') {
+      const last = Math.max(0, ...entries.map(([k]) => Number(k)));
+      return String(last + 1);
+    }
+    const used = new Set(entries.map(([k]) => k));
+    return keyRefs?.find((r) => !used.has(r.value))?.value ?? (used.has('') ? null : '');
+  };
+  const nextKey = freeKey();
+  return (
+    <div className="record">
+      {entries.map(([key, item], i) => (
+        // Keyed by position: keying by the key would remount the row (and drop focus) as you type it.
+        <div key={i} className="record-row">
+          {keys === 'integer' ? (
+            <input
+              id={i === 0 ? id : undefined}
+              className="record-key"
+              type="number"
+              min={1}
+              step={1}
+              aria-label="Level"
+              value={key}
+              onChange={(e) => {
+                const k = String(Math.trunc(e.target.valueAsNumber));
+                if (!Number.isFinite(e.target.valueAsNumber) || (k !== key && k in value)) return;
+                rebuild(entries.map(([ek, ev]) => (ek === key ? [k, ev] : [ek, ev])));
+              }}
+            />
+          ) : (
+            <Select
+              id={i === 0 ? id : `${id}-${key}`}
+              value={key}
+              none={null}
+              options={(keyRefs ?? [{ value: key, label: key }]).filter(
+                (r) => r.value === key || !(r.value in value),
+              )}
+              onChange={(k) =>
+                rebuild(entries.map(([ek, ev]) => (ek === key ? [k, ev] : [ek, ev])))
+              }
+            />
+          )}
+          <span className="muted">→</span>
+          <Control
+            id={`${id}-v-${key}`}
+            name={`${name}:value`}
+            schema={valueSchema}
+            value={item}
+            optional={false}
+            onChange={(v) => rebuild(entries.map(([ek, ev]) => (ek === key ? [ek, v] : [ek, ev])))}
+            ctx={ctx}
+            parent={null}
+          />
+          <button
+            type="button"
+            className="icon"
+            aria-label={`Remove ${key}`}
+            disabled={entries.length <= minimum}
+            onClick={() => rebuild(entries.filter(([ek]) => ek !== key))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        disabled={nextKey === null}
+        onClick={() =>
+          nextKey !== null &&
+          rebuild([...entries, [nextKey, defaultFor(valueSchema, ctx.pick, `${name}:value`)]])
+        }
+      >
+        + Add
+      </button>
+    </div>
   );
 }
