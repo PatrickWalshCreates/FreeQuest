@@ -59,6 +59,17 @@ pnpm editor:desktop   # as a desktop app; needs Rust (https://rustup.rs)
 - **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
 - Undo/redo (⌘Z / ⇧⌘Z) for everything, problems listed as you work, and ⌘S saves.
 
+### Exporting a game
+
+```sh
+pnpm build                                                     # once: builds the player games run in
+pnpm freequest check samples/demo-project                      # list any problems
+pnpm freequest export web samples/demo-project --out ../my-game-web
+```
+
+The web export is a folder to upload to any static host (itch.io works); `index.html` starts the
+game. It has to be served by a web server, so double-clicking `index.html` won't work.
+
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
 
 ## Project files

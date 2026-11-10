@@ -1,0 +1,29 @@
+{
+  "name": "@freequest/cli",
+  "version": "0.0.0",
+  "description": "The freequest command: check and export FreeQuest projects.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "freequest": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "@freequest/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@freequest/editor-core": "workspace:*",
+    "@freequest/player": "workspace:*",
+    "@freequest/schema": "workspace:*"
+  }
+}

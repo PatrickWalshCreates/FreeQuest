@@ -1,0 +1,226 @@
+// The freequest command. `run` takes arguments and an Io so tests can drive
+// it without a terminal; main.ts wires it to the real process.
+import { existsSync, readdirSync } from 'node:fs';
+import { cp, readFile, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, join, relative, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
+import {
+  type OpenedProject,
+  type Problem,
+  ProjectOpenError,
+  openProject,
+  planExport,
+  writeExport,
+} from '@freequest/editor-core';
+import { NodeFs } from './node-fs.js';
+
+export interface Io {
+  out(line: string): void;
+  err(line: string): void;
+  readonly cwd: string;
+  /** Where the built release player is (default: the @freequest/player package's dist/). */
+  readonly playerDir?: string;
+}
+
+export const VERSION = '0.0.0';
+
+/** Marks a folder as a FreeQuest export, so `--clean` only ever deletes exports. */
+export const EXPORT_MARKER = 'freequest-export.json';
+
+const HELP = `freequest ${VERSION}: check and export FreeQuest projects
+
+Usage:
+  freequest check [project]               Report every problem in a project
+  freequest export web [project] --out <folder> [--clean]
+                                          Export a game for the web (any static host)
+
+[project] is the folder containing project.json (default: the current folder).
+--clean replaces a previous export in the output folder; other folders must be empty.
+
+Options:
+  -h, --help       Show this help
+  -v, --version    Show the version`;
+
+class UsageError extends Error {}
+
+/** Run the command line. Returns the exit code: 0 ok, 1 problems found, 2 usage error. */
+export async function run(argv: readonly string[], io: Io): Promise<number> {
+  let parsed;
+  try {
+    parsed = parseArgs({
+      args: [...argv],
+      allowPositionals: true,
+      options: {
+        out: { type: 'string', short: 'o' },
+        clean: { type: 'boolean' },
+        help: { type: 'boolean', short: 'h' },
+        version: { type: 'boolean', short: 'v' },
+      },
+    });
+  } catch (error) {
+    io.err(error instanceof Error ? error.message : String(error));
+    io.err('Run "freequest --help" for usage.');
+    return 2;
+  }
+  const { values, positionals } = parsed;
+  if (values.version) {
+    io.out(VERSION);
+    return 0;
+  }
+  const [command, ...rest] = positionals;
+  if (values.help || !command) {
+    io.out(HELP);
+    return values.help ? 0 : 2;
+  }
+  try {
+    switch (command) {
+      case 'check':
+        return await check(rest, io);
+      case 'export': {
+        const [target, ...more] = rest;
+        if (target !== 'web') {
+          throw new UsageError(
+            target
+              ? `Unknown export target "${target}" (supported: web)`
+              : 'Missing export target (web)',
+          );
+        }
+        return await exportWeb(more, values.out, values.clean === true, io);
+      }
+      default:
+        throw new UsageError(`Unknown command "${command}"`);
+    }
+  } catch (error) {
+    if (error instanceof UsageError) {
+      io.err(error.message);
+      io.err('Run "freequest --help" for usage.');
+      return 2;
+    }
+    if (error instanceof ProjectOpenError) {
+      io.err(error.message);
+      return 1;
+    }
+    throw error;
+  }
+}
+
+function projectDir(args: readonly string[], io: Io): string {
+  if (args.length > 1) throw new UsageError(`Expected one project folder, got: ${args.join(' ')}`);
+  return resolve(io.cwd, args[0] ?? '.');
+}
+
+function printProblems(io: Io, label: string, problems: readonly Problem[]): void {
+  if (problems.length === 0) return;
+  io.err(`${label} (${problems.length}):`);
+  for (const p of problems) io.err(`  ${p.source}: ${p.message}`);
+}
+
+async function plan(dir: string) {
+  const fs = new NodeFs(dir);
+  const project = await openProject(fs);
+  return { fs, project, plan: await planExport(project, fs) };
+}
+
+async function check(args: readonly string[], io: Io): Promise<number> {
+  const dir = projectDir(args, io);
+  const { project, plan: result } = await plan(dir);
+  printProblems(io, 'Problems', result.errors);
+  printProblems(io, 'Warnings', result.warnings);
+  const name = project.manifest.data.name;
+  if (result.errors.length > 0) {
+    io.err(`${name}: ${count(result.errors.length, 'problem')}. The game would not start.`);
+    return 1;
+  }
+  io.out(`${name}: no problems (${summary(project, result.files.length)}).`);
+  return 0;
+}
+
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+function summary(project: OpenedProject, files: number): string {
+  return `${count(project.maps.size, 'map')}, ${count(files, 'file')} to export`;
+}
+
+/** The built release player and its file list. */
+async function player(io: Io): Promise<{ dir: string; files: string[] }> {
+  let dir = io.playerDir;
+  if (!dir) {
+    try {
+      dir = dirname(createRequire(import.meta.url).resolve('@freequest/player/files.json'));
+    } catch {
+      throw new Error(
+        'The release player is not built. Run "pnpm --filter @freequest/player build" first.',
+      );
+    }
+  }
+  const list = JSON.parse(await readFile(join(dir, 'files.json'), 'utf8')) as { files: string[] };
+  return { dir, files: list.files };
+}
+
+/** Make sure `out` can receive an export: empty or missing, or a previous export with --clean. */
+async function prepareOut(out: string, project: string, clean: boolean): Promise<void> {
+  const inside = (a: string, b: string) => {
+    const rel = relative(b, a);
+    return rel === '' || (!rel.startsWith('..') && !rel.startsWith('/'));
+  };
+  if (inside(out, project) || inside(project, out)) {
+    throw new UsageError('The output folder must be outside the project folder.');
+  }
+  if (!existsSync(out) || readdirSync(out).length === 0) return;
+  if (!existsSync(join(out, EXPORT_MARKER))) {
+    throw new UsageError(
+      `${out} isn't empty and isn't a FreeQuest export. Choose an empty folder.`,
+    );
+  }
+  if (!clean) {
+    throw new UsageError(`${out} holds a previous export. Add --clean to replace it.`);
+  }
+  await rm(out, { recursive: true, force: true });
+}
+
+async function exportWeb(
+  args: readonly string[],
+  out: string | undefined,
+  clean: boolean,
+  io: Io,
+): Promise<number> {
+  const dir = projectDir(args, io);
+  if (!out) throw new UsageError('Missing --out <folder>');
+  const outDir = resolve(io.cwd, out);
+  const { fs, project, plan: result } = await plan(dir);
+  printProblems(io, 'Warnings', result.warnings);
+  if (result.errors.length > 0) {
+    printProblems(io, 'Problems', result.errors);
+    io.err('Not exported: fix the problems above first (the game would not start).');
+    return 1;
+  }
+  const built = await player(io);
+  await prepareOut(outDir, dir, clean);
+
+  const target = new NodeFs(outDir);
+  const written = await writeExport(result, fs, target, { prefix: 'game' });
+  for (const file of built.files) await cp(join(built.dir, file), join(outDir, file));
+  const manifest = project.manifest.data;
+  await target.writeText(
+    EXPORT_MARKER,
+    `${JSON.stringify(
+      {
+        formatVersion: 1,
+        target: 'web',
+        game: manifest.id,
+        name: manifest.name,
+        exportedAt: new Date().toISOString(),
+        freequest: VERSION,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const size = (written.bytes / 1024 / 1024).toFixed(1);
+  io.out(
+    `Exported ${manifest.name} for the web to ${outDir} (${count(written.files, 'game file')}, ${size} MB).`,
+  );
+  io.out('Upload the whole folder to a web host (e.g. itch.io); index.html starts the game.');
+  return 0;
+}

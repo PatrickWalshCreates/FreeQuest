@@ -13,6 +13,7 @@
     "dev": "pnpm --filter @freequest/player-web dev",
     "editor": "pnpm --filter @freequest/editor dev",
     "editor:desktop": "pnpm --filter @freequest/editor desktop",
+    "freequest": "tsx --conditions=@freequest/source packages/cli/src/main.ts",
     "build": "pnpm -r run build",
     "test": "vitest run",
     "test:watch": "vitest",

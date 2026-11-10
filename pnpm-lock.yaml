@@ -264,6 +264,18 @@ importers:
         specifier: workspace:*
         version: link:../../packages/runtime
 
+  packages/cli:
+    dependencies:
+      '@freequest/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
+      '@freequest/player':
+        specifier: workspace:*
+        version: link:../player
+      '@freequest/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/core:
     dependencies:
       '@freequest/schema':

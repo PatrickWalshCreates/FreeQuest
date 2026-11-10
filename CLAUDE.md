@@ -16,21 +16,22 @@ Requires Node >= 22 and pnpm (version pinned in `package.json` `packageManager`)
 editor also needs a Rust toolchain (stable) and, on macOS, Xcode command line tools; nothing else
 in the repo does.
 
-| Command               | What it does                                                                |
-| --------------------- | --------------------------------------------------------------------------- |
-| `pnpm install`        | Install everything                                                          |
-| `pnpm dev`            | Run apps/player-web with the demo project at http://localhost:5173          |
-| `pnpm editor`         | Run the editor in a browser at http://localhost:5174 (opens samples/)       |
-| `pnpm editor:desktop` | Run the editor as the Tauri desktop app (needs Rust; see below)             |
-| `pnpm test`           | Run all unit tests once (Vitest); `pnpm test:watch` to watch                |
-| `pnpm check`          | lint + typecheck + test: run before every commit (CI runs this + build)     |
-| `pnpm lint`           | ESLint + Prettier check                                                     |
-| `pnpm format`         | Prettier write                                                              |
-| `pnpm typecheck`      | `tsc` in every package                                                      |
-| `pnpm build`          | Build every package to `dist/` and the player app to `apps/player-web/dist` |
-| `pnpm gen:schema`     | Regenerate `packages/schema/json/*.schema.json` from the TypeBox defs       |
-| `pnpm gen:art`        | Regenerate the demo project's placeholder PNGs (deterministic)              |
-| `pnpm gen:audio`      | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)     |
+| Command               | What it does                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm install`        | Install everything                                                                               |
+| `pnpm dev`            | Run apps/player-web with the demo project at http://localhost:5173                               |
+| `pnpm editor`         | Run the editor in a browser at http://localhost:5174 (opens samples/)                            |
+| `pnpm editor:desktop` | Run the editor as the Tauri desktop app (needs Rust; see below)                                  |
+| `pnpm freequest …`    | The `freequest` CLI from source: `check [project]`, `export web [project] --out <dir> [--clean]` |
+| `pnpm test`           | Run all unit tests once (Vitest); `pnpm test:watch` to watch                                     |
+| `pnpm check`          | lint + typecheck + test: run before every commit (CI runs this + build)                          |
+| `pnpm lint`           | ESLint + Prettier check                                                                          |
+| `pnpm format`         | Prettier write                                                                                   |
+| `pnpm typecheck`      | `tsc` in every package                                                                           |
+| `pnpm build`          | Build every package to `dist/` and the player app to `apps/player-web/dist`                      |
+| `pnpm gen:schema`     | Regenerate `packages/schema/json/*.schema.json` from the TypeBox defs                            |
+| `pnpm gen:art`        | Regenerate the demo project's placeholder PNGs (deterministic)                                   |
+| `pnpm gen:audio`      | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)                          |
 
 Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
 GitHub yet, so nothing runs it automatically: run it locally.
@@ -44,6 +45,7 @@ packages/core       Pure game logic. No rendering, no DOM, no Node APIs. Unit-te
 packages/runtime    PixiJS v8 player: loads a project folder over HTTP and runs it on core.
 packages/editor-core  Editor logic: ProjectFs, opening projects, edits, undo/redo, saving, export. No UI.
 packages/player     The release player page exported games run in (built once; exporters copy dist/).
+packages/cli        The `freequest` command (check, export) on top of editor-core; Node only.
 apps/player-web     Minimal Vite app that boots runtime with samples/demo-project.
 apps/editor         React editor; Tauri 2 desktop shell in src-tauri/.
 samples/demo-project  Tiny sample game used for dev and tests.
@@ -338,6 +340,16 @@ gen:icon`).
   toggles fullscreen with F11 / Alt+Enter, has no debug panel or `window.freequest`, and
   explains start failures to players (`src/messages.ts`, tested: opened from `file://`, missing
   files, anything else with a Details fold). `apps/player-web` stays the dev player.
+- **`freequest` CLI** (`packages/cli`): `run(argv, io)` in `cli.ts` (tested with a fake player
+  dir and temp folders), `main.ts` wires it to the process; `NodeFs` is the Node `ProjectFs`.
+  Exit codes: 0 ok, 1 problems (or not a project), 2 usage. `export web` writes `game/` via
+  `writeExport`, copies the built player listed in `@freequest/player/files.json`, and drops a
+  `freequest-export.json` marker. It only writes into an empty folder, or replaces a previous
+  export with `--clean` (never a folder without the marker, never inside the project). From
+  the repo, `pnpm freequest …` runs it from source (paths relative to the repo root); the
+  player must be built (`pnpm --filter @freequest/player build`, or `pnpm build`).
+- Browser-pane note: serve exports with `vite preview --outDir <dir>` (Python's http.server
+  stalls under the pane's parallel requests); the pane only opens ports it was allowed before.
 - Web export layout: `index.html`, `player/`, `game/project.json`, `game/data/…`,
   `game/assets/…`. Must be served over HTTP (itch.io, any static host); `file://` shows the
   "needs a website" message.
@@ -446,7 +458,7 @@ gen:icon`).
      Project settings)
   3. ~~Release player: loading screen, fullscreen, friendly errors, no debug; built once~~ (done;
      a scripted export of the demo played in the browser)
-  4. `freequest` CLI: `check` and `export web`
+  4. ~~`freequest` CLI: `check` and `export web`~~ (done)
   5. Export dialog in the editor
   6. Desktop player (file saves) and macOS export (copy the prebuilt app, add the game, rename,
      icon, ad-hoc sign); Windows/Linux shells need building on those systems later
@@ -457,6 +469,5 @@ gen:icon`).
 
 - Text renders at the internal resolution and is pixel-upscaled; fine for now, revisit (bitmap font
   or high-res UI layer) if legibility suffers at small sizes.
-- No `freequest check` CLI yet: until then, `schema.test.ts` is what validates every demo file together.
 - Each tile is its own Sprite; fine for small maps, revisit (chunked render textures) for large ones.
 - Passability is a single boolean per tile; per-direction passability would be a format migration.
