@@ -1430,3 +1430,154 @@ a.button.primary {
   font-weight: 600;
   padding: 8px 16px;
 }
+
+/* Assets panel: header, file list | preview and usages. Drop files anywhere on it. */
+.details.assets-details {
+  padding: 0;
+  overflow: hidden;
+}
+
+.assets {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px 20px 0;
+  gap: 8px;
+  outline: 2px dashed transparent;
+  outline-offset: -6px;
+}
+
+.assets.dragging {
+  outline-color: var(--accent);
+  background: var(--selected);
+}
+
+.assets-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assets-header h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.notice.error {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: transparent;
+}
+
+.notice .link {
+  align-self: flex-start;
+}
+
+.assets-body {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.assets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.assets-list h2 {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.assets-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assets-list .item {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.asset-icon {
+  width: 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.asset-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.assets-detail {
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.asset-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.assets-detail h3 {
+  margin: 16px 0 4px;
+  font-size: 13px;
+}
+
+.asset-preview {
+  display: inline-block;
+  max-width: 100%;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* A checkerboard shows transparent pixels. */
+  background: repeating-conic-gradient(#2a2e38 0% 25%, #22252d 0% 50%) 0 0 / 16px 16px;
+}
+
+.asset-preview img {
+  display: block;
+  image-rendering: pixelated;
+  min-width: 64px;
+  max-height: 420px;
+}
+
+.asset-audio {
+  width: min(400px, 100%);
+}
+
+.usages {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}

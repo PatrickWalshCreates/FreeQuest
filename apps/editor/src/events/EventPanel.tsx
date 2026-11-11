@@ -26,7 +26,7 @@ import type {
 } from '@freequest/schema';
 import { useMemo, useState } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
-import { useLoaded } from '../map/graphics.js';
+import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList } from './CommandList.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
@@ -109,16 +109,9 @@ function EventEditor(props: {
   const [pageIndex, setPageIndex] = useState(0);
   const page = event.pages[Math.min(pageIndex, event.pages.length - 1)] ?? event.pages[0];
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
-  const audio = useLoaded(doc, () => doc.fs.list('assets'));
+  const { audio } = useProjectLists(doc);
   const project = doc.project;
-  const ctx = useMemo(
-    () =>
-      projectFormContext(project, {
-        audio:
-          audio.status === 'ready' ? audio.value.filter((p) => /\.(wav|ogg|mp3)$/i.test(p)) : [],
-      }),
-    [project, audio],
-  );
+  const ctx = useMemo(() => projectFormContext(project, { audio }), [project, audio]);
   const names = useMemo(() => projectNames(project), [project]);
 
   const changeEvent = (label: string, fn: (e: MapEvent) => MapEvent, coalesce?: string) =>

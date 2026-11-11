@@ -3,7 +3,7 @@ import type { Encounters, GameMap } from '@freequest/schema';
 import { useState } from 'react';
 import { Field } from '../Dialog.js';
 import { ResizeDialog } from './ResizeDialog.js';
-import { useLoaded } from './graphics.js';
+import { useProjectLists } from '../forms/use-project-lists.js';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -11,17 +11,12 @@ interface Props {
   readonly map: GameMap;
 }
 
-const AUDIO = /\.(wav|ogg|mp3)$/i;
-/** Where the music picker looks for audio files. */
-const ASSET_DIR = 'assets';
 const DEFAULT_ENCOUNTER_STEPS = 30;
 
 /** Map-wide settings: tileset, size, music, random battles. */
 export function MapSettings({ doc, path, map }: Props) {
   const [resizing, setResizing] = useState(false);
-  const audio = useLoaded(doc, () =>
-    doc.fs.list(ASSET_DIR).then((f) => f.filter((p) => AUDIO.test(p))),
-  );
+  const { audio } = useProjectLists(doc);
   const troops = doc.project.database.troops?.data?.entries ?? [];
   const tilesets = [...doc.project.tilesets];
 
@@ -30,12 +25,7 @@ export function MapSettings({ doc, path, map }: Props) {
   const setEncounters = (label: string, fn: (e: Encounters) => Encounters, coalesce?: string) =>
     change(label, (m) => (m.encounters ? { ...m, encounters: fn(m.encounters) } : m), coalesce);
 
-  const musicOptions = [
-    ...new Set([
-      ...(audio.status === 'ready' ? audio.value : []),
-      ...(map.music ? [map.music] : []),
-    ]),
-  ].sort();
+  const musicOptions = [...new Set([...audio, ...(map.music ? [map.music] : [])])].sort();
 
   return (
     <div className="settings">
@@ -76,7 +66,7 @@ export function MapSettings({ doc, path, map }: Props) {
           <option value="">(silence)</option>
           {musicOptions.map((p) => (
             <option key={p} value={p}>
-              {p.replace(`${ASSET_DIR}/`, '')}
+              {p.replace(/^assets\//, '')}
             </option>
           ))}
         </select>

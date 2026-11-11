@@ -423,6 +423,19 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   name. A failed recent open says the folder may have moved and offers "Remove it from Recent".
   On desktop, `tauri-plugin-persisted-scope` saves the fs scope the dialogs grant (they ask for
   `recursive: true`), so recent folders stay readable after a restart.
+- **Assets** (`editor-core/assets.ts`, tested): files on disk, outside the undo history (an
+  import or delete happens at once). `doc.assets` is an `AssetLibrary`: the list of files under
+  `assets/` (listed once, `refresh()` re-reads, `subscribe`/`version` so every picker updates;
+  the app's `useAssetPaths` / `useProjectLists`), `import(folder, files)` (only under `assets/`,
+  never overwrites: `name-2.png`; names cleaned by `safeAssetName`; contents must match the
+  extension, `sniffFormat`, or the file is rejected with a reason) and `remove(project, path)`
+  (refuses while `assetReferences` uses it). `describeAssets` adds where each is used and lists
+  referenced-but-missing files. `ASSET_FOLDERS` are the import targets; `importFolderFor` sends
+  a file to a folder of its type. The Assets panel (sidebar, under Project settings) imports
+  through a file input or by dropping files on it (the desktop window sets
+  `dragDropEnabled: false` so HTML drops reach the page; the webview reads the bytes, so no fs
+  scope is needed for the source files) and previews images (size from `pngSize`) and sounds.
+  `TauriFs` drops a cached blob URL when its file is written or removed.
 
 ## Project file format
 
@@ -543,7 +556,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   1. ~~New project from a template (Starter, Demo)~~ (done; created and played in browser mode)
   2. ~~Recent projects (desktop keeps folder access between launches)~~ (done; tried in browser
      mode, the desktop restart still to be tried by hand)
-  3. Asset import and an Assets panel (files are copied into the project)
+  3. ~~Asset import and an Assets panel (files are copied into the project)~~ (done; tried in
+     browser mode with dropped files; renaming assets with reference updates later)
   4. Tileset editor (passability, above flags)
   5. Character sheet editor
   6. Copy/paste of commands, events and entries; a map picker for transfer targets

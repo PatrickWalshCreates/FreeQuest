@@ -1,3 +1,4 @@
+import { AssetLibrary } from './assets.js';
 import { DATABASE_KINDS, type FileData, stableStringify } from '@freequest/schema';
 import {
   type DataFileKind,
@@ -105,8 +106,12 @@ export class ProjectDocument {
   /** Bumped on every change (edits, undo, redo, saves). */
   version = 0;
 
+  /** The image and sound files under assets/ (not part of the undo history). */
+  readonly assets: AssetLibrary;
+
   constructor(opened: OpenedProject) {
     this.fs = opened.fs;
+    this.assets = new AssetLibrary(opened.fs);
     for (const file of allFiles(opened)) {
       this.files.set(file.path, file);
       this.saved.set(file.path, file.migrated ? NEEDS_UPGRADE : file.data);

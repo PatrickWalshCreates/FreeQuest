@@ -47,6 +47,7 @@ export class TauriFs implements ProjectFs {
   }
 
   async writeBytes(path: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
+    this.forget(path);
     const full = this.full(path);
     await mkdir(full.slice(0, full.lastIndexOf('/')), { recursive: true });
     await writeFile(full, bytes, options.executable ? { mode: 0o755 } : {});
@@ -59,6 +60,7 @@ export class TauriFs implements ProjectFs {
   }
 
   async remove(path: string): Promise<void> {
+    this.forget(path);
     const full = this.full(path);
     if (await exists(full)) await remove(full);
   }
@@ -91,6 +93,14 @@ export class TauriFs implements ProjectFs {
       this.urls.set(path, url);
     }
     return url;
+  }
+
+  /** Drop a cached blob URL when its file changes, so the next use reads the new contents. */
+  private forget(path: string): void {
+    const url = this.urls.get(path);
+    if (!url) return;
+    this.urls.delete(path);
+    void url.then((u) => URL.revokeObjectURL(u));
   }
 
   /** Release the blob URLs (when the project closes). */

@@ -13,6 +13,8 @@ import {
 } from '@freequest/editor-core';
 import { DATABASE_KINDS, type DatabaseKind, type GameMap, ID_PATTERN } from '@freequest/schema';
 import { useEffect, useState } from 'react';
+import { AssetsPanel } from './assets/AssetsPanel.js';
+import { useAssetPaths } from './assets/use-assets.js';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
 import { ExportDialog } from './ExportDialog.js';
 import { MapEditor } from './map/MapEditor.js';
@@ -40,6 +42,9 @@ interface Status {
   /** Shown only while the document is still at this version (the next edit clears it). */
   readonly version: number;
 }
+
+/** The sidebar selection for the Assets panel (not a file path). */
+const ASSETS_VIEW = '#assets';
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const isDatabase = (file: ProjectFile) => DATABASE_KINDS.some((k) => k === file.kind);
@@ -166,6 +171,8 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
     problemCount.set(p.source, (problemCount.get(p.source) ?? 0) + 1);
   }
   const current = files.find((f) => f.path === selected) ?? project.manifest;
+  const showAssets = selected === ASSETS_VIEW;
+  const assetCount = useAssetPaths(doc)?.length;
   const unsaved = doc.dirtyPaths.length;
   const shortcut = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
 
@@ -217,7 +224,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       </header>
 
       <nav className="sidebar" aria-label="Project files">
-        {groups.map((group) => (
+        {groups.map((group, groupIndex) => (
           <section key={group.title}>
             <h2>
               {group.title}
@@ -240,8 +247,10 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
                 return (
                   <li key={file.path}>
                     <button
-                      className={file.path === current.path ? 'item selected' : 'item'}
-                      aria-current={file.path === current.path}
+                      className={
+                        !showAssets && file.path === current.path ? 'item selected' : 'item'
+                      }
+                      aria-current={!showAssets && file.path === current.path}
                       onClick={() => setSelected(file.path)}
                     >
                       <span>
@@ -262,12 +271,28 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
                   </li>
                 );
               })}
+              {groupIndex === 0 && (
+                <li>
+                  <button
+                    className={showAssets ? 'item selected' : 'item'}
+                    aria-current={showAssets}
+                    onClick={() => setSelected(ASSETS_VIEW)}
+                  >
+                    <span>Assets</span>
+                    {assetCount !== undefined && <span className="muted">{assetCount}</span>}
+                  </button>
+                </li>
+              )}
             </ul>
           </section>
         ))}
       </nav>
 
-      {current.kind === 'map' && current.data ? (
+      {showAssets ? (
+        <main className="details assets-details">
+          <AssetsPanel doc={doc} />
+        </main>
+      ) : current.kind === 'map' && current.data ? (
         <main className="details map-details">
           <div className="map-header">
             <NameField doc={doc} file={current} />
