@@ -2,6 +2,7 @@ import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt } from './common.js';
 import { Command } from './command.js';
 import { Condition } from './condition.js';
+import { MoveSteps } from './route.js';
 
 export const EventTrigger = Type.Union(
   [
@@ -28,29 +29,44 @@ export const EventLayer = Type.Union(
 );
 export type EventLayer = Static<typeof EventLayer>;
 
+const Speed = Type.Number({
+  exclusiveMinimum: 0,
+  maximum: 16,
+  description: 'Walking speed in tiles per second (the player usually walks at 4).',
+});
+const Pause = Type.Number({
+  minimum: 0,
+  maximum: 60,
+  description: 'Seconds to stand still between steps (random movement varies it a little).',
+});
+
 /**
  * How an event moves on its own while its page is active. Leave it out for an
  * event that stays put. Moving events walk tile by tile like the player and
  * never walk through the player, blocking events or impassable tiles.
  */
-export const EventMovement = Type.Object(
-  {
-    type: Type.Union([Type.Literal('random'), Type.Literal('approach')], {
-      description: 'random: wanders about. approach: walks toward the player.',
-    }),
-    speed: Type.Number({
-      exclusiveMinimum: 0,
-      maximum: 16,
-      description: 'Walking speed in tiles per second (the player usually walks at 4).',
-    }),
-    pause: Type.Number({
-      minimum: 0,
-      maximum: 60,
-      description: 'Seconds to stand still between steps (random movement varies it a little).',
-    }),
-  },
-  { additionalProperties: false },
-);
+export const EventMovement = Type.Union([
+  Type.Object(
+    {
+      type: Type.Union([Type.Literal('random'), Type.Literal('approach')], {
+        description: 'random: wanders about. approach: walks toward the player.',
+      }),
+      speed: Speed,
+      pause: Pause,
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('route'),
+      speed: Speed,
+      pause: Pause,
+      /** Walked in order, over and over; blocked steps are skipped. */
+      steps: MoveSteps,
+    },
+    { additionalProperties: false, description: 'Walks a set route, over and over.' },
+  ),
+]);
 export type EventMovement = Static<typeof EventMovement>;
 
 /**

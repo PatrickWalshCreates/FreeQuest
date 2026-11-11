@@ -18,6 +18,9 @@ const options = (list: readonly Named[]): RefOption[] =>
 /** Field labels that read better than the generated ones. */
 const LABELS: Record<string, string> = {
   id: 'Item',
+  target: 'Who moves',
+  skipBlocked: 'Skip blocked steps',
+  wait: 'Wait until done',
   op: 'Operation',
   x: 'X',
   y: 'Y',
@@ -41,6 +44,8 @@ export interface ProjectLists {
   readonly audio: readonly string[];
   /** Image files, for enemy pictures and the iconset. */
   readonly images?: readonly string[];
+  /** Events on the map being edited, for move route targets. */
+  readonly events?: readonly { readonly id: string; readonly name: string }[];
 }
 
 /** Starting values that make new entries useful at once (an item that works, a normal enemy action). */
@@ -122,6 +127,12 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return options(system?.skillTypes ?? []);
       case 'image':
         return images;
+      case 'target':
+        return [
+          { value: 'this', label: 'This event' },
+          { value: 'player', label: 'The player' },
+          ...options(lists.events ?? []),
+        ];
       default:
         return AUDIO_FIELDS.has(field) ? audio : null;
     }
@@ -143,7 +154,10 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
 }
 
 /** Names for command descriptions, falling back to ids for anything missing. */
-export function projectNames(project: OpenedProject): NameLookup {
+export function projectNames(
+  project: OpenedProject,
+  events: readonly { readonly id: string; readonly name: string }[] = [],
+): NameLookup {
   const m = project.manifest.data;
   const find = (list: readonly Named[] | undefined, id: string) =>
     list?.find((x) => x.id === id)?.name ?? id;
@@ -156,5 +170,6 @@ export function projectNames(project: OpenedProject): NameLookup {
     actor: (id) => find(entries('actors'), id),
     item: (kind, id) => find(entries(kind === 'equipment' ? 'equipment' : 'items'), id),
     troop: (id) => find(entries('troops'), id),
+    event: (id) => find(events, id),
   };
 }

@@ -1,4 +1,11 @@
-import type { CompareOp, Condition, Manifest, Operand, VariableOp } from '@freequest/schema';
+import type {
+  CommandOf,
+  CompareOp,
+  Condition,
+  Manifest,
+  Operand,
+  VariableOp,
+} from '@freequest/schema';
 import type { Party } from './party.js';
 
 /**
@@ -140,6 +147,16 @@ export interface EventContext {
   readonly party?: Party;
   /** Where playMusic/playSound commands go. Without one they are silent. */
   readonly audio?: AudioSink;
+  /** Starts moveRoute commands (the world). Without one, moveRoute fails clearly. */
+  readonly routes?: RouteHost;
+  /** The id of the map event whose commands these are ("this" in a move route), if any. */
+  readonly self?: string | null;
+}
+
+/** Starts move routes for the interpreter. */
+export interface RouteHost {
+  /** Start a route; returns a check that's true once it has finished (or was replaced). */
+  start(command: CommandOf<'moveRoute'>, self: string | null): () => boolean;
 }
 
 /** Receives the audio an event asks for; the runtime turns it into sound. */

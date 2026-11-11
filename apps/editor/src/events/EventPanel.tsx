@@ -22,6 +22,7 @@ import type {
   Condition,
   EventLayer,
   EventMovement,
+  MoveStep,
   EventPage,
   EventTrigger,
   GameMap,
@@ -31,6 +32,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList } from './CommandList.js';
+import { RouteSteps } from './RouteSteps.js';
 import { TransferTargetButton } from './TransferTargetButton.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
@@ -47,6 +49,16 @@ const MOVEMENTS: readonly { value: EventMovement['type'] | ''; label: string }[]
   { value: '', label: 'Stays put' },
   { value: 'random', label: 'Wanders about' },
   { value: 'approach', label: 'Walks toward the player' },
+  { value: 'route', label: 'Walks a route' },
+];
+
+/** A map's id from its file path (data/maps/<id>.json). */
+const mapIdOf = (path: string) => path.replace(/^.*\//, '').replace(/\.json$/, '');
+
+/** A new route: pace one tile right and back. */
+const DEFAULT_ROUTE: MoveStep[] = [
+  { type: 'move', direction: 'right' },
+  { type: 'move', direction: 'left' },
 ];
 
 /** New movement: a gentle walk with a pause, like a villager. */
@@ -59,52 +71,75 @@ function MovementFields(props: {
 }) {
   const { movement, onChange } = props;
   return (
-    <div className="row">
-      <label className="field grow">
-        <span>Moves</span>
-        <select
-          value={movement?.type ?? ''}
-          onChange={(e) => {
-            const type = e.target.value as EventMovement['type'] | '';
-            onChange('Change movement', type ? { ...DEFAULT_MOVEMENT, ...movement, type } : null);
-          }}
-        >
-          {MOVEMENTS.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {movement && (
-        <>
-          <label className="field" title="Tiles per second (the player walks at 4)">
-            <span>Speed</span>
-            <NumberField
-              value={movement.speed}
-              min={0.01}
-              max={16}
-              step={0.5}
-              onCommit={(speed) =>
-                onChange('Change speed', { ...movement, speed }, 'movement-speed')
-              }
-            />
-          </label>
-          <label className="field" title="Seconds standing still between steps">
-            <span>Pause (s)</span>
-            <NumberField
-              value={movement.pause}
-              min={0}
-              max={60}
-              step={0.5}
-              onCommit={(pause) =>
-                onChange('Change pause', { ...movement, pause }, 'movement-pause')
-              }
-            />
-          </label>
-        </>
+    <>
+      <div className="row">
+        <label className="field grow">
+          <span>Moves</span>
+          <select
+            value={movement?.type ?? ''}
+            onChange={(e) => {
+              const type = e.target.value as EventMovement['type'] | '';
+              const base = {
+                speed: movement?.speed ?? DEFAULT_MOVEMENT.speed,
+                pause: movement?.pause ?? DEFAULT_MOVEMENT.pause,
+              };
+              const steps = movement?.type === 'route' ? movement.steps : DEFAULT_ROUTE;
+              onChange(
+                'Change movement',
+                type === ''
+                  ? null
+                  : type === 'route'
+                    ? { ...base, type, steps }
+                    : { ...base, type },
+              );
+            }}
+          >
+            {MOVEMENTS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {movement && (
+          <>
+            <label className="field" title="Tiles per second (the player walks at 4)">
+              <span>Speed</span>
+              <NumberField
+                value={movement.speed}
+                min={0.01}
+                max={16}
+                step={0.5}
+                onCommit={(speed) =>
+                  onChange('Change speed', { ...movement, speed }, 'movement-speed')
+                }
+              />
+            </label>
+            <label className="field" title="Seconds standing still between steps">
+              <span>Pause (s)</span>
+              <NumberField
+                value={movement.pause}
+                min={0}
+                max={60}
+                step={0.5}
+                onCommit={(pause) =>
+                  onChange('Change pause', { ...movement, pause }, 'movement-pause')
+                }
+              />
+            </label>
+          </>
+        )}
+      </div>
+      {movement?.type === 'route' && (
+        <div className="route-field">
+          <RouteSteps
+            steps={movement.steps}
+            onChange={(steps) => onChange('Change route', { ...movement, steps })}
+          />
+          <p className="hint">Walked over and over; a blocked step is skipped.</p>
+        </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -264,8 +299,21 @@ function EventEditor(props: {
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
   const { audio } = useProjectLists(doc);
   const project = doc.project;
-  const ctx = useMemo(() => projectFormContext(project, { audio }), [project, audio]);
-  const names = useMemo(() => projectNames(project), [project]);
+  const mapEvents = useMemo(() => {
+    const data = project.maps.get(mapIdOf(path))?.data;
+    return (data?.events ?? []).map((e) => ({ id: e.id, name: e.name }));
+  }, [project, path]);
+  const ctx = useMemo(
+    () => ({
+      ...projectFormContext(project, { audio, events: mapEvents }),
+      render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
+        field === 'steps' ? (
+          <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
+        ) : undefined,
+    }),
+    [project, audio, mapEvents],
+  );
+  const names = useMemo(() => projectNames(project, mapEvents), [project, mapEvents]);
 
   const changeEvent = (label: string, fn: (e: MapEvent) => MapEvent, coalesce?: string) =>
     editMap(doc, path, label, (m) => updateEvent(m, event.id, fn), coalesce ? { coalesce } : {});

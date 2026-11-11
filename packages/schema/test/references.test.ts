@@ -187,6 +187,24 @@ describe('map tiles', () => {
 });
 
 describe('checkMapShape events', () => {
+  it('rejects move routes that wait forever or move nobody', () => {
+    const route = (target: string, repeat: boolean, wait: boolean): Command => ({
+      type: 'moveRoute',
+      target,
+      steps: [{ type: 'move', direction: 'up' }],
+      repeat,
+      skipBlocked: false,
+      wait,
+    });
+    expect(
+      checkMapShape(mapWith([route('this', false, true), route('player', true, false)])),
+    ).toEqual([]);
+    expect(checkMapShape(mapWith([route('ghost', true, true)]))).toEqual([
+      expect.stringMatching(/repeating route never ends/),
+      expect.stringMatching(/route for "ghost", which isn't an event on this map/),
+    ]);
+  });
+
   it('rejects duplicate ids, out-of-bounds events and bad cancel indices', () => {
     const map = mapWith([{ type: 'choice', cancel: 3, options: [{ label: 'a', commands: [] }] }]);
     const first = map.events[0];

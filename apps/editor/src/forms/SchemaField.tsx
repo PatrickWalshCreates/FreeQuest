@@ -12,7 +12,7 @@ import {
   variantIndex,
   variantLabel,
 } from '@freequest/editor-core';
-import { useId } from 'react';
+import { type ReactNode, useId } from 'react';
 
 export interface RefOption {
   readonly value: string;
@@ -37,6 +37,8 @@ export interface FormContext {
   pick: DefaultPicker;
   /** A problem with a field's current value to show under it (e.g. a formula that won't parse). */
   check?(field: string, value: unknown): string | null;
+  /** A custom control for a field (e.g. a route's steps), or undefined for the generated one. */
+  render?(field: string, value: unknown, onChange: (value: unknown) => void): ReactNode | undefined;
 }
 
 type Record_ = Readonly<Record<string, unknown>>;
@@ -140,6 +142,20 @@ export function ObjectFields(props: {
           );
         }
         const problem = ctx.check?.(field.name, value[field.name]) ?? null;
+        const custom = ctx.render?.(field.name, value[field.name], (next) => set(field.name, next));
+        if (custom !== undefined) {
+          return (
+            <Labeled
+              key={field.name}
+              label={labelFor(ctx, field.name)}
+              hint={field.schema.description}
+              inline={false}
+              problem={problem}
+            >
+              {() => custom}
+            </Labeled>
+          );
+        }
         return (
           <Labeled
             key={field.name}

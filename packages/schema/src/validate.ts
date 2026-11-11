@@ -115,6 +115,20 @@ export function checkMapShape(map: GameMap): string[] {
             );
           }
         }
+        if (command.type === 'moveRoute') {
+          const at = `${where} pages[${p}].${path}`;
+          if (command.repeat && command.wait) {
+            problems.push(`${at}: a repeating route never ends, so the event can't wait for it`);
+          }
+          const target = command.target;
+          if (
+            target !== 'player' &&
+            target !== 'this' &&
+            !map.events.some((e) => e.id === target)
+          ) {
+            problems.push(`${at}: route for "${target}", which isn't an event on this map`);
+          }
+        }
       }),
     );
   });

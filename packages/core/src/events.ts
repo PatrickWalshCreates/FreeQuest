@@ -29,7 +29,8 @@ export class EventInstance {
 
   constructor(data: MapEvent, context: EventContext | GameState) {
     this.data = data;
-    this.mover = new GridMover({ x: data.x, y: data.y, direction: 'down', speed: 1 });
+    // 3 tiles/s until a page's movement or a route's speed step says otherwise.
+    this.mover = new GridMover({ x: data.x, y: data.y, direction: 'down', speed: 3 });
     this.refresh(context);
   }
 

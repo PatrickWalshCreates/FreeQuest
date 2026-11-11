@@ -351,6 +351,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     !world.interpreter &&
     !transfer.isActive &&
     !world.player.isMoving &&
+    !world.playerOnRoute &&
     !world.hasPendingEncounter;
 
   // Position before the most recent logic step, for interpolation.

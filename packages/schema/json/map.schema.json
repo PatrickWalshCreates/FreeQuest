@@ -635,6 +635,172 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Walk the player or an event along a route.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "moveRoute"
+            },
+            "repeat": {
+              "type": "boolean"
+            },
+            "skipBlocked": {
+              "type": "boolean"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk one tile.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "move"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "forward"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          }
+                        ],
+                        "description": "forward: the way the character faces; the player ones are worked out at the time."
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Face a direction without moving.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "turn"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "around"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Stand still.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "wait"
+                      },
+                      "seconds": {
+                        "type": "number",
+                        "maximum": 60,
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "seconds"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk faster or slower from here on.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "speed"
+                      },
+                      "speed": {
+                        "type": "number",
+                        "description": "Tiles per second.",
+                        "exclusiveMinimum": 0,
+                        "maximum": 16
+                      }
+                    },
+                    "required": ["type", "speed"]
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "target", "steps", "repeat", "skipBlocked", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {
@@ -986,36 +1152,204 @@
                   "description": "Drawn below, level with, or above characters. Only \"same\" blocks movement."
                 },
                 "movement": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "const": "random"
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "type": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "const": "random"
+                            },
+                            {
+                              "type": "string",
+                              "const": "approach"
+                            }
+                          ],
+                          "description": "random: wanders about. approach: walks toward the player."
                         },
-                        {
-                          "type": "string",
-                          "const": "approach"
+                        "pause": {
+                          "type": "number",
+                          "description": "Seconds to stand still between steps (random movement varies it a little).",
+                          "maximum": 60,
+                          "minimum": 0
+                        },
+                        "speed": {
+                          "type": "number",
+                          "description": "Walking speed in tiles per second (the player usually walks at 4).",
+                          "exclusiveMinimum": 0,
+                          "maximum": 16
                         }
-                      ],
-                      "description": "random: wanders about. approach: walks toward the player."
+                      },
+                      "required": ["type", "speed", "pause"]
                     },
-                    "pause": {
-                      "type": "number",
-                      "description": "Seconds to stand still between steps (random movement varies it a little).",
-                      "maximum": 60,
-                      "minimum": 0
-                    },
-                    "speed": {
-                      "type": "number",
-                      "description": "Walking speed in tiles per second (the player usually walks at 4).",
-                      "exclusiveMinimum": 0,
-                      "maximum": 16
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "description": "Walks a set route, over and over.",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "route"
+                        },
+                        "pause": {
+                          "type": "number",
+                          "description": "Seconds to stand still between steps (random movement varies it a little).",
+                          "maximum": 60,
+                          "minimum": 0
+                        },
+                        "speed": {
+                          "type": "number",
+                          "description": "Walking speed in tiles per second (the player usually walks at 4).",
+                          "exclusiveMinimum": 0,
+                          "maximum": 16
+                        },
+                        "steps": {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Walk one tile.",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "move"
+                                  },
+                                  "direction": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "const": "down"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "left"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "right"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "up"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "forward"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "random"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "toward-player"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "away-from-player"
+                                      }
+                                    ],
+                                    "description": "forward: the way the character faces; the player ones are worked out at the time."
+                                  }
+                                },
+                                "required": ["type", "direction"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Face a direction without moving.",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "turn"
+                                  },
+                                  "direction": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "const": "down"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "left"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "right"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "up"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "around"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "random"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "toward-player"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "away-from-player"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": ["type", "direction"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Stand still.",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "wait"
+                                  },
+                                  "seconds": {
+                                    "type": "number",
+                                    "maximum": 60,
+                                    "minimum": 0
+                                  }
+                                },
+                                "required": ["type", "seconds"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Walk faster or slower from here on.",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "speed"
+                                  },
+                                  "speed": {
+                                    "type": "number",
+                                    "description": "Tiles per second.",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 16
+                                  }
+                                },
+                                "required": ["type", "speed"]
+                              }
+                            ]
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": ["type", "speed", "pause", "steps"]
                     }
-                  },
-                  "required": ["type", "speed", "pause"]
+                  ]
                 },
                 "trigger": {
                   "anyOf": [

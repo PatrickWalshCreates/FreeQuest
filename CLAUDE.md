@@ -108,6 +108,20 @@ Never the other way.
   blocking) the player. A blocking touch event that walks into the player starts its commands
   (chasers). Positions aren't saved: events start from their placed tiles on map load.
   `EventViews` interpolates them like the player (`remember()` before each logic step).
+- **Move routes** (`schema/route.ts`, `core/route.ts`): steps `move` / `turn` (fixed or
+  `forward`, `around`, `random`, `toward-player`, `away-from-player`, worked out when the step
+  runs), `wait`, `speed`. `RouteRunner` walks any `GridMover`: one move per update at most (a
+  repeating route of turns can't spin), blocked moves wait or are skipped, an optional pause
+  after each move. The `moveRoute` command (target `player`, `this` = the event running it,
+  or an event id) goes through `EventContext.routes` (`RouteHost`, the world) and returns a
+  "finished" check the interpreter waits on (`wait`, not with `repeat`; `checkMapShape`
+  rejects both, and unknown targets). A command route replaces the event's own movement while
+  it runs (also for the running event; the target's page speed is the starting speed, events
+  default to 3 tiles/s) and is followed by its pause. Player routes ignore input, block the
+  menu and talking, and give the player's speed back when they end. Page movement `route`
+  repeats its steps, skipping blocked ones. Map changes clear every route. Editor:
+  `RouteSteps` (quick-add buttons, per-step direction or number, reorder) via the new
+  `FormContext.render` hook for the `steps` field; `describeRoute` counts runs ("↑ ×3").
 - **Map events at runtime** (`EventInstance`): position, facing, active page. Pages are re-picked only
   when `GameState.version` changes. Events with `layer: "same"` block movement
   (`World.passability` = tiles + blocking events). A page change resets facing to the page graphic,
@@ -513,7 +527,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
   map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`; v6: page `movement`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
+  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
@@ -631,7 +645,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   1. ~~Parallel events (background interpreters; screen requests wait their turn)~~ (done)
   2. ~~NPCs that move: page movement (random, toward the player), speed, pause~~ (done; map v6;
      a wanderer and a chaser into a battle tried in a playtest; routes come with step 3)
-  3. Move route command (event or player; repeat, skip if blocked, wait until done)
+  3. ~~Move route command (event or player; repeat, skip if blocked, wait until done)~~ (done;
+     also route page movement; added in the dialog and played in a playtest)
   4. Shops (buy/sell screen from a `shop` command)
   5. Icons (generated iconset; menus, battle, shop; icon picker in the editor)
   6. Options screen (volume, key rebinding; kept per player apart from saves)

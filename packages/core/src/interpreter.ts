@@ -47,6 +47,8 @@ export class Interpreter {
   private choiceCommand: CommandOf<'choice'> | null = null;
   private battleCommand: CommandOf<'battle'> | null = null;
   private waitRemaining = 0;
+  /** A move route the event waits for (true once it has finished). */
+  private waitFor: (() => boolean) | null = null;
 
   constructor(commands: readonly Command[], context: EventContext | GameState) {
     this.stack = [{ commands, index: 0 }];
@@ -59,7 +61,12 @@ export class Interpreter {
   }
 
   get isDone(): boolean {
-    return this.request === null && this.waitRemaining <= 0 && this.peek() === null;
+    return (
+      this.request === null &&
+      this.waitRemaining <= 0 &&
+      this.waitFor === null &&
+      this.peek() === null
+    );
   }
 
   /** Advance by `dt` seconds. Does nothing while a request is pending. */
@@ -67,6 +74,10 @@ export class Interpreter {
     let time = dt;
     let executed = 0;
     while (this.request === null) {
+      if (this.waitFor) {
+        if (!this.waitFor()) return;
+        this.waitFor = null;
+      }
       if (this.waitRemaining > 0) {
         if (time < this.waitRemaining - TIME_EPSILON) {
           this.waitRemaining -= time;
@@ -251,6 +262,13 @@ export class Interpreter {
       case 'playSound':
         this.context.audio?.playSound(command.path);
         break;
+      case 'moveRoute': {
+        const routes = this.context.routes;
+        if (!routes) throw new Error('the moveRoute command needs a world to move characters in');
+        const done = routes.start(command, this.context.self ?? null);
+        if (command.wait && !command.repeat) this.waitFor = done;
+        break;
+      }
       case 'comment':
         break;
       default: {

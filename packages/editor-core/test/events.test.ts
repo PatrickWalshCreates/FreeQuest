@@ -11,6 +11,7 @@ import {
   defaultFor,
   describeCommand,
   describeCondition,
+  describeRoute,
   duplicateEvent,
   duplicatePage,
   eventAt,
@@ -235,6 +236,7 @@ describe('schema forms', () => {
         actor: 'mira',
         id: 'potion',
         path: 'assets/audio/a.wav',
+        target: 'this',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);
@@ -263,5 +265,30 @@ describe('schema forms', () => {
     expect(variantIndex(operand, { variable: 'v' })).toBe(1);
     expect(variantLabel(operand[1] ?? {})).toBe('variable');
     expect(fieldLabel('includeEquipped')).toBe('Include equipped');
+  });
+});
+
+describe('route descriptions', () => {
+  it('counts runs of the same step', () => {
+    expect(
+      describeRoute([
+        { type: 'move', direction: 'up' },
+        { type: 'move', direction: 'up' },
+        { type: 'wait', seconds: 1 },
+        { type: 'turn', direction: 'toward-player' },
+        { type: 'speed', speed: 6 },
+        { type: 'move', direction: 'away-from-player' },
+      ]),
+    ).toBe('↑ ×2, wait 1 s, turn toward player, speed 6, away from player');
+    expect(
+      describeCommand({
+        type: 'moveRoute',
+        target: 'player',
+        steps: [{ type: 'move', direction: 'left' }],
+        repeat: false,
+        skipBlocked: true,
+        wait: true,
+      }),
+    ).toBe('Move the player: ← (skip blocked, wait)');
   });
 });

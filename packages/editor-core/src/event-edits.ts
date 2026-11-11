@@ -6,6 +6,7 @@ import type {
   EventPage,
   GameMap,
   MapEvent,
+  MoveStep,
   Operand,
   VariableOp,
 } from '@freequest/schema';
@@ -334,6 +335,8 @@ export interface NameLookup {
   actor(id: string): string;
   item(kind: 'item' | 'equipment', id: string): string;
   troop(id: string): string;
+  /** An event on the map being edited (for move routes); ids are shown without one. */
+  event?(id: string): string;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */
@@ -428,9 +431,70 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return command.path === null ? 'Stop music' : `Play music ${fileName(command.path)}`;
     case 'playSound':
       return `Play sound ${fileName(command.path)}`;
+    case 'moveRoute': {
+      const who =
+        command.target === 'player'
+          ? 'the player'
+          : command.target === 'this'
+            ? 'this event'
+            : (names.event?.(command.target) ?? command.target);
+      const how = [
+        command.repeat ? 'repeat' : null,
+        command.skipBlocked ? 'skip blocked' : null,
+        command.wait && !command.repeat ? 'wait' : null,
+      ].filter(Boolean);
+      return `Move ${who}: ${describeRoute(command.steps)}${how.length > 0 ? ` (${how.join(', ')})` : ''}`;
+    }
     case 'comment':
       return `// ${command.text.split('\n')[0] ?? ''}`;
   }
+}
+
+const ARROWS: Readonly<Record<string, string>> = {
+  down: '↓',
+  left: '←',
+  right: '→',
+  up: '↑',
+  forward: 'forward',
+  around: 'around',
+  random: 'random',
+  'toward-player': 'toward player',
+  'away-from-player': 'away from player',
+};
+
+/** One route step, short: "↑", "turn ←", "wait 1 s", "speed 6". */
+export function describeStep(step: MoveStep): string {
+  switch (step.type) {
+    case 'move':
+      return ARROWS[step.direction] ?? step.direction;
+    case 'turn':
+      return `turn ${ARROWS[step.direction] ?? step.direction}`;
+    case 'wait':
+      return `wait ${step.seconds} s`;
+    case 'speed':
+      return `speed ${step.speed}`;
+  }
+}
+
+/** A route, short: runs of the same step are counted ("↑ ×3, wait 1 s, ←"). */
+export function describeRoute(steps: readonly MoveStep[]): string {
+  const parts: string[] = [];
+  let last: string | null = null;
+  let count = 0;
+  const flush = () => {
+    if (last !== null) parts.push(count > 1 ? `${last} ×${count}` : last);
+  };
+  for (const step of steps) {
+    const text = describeStep(step);
+    if (text === last) count++;
+    else {
+      flush();
+      last = text;
+      count = 1;
+    }
+  }
+  flush();
+  return parts.join(', ') || '(no steps)';
 }
 
 /** Command types in the order (and groups) the "add command" menu offers them. */
@@ -442,7 +506,7 @@ export const COMMAND_GROUPS: readonly {
   { label: 'Flow', types: ['if', 'wait'] },
   { label: 'Game state', types: ['setSwitch', 'setVariable'] },
   { label: 'Party', types: ['changeGold', 'changeItems', 'changeParty', 'gainExp', 'recoverAll'] },
-  { label: 'World', types: ['transfer', 'battle'] },
+  { label: 'World', types: ['transfer', 'moveRoute', 'battle'] },
   { label: 'Audio', types: ['playMusic', 'playSound'] },
 ];
 
@@ -460,6 +524,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   gainExp: 'Give experience',
   recoverAll: 'Recover all',
   transfer: 'Transfer player',
+  moveRoute: 'Move route',
   battle: 'Start battle',
   playMusic: 'Play music',
   playSound: 'Play sound',

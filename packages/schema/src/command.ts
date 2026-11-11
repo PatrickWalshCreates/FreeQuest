@@ -1,6 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, RelativePath } from './common.js';
 import { Condition } from './condition.js';
+import { MoveSteps } from './route.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
 
@@ -163,6 +164,21 @@ export const Command = Type.Cyclic(
       Type.Object(
         { type: Type.Literal('playSound'), path: RelativePath },
         { additionalProperties: false },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('moveRoute'),
+          /** "player", "this" (the event running the command) or an event id on this map. */
+          target: Id,
+          steps: MoveSteps,
+          /** Walk the steps over and over (until the map changes or another route replaces it). */
+          repeat: Type.Boolean(),
+          /** Skip a step that's blocked instead of waiting until it's free. */
+          skipBlocked: Type.Boolean(),
+          /** Wait for the route to finish before the next command (not with repeat). */
+          wait: Type.Boolean(),
+        },
+        { additionalProperties: false, description: 'Walk the player or an event along a route.' },
       ),
       Type.Object(
         {

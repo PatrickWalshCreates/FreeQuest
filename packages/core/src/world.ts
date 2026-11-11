@@ -1,5 +1,6 @@
 import {
   type Command,
+  type CommandOf,
   type GameMap,
   type Manifest,
   SAVE_FORMAT_VERSION,
@@ -15,6 +16,7 @@ import { type AudioSink, type EventContext, GameState } from './game-state.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
 import type { InputState } from './input.js';
 import { Interpreter } from './interpreter.js';
+import { RouteRunner, type RouteSurroundings } from './route.js';
 import { Party } from './party.js';
 
 export interface WorldOptions {
@@ -70,6 +72,12 @@ export class World {
   private runningEvent: EventInstance | null = null;
   /** Interpreters of parallel pages, running alongside play (one per event). */
   private readonly parallels = new Map<EventInstance, Interpreter>();
+  /** Routes started by moveRoute commands, by character (they replace page movement meanwhile). */
+  private readonly routes = new Map<EventInstance | 'player', RouteRunner>();
+  /** Routes of pages whose movement is a route, with the page they belong to. */
+  private readonly pageRoutes = new Map<EventInstance, { page: number; runner: RouteRunner }>();
+  /** The player's speed before a route changed it (restored when the route ends). */
+  private playerSpeed: number;
   /** Events whose pass finished as the running event this step (they start again next step). */
   private readonly finishedRunning = new Set<EventInstance>();
   private seenVersion: string;
@@ -101,6 +109,7 @@ export class World {
       direction: start.direction,
       speed: manifest.player.speed,
     });
+    this.playerSpeed = manifest.player.speed;
     // Assigned for the type checker; `enterMap` sets them for real.
     this.currentMap = map;
     this.currentTileset = tileset;
@@ -148,8 +157,11 @@ export class World {
     this.currentTileset = tileset;
     this.currentCollision = collision;
     this.currentEvents = map.events.map((e) => new EventInstance(e, this.eventContext));
-    // The old map's parallel events stop; the new map's start on the next step.
+    // The old map's parallel events and routes stop; the new map's start on the next step.
     this.parallels.clear();
+    this.endPlayerRoute();
+    this.routes.clear();
+    this.pageRoutes.clear();
     this.player.placeAt(x, y);
     this.pendingEncounter = null;
     this.encounterCountdown = this.rollEncounterSteps();
@@ -281,7 +293,7 @@ export class World {
    */
   run(commands: readonly Command[], source: EventInstance | null = null): Interpreter {
     if (this.running) throw new Error('an event is already running');
-    this.running = new Interpreter(commands, this.eventContext);
+    this.running = new Interpreter(commands, this.contextFor(source));
     this.runningEvent = source;
     return this.running;
   }
@@ -314,7 +326,7 @@ export class World {
       const page = event.page;
       if (page?.trigger !== 'parallel' || this.parallels.has(event)) continue;
       if (finished.has(event) || event === this.runningEvent) continue;
-      const interpreter = new Interpreter(page.commands, this.eventContext);
+      const interpreter = new Interpreter(page.commands, this.contextFor(event));
       interpreter.update(dt);
       if (!interpreter.isDone) this.parallels.set(event, interpreter);
     }
@@ -404,14 +416,44 @@ export class World {
    */
   private moveEvents(dt: number): void {
     for (const event of this.events) {
-      const movement = event.page?.movement;
       const mover = event.mover;
-      if (!movement && !mover.isMoving) continue;
-      if (movement) mover.speed = movement.speed;
       const passability = this.passabilityFor(event);
+      const hooks = this.eventHooks(event);
+      // A moveRoute command's route comes first, even for the event that runs it.
+      const route = this.routes.get(event);
+      if (route) {
+        route.update(dt, mover, passability, this.surroundings, hooks);
+        if (route.isDone(mover)) {
+          this.routes.delete(event);
+          // Its own movement takes over after a pause, not straight away.
+          event.pauseLeft = event.page?.movement?.pause ?? 0;
+        }
+        continue;
+      }
+      const movement = event.page?.movement;
+      if (!movement && !mover.isMoving) continue;
       const still = event === this.runningEvent || !movement;
+      if (movement?.type === 'route') {
+        let own = this.pageRoutes.get(event);
+        if (!own || own.page !== event.pageIndex) {
+          own = {
+            page: event.pageIndex,
+            runner: new RouteRunner(movement.steps, {
+              repeat: true,
+              skipBlocked: true,
+              pause: movement.pause,
+            }),
+          };
+          this.pageRoutes.set(event, own);
+          mover.speed = movement.speed;
+        }
+        if (still) mover.update(dt, passability, () => null, hooks);
+        else own.runner.update(dt, mover, passability, this.surroundings, hooks);
+        continue;
+      }
+      if (movement) mover.speed = movement.speed;
       let wanted: Direction | null = null;
-      if (!mover.isMoving && !still) {
+      if (movement && !mover.isMoving && !still) {
         event.pauseLeft -= dt;
         if (event.pauseLeft > 0) continue;
         wanted = this.nextStep(event, passability);
@@ -429,15 +471,20 @@ export class World {
           offered = true;
           return wanted;
         },
-        {
-          bumped: (x, y) => {
-            const page = event.page;
-            if (page?.trigger !== 'touch' || !event.blocks || this.running) return;
-            if (x === this.player.x && y === this.player.y) this.run(page.commands, event);
-          },
-        },
+        hooks,
       );
     }
+  }
+
+  /** A blocking touch event that walks into the player starts its commands. */
+  private eventHooks(event: EventInstance): MoveHooks {
+    return {
+      bumped: (x, y) => {
+        const page = event.page;
+        if (page?.trigger !== 'touch' || !event.blocks || this.running) return;
+        if (x === this.player.x && y === this.player.y) this.run(page.commands, event);
+      },
+    };
   }
 
   /** Start the first present event at (x, y) matching `accept`. Returns true if one started. */
@@ -450,9 +497,56 @@ export class World {
     return true;
   }
 
-  /** What event conditions and commands see: switches, variables and the party. */
+  /** What event conditions and commands see: switches, variables, the party, audio and routes. */
   get eventContext(): EventContext {
-    return { state: this.state, party: this.party, audio: this.audio };
+    return { state: this.state, party: this.party, audio: this.audio, routes: this.routeHost };
+  }
+
+  /** The context for the commands of one map event (so "this" in a route means it). */
+  private contextFor(event: EventInstance | null): EventContext {
+    return { ...this.eventContext, self: event?.id ?? null };
+  }
+
+  private readonly routeHost = {
+    start: (command: CommandOf<'moveRoute'>, self: string | null) => this.startRoute(command, self),
+  };
+
+  /** What routes see: where the player is, and the world's random numbers. */
+  private get surroundings(): RouteSurroundings {
+    return { player: this.player, random: this.random };
+  }
+
+  /**
+   * Start a moveRoute command's route on its target, replacing any route it
+   * had. Returns a check that's true once the route has ended (or the target
+   * doesn't exist, e.g. "this" after the map changed).
+   */
+  private startRoute(command: CommandOf<'moveRoute'>, self: string | null): () => boolean {
+    const target =
+      command.target === 'player'
+        ? 'player'
+        : this.events.find((e) => e.id === (command.target === 'this' ? self : command.target));
+    if (!target) return () => true;
+    if (target === 'player') this.endPlayerRoute();
+    // An event walks a route at its page's speed until a speed step says otherwise.
+    else if (target.page?.movement) target.mover.speed = target.page.movement.speed;
+    const runner = new RouteRunner(command.steps, {
+      repeat: command.repeat,
+      skipBlocked: command.skipBlocked,
+    });
+    this.routes.set(target, runner);
+    return () => this.routes.get(target) !== runner;
+  }
+
+  /** Stop the player's route, if any, and give back the speed it may have changed. */
+  private endPlayerRoute(): void {
+    if (!this.routes.delete('player')) return;
+    this.player.speed = this.playerSpeed;
+  }
+
+  /** True while a move route walks the player (input doesn't move it meanwhile). */
+  get playerOnRoute(): boolean {
+    return this.routes.has('player');
   }
 
   /** The music that should be playing on the map: an event's choice, else the map's, else none. */
@@ -534,18 +628,30 @@ export class World {
     this.advanceParallels(dt);
     this.moveEvents(dt);
     if (!this.running) this.tryAutorun();
-    if (!this.running && !runningAtStart && !this.player.isMoving && input.justPressed('confirm')) {
+    if (
+      !this.running &&
+      !runningAtStart &&
+      !this.player.isMoving &&
+      !this.playerOnRoute &&
+      input.justPressed('confirm')
+    ) {
       this.tryAction();
     }
-    this.player.update(
-      dt,
-      this.passability,
-      () =>
-        this.running || runningAtStart || this.pendingEncounter !== null
-          ? null
-          : input.heldDirection(),
-      this.moveHooks,
-    );
+    const playerRoute = this.routes.get('player');
+    if (playerRoute) {
+      playerRoute.update(dt, this.player, this.passability, this.surroundings, this.moveHooks);
+      if (playerRoute.isDone(this.player)) this.endPlayerRoute();
+    } else {
+      this.player.update(
+        dt,
+        this.passability,
+        () =>
+          this.running || runningAtStart || this.pendingEncounter !== null
+            ? null
+            : input.heldDirection(),
+        this.moveHooks,
+      );
+    }
     // An event triggered during this step runs up to its first pause right
     // away, so its first message shows without a one-step delay.
     if (this.running && this.running !== runningAtStart) this.advanceInterpreter(0);
