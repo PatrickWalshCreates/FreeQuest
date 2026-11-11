@@ -640,6 +640,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   on a published release or by hand (Pages needs the repo public, Source = GitHub Actions).
   The player focuses with `preventScroll` so an embedding page doesn't jump to the game.
   Preview: launch config `site` (`vite preview --outDir site-dist --port 5180`).
+- Shortcut labels in the editor come from `apps/editor/src/keys.ts` (`MOD`: ⌘ on a Mac, `Ctrl+`
+  elsewhere); every shortcut accepts both. The guides write Ctrl with a "⌘ on a Mac" note.
 - `docs/release-checklist.md`: the by-hand checks for a release (dialogs, restarts, Gatekeeper,
   playing the demo).
 - Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`
@@ -662,6 +664,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
+- **0.1 formats are frozen**: `packages/schema/test/fixtures/release-0.1/` is the demo's data and
+  a save exactly as 0.1.0 wrote them (never edit; a checksum test fails, `.gitattributes` keeps
+  the bytes). `editor-core/test/release-formats.test.ts` opens it with no problems and
+  `core/test/release-formats.test.ts` loads the save. Change a format only with a migration; a
+  release that changes one adds its own `release-<v>/` folder.
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
   map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,

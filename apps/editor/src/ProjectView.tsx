@@ -40,6 +40,7 @@ import { summarize } from './summary.js';
 import { NewTilesetDialog } from './tileset/NewTilesetDialog.js';
 import { TilesetEditor } from './tileset/TilesetEditor.js';
 import { useDocumentVersion } from './use-document.js';
+import { MOD } from './keys.js';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -235,7 +236,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const showAssets = selected === ASSETS_VIEW;
   const assetCount = useAssetPaths(doc)?.length;
   const unsaved = doc.dirtyPaths.length;
-  const shortcut = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
+  const shortcut = MOD;
 
   return (
     <div className="workspace">

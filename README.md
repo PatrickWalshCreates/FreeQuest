@@ -51,11 +51,18 @@ Try the elder by the path, the house door, and the bridge. Saves are kept in you
 
 ### The editor
 
+Download it for macOS (Apple Silicon or Intel), Windows or Linux from the
+[latest release](https://github.com/PatrickWalshCreates/FreeQuest/releases/latest), or run it from
+source:
+
 ```sh
-pnpm build:editor-app # builds FreeQuest Editor.app (macOS; needs Rust: https://rustup.rs)
-pnpm editor           # or: in the browser at http://localhost:5174, with the sample projects
-pnpm editor:desktop   # or: the desktop app in development mode
+pnpm editor           # in the browser at http://localhost:5174, with the sample projects
+pnpm editor:desktop   # the desktop app in development mode (needs Rust: https://rustup.rs)
+pnpm build:editor-app # macOS: builds FreeQuest Editor.app and a .dmg
 ```
+
+Windows and Linux builds are made by the release workflow; [CONTRIBUTING.md](CONTRIBUTING.md)
+explains building them yourself.
 
 - **Projects**: New project from a template (Starter or Demo), recent projects on the start screen.
 - **Assets**: import images and sounds (copied into the project), see where each is used.
@@ -72,12 +79,14 @@ pnpm editor:desktop   # or: the desktop app in development mode
 - **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
 - Copy and paste commands, events and database entries, also between projects; pick a door's
   destination on the map.
-- Undo/redo (⌘Z / ⇧⌘Z) for everything, problems listed as you work, and ⌘S saves.
+- Undo/redo (Ctrl+Z / Ctrl+Shift+Z, ⌘ on a Mac) for everything, problems listed as you work, and
+  Ctrl+S saves.
 
 ### Exporting a game
 
 In the editor, **Export…** checks the game and exports it as a web game (upload the folder to
-itch.io or any web host) or, on a Mac, as an app. The same works from the command line:
+itch.io or any web host), a Windows or Linux game, or, on a Mac, a Mac app. The same works from
+the command line:
 
 ```sh
 pnpm build                                          # once: builds the player games run in
@@ -85,9 +94,15 @@ pnpm freequest check samples/demo-project
 pnpm freequest export web samples/demo-project --out ../my-game-web
 pnpm build:mac-player                               # once, needs Rust: the Mac player app
 pnpm freequest export mac samples/demo-project --out ../my-game-mac
+pnpm freequest export windows samples/demo-project --out ../my-game-windows
+pnpm freequest export linux samples/demo-project --out ../my-game-linux
 ```
 
-See [docs/exporting.md](docs/exporting.md) for uploading to itch.io and sharing Mac apps.
+Windows and Linux exports copy those systems' players from `apps/player-desktop/dist/`, which the
+release workflow builds (or `pnpm --filter @freequest/player-desktop build:shell` run on that
+system).
+
+See [docs/exporting.md](docs/exporting.md) for uploading to itch.io and sharing desktop games.
 
 Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm build:site`
 (the website, with the guides and the playable demo, in `site-dist/`).
@@ -111,11 +126,10 @@ live in [`packages/schema/json`](packages/schema/json).
 
 ## Roadmap
 
-Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web and macOS
-export, the editor workflow (templates, assets, tileset and character editors, copy/paste), and
+Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web, Windows,
+macOS and Linux exports, the editor workflow (templates, assets, tileset and character editors, copy/paste), and
 gameplay depth (moving NPCs, move routes, background events, shops, icons, options, smarter
-enemies). Next: a first public release (GitHub, signed downloads, Windows and Linux builds), then
-the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
+enemies). Next: the first public release (0.1.0), then the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

@@ -1,6 +1,7 @@
 import type { PlaytestSource } from '@freequest/editor-core';
 import { type Game, MemoryStorage, startGame } from '@freequest/runtime';
 import { useEffect, useRef, useState } from 'react';
+import { MOD } from './keys.js';
 
 export interface PlaytestStart {
   readonly map: string;
@@ -79,7 +80,7 @@ export function Playtest({ gameName, source, start, onClose }: Props) {
         </span>
         <span className="spacer" />
         <span className="muted keys">Arrows move · Enter talks · Esc menu · F9 debug</span>
-        <button className="primary" onClick={onClose} title="Stop playtesting (⌘.)">
+        <button className="primary" onClick={onClose} title={`Stop playtesting (${MOD}.)`}>
           Stop
         </button>
       </header>

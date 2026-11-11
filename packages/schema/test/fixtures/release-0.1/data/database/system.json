@@ -1,0 +1,107 @@
+{
+  "formatVersion": 4,
+  "attackSkill": "attack",
+  "audio": {
+    "battleMusic": "assets/audio/battle.wav",
+    "gameOverMusic": "assets/audio/gameover.wav",
+    "sounds": {
+      "battleStart": "assets/audio/sfx-battleStart.wav",
+      "buzzer": "assets/audio/sfx-buzzer.wav",
+      "cancel": "assets/audio/sfx-cancel.wav",
+      "confirm": "assets/audio/sfx-confirm.wav",
+      "cursor": "assets/audio/sfx-cursor.wav",
+      "damage": "assets/audio/sfx-damage.wav",
+      "heal": "assets/audio/sfx-heal.wav",
+      "save": "assets/audio/sfx-save.wav"
+    },
+    "titleMusic": "assets/audio/title.wav",
+    "victoryMusic": "assets/audio/victory.wav"
+  },
+  "currency": "G",
+  "elements": [
+    {
+      "id": "physical",
+      "name": "Physical"
+    },
+    {
+      "id": "fire",
+      "name": "Fire"
+    },
+    {
+      "id": "ice",
+      "name": "Ice"
+    },
+    {
+      "id": "holy",
+      "name": "Holy"
+    }
+  ],
+  "equipmentSlots": [
+    {
+      "id": "weapon",
+      "name": "Weapon"
+    },
+    {
+      "id": "shield",
+      "name": "Shield"
+    },
+    {
+      "id": "head",
+      "name": "Head"
+    },
+    {
+      "id": "body",
+      "name": "Body"
+    },
+    {
+      "id": "accessory",
+      "name": "Accessory"
+    }
+  ],
+  "equipmentTypes": [
+    {
+      "id": "sword",
+      "name": "Sword"
+    },
+    {
+      "id": "staff",
+      "name": "Staff"
+    },
+    {
+      "id": "shield",
+      "name": "Shield"
+    },
+    {
+      "id": "light-armor",
+      "name": "Light armor"
+    },
+    {
+      "id": "robe",
+      "name": "Robe"
+    },
+    {
+      "id": "hat",
+      "name": "Hat"
+    },
+    {
+      "id": "accessory",
+      "name": "Accessory"
+    }
+  ],
+  "guardSkill": "guard",
+  "iconset": {
+    "columns": 8,
+    "iconSize": 16,
+    "image": "assets/system/iconset.png"
+  },
+  "skillTypes": [
+    {
+      "id": "magic",
+      "name": "Magic"
+    },
+    {
+      "id": "technique",
+      "name": "Technique"
+    }
+  ]
+}

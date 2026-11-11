@@ -1,0 +1,71 @@
+{
+  "formatVersion": 1,
+  "game": "freequest-demo",
+  "savedAt": "2026-11-11T12:00:00.000Z",
+  "playSeconds": 754,
+  "map": "house",
+  "x": 3,
+  "y": 4,
+  "direction": "left",
+  "switches": {
+    "accepted_request": true
+  },
+  "variables": {
+    "bridge_visits": 2
+  },
+  "party": {
+    "members": [
+      {
+        "id": "hero",
+        "level": 3,
+        "exp": 300,
+        "hp": 17,
+        "mp": 10,
+        "equipment": {
+          "body": "leather-vest",
+          "weapon": "bronze-sword"
+        },
+        "extraSkills": [],
+        "states": []
+      },
+      {
+        "id": "mira",
+        "level": 3,
+        "exp": 152,
+        "hp": 152,
+        "mp": 59,
+        "equipment": {
+          "body": "cloth-robe",
+          "weapon": "oak-staff",
+          "head": "straw-hat"
+        },
+        "extraSkills": [],
+        "states": [
+          {
+            "id": "poison",
+            "steps": 40
+          }
+        ]
+      }
+    ],
+    "gold": 173,
+    "items": {
+      "potion": 3
+    },
+    "equipment": {},
+    "steps": 0
+  },
+  "summary": {
+    "location": "Elder's house",
+    "members": [
+      {
+        "name": "Hero",
+        "level": 3
+      },
+      {
+        "name": "Mira",
+        "level": 3
+      }
+    ]
+  }
+}

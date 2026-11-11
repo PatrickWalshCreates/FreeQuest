@@ -14,3 +14,4 @@ apps/editor/dist-app/
 templates/**/*.json
 projects/
 site-dist/
+packages/schema/test/fixtures/release-0.1/

@@ -32,6 +32,7 @@ import { MapSettings } from './MapSettings.js';
 import { TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
 import type { RenderOptions } from './map-renderer.js';
+import { MOD } from '../keys.js';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -448,7 +449,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
           ) : tool === 'event' && !hover ? (
             <span className="muted">
               Click an event to edit it, drag to move it, double-click an empty cell to add one,
-              Delete removes it, ⌘C / ⌘V copy and paste it
+              Delete removes it, {MOD}C / {MOD}V copy and paste it
             </span>
           ) : hover ? (
             <>

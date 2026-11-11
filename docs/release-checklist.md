@@ -11,6 +11,8 @@ this on the release build, ideally on a Mac user account that has never run Free
 - [ ] `pnpm gen:notices` re-run if dependencies changed (no diff otherwise).
 - [ ] `pnpm gen:art`, `pnpm gen:audio` and `pnpm gen:templates` leave no diff.
 - [ ] `pnpm freequest check samples/demo-project` and `… templates/starter` report no problems.
+- [ ] The guides (`docs/`), README and CHANGELOG describe every system the release supports
+      (Mac, Windows, Linux): downloads, first-open steps, shortcuts (Ctrl, ⌘ on a Mac), exports.
 
 ## The editor app
 

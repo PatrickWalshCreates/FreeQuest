@@ -1,0 +1,25 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "slimes",
+      "name": "Slimes",
+      "enemies": ["slime", "slime"]
+    },
+    {
+      "id": "bats",
+      "name": "Bat swarm",
+      "enemies": ["bat", "bat", "bat"]
+    },
+    {
+      "id": "slime-and-bat",
+      "name": "Slime and bat",
+      "enemies": ["slime", "bat"]
+    },
+    {
+      "id": "bridge-wolf",
+      "name": "Wolf on the bridge",
+      "enemies": ["wolf"]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "formatVersion": 6,
+  "id": "house",
+  "name": "Elder's house",
+  "height": 7,
+  "music": "assets/audio/house.wav",
+  "tileset": "overworld",
+  "width": 10,
+  "layers": [
+    {
+      "name": "floor",
+      "data": [
+        [8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+        [8, 7, 7, 7, 7, 7, 6, 6, 6, 8],
+        [8, 7, 7, 7, 7, 7, 6, 6, 6, 8],
+        [8, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+        [8, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+        [8, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+        [8, 8, 8, 8, 7, 8, 8, 8, 8, 8]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "exit",
+      "name": "Exit",
+      "x": 4,
+      "y": 6,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "below",
+          "trigger": "touch",
+          "commands": [
+            {
+              "type": "transfer",
+              "direction": "down",
+              "map": "map001",
+              "x": 4,
+              "y": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-map",
+      "name": "Map on the wall",
+      "x": 2,
+      "y": 0,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "A hand-drawn map of the Meadow. The bridge is circled twice."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hearth",
+      "name": "Hearth",
+      "x": 7,
+      "y": 1,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "if",
+              "conditions": [
+                {
+                  "type": "switch",
+                  "switch": "accepted_request",
+                  "value": true
+                }
+              ],
+              "then": [
+                {
+                  "type": "message",
+                  "text": "The fire crackles. You rest a while by the warmth."
+                },
+                {
+                  "type": "playSound",
+                  "path": "assets/audio/sfx-heal.wav"
+                },
+                {
+                  "type": "recoverAll"
+                },
+                {
+                  "type": "message",
+                  "text": "Everyone is fully rested."
+                }
+              ],
+              "else": [
+                {
+                  "type": "message",
+                  "text": "The hearth is cold."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "name": "Mira",
+      "x": 2,
+      "y": 3,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "mage",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Mira",
+              "text": "Grandfather sent you to check the bridge? Then I'm coming too."
+            },
+            {
+              "type": "changeParty",
+              "action": "add",
+              "actor": "mira"
+            },
+            {
+              "type": "setSwitch",
+              "switch": "mira_joined",
+              "value": true
+            },
+            {
+              "type": "message",
+              "text": "Mira joined the party!"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "mira_joined",
+              "value": true
+            }
+          ],
+          "layer": "below",
+          "trigger": "action",
+          "commands": []
+        }
+      ]
+    }
+  ]
+}

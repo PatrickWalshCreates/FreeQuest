@@ -41,13 +41,15 @@ games, free and open source (MIT).
 
 ### Sharing games
 
-- Export a web game (any static host, such as itch.io) or a macOS app (signed ad-hoc), from the
-  editor or the `freequest` command line. Exports are checked first and contain only the files
+- Export a web game (any static host, such as itch.io), a Windows or Linux game, or a macOS app
+  (signed ad-hoc; Apple Silicon and Intel), from the editor or the `freequest` command line. Any
+  editor makes web, Windows and Linux exports; Mac apps need the Mac editor. Exports are checked first and contain only the files
   the game uses.
-- A demo game and a Getting started guide.
+- A demo game, a Getting started guide and a website where the demo plays in the browser.
+- The editor for Apple Silicon and Intel Macs, Windows (installer) and Linux (AppImage, .deb).
 
 ### Known limits
 
-- macOS only for the editor and desktop exports so far; Windows and Linux are planned.
-- Apps aren't signed by a registered developer yet: open them with right-click → Open the first
-  time.
+- The apps aren't signed by a registered developer yet: on a Mac, open them with right-click →
+  Open the first time; on Windows, choose More info → Run anyway.
+- The Linux builds haven't been tried on many distributions yet; reports are welcome.

@@ -1,0 +1,73 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "knockout",
+      "name": "Knocked out",
+      "icon": 25,
+      "knockout": true,
+      "modifiers": [],
+      "priority": 100,
+      "removal": {
+        "battleEnd": false
+      },
+      "restriction": "cannotAct"
+    },
+    {
+      "id": "poison",
+      "name": "Poison",
+      "icon": 22,
+      "knockout": false,
+      "modifiers": [
+        {
+          "type": "hpRegen",
+          "value": -0.1
+        }
+      ],
+      "priority": 50,
+      "removal": {
+        "battleEnd": false,
+        "steps": 40
+      },
+      "restriction": "none"
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep",
+      "icon": 24,
+      "knockout": false,
+      "modifiers": [],
+      "priority": 60,
+      "removal": {
+        "battleEnd": true,
+        "damageChance": 1,
+        "turns": {
+          "max": 4,
+          "min": 2
+        }
+      },
+      "restriction": "cannotAct"
+    },
+    {
+      "id": "guarding",
+      "name": "Guarding",
+      "icon": 17,
+      "knockout": false,
+      "modifiers": [
+        {
+          "type": "damageTaken",
+          "value": 0.5
+        }
+      ],
+      "priority": 0,
+      "removal": {
+        "battleEnd": true,
+        "turns": {
+          "max": 1,
+          "min": 1
+        }
+      },
+      "restriction": "none"
+    }
+  ]
+}

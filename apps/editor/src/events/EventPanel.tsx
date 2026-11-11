@@ -36,6 +36,7 @@ import { RouteSteps } from './RouteSteps.js';
 import { TransferTargetButton } from './TransferTargetButton.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
+import { MOD } from '../keys.js';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -247,7 +248,7 @@ export function EventPanel({ doc, path, map, selected, onSelect }: Props) {
             disabled={!canPaste}
             title={
               canPaste
-                ? 'Paste the copied event next to the selected one (or ⌘V on the map, where the pointer is)'
+                ? `Paste the copied event next to the selected one (or ${MOD}V on the map, where the pointer is)`
                 : 'Copy an event first'
             }
             onClick={paste}
@@ -363,7 +364,7 @@ function EventEditor(props: {
           />
         </label>
         <button
-          title="Copy this event, all pages included (⌘C on the map)"
+          title={`Copy this event, all pages included (${MOD}C on the map)`}
           onClick={() => clipboard.set({ kind: 'event', event })}
         >
           Copy

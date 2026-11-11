@@ -25,9 +25,9 @@ import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
 import { IconField, IconImage, useIconset } from './IconField.js';
+import { MOD } from '../keys.js';
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
-const MOD = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
 
 interface Props {
   readonly doc: ProjectDocument;

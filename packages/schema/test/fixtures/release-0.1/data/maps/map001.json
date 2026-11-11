@@ -1,0 +1,421 @@
+{
+  "formatVersion": 6,
+  "id": "map001",
+  "name": "Meadow",
+  "encounters": {
+    "steps": 25,
+    "troops": [
+      {
+        "troop": "slimes",
+        "weight": 3
+      },
+      {
+        "troop": "bats",
+        "weight": 2
+      },
+      {
+        "troop": "slime-and-bat",
+        "weight": 2
+      }
+    ]
+  },
+  "height": 15,
+  "music": "assets/audio/meadow.wav",
+  "tileset": "overworld",
+  "width": 20,
+  "layers": [
+    {
+      "name": "ground",
+      "data": [
+        [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13],
+        [13, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 13],
+        [13, 0, 9, 9, 9, 9, 9, 0, 0, 10, 0, 0, 0, 0, 4, 4, 5, 5, 4, 13],
+        [13, 0, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 4, 13],
+        [13, 0, 8, 8, 7, 8, 8, 0, 0, 0, 1, 0, 0, 0, 4, 4, 4, 4, 4, 13],
+        [13, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 14, 14, 14, 14, 3, 13],
+        [13, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3, 4, 4, 4, 3, 13],
+        [13, 0, 1, 0, 0, 0, 0, 2, 0, 0, 10, 0, 0, 0, 0, 3, 3, 3, 3, 13],
+        [13, 0, 0, 0, 12, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 13],
+        [13, 0, 0, 0, 0, 0, 15, 2, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 13],
+        [13, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 6, 6, 6, 6, 0, 0, 0, 13, 13],
+        [13, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 0, 0, 0, 13, 13],
+        [13, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 13],
+        [13, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 1, 13],
+        [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13]
+      ]
+    },
+    {
+      "name": "canopy",
+      "data": [
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "sign",
+      "name": "Meadow sign",
+      "x": 6,
+      "y": 9,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "Welcome to the Meadow. The elder waits by the path."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elder",
+      "name": "Elder",
+      "x": 12,
+      "y": 8,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Elder",
+              "text": "Ah, a traveler! Would you check on the old bridge to the east?"
+            },
+            {
+              "type": "choice",
+              "cancel": 1,
+              "options": [
+                {
+                  "label": "Sure",
+                  "commands": [
+                    {
+                      "type": "setSwitch",
+                      "switch": "accepted_request",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Thank you. Follow the path east."
+                    }
+                  ]
+                },
+                {
+                  "label": "Not now",
+                  "commands": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Come back if you change your mind."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "accepted_request",
+              "value": true
+            }
+          ],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "if",
+              "conditions": [
+                {
+                  "type": "variable",
+                  "op": ">=",
+                  "value": 1,
+                  "variable": "bridge_visits"
+                }
+              ],
+              "then": [
+                {
+                  "type": "if",
+                  "conditions": [
+                    {
+                      "type": "switch",
+                      "switch": "rewarded",
+                      "value": false
+                    }
+                  ],
+                  "then": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "You saw the bridge? Good, it still stands. Take these for your trouble."
+                    },
+                    {
+                      "id": "potion",
+                      "type": "changeItems",
+                      "amount": 2,
+                      "kind": "item"
+                    },
+                    {
+                      "type": "changeGold",
+                      "amount": 100
+                    },
+                    {
+                      "type": "setSwitch",
+                      "switch": "rewarded",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "text": "Received 2 Potions and 100 G."
+                    }
+                  ],
+                  "else": [
+                    {
+                      "type": "message",
+                      "speaker": "Elder",
+                      "text": "Safe travels, friend."
+                    }
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "type": "message",
+                  "speaker": "Elder",
+                  "text": "The bridge is east along the path."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Bridge check",
+      "x": 15,
+      "y": 5,
+      "pages": [
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "accepted_request",
+              "value": true
+            }
+          ],
+          "layer": "below",
+          "trigger": "touch",
+          "commands": [
+            {
+              "type": "setVariable",
+              "op": "add",
+              "value": 1,
+              "variable": "bridge_visits"
+            },
+            {
+              "type": "if",
+              "conditions": [
+                {
+                  "type": "switch",
+                  "switch": "wolf_defeated",
+                  "value": false
+                }
+              ],
+              "then": [
+                {
+                  "type": "message",
+                  "text": "The planks creak, but the bridge holds."
+                },
+                {
+                  "type": "message",
+                  "text": "A wolf leaps out from under the bridge!"
+                },
+                {
+                  "type": "battle",
+                  "canEscape": false,
+                  "canLose": false,
+                  "onWin": [
+                    {
+                      "type": "setSwitch",
+                      "switch": "wolf_defeated",
+                      "value": true
+                    },
+                    {
+                      "type": "message",
+                      "text": "The wolf limps away. The bridge is safe again."
+                    }
+                  ],
+                  "troop": "bridge-wolf"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "house-door",
+      "name": "House door",
+      "x": 4,
+      "y": 4,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "below",
+          "trigger": "touch",
+          "commands": [
+            {
+              "type": "transfer",
+              "direction": "up",
+              "map": "house",
+              "x": 4,
+              "y": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peddler",
+      "name": "Peddler",
+      "x": 2,
+      "y": 12,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "right"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Peddler",
+              "text": "Fresh goods, all the way from the city!"
+            },
+            {
+              "type": "shop",
+              "canSell": true,
+              "goods": [
+                {
+                  "id": "potion",
+                  "kind": "item"
+                },
+                {
+                  "id": "ether",
+                  "kind": "item"
+                },
+                {
+                  "id": "antidote",
+                  "kind": "item"
+                },
+                {
+                  "id": "straw-hat",
+                  "kind": "equipment"
+                },
+                {
+                  "id": "wooden-shield",
+                  "kind": "equipment"
+                }
+              ]
+            },
+            {
+              "type": "message",
+              "speaker": "Peddler",
+              "text": "Safe travels, friend."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "farmer",
+      "name": "Farmer",
+      "x": 16,
+      "y": 11,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "movement": {
+            "type": "random",
+            "pause": 2,
+            "speed": 1.5
+          },
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Farmer",
+              "text": "I'm just stretching my legs. Lovely day for it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "birdsong",
+      "name": "Birdsong",
+      "x": 19,
+      "y": 0,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "below",
+          "trigger": "parallel",
+          "commands": [
+            {
+              "type": "comment",
+              "text": "Runs alongside play: a bird sings every few seconds."
+            },
+            {
+              "type": "wait",
+              "seconds": 7
+            },
+            {
+              "type": "playSound",
+              "path": "assets/audio/sfx-bird.wav"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

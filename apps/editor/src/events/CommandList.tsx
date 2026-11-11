@@ -17,6 +17,7 @@ import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import type { FormContext } from '../forms/SchemaField.js';
 import { ValueDialog } from './ValueDialog.js';
 import { commandProblem } from './validate.js';
+import { MOD } from '../keys.js';
 
 /** A command, or the end slot of a list: where the next added command goes. */
 export interface Slot {
@@ -55,7 +56,6 @@ const samePath = (a: ListPath, b: ListPath) =>
   );
 const sameSlot = (a: Slot | null, b: Slot) =>
   !!a && a.index === b.index && samePath(a.path, b.path);
-const MOD = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
 type Editing =

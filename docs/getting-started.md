@@ -54,8 +54,10 @@ The project opens. Next time, it's listed under **Recent** on the start screen.
   and the database. The **+** next to a heading makes a new one.
 - The **problems** bar along the bottom lists anything that would stop the game, such as a door
   that leads nowhere. Click a problem to jump to it.
-- **Undo** (⌘Z) and **Redo** (⇧⌘Z) cover every change. **Save** (⌘S) writes your changes to the
-  project folder. Until you save, nothing on disk changes.
+- **Undo** (Ctrl+Z) and **Redo** (Ctrl+Shift+Z, or Ctrl+Y) cover every change. **Save**
+  (Ctrl+S) writes your changes to the project folder. Until you save, nothing on disk changes.
+- On a Mac, use ⌘ wherever this guide says Ctrl: ⌘Z, ⇧⌘Z, ⌘S and so on. The editor's own hints
+  show the keys for your computer.
 
 ## 3. Paint the map
 
@@ -72,10 +74,10 @@ Click **First map**. The toolbar holds the painting tools:
 
 Pick a tile from the palette on the right, and the layer to paint on: **ground** for floors and
 **upper** for things on top, like trees and furniture. Press **W** to see where the player can
-walk: blocked cells are tinted. Scroll to move around; hold ⌘ (Ctrl on Windows) and scroll, or
-press `=` and `-`, to zoom.
+walk: blocked cells are tinted. Scroll to move around; hold Ctrl and scroll (or pinch on a
+trackpad), or press `=` and `-`, to zoom.
 
-Press **▶ Play** at any time to try the game with your unsaved changes. **Stop** (or ⌘.) comes
+Press **▶ Play** at any time to try the game with your unsaved changes. **Stop** (or Ctrl+.) comes
 back.
 
 ## 4. Someone to talk to
@@ -96,7 +98,7 @@ event remember that something happened, and **Start battle** starts a fight. An 
 several **pages**: the last page whose conditions are all met is the one that's active, which is
 how an NPC says something new after you've helped them.
 
-Select commands with Shift to copy a whole conversation (⌘C, ⌘V). Events and database entries
+Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries
 copy and paste too, even into another project.
 
 ### People who move, and things that happen on their own
@@ -172,28 +174,33 @@ Click **Export…**. FreeQuest checks the game first and lists anything that wou
 starting. Then:
 
 - **Web** makes a folder to upload to itch.io or any website.
-- **macOS app** makes an app people can double-click.
+- **Windows** and **Linux** make a folder with a program players run, for those systems.
+- **macOS app** makes an app people can double-click (only the Mac editor can make these, as
+  they're signed with macOS's own tools).
 
-[Exporting and sharing a game](exporting.md) covers both in detail, including what players need to
-know.
+Any editor makes the web, Windows and Linux versions, whatever computer you're on.
+[Exporting and sharing a game](exporting.md) covers each in detail, including what players need
+to know.
 
 Players can change the music and sound volume and rebind the keys under **Options**, on the title
 screen and in the menu. Their choices are kept with their saves.
 
 ## Keyboard shortcuts
 
-| Keys                      | Where             | What                                          |
-| ------------------------- | ----------------- | --------------------------------------------- |
-| ⌘S / ⌘Z / ⇧⌘Z             | Everywhere        | Save / undo / redo                            |
-| B R F E I V               | Map               | Pencil, rectangle, fill, eraser, pick, events |
-| W / G                     | Map               | Walkable overlay / grid                       |
-| `=` `-` `0`               | Map               | Zoom in / out / fit                           |
-| Space + drag, middle drag | Map               | Scroll                                        |
-| Delete, ⌘C / ⌘X / ⌘V      | Map (Events tool) | Delete, copy, cut, paste an event             |
-| Enter, Delete, Alt+↑/↓    | Command list      | Edit, delete, move a command                  |
-| Shift+↑/↓, ⌘C / ⌘X / ⌘V   | Command list      | Select several, copy, cut, paste              |
-| W A S                     | Tileset           | Walkable, above, select modes                 |
-| ⌘. (or Stop)              | While playing     | Back to the editor                            |
+On a Mac, use ⌘ for Ctrl.
+
+| Keys                           | Where             | What                                          |
+| ------------------------------ | ----------------- | --------------------------------------------- |
+| Ctrl+S / Ctrl+Z / Ctrl+Shift+Z | Everywhere        | Save / undo / redo                            |
+| B R F E I V                    | Map               | Pencil, rectangle, fill, eraser, pick, events |
+| W / G                          | Map               | Walkable overlay / grid                       |
+| `=` `-` `0`                    | Map               | Zoom in / out / fit                           |
+| Space + drag, middle drag      | Map               | Scroll                                        |
+| Delete, Ctrl+C / X / V         | Map (Events tool) | Delete, copy, cut, paste an event             |
+| Enter, Delete, Alt+↑/↓         | Command list      | Edit, delete, move a command                  |
+| Shift+↑/↓, Ctrl+C / X / V      | Command list      | Select several, copy, cut, paste              |
+| W A S                          | Tileset           | Walkable, above, select modes                 |
+| Ctrl+. (or Stop)               | While playing     | Back to the editor                            |
 
 In the game itself: arrow keys or WASD walk, Enter or Space talks and confirms, Escape cancels and
 opens the menu, and F9 shows a debug panel while you test.
