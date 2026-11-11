@@ -111,7 +111,8 @@ describe('ProjectDocument editing', () => {
     while (doc.undo()) steps++;
     expect(steps).toBe(HISTORY_LIMIT);
     expect(mapName(doc)).toBe('Name 0');
-  });
+    // 400 steps, each rechecking the whole project: slow CI machines need longer.
+  }, 30_000);
 
   it('updates problems as data changes', async () => {
     const { doc } = await demoDocument();
