@@ -830,6 +830,29 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Decided: GitHub `PatrickWalshCreates`, public from 0.1.0, commits on the noreply address,
     editor downloads for Apple Silicon and Intel Macs, Windows and Linux. Still open: Apple Developer ID
     ($99/yr), Windows signing, a name check.
+- **M11 (planned)** Events for real games, released as 0.2.0. The event language is what limits
+  games now: no per-event memory, no reusable logic, plain-text messages, no loops or screen
+  effects. Steps:
+  1. Event flags: each event's own on/off flags (a chest remembers it was opened, no global
+     switch per chest), as page conditions and a command; kept in saves (save v2, migrating
+     0.1 saves through the frozen fixture)
+  2. Common events: shared command lists in their own file (manifest v6), a `callCommon` command,
+     and optional autorun/parallel triggers gated by a switch; an editor list beside the database
+  3. Text codes in messages and choices: variables, actor and party names, gold, item names,
+     colours and icons, in FreeQuest's own `{…}` syntax (parsed in core, drawn as styled runs);
+     the editor previews them and reports unknown codes
+  4. Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
+     goto)
+  5. Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
+     runtime), plus hiding/showing an event until the map reloads
+  6. Editor support for all of it: forms come from the schema, plus the flag picker, the common
+     event list and the text-code preview
+  7. Demo, Starter, guides (every system), the quest test, and a 0.2.0 release through the
+     checklist
+  - Formats: map 7 (flags, new commands), manifest 6 (common events), save 2 (flags); each with a
+    migration and 0.1's frozen project and save still opening.
+  - Not in M11 (M12 candidates, "editor comfort"): renaming ids/assets with reference updates,
+    multi-tile stamps, chunked rendering for big maps, message faces/portraits.
 - **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
   multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
   clean-room), the plugin API.
