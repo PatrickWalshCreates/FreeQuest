@@ -46,12 +46,14 @@ Things to know:
 ## macOS apps
 
 The export is one app, named after your game (e.g. `My Quest.app`), that plays offline and keeps
-saves as files. It is about 6 MB plus your game.
+saves as files. It runs on Apple Silicon and Intel Macs, and is about 11 MB plus your game.
 
-Building one needs the desktop player app, made once with Rust installed
-([rustup.rs](https://rustup.rs)):
+Building one needs the desktop player app, made once with Rust installed. For the universal build
+(both kinds of Mac), install Rust with [rustup](https://rustup.rs) and add both targets; with
+another Rust it builds for your kind of Mac only:
 
 ```sh
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
 pnpm build:mac-player
 ```
 

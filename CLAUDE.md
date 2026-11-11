@@ -455,8 +455,9 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   window's "inner" size, which includes the macOS title bar) is 2× the resolution, F11/Alt+Enter use native fullscreen, and saves are files: `FileSaveStorage`
   (`file-saves.ts`, tested) reads every save into memory at start (SaveStore is synchronous) and
   writes through in order to `$APPDATA/saves/<game id>/` (fs scope limited to that). The shell is
-  built with `pnpm build:mac-player` (release, LTO, ~6 MB) and staged at
+  built with `pnpm build:mac-player` (release, LTO, ~11 MB universal) and staged at
   `apps/player-desktop/dist/macos/FreeQuest Player.app`; it carries the demo as a placeholder.
+  Universal since M10 (see Versions and releases).
 - **PixiJS under a strict CSP**: runtime's index imports `pixi.js/unsafe-eval`, which replaces
   PixiJS's `new Function` code generation; without it the desktop apps' CSP stops PixiJS
   ("does not allow unsafe-eval"). Keep that import.
@@ -573,6 +574,15 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   after changing dependencies and before a release.
 - **About box** (`apps/editor/src/AboutDialog.tsx`): version, licence, and the notices; from the
   start screen and the toolbar's "?".
+- **Universal Mac builds** (`scripts/tauri-mac-build.mjs`, used by `build:shell` and `build:app`):
+  `tauri build --target universal-apple-darwin` when a rustup toolchain has both Mac targets
+  (found via `FREEQUEST_RUSTUP_BIN`, `~/.cargo/bin` or Homebrew's keg-only `rustup`; put first on
+  PATH for that build only, Homebrew's own Rust stays the default), else a host-only build with
+  a warning. `scripts/mac-bundles.mjs` picks the newest built app for the stage scripts. The
+  player shell and so every Mac export are universal (~11 MB). The editor's stage script signs
+  the whole app, then makes `dist-app/macos/FreeQuest-Editor-<version>-macOS.dmg` with `hdiutil`
+  (app + an Applications link), not Tauri's DMG bundler, which would pack the app before our
+  signing. `hdiutil` warns it's deprecated; its `diskutil image` replacement needs newer macOS.
 - **Help window** (`apps/editor/src/HelpDialog.tsx`): the guides in `docs/` are bundled with the
   editor (`?raw` imports, so they always match its version) and read by editor-core's
   `parseMarkdown` (`markdown.ts`, tested: headings with anchors, paragraphs, lists with
@@ -753,7 +763,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      templates, a history check before publishing~~ (done; the commit email is the open question)
   3. ~~First-run polish: welcome and guide link, an error screen instead of a blank window, a
      by-hand checklist~~ (done; guides bundled in a Help window, `docs/release-checklist.md`)
-  4. Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor
+  4. ~~Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor~~ (done; both
+     slices checked with `lipo`, signatures verified in the DMG, launched under Rosetta)
   5. GitHub and a release workflow (needs the user's account)
   6. Windows and Linux exports (from CI-built players)
   7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)

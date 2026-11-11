@@ -21,8 +21,8 @@ pnpm install
 pnpm build:editor-app
 ```
 
-The app appears at `apps/editor/dist-app/macos/FreeQuest Editor.app`. Drag it into
-**Applications**. It isn't signed by a registered Apple developer, so the first time, right-click
+The app appears at `apps/editor/dist-app/macos/FreeQuest Editor.app`, with a disk image beside it
+(`FreeQuest-Editor-<version>-macOS.dmg`) to share. Drag the app into **Applications**. It isn't signed by a registered Apple developer, so the first time, right-click
 it and choose **Open**, then **Open** again. After that it opens normally.
 
 > Just want a look? `pnpm editor` runs the same editor in your browser at

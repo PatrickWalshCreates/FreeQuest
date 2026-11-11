@@ -32,7 +32,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # Universal Mac apps: both architectures' Rust targets (the runner's Rust is rustup's).
+      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - run: pnpm build:mac-player
+      - run: lipo -archs "apps/player-desktop/dist/macos/FreeQuest Player.app/Contents/MacOS/freequest-player" | grep -q x86_64
       - run: node packages/cli/dist/main.js export mac samples/demo-project --out "$RUNNER_TEMP/mac"
       - run: codesign --verify --deep --strict "$RUNNER_TEMP/mac/FreeQuest Demo.app"
       # The packaged editor (bundles the player app above); its stage script verifies the signature.
