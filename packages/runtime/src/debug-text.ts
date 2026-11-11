@@ -46,5 +46,9 @@ export function describeGame(world: World, manifest: Manifest): string {
   }
   lines.push('Variables:');
   for (const v of manifest.variables) lines.push(`  ${v.id} = ${state.getVariable(v.id)}`);
+  // Flags that are on for this map's events (flags elsewhere wait in the save data).
+  const flags = state.toData().flags[world.map.id] ?? {};
+  const flagLines = Object.entries(flags).map(([event, ids]) => `  ${event}: ${ids.join(', ')}`);
+  lines.push('Event flags on this map:', ...(flagLines.length > 0 ? flagLines : ['  —']));
   return lines.join('\n');
 }

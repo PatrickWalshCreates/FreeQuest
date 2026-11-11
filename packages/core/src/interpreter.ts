@@ -3,6 +3,7 @@ import {
   type EventContext,
   type GameState,
   evaluateConditions,
+  requireEvent,
   requireParty,
   toEventContext,
 } from './game-state.js';
@@ -214,6 +215,11 @@ export class Interpreter {
       case 'setSwitch':
         this.context.state.setSwitch(command.switch, command.value);
         break;
+      case 'setFlag': {
+        const { map, event } = requireEvent(this.context, 'setFlag', command.event);
+        this.context.state.setFlag(map, event, command.flag, command.value);
+        break;
+      }
       case 'setVariable':
         this.context.state.applyVariable(command.variable, command.op, command.value);
         break;

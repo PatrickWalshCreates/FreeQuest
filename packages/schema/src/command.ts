@@ -90,6 +90,19 @@ export const Command = Type.Cyclic(
       ),
       Type.Object(
         {
+          type: Type.Literal('setFlag'),
+          flag: Id,
+          value: Type.Boolean(),
+          /** Another event on this map; leave out for the event running the command. */
+          event: Type.Optional(Id),
+        },
+        {
+          additionalProperties: false,
+          description: "Turn one of an event's own flags on or off (kept in saves).",
+        },
+      ),
+      Type.Object(
+        {
           type: Type.Literal('setVariable'),
           variable: Id,
           op: VariableOp,

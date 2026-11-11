@@ -1,3 +1,4 @@
+import { MAP_FORMAT_VERSION } from '@freequest/schema';
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
 import { describe, expect, it } from 'vitest';
 import {
@@ -18,7 +19,7 @@ const PATH = 'data/maps/m.json';
 function mapData(): GameMap {
   const ground = [0, 1, 2, 3].map(() => [0, 0, 1, 0, 0]);
   return {
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id: 'm',
     name: 'Test',
     width: 5,

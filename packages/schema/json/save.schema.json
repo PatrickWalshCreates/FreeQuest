@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "direction": {
       "anyOf": [
@@ -26,6 +26,24 @@
           "const": "up"
         }
       ]
+    },
+    "flags": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          }
+        }
+      }
     },
     "game": {
       "type": "string"
@@ -199,6 +217,6 @@
       "minimum": 0
     }
   },
-  "required": ["formatVersion", "game", "savedAt", "playSeconds", "map", "x", "y", "direction", "switches", "variables", "party", "summary"],
+  "required": ["formatVersion", "game", "savedAt", "playSeconds", "map", "x", "y", "direction", "switches", "variables", "flags", "party", "summary"],
   "title": "FreeQuest save file"
 }

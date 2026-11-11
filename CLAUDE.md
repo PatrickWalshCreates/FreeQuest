@@ -126,6 +126,18 @@ Never the other way.
   repeats its steps, skipping blocked ones. Map changes clear every route. Editor:
   `RouteSteps` (quick-add buttons, per-step direction or number, reorder) via the new
   `FormContext.render` hook for the `steps` field; `describeRoute` counts runs ("↑ ×3").
+- **Event flags** (map v7, save v2): each event's own on/off flags, keyed by map + event id in
+  `GameState` (`getFlag`/`setFlag`, `toData().flags` = map → event → sorted flag ids, only flags
+  that are on). The `flag` condition is always about "this" event (`EventContext.self`, and
+  `activePageIndex` sets it to the event whose pages it picks); `setFlag` takes an optional
+  `event` on the same map (`checkMapShape` checks it). Both need `EventContext.map` (the world
+  supplies it) and throw clearly without an event. Flags of events that no longer exist stay in
+  saves. Editor: `mapFlagNames(map)` feeds `FormContext.suggest` (a datalist on the flag field),
+  flag names are checked as ids, F9 lists this map's flags. Demo: the house chest
+  (`characters/chest.png`, closed = facing down, open = facing up). A page graphic's optional
+  `fixed` (also v7; "Keep this facing" in the panel) stops the turn toward the player on talk,
+  and a fixed new page's facing applies even to the running event, so a chest shows its open
+  lid right away.
 - **Map events at runtime** (`EventInstance`): position, facing, active page. Pages are re-picked only
   when `GameState.version` changes. Events with `layer: "same"` block movement
   (`World.passability` = tiles + blocking events). A page change resets facing to the page graphic,
@@ -671,9 +683,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   release that changes one adds its own `release-<v>/` folder.
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
-  map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 1. Additive bumps migrate as no-ops.
+  map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -830,12 +842,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Decided: GitHub `PatrickWalshCreates`, public from 0.1.0, commits on the noreply address,
     editor downloads for Apple Silicon and Intel Macs, Windows and Linux. Still open: Apple Developer ID
     ($99/yr), Windows signing, a name check.
-- **M11 (planned)** Events for real games, released as 0.2.0. The event language is what limits
+- **M11 (in progress)** Events for real games, released as 0.2.0. The event language is what limits
   games now: no per-event memory, no reusable logic, plain-text messages, no loops or screen
   effects. Steps:
-  1. Event flags: each event's own on/off flags (a chest remembers it was opened, no global
+  1. ~~Event flags: each event's own on/off flags (a chest remembers it was opened, no global
      switch per chest), as page conditions and a command; kept in saves (save v2, migrating
-     0.1 saves through the frozen fixture)
+     0.1 saves through the frozen fixture)~~ (done; plus "Keep this facing" for graphics. The
+     demo's house chest was opened in the dev player; the flag dialog tried in the editor)
   2. Common events: shared command lists in their own file (manifest v6), a `callCommon` command,
      and optional autorun/parallel triggers gated by a switch; an editor list beside the database
   3. Text codes in messages and choices: variables, actor and party names, gold, item names,

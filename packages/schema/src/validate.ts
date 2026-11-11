@@ -129,6 +129,14 @@ export function checkMapShape(map: GameMap): string[] {
             problems.push(`${at}: route for "${target}", which isn't an event on this map`);
           }
         }
+        if (command.type === 'setFlag' && command.event !== undefined) {
+          const other = command.event;
+          if (!map.events.some((e) => e.id === other)) {
+            problems.push(
+              `${where} pages[${p}].${path}: flag of "${other}", which isn't an event on this map`,
+            );
+          }
+        }
       }),
     );
   });

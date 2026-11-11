@@ -84,8 +84,12 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 4, migrate: (d) => d },
     // v6: event page movement. Additive.
     { from: 5, migrate: (d) => d },
+    // v7: event flags (the flag condition, setFlag). Additive.
+    { from: 6, migrate: (d) => d },
   ],
   character: [],
+  // Save v2: event flags (none were set before).
+  save: [{ from: 1, migrate: (d) => ({ ...d, flags: {} }) }],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
   // Both additive. v4: enemy action conditions (every action gets an empty list).
   ...(Object.fromEntries(

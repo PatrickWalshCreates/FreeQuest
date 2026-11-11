@@ -60,7 +60,7 @@ describe('planExport', () => {
     expect(paths).not.toContain('assets/unused/old-sketch.png');
     expect(paths).not.toContain('notes.txt');
     // project.json, 1 tileset, 2 maps, 3 characters, 9 database files.
-    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(16);
+    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(17);
   });
 
   it('blocks on project problems and missing images, warns about missing sounds', async () => {

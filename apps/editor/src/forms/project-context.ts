@@ -1,7 +1,9 @@
 // What the project offers to forms: the dropdown choices for fields that
 // refer to maps, switches, items…, and display names for command rows.
 import type { NameLookup, OpenedProject } from '@freequest/editor-core';
-import { ATTACK_ELEMENT, SOUND_KEYS, checkFormula } from '@freequest/schema';
+import { ATTACK_ELEMENT, ID_PATTERN, SOUND_KEYS, checkFormula } from '@freequest/schema';
+
+const ID_RE = new RegExp(ID_PATTERN);
 import type { FormContext, RefOption } from './SchemaField.js';
 
 interface Named {
@@ -42,6 +44,8 @@ const LABELS: Record<string, string> = {
   hpRegen: 'HP regeneration',
   successRate: 'Success rate (0–1)',
   chance: 'Chance (0–1)',
+  flag: 'Flag',
+  event: 'Another event (none: this one)',
 };
 
 export interface ProjectLists {
@@ -51,6 +55,8 @@ export interface ProjectLists {
   readonly images?: readonly string[];
   /** Events on the map being edited, for move route targets. */
   readonly events?: readonly { readonly id: string; readonly name: string }[];
+  /** Event flag names the map already uses, offered while typing a flag. */
+  readonly flags?: readonly string[];
 }
 
 /** Starting values that make new entries useful at once (an item that works, a normal enemy action). */
@@ -133,6 +139,8 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return options(system?.skillTypes ?? []);
       case 'image':
         return images;
+      case 'event':
+        return options(lists.events ?? []);
       case 'target':
         return [
           { value: 'this', label: 'This event' },
@@ -146,13 +154,20 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
   return {
     refs,
     multiline: (field) => field === 'text' || field === 'description',
-    check: (field, value) =>
-      field === 'formula' && typeof value === 'string' && value !== ''
-        ? checkFormula(value, variables)
-        : null,
+    suggest: (field) => (field === 'flag' ? (lists.flags ?? []) : []),
+    check: (field, value) => {
+      if (field === 'formula' && typeof value === 'string' && value !== '') {
+        return checkFormula(value, variables);
+      }
+      if (field === 'flag' && typeof value === 'string' && !ID_RE.test(value)) {
+        return 'Use lowercase letters, digits, "-" and "_" (e.g. opened)';
+      }
+      return null;
+    },
     label: (field) => LABELS[field],
     pick: (field) => {
       if (field in NUMBER_DEFAULTS) return NUMBER_DEFAULTS[field];
+      if (field === 'flag') return lists.flags?.[0] ?? 'done';
       const first = refs(field, null)?.[0];
       return first ? first.value : undefined;
     },

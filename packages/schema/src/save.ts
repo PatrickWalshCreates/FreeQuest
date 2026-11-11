@@ -1,7 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, PositiveInt } from './common.js';
 
-export const SAVE_FORMAT_VERSION = 1;
+export const SAVE_FORMAT_VERSION = 2;
 
 const Counts = Type.Record(Type.String(), NonNegativeInt);
 
@@ -46,6 +46,8 @@ export const SaveFile = Type.Object(
     direction: Direction,
     switches: Type.Record(Type.String(), Type.Boolean()),
     variables: Type.Record(Type.String(), Type.Integer()),
+    /** Event flags that are on: map id → event id → flag ids (v2). */
+    flags: Type.Record(Type.String(), Type.Record(Type.String(), Type.Array(Id))),
     party: Type.Object(
       {
         members: Type.Array(SavedActor),

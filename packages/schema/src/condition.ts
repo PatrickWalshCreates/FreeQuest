@@ -47,5 +47,17 @@ export const Condition = Type.Union([
     { additionalProperties: false },
   ),
   Type.Object({ type: Type.Literal('inParty'), actor: Id }, { additionalProperties: false }),
+  Type.Object(
+    {
+      type: Type.Literal('flag'),
+      /** One of this event's own flags (unset flags are off). */
+      flag: Id,
+      value: Type.Boolean(),
+    },
+    {
+      additionalProperties: false,
+      description: 'One of this event\'s own flags, e.g. a chest\'s "opened".',
+    },
+  ),
 ]);
 export type Condition = Static<typeof Condition>;

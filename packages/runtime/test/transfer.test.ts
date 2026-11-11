@@ -1,3 +1,4 @@
+import { MAP_FORMAT_VERSION } from '@freequest/schema';
 import { ActionState, World } from '@freequest/core';
 import type { Command, GameMap, Manifest, Tileset } from '@freequest/schema';
 import { describe, expect, it, vi } from 'vitest';
@@ -18,7 +19,7 @@ const tileset: Tileset = {
 
 function map(id: string, width: number, height: number): GameMap {
   return {
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id,
     name: id,
     width,

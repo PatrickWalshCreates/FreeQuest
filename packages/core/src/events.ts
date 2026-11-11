@@ -1,5 +1,10 @@
 import type { Direction, EventPage, MapEvent } from '@freequest/schema';
-import { type EventContext, type GameState, evaluateConditions } from './game-state.js';
+import {
+  type EventContext,
+  type GameState,
+  evaluateConditions,
+  toEventContext,
+} from './game-state.js';
 import { GridMover } from './grid-mover.js';
 
 /**
@@ -7,6 +12,8 @@ import { GridMover } from './grid-mover.js';
  * or -1 if none does (the event is then absent from the map).
  */
 export function activePageIndex(event: MapEvent, context: EventContext | GameState): number {
+  // Flag conditions on a page are about the event itself.
+  context = { ...toEventContext(context), self: event.id };
   for (let i = event.pages.length - 1; i >= 0; i--) {
     const page = event.pages[i];
     if (page && evaluateConditions(page.conditions, context)) return i;
@@ -86,6 +93,9 @@ export class EventInstance {
     const next = activePageIndex(this.data, context);
     if (next === this.index) return;
     this.index = next;
-    if (!keepDirection) this.direction = this.page?.graphic?.direction ?? 'down';
+    // A running event keeps facing the player, unless its new page's facing is fixed (a chest
+    // that shows its open lid as another facing).
+    const graphic = this.page?.graphic;
+    if (!keepDirection || graphic?.fixed) this.direction = graphic?.direction ?? 'down';
   }
 }

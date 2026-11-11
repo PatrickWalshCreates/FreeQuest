@@ -98,6 +98,15 @@ event remember that something happened, and **Start battle** starts a fight. An 
 several **pages**: the last page whose conditions are all met is the one that's active, which is
 how an NPC says something new after you've helped them.
 
+**Event flags** are an event's own on/off notes, for things only that event needs to remember.
+A chest can **Set event flag** "opened" after giving its treasure, and a second page with the
+condition **flag "opened" is on** shows it open and empty. Every chest can use the same flag
+name without getting mixed up, and flags are kept in saves. To change another event's flag (a
+lever opening a gate), pick it under **Another event** in the command. The demo's house has a chest
+that works this way: its chest character shows the lid closed facing down and open facing up,
+and both pages tick **Keep this facing**, so the chest doesn't turn toward the player like a
+person would.
+
 Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries
 copy and paste too, even into another project.
 

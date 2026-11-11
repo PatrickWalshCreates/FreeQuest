@@ -89,11 +89,21 @@ describe('migrate', () => {
     expect(odd.id).toBe('game');
   });
 
-  it('reads a v5 map (before event movement) unchanged as v6', () => {
+  it('reads a v5 map (before event movement and flags) unchanged as the current version', () => {
     const raw = JSON.parse(readFileSync(join(FIXTURES, 'v5', 'map001.json'), 'utf8')) as object;
     const map = parseProjectFile('map', raw, 'map001.json');
-    expect(map.formatVersion).toBe(6);
+    expect(map.formatVersion).toBe(CURRENT_FORMAT_VERSION.map);
     expect({ ...map, formatVersion: 5 }).toEqual(raw);
+  });
+
+  it('gives a 0.1 (v1) save an empty set of event flags', () => {
+    const raw = JSON.parse(
+      readFileSync(join(FIXTURES, 'release-0.1', 'save-slot-1.json'), 'utf8'),
+    ) as object;
+    const save = parseProjectFile('save', raw, 'save-slot-1.json');
+    expect(save.formatVersion).toBe(2);
+    expect(save.flags).toEqual({});
+    expect({ ...save, formatVersion: 1, flags: undefined }).toEqual({ ...raw, flags: undefined });
   });
 
   it('gives v3 enemy actions an empty list of conditions', () => {

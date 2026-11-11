@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAP_FORMAT_VERSION,
   type CharacterSheet,
   type Command,
   type Database,
@@ -44,7 +45,7 @@ const hero = { id: 'hero' } as CharacterSheet;
 
 function mapWith(commands: Command[], extra: Partial<GameMap> = {}): GameMap {
   return {
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id: 'a',
     name: 'A',
     width: 2,
@@ -202,6 +203,14 @@ describe('checkMapShape events', () => {
     expect(checkMapShape(mapWith([route('ghost', true, true)]))).toEqual([
       expect.stringMatching(/repeating route never ends/),
       expect.stringMatching(/route for "ghost", which isn't an event on this map/),
+    ]);
+  });
+
+  it('rejects a flag set on an event that is not on the map', () => {
+    const own: Command = { type: 'setFlag', flag: 'opened', value: true };
+    expect(checkMapShape(mapWith([own]))).toEqual([]);
+    expect(checkMapShape(mapWith([{ ...own, event: 'ghost' }]))).toEqual([
+      expect.stringMatching(/flag of "ghost", which isn't an event on this map/),
     ]);
   });
 

@@ -240,6 +240,15 @@ describe('demo quest', () => {
     walkTo('up', 2, 1);
     tap('confirm');
     finish();
+    // The chest in the corner gives a potion once, then remembers it was opened.
+    const potions = world.party.count('item', 'potion');
+    walkTo('left', 1, 1); // blocked by the chest: only turns
+    tap('confirm');
+    finish();
+    tap('confirm');
+    finish();
+    expect(world.party.count('item', 'potion')).toBe(potions + 1);
+    expect(world.state.getFlag('house', 'chest', 'opened')).toBe(true);
     // Mira stands below; talking to her adds her to the party and she steps aside.
     walkTo('down', 2, 3); // stops at (2, 2): Mira blocks
     expect(world.party.hasMember('mira')).toBe(false);
@@ -249,6 +258,8 @@ describe('demo quest', () => {
     expect(transcript).toEqual([
       'The hearth is cold.',
       'A hand-drawn map of the Meadow. The bridge is circled twice.',
+      'You open the chest. Inside: a Potion!',
+      'The chest is empty.',
       "Mira: Grandfather sent you to check the bridge? Then I'm coming too.",
       'Mira joined the party!',
     ]);

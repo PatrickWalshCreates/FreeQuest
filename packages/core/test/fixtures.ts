@@ -1,3 +1,4 @@
+import { MAP_FORMAT_VERSION } from '@freequest/schema';
 import type { GameMap, Manifest, Tileset } from '@freequest/schema';
 
 // Tile 0: floor, 1: wall, 2: treetop (above, impassable flag ignored), 3: floor with passable overlay.
@@ -24,7 +25,7 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
   const layers = [{ name: 'ground', data: toData(rows, { '.': 0, '#': 1 }) }];
   if (overlay) layers.push({ name: 'overlay', data: toData(overlay, { T: 2, '#': 1, o: 3 }) });
   return {
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id: 'test-map',
     name: 'Test map',
     width: rows[0]?.length ?? 0,

@@ -1,5 +1,5 @@
 {
-  "formatVersion": 6,
+  "formatVersion": 7,
   "id": "house",
   "name": "Elder's house",
   "height": 7,
@@ -157,6 +157,63 @@
           "layer": "below",
           "trigger": "action",
           "commands": []
+        }
+      ]
+    },
+    {
+      "id": "chest",
+      "name": "Chest",
+      "x": 1,
+      "y": 1,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "chest",
+            "direction": "down",
+            "fixed": true
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "You open the chest. Inside: a Potion!"
+            },
+            {
+              "id": "potion",
+              "type": "changeItems",
+              "amount": 1,
+              "kind": "item"
+            },
+            {
+              "type": "setFlag",
+              "flag": "opened",
+              "value": true
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "flag",
+              "flag": "opened",
+              "value": true
+            }
+          ],
+          "graphic": {
+            "character": "chest",
+            "direction": "up",
+            "fixed": true
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "The chest is empty."
+            }
+          ]
         }
       ]
     }

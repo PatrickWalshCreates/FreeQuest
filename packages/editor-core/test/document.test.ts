@@ -242,7 +242,7 @@ describe('ProjectDocument saving', () => {
 
 describe('setTiles', () => {
   const map = (): GameMap => ({
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id: 'm',
     name: 'm',
     width: 3,

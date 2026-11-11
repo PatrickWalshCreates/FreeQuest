@@ -264,6 +264,48 @@ function drawCharacter(file: string, palette: CharacterPalette): void {
   c.save(join(ROOT, 'assets', 'characters', `${file}.png`));
 }
 
+/**
+ * A treasure chest as a character sheet, so events can show it: the "down"
+ * row is closed and the "up" row open (a page picks one with its graphic's
+ * facing); every frame of a row is the same, so it never "walks".
+ */
+function drawChest(): void {
+  const c = new Canvas(T * 3, T * 4);
+  const wood = hex('#8a5a2b');
+  const dark = hex('#5a3818');
+  const band = hex('#c9a640');
+  const inside = hex('#2a1a0c');
+  const gold = hex('#f2d04a');
+  ROWS.forEach((dir, row) => {
+    for (let frame = 0; frame < 3; frame++) {
+      const ox = frame * T;
+      const oy = row * T;
+      c.rect(ox + 6, oy + 28, 20, 2, hex('#000000', 60)); // shadow
+      c.rect(ox + 6, oy + 17, 20, 11, wood); // box
+      c.rect(ox + 6, oy + 27, 20, 1, dark);
+      c.rect(ox + 9, oy + 17, 2, 11, band);
+      c.rect(ox + 21, oy + 17, 2, 11, band);
+      if (dir === 'up') {
+        // Open: the lid stands up behind the box, coins show inside.
+        c.rect(ox + 6, oy + 6, 20, 9, dark);
+        c.rect(ox + 7, oy + 7, 18, 7, wood);
+        c.rect(ox + 6, oy + 15, 20, 2, inside);
+        c.rect(ox + 10, oy + 14, 4, 2, gold);
+        c.rect(ox + 17, oy + 14, 5, 2, gold);
+      } else {
+        // Closed: a rounded lid and a lock.
+        c.rect(ox + 6, oy + 12, 20, 5, wood);
+        c.rect(ox + 7, oy + 11, 18, 1, wood);
+        c.rect(ox + 6, oy + 16, 20, 1, dark);
+        c.rect(ox + 9, oy + 11, 2, 6, band);
+        c.rect(ox + 21, oy + 11, 2, 6, band);
+        c.rect(ox + 15, oy + 15, 2, 4, band);
+      }
+    }
+  });
+  c.save(join(ROOT, 'assets', 'characters', 'chest.png'));
+}
+
 /** Filled ellipse centered on (cx, cy). */
 function ellipse(c: Canvas, cx: number, cy: number, rx: number, ry: number, color: RGBA): void {
   for (let y = -ry; y <= ry; y++) {
@@ -780,5 +822,6 @@ function drawIconset(): void {
 
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
+drawChest();
 drawEnemies();
 drawIconset();

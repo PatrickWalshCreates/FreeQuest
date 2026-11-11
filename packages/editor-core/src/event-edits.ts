@@ -10,6 +10,7 @@ import type {
   Operand,
   VariableOp,
 } from '@freequest/schema';
+import { walkCommands } from '@freequest/schema';
 import type { EditOptions, ProjectDocument } from './document.js';
 import { inBounds } from './map-edits.js';
 
@@ -385,6 +386,8 @@ export function describeCondition(condition: Condition, names: NameLookup = ID_N
     }
     case 'inParty':
       return `${names.actor(condition.actor)} is in the party`;
+    case 'flag':
+      return `flag “${condition.flag}” is ${condition.value ? 'on' : 'off'}`;
   }
 }
 
@@ -399,6 +402,12 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `If ${command.conditions.map((c) => describeCondition(c, names)).join(' and ')}`;
     case 'setSwitch':
       return `Turn ${names.switchName(command.switch)} ${command.value ? 'on' : 'off'}`;
+    case 'setFlag': {
+      const whose = command.event
+        ? `${names.event?.(command.event) ?? command.event}’s flag`
+        : 'flag';
+      return `Turn ${whose} “${command.flag}” ${command.value ? 'on' : 'off'}`;
+    }
     case 'setVariable':
       return `${names.variable(command.variable)} ${VARIABLE_OPS[command.op]} ${operand(command.value, names)}`;
     case 'transfer':
@@ -502,6 +511,27 @@ export function describeRoute(steps: readonly MoveStep[]): string {
   return parts.join(', ') || '(no steps)';
 }
 
+/**
+ * Every event flag name a map's events use (in page conditions, `if`
+ * conditions and setFlag commands), sorted: suggestions for flag fields.
+ */
+export function mapFlagNames(map: GameMap): string[] {
+  const names = new Set<string>();
+  const fromConditions = (conditions: readonly Condition[]) => {
+    for (const c of conditions) if (c.type === 'flag') names.add(c.flag);
+  };
+  for (const event of map.events) {
+    for (const page of event.pages) {
+      fromConditions(page.conditions);
+      walkCommands(page.commands, (command) => {
+        if (command.type === 'setFlag') names.add(command.flag);
+        else if (command.type === 'if') fromConditions(command.conditions);
+      });
+    }
+  }
+  return [...names].sort();
+}
+
 /** Command types in the order (and groups) the "add command" menu offers them. */
 export const COMMAND_GROUPS: readonly {
   readonly label: string;
@@ -509,7 +539,7 @@ export const COMMAND_GROUPS: readonly {
 }[] = [
   { label: 'Messages', types: ['message', 'choice', 'comment'] },
   { label: 'Flow', types: ['if', 'wait'] },
-  { label: 'Game state', types: ['setSwitch', 'setVariable'] },
+  { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag'] },
   {
     label: 'Party',
     types: ['changeGold', 'changeItems', 'shop', 'changeParty', 'gainExp', 'recoverAll'],
@@ -526,6 +556,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   wait: 'Wait',
   setSwitch: 'Set switch',
   setVariable: 'Set variable',
+  setFlag: 'Set event flag',
   changeGold: 'Change gold',
   changeItems: 'Change items',
   changeParty: 'Change party',

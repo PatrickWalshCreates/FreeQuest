@@ -2,7 +2,7 @@ import Type, { type Static } from 'typebox';
 import { Id, PositiveInt, RelativePath } from './common.js';
 import { MapEvent } from './event.js';
 
-export const MAP_FORMAT_VERSION = 6;
+export const MAP_FORMAT_VERSION = 7;
 
 /** Random battles while walking on a map. */
 export const Encounters = Type.Object(

@@ -78,7 +78,12 @@ export const EventPage = Type.Object(
     conditions: Type.Array(Condition),
     graphic: Type.Optional(
       Type.Object(
-        { character: Id, direction: Direction },
+        {
+          character: Id,
+          direction: Direction,
+          /** Keeps this facing: doesn't turn toward the player when talked to (v7). */
+          fixed: Type.Optional(Type.Boolean()),
+        },
         { additionalProperties: false, description: 'Omit for an invisible event.' },
       ),
     ),

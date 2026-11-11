@@ -1,3 +1,4 @@
+import { MAP_FORMAT_VERSION } from '@freequest/schema';
 import type { Command, GameMap, MapEvent } from '@freequest/schema';
 import { describe, expect, it } from 'vitest';
 import {
@@ -21,7 +22,7 @@ const inThen = [{ index: 1, branch: 'then' as const }];
 
 function map(events: Pick<MapEvent, 'x' | 'y'>[] = [], width = 3, height = 3): GameMap {
   return {
-    formatVersion: 6,
+    formatVersion: MAP_FORMAT_VERSION,
     id: 'm',
     name: 'M',
     width,

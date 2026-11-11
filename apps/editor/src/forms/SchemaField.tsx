@@ -29,6 +29,8 @@ export interface FormContext {
     field: string,
     parent: Readonly<Record<string, unknown>> | null,
   ): readonly RefOption[] | null;
+  /** Names to offer while typing in a free-text field (e.g. flags this map already uses). */
+  suggest?(field: string): readonly string[];
   /** Fields edited in a multi-line text box. */
   multiline?(field: string): boolean;
   /** Labels to use instead of the generated "Field name". */
@@ -325,10 +327,26 @@ function Control(props: FieldProps & { readonly id: string; readonly optional: b
         );
       }
       const change = (v: string) => onChange(v === '' && optional ? undefined : v);
-      return ctx.multiline?.(name) ? (
-        <textarea id={id} value={text} rows={3} onChange={(e) => change(e.target.value)} />
-      ) : (
-        <input id={id} value={text} onChange={(e) => change(e.target.value)} />
+      if (ctx.multiline?.(name)) {
+        return <textarea id={id} value={text} rows={3} onChange={(e) => change(e.target.value)} />;
+      }
+      const suggestions = ctx.suggest?.(name) ?? [];
+      return (
+        <>
+          <input
+            id={id}
+            value={text}
+            list={suggestions.length > 0 ? `${id}-suggestions` : undefined}
+            onChange={(e) => change(e.target.value)}
+          />
+          {suggestions.length > 0 && (
+            <datalist id={`${id}-suggestions`}>
+              {suggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          )}
+        </>
       );
     }
     case 'number':

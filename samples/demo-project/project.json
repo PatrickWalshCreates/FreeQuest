@@ -14,6 +14,10 @@
     {
       "id": "mage",
       "path": "data/characters/mage.json"
+    },
+    {
+      "id": "chest",
+      "path": "data/characters/chest.json"
     }
   ],
   "database": {

@@ -16,6 +16,7 @@ import {
   removePage,
   replaceCommand,
   updateEvent,
+  mapFlagNames,
   updatePage,
 } from '@freequest/editor-core';
 import type {
@@ -300,19 +301,21 @@ function EventEditor(props: {
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
   const { audio } = useProjectLists(doc);
   const project = doc.project;
-  const mapEvents = useMemo(() => {
-    const data = project.maps.get(mapIdOf(path))?.data;
-    return (data?.events ?? []).map((e) => ({ id: e.id, name: e.name }));
-  }, [project, path]);
+  const mapData = project.maps.get(mapIdOf(path))?.data;
+  const mapEvents = useMemo(
+    () => (mapData?.events ?? []).map((e) => ({ id: e.id, name: e.name })),
+    [mapData],
+  );
+  const flags = useMemo(() => (mapData ? mapFlagNames(mapData) : []), [mapData]);
   const ctx = useMemo(
     () => ({
-      ...projectFormContext(project, { audio, events: mapEvents }),
+      ...projectFormContext(project, { audio, events: mapEvents, flags }),
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
         field === 'steps' ? (
           <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
         ) : undefined,
     }),
-    [project, audio, mapEvents],
+    [project, audio, mapEvents, flags],
   );
   const names = useMemo(() => projectNames(project, mapEvents), [project, mapEvents]);
 
@@ -495,7 +498,14 @@ function EventEditor(props: {
                 changePage('Change graphic', (p) => {
                   const { graphic: old, ...rest } = p;
                   return character
-                    ? { ...rest, graphic: { character, direction: old?.direction ?? 'down' } }
+                    ? {
+                        ...rest,
+                        graphic: {
+                          character,
+                          direction: old?.direction ?? 'down',
+                          ...(old?.fixed ? { fixed: true } : {}),
+                        },
+                      }
                     : rest;
                 });
               }}
@@ -528,6 +538,25 @@ function EventEditor(props: {
             </select>
           </label>
         </div>
+        <label
+          className="toggle"
+          title="For chests, signs and statues: keeps this facing instead of turning toward the player when talked to"
+        >
+          <input
+            type="checkbox"
+            checked={page.graphic?.fixed === true}
+            disabled={!page.graphic}
+            onChange={(e) => {
+              const fixed = e.target.checked;
+              changePage('Change fixed facing', (p) => {
+                if (!p.graphic) return p;
+                const { fixed: _old, ...graphic } = p.graphic;
+                return { ...p, graphic: fixed ? { ...graphic, fixed: true } : graphic };
+              });
+            }}
+          />
+          Keep this facing (doesn’t turn to the player)
+        </label>
         <MovementFields
           movement={page.movement}
           onChange={(label, movement, coalesce) =>

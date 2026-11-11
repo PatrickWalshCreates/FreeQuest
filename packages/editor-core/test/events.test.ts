@@ -10,6 +10,7 @@ import {
   classify,
   defaultFor,
   describeCommand,
+  mapFlagNames,
   describeCondition,
   describeRoute,
   duplicateEvent,
@@ -167,6 +168,11 @@ describe('descriptions', () => {
         'Choice: A / B',
       ],
       [{ type: 'setSwitch', switch: 's', value: false }, 'Turn s off'],
+      [{ type: 'setFlag', flag: 'opened', value: true }, 'Turn flag “opened” on'],
+      [
+        { type: 'setFlag', flag: 'open', value: false, event: 'gate' },
+        'Turn gate’s flag “open” off',
+      ],
       [{ type: 'setVariable', variable: 'v', op: 'add', value: { variable: 'w' } }, 'v += w'],
       [
         { type: 'transfer', map: 'house', x: 1, y: 2, direction: 'up' },
@@ -198,6 +204,32 @@ describe('descriptions', () => {
       }),
     ).toBe('If gold >= 10 and has 2 × key');
     expect(describeCondition({ type: 'inParty', actor: 'mira' })).toBe('mira is in the party');
+    expect(describeCondition({ type: 'flag', flag: 'opened', value: false })).toBe(
+      'flag “opened” is off',
+    );
+  });
+
+  it('lists the flag names a map uses, for suggestions', () => {
+    const map = {
+      events: [
+        {
+          pages: [
+            {
+              conditions: [{ type: 'flag', flag: 'opened', value: true }],
+              commands: [
+                {
+                  type: 'if',
+                  conditions: [{ type: 'flag', flag: 'looted', value: true }],
+                  then: [{ type: 'setFlag', flag: 'asked', value: true, event: 'x' }],
+                },
+                { type: 'setFlag', flag: 'opened', value: true },
+              ],
+            },
+          ],
+        },
+      ],
+    } as unknown as GameMap;
+    expect(mapFlagNames(map)).toEqual(['asked', 'looted', 'opened']);
   });
 
   it('names every command type in the add menu exactly once', () => {
@@ -237,6 +269,7 @@ describe('schema forms', () => {
         id: 'potion',
         path: 'assets/audio/a.wav',
         target: 'this',
+        flag: 'opened',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);
@@ -257,6 +290,7 @@ describe('schema forms', () => {
       'gold',
       'hasItem',
       'inParty',
+      'flag',
     ]);
     expect(variantIndex(variants, { type: 'gold', op: '>', value: 1 })).toBe(2);
     expect(variantIndex(variants, { nonsense: true })).toBe(0);

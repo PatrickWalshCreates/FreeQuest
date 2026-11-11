@@ -34,6 +34,7 @@ describe('describeGame', () => {
     world.party.member('hero')?.addState('poison');
     world.state.setSwitch('accepted_request', true);
     world.state.setVariable('bridge_visits', 3);
+    world.state.setFlag('map001', 'elder', 'asked', true);
 
     const text = describeGame(world, manifest);
     expect(text).toContain('Map map001 (7, 7) facing down · 0 steps');
@@ -44,5 +45,6 @@ describe('describeGame', () => {
     expect(text).toContain('● accepted_request');
     expect(text).toContain('○ rewarded');
     expect(text).toContain('bridge_visits = 3');
+    expect(text).toContain('Event flags on this map:\n  elder: asked');
   });
 });

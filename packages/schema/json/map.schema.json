@@ -231,6 +231,26 @@
                       }
                     },
                     "required": ["type", "actor"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "One of this event's own flags, e.g. a chest's \"opened\".",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "flag"
+                      },
+                      "flag": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "flag", "value"]
                   }
                 ]
               },
@@ -269,6 +289,31 @@
             }
           },
           "required": ["type", "switch", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Turn one of an event's own flags on or off (kept in saves).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setFlag"
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "flag": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "flag", "value"]
         },
         {
           "type": "object",
@@ -868,7 +913,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 6
+      "const": 7
     },
     "id": {
       "type": "string",
@@ -1144,6 +1189,26 @@
                           }
                         },
                         "required": ["type", "actor"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "description": "One of this event's own flags, e.g. a chest's \"opened\".",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "flag"
+                          },
+                          "flag": {
+                            "type": "string",
+                            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                          },
+                          "value": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["type", "flag", "value"]
                       }
                     ]
                   }
@@ -1177,6 +1242,9 @@
                           "const": "up"
                         }
                       ]
+                    },
+                    "fixed": {
+                      "type": "boolean"
                     }
                   },
                   "required": ["character", "direction"]

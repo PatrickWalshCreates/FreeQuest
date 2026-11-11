@@ -499,7 +499,13 @@ export class World {
 
   /** What event conditions and commands see: switches, variables, the party, audio and routes. */
   get eventContext(): EventContext {
-    return { state: this.state, party: this.party, audio: this.audio, routes: this.routeHost };
+    return {
+      state: this.state,
+      party: this.party,
+      audio: this.audio,
+      routes: this.routeHost,
+      map: this.currentMap.id,
+    };
   }
 
   /** The context for the commands of one map event (so "this" in a route means it). */
@@ -580,7 +586,9 @@ export class World {
     const ahead = (e: EventInstance) => isAction(e) && e.blocks;
     if (this.triggerAt(x + dx, y + dy, ahead)) {
       const event = this.runningEvent;
-      if (event?.page?.graphic) event.direction = OPPOSITE[direction];
+      // Chests, signs and statues keep their facing (`fixed`); people turn to the player.
+      const graphic = event?.page?.graphic;
+      if (event && graphic && !graphic.fixed) event.direction = OPPOSITE[direction];
       return;
     }
     this.triggerAt(x, y, (e) => isAction(e) && !e.blocks);
