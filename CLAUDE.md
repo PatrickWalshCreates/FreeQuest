@@ -593,7 +593,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   `x86_64-apple-darwin`; DMGs named `…-macOS-AppleSilicon.dmg` / `…-macOS-Intel.dmg` from the
   binary's `lipo -archs`), each bundling the universal player so exports run on every Mac; a
   Windows job builds the editor's NSIS installer (`tauri.windows.conf.json` drops the Mac player
-  resource and picks NSIS). A tag also makes a draft GitHub Release with all three to check and
+  resource and picks NSIS), renamed `FreeQuest-Editor-<version>-Windows-setup.exe`. Note: while
+  the repo is private, Actions minutes come from the free allowance (macOS counts 10×). A tag also makes a draft GitHub Release with all three to check and
   publish by hand.
 - **Help window** (`apps/editor/src/HelpDialog.tsx`): the guides in `docs/` are bundled with the
   editor (`?raw` imports, so they always match its version) and read by editor-core's
@@ -777,8 +778,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      by-hand checklist~~ (done; guides bundled in a Help window, `docs/release-checklist.md`)
   4. ~~Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor~~ (done; both
      slices checked with `lipo`, signatures verified in the DMG, launched under Rosetta)
-  5. GitHub and a release workflow (repo pushed private, history on the noreply address; CI
-     running; release workflow in progress)
+  5. ~~GitHub and a release workflow~~ (done; private repo, history on the noreply address, CI
+     green; a test release run built all three downloads: Apple Silicon and Intel DMGs checked
+     with `lipo` and `codesign`, the Windows installer built but not yet run on Windows)
   6. Windows and Linux exports (from CI-built players)
   7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
   8. Release dry run, tag v0.1.0, freeze the 0.1 formats
