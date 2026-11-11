@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "tauri": "tauri",
     "gen:icon": "tsx scripts/gen-icon.ts",
-    "desktop": "tauri dev"
+    "desktop": "tauri dev",
+    "build:app": "tauri build --bundles app && node scripts/stage-app.mjs"
   },
   "dependencies": {
     "@freequest/core": "workspace:*",

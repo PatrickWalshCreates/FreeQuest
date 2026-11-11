@@ -4,11 +4,14 @@ FreeQuest is a free, open-source (MIT) toolkit for making classic 2D role-playin
 alternative to RPG Maker MZ. It is a clean-room implementation: no RPG Maker code, assets or UI are
 used.
 
-> **Status: early pre-alpha.** FreeQuest can load a project, walk a character around tile maps,
-> talk to NPCs (messages, choices, switches, variables, conditional branches), move between maps,
-> and has a full RPG database (heroes, classes, skills, items, equipment, states, enemies) with a
-> safe formula language for damage, turn-based battles (random encounters and scripted fights), an
-> in-game menu, save slots, and music and sound. No editor yet. File formats will change.
+> **Status: pre-alpha.** FreeQuest has a desktop editor (maps, events, database, tilesets,
+> characters, assets) and exports games for the web and macOS. Games have tile maps, NPCs and
+> events (messages, choices, switches, variables, branches, map transfers), a full RPG database
+> with a safe formula language, turn-based battles, an in-game menu, save slots, and music and
+> sound. File formats may still change (older projects are upgraded automatically).
+
+**New here? Read [Getting started](docs/getting-started.md)**: build the editor and make a small
+game in about half an hour.
 
 ## What's here
 
@@ -19,7 +22,7 @@ used.
 | [`@freequest/runtime`](packages/runtime)         | PixiJS player that runs a project in the browser            |
 | [`@freequest/editor-core`](packages/editor-core) | Editor logic (opening, editing, saving projects), no UI     |
 | [`apps/player-web`](apps/player-web)             | Minimal web app that plays the demo project                 |
-| [`apps/editor`](apps/editor)                     | The editor (desktop app, work in progress)                  |
+| [`apps/editor`](apps/editor)                     | The editor (desktop app, also runs in a browser for dev)    |
 | [`samples/demo-project`](samples/demo-project)   | A tiny sample game                                          |
 
 ## Running it
@@ -46,9 +49,15 @@ Try the elder by the path, the house door, and the bridge. Saves are kept in you
 ### The editor
 
 ```sh
-pnpm editor           # in the browser at http://localhost:5174, with the sample projects
-pnpm editor:desktop   # as a desktop app; needs Rust (https://rustup.rs)
+pnpm build:editor-app # builds FreeQuest Editor.app (macOS; needs Rust: https://rustup.rs)
+pnpm editor           # or: in the browser at http://localhost:5174, with the sample projects
+pnpm editor:desktop   # or: the desktop app in development mode
 ```
+
+- **Projects**: New project from a template (Starter or Demo), recent projects on the start screen.
+- **Assets**: import images and sounds (copied into the project), see where each is used.
+- **Tilesets and characters**: cut images into tiles or walking frames, mark walkable and
+  drawn-above tiles, preview a character walking.
 
 - **Maps**: paint tiles (pencil, rectangle, fill, eraser, pick), layers, a walkable overlay, and
   new / duplicate / resize / delete maps with their music and random battles.
@@ -57,6 +66,8 @@ pnpm editor:desktop   # as a desktop app; needs Rust (https://rustup.rs)
 - **Database**: actors, classes, skills, items, equipment, states, enemies, troops and system
   settings, with formulas checked as you type.
 - **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
+- Copy and paste commands, events and database entries, also between projects; pick a door's
+  destination on the map.
 - Undo/redo (⌘Z / ⇧⌘Z) for everything, problems listed as you work, and ⌘S saves.
 
 ### Exporting a game
@@ -95,8 +106,10 @@ live in [`packages/schema/json`](packages/schema/json).
 
 ## Roadmap
 
-Events and NPCs → database (actors, items, skills, ...) → turn-based battles → menus, saving and
-audio → desktop editor (Tauri) → web/desktop export. See [CLAUDE.md](CLAUDE.md) for details.
+Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web and macOS
+export, and the editor workflow (templates, assets, tileset and character editors, copy/paste).
+Next candidates: parallel events and move routes, shops, an options screen, Windows/Linux builds,
+and a plugin API. See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

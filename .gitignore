@@ -18,4 +18,5 @@ coverage/
 # Exports made by the editor in browser mode
 exports/
 apps/player-desktop/dist/
+apps/editor/dist-app/
 projects/

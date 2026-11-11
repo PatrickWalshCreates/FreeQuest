@@ -18,3 +18,10 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-persisted-scope = "2"
+
+[profile.release]
+# A smaller app to download; the editor's work happens in the web view anyway.
+lto = true
+opt-level = "s"
+codegen-units = 1
+strip = true

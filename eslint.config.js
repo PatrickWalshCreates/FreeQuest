@@ -8,6 +8,7 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      '**/dist-app/**',
       // Exports made by the editor in browser mode: built player code.
       'exports/**',
       'projects/**',

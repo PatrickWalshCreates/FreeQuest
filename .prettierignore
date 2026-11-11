@@ -10,5 +10,6 @@ exports/
 apps/player-desktop/src-tauri/target/
 apps/player-desktop/src-tauri/gen/
 apps/player-desktop/dist/
+apps/editor/dist-app/
 templates/**/*.json
 projects/

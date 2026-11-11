@@ -24,6 +24,7 @@ in the repo does.
 | `pnpm editor:desktop`   | Run the editor as the Tauri desktop app (needs Rust; see below)                                       |
 | `pnpm freequest …`      | The `freequest` CLI from source: `check [project]`, `export web\|mac [project] --out <dir> [--clean]` |
 | `pnpm build:mac-player` | Build the desktop player app Mac exports are made from (Rust, macOS; needed by `editor:desktop`)      |
+| `pnpm build:editor-app` | Build everything, then `FreeQuest Editor.app` at `apps/editor/dist-app/macos/` (ad-hoc signed)        |
 | `pnpm test`             | Run all unit tests once (Vitest); `pnpm test:watch` to watch                                          |
 | `pnpm check`            | lint + typecheck + test: run before every commit (CI runs this + build)                               |
 | `pnpm lint`             | ESLint + Prettier check                                                                               |
@@ -469,6 +470,12 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   `ValueDialog`/`CommandList` take an `extra` render prop for such controls. Dialogs opened from
   a dialog go through a portal (forms can't nest), and React still bubbles their events to the
   parent, so the picker's submit calls `stopPropagation()`.
+- **Packaged editor**: `pnpm build:editor-app` builds every package (the editor's `dist/` must
+  hold the release player and templates), the Mac player shell (bundled as a resource), then
+  `tauri build --bundles app` (release profile: LTO, size-optimised, stripped, ~12 MB) and
+  `scripts/stage-app.mjs`, which copies it to `apps/editor/dist-app/macos/` (git-ignored) and
+  signs it ad-hoc as a whole (`codesign --deep`, then `--verify --strict`), nested player app
+  included. Users open it with right-click → Open the first time (no Developer ID).
 - `checkMapReferences` reports map tiles past the end of the tileset (the game would throw), so
   shrinking a tileset shows up as a problem instead of a crash.
 
@@ -587,7 +594,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
     setup programs), a packaged editor app, custom app icons per game, Developer ID signing and
     notarization, uploading to itch.io, mobile, one shared FreeQuest version constant (the CLI
     and the editor each declare `0.0.0`).
-- **M8 (in progress)** Editor workflow. Steps:
+- **M8 (done)** Editor workflow. Steps:
   1. ~~New project from a template (Starter, Demo)~~ (done; created and played in browser mode)
   2. ~~Recent projects (desktop keeps folder access between launches)~~ (done; tried in browser
      mode, the desktop restart still to be tried by hand)
@@ -599,7 +606,10 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      browser mode)
   6. ~~Copy/paste of commands, events and entries; a map picker for transfer targets~~ (done;
      tried in browser mode, including pasting an item into another project)
-  7. A packaged FreeQuest Editor.app (unsigned) and a Getting started guide
+  7. ~~A packaged FreeQuest Editor.app (unsigned) and a Getting started guide~~ (done; built and
+     launched; `docs/getting-started.md`)
+  - Deferred: renaming ids and assets with reference updates, multi-tile stamps, a DMG or
+    installer, Developer ID signing, Windows/Linux editor builds, an auto-update.
 - **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,
   move routes, shops, options screen, icons, copy/paste and id renaming in the editor), getting the
   repo onto GitHub so CI runs, Windows/Linux exports, an RPG Maker MZ project importer (reads

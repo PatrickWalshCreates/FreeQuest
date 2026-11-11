@@ -15,6 +15,7 @@
     "editor:desktop": "pnpm --filter @freequest/editor desktop",
     "freequest": "tsx --conditions=@freequest/source packages/cli/src/main.ts",
     "build:mac-player": "pnpm --filter @freequest/player-desktop build:shell",
+    "build:editor-app": "pnpm build && pnpm build:mac-player && pnpm --filter @freequest/editor build:app",
     "build": "pnpm -r run build",
     "test": "vitest run",
     "test:watch": "vitest",

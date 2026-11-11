@@ -19,7 +19,8 @@ jobs:
       - run: pnpm check
       - run: pnpm build
 
-  # The macOS player app and a Mac export of the demo, checked the way players' Macs check it.
+  # The macOS player app, a Mac export of the demo (checked the way players' Macs check it) and
+  # the packaged editor app.
   mac-export:
     runs-on: macos-latest
     steps:
@@ -34,3 +35,5 @@ jobs:
       - run: pnpm build:mac-player
       - run: node packages/cli/dist/main.js export mac samples/demo-project --out "$RUNNER_TEMP/mac"
       - run: codesign --verify --deep --strict "$RUNNER_TEMP/mac/FreeQuest Demo.app"
+      # The packaged editor (bundles the player app above); its stage script verifies the signature.
+      - run: pnpm --filter @freequest/editor build:app
