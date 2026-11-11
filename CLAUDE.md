@@ -800,7 +800,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   5. ~~GitHub and a release workflow~~ (done; private repo, history on the noreply address, CI
      green; a test release run built all three downloads: Apple Silicon and Intel DMGs checked
      with `lipo` and `codesign`, the Windows installer built but not yet run on Windows)
-  6. ~~Windows and Linux exports (from CI-built players)~~ (done; plus a Linux editor download)
+  6. ~~Windows and Linux exports (from CI-built players)~~ (done; plus a Linux editor download.
+     Tried by hand on a Windows PC: the exported demo, the editor installer, a new project, Play,
+     and a Windows export made on Windows all worked. No SmartScreen prompt there because the
+     files were copied, not downloaded; web downloads carry the Mark of the Web and will warn.
+     Linux not yet run on a real machine)
   7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
   8. Release dry run, tag v0.1.0, freeze the 0.1 formats
   - Decided: GitHub `PatrickWalshCreates`, private until release, commits on the noreply address,
