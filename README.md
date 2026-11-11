@@ -5,15 +5,16 @@ alternative to RPG Maker MZ. It is a clean-room implementation: no RPG Maker cod
 used.
 
 > **Status: pre-alpha.** FreeQuest has a desktop editor (maps, events, database, tilesets,
-> characters, assets) and exports games for the web and macOS. Games have tile maps, NPCs who
+> characters, assets) and exports games for the web, Windows, macOS and Linux. Games have tile maps, NPCs who
 > wander, chase or follow routes, events (messages, choices, switches, variables, branches, map
 > transfers, background events), shops, a full RPG database with a safe formula language and
 > icons, turn-based battles with enemies that pick moves by situation, an in-game menu, save
 > slots, an options screen (volume, keys), and music and sound. File formats may still change
 > (older projects are upgraded automatically).
 
-**New here? Read [Getting started](docs/getting-started.md)**: build the editor and make a small
-game in about half an hour.
+**New here?** Download the editor and play the demo on the
+[website](https://patrickwalshcreates.github.io/FreeQuest/), then follow
+[Getting started](docs/getting-started.md) to make a small game in about half an hour.
 
 ## What's here
 
@@ -88,7 +89,8 @@ pnpm freequest export mac samples/demo-project --out ../my-game-mac
 
 See [docs/exporting.md](docs/exporting.md) for uploading to itch.io and sharing Mac apps.
 
-Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`.
+Other commands: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm build:site`
+(the website, with the guides and the playable demo, in `site-dist/`).
 
 ## Project files
 

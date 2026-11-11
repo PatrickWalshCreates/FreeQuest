@@ -1,0 +1,48 @@
+name: Website
+
+# Publishes the website (pnpm build:site: the landing page, the guides and the
+# playable demo) to GitHub Pages, at https://patrickwalshcreates.github.io/FreeQuest/.
+# It runs when a release is published, so the site's download links always
+# point at files that exist, or by hand ("Run workflow"). Pages on a free
+# account needs the repository to be public, and Settings → Pages → Source
+# set to "GitHub Actions".
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm build:site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

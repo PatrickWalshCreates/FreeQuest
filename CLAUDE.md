@@ -35,6 +35,7 @@ in the repo does.
 | `pnpm gen:art`          | Regenerate the demo project's placeholder PNGs (deterministic)                                        |
 | `pnpm gen:audio`        | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)                               |
 | `pnpm gen:templates`    | Regenerate `templates/starter` (New project's Starter template) from the demo's assets                |
+| `pnpm build:site`       | Build the website (landing page, guides, playable demo) into `site-dist/`; needs `pnpm build` first   |
 | `pnpm gen:notices`      | Regenerate the third-party licence notices shipped with the editor, the player and exports            |
 | `pnpm version:set [v]`  | Set FreeQuest's version (root `package.json`) and write it into every other versioned file            |
 
@@ -630,6 +631,15 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   project**). **Copy details** gives the version, browser and stacks. Dev builds: set
   `sessionStorage['freequest:test-crash'] = '1'` to make the project screen throw (React retries
   a failed render once, so the boundary, not the thrower, clears the flag).
+- **Website** (`scripts/build-site.ts`, `pnpm build:site` → git-ignored `site-dist/`; styles in
+  `scripts/site/site.css`): a landing page (demo in an iframe, features, download links to
+  `releases/latest/download/<file>` named like the release workflow names them), `docs/*.md` as
+  HTML through editor-core's `parseMarkdown` (escaped; links to other guides become pages, other
+  repo files GitHub links; `<version>` in code is filled in), and `play/`, a real web export of the
+  demo (`exportWeb`). Relative links only, light/dark. `.github/workflows/pages.yml` deploys it
+  on a published release or by hand (Pages needs the repo public, Source = GitHub Actions).
+  The player focuses with `preventScroll` so an embedding page doesn't jump to the game.
+  Preview: launch config `site` (`vite preview --outDir site-dist --port 5180`).
 - `docs/release-checklist.md`: the by-hand checks for a release (dialogs, restarts, Gatekeeper,
   playing the demo).
 - Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`
@@ -805,7 +815,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      and a Windows export made on Windows all worked. No SmartScreen prompt there because the
      files were copied, not downloaded; web downloads carry the Mark of the Web and will warn.
      Linux not yet run on a real machine)
-  7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
+  7. ~~A website with the demo playable in the browser (GitHub Pages)~~ (done; built and played
+     in the browser pane; goes live with the first published release, once the repo is public)
   8. Release dry run, tag v0.1.0, freeze the 0.1 formats
   - Decided: GitHub `PatrickWalshCreates`, private until release, commits on the noreply address,
     editor downloads for Apple Silicon, Intel Macs and Windows. Still open: Apple Developer ID

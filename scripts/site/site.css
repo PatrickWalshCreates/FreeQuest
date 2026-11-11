@@ -1,0 +1,355 @@
+/* The FreeQuest website (built by scripts/build-site.ts). */
+:root {
+  --bg: #f7f5ef;
+  --panel: #ffffff;
+  --text: #22252b;
+  --muted: #5f6470;
+  --line: #dcd8cc;
+  --accent: #2f7d4f;
+  --accent-text: #ffffff;
+  --link: #22663f;
+  --code: #efece3;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171b;
+    --panel: #1e2127;
+    --text: #e8e6e1;
+    --muted: #a3a7b0;
+    --line: #33373f;
+    --accent: #4fb27a;
+    --accent-text: #0d1a12;
+    --link: #7fd3a2;
+    --code: #262a31;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    17px/1.6 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+a {
+  color: var(--link);
+}
+img {
+  image-rendering: pixelated;
+}
+code {
+  font:
+    0.9em ui-monospace,
+    'SF Mono',
+    Menlo,
+    Consolas,
+    monospace;
+  background: var(--code);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+pre {
+  background: var(--code);
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+pre code {
+  padding: 0;
+  background: none;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.92em;
+}
+
+/* Top bar */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.15em;
+  color: var(--text);
+  text-decoration: none;
+}
+.top nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.top nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.top nav a:hover {
+  color: var(--text);
+}
+
+main,
+footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+section {
+  margin: 64px 0;
+}
+h1 {
+  font-size: clamp(2em, 5vw, 3em);
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+h2 {
+  font-size: 1.6em;
+  margin: 0 0 12px;
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 32px;
+  align-items: center;
+  margin-top: 32px;
+}
+.lead {
+  font-size: 1.15em;
+  color: var(--muted);
+  max-width: 34em;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.hero-art {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 24px;
+  height: 220px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  /* The demo's grass tile, drawn big. */
+  background: url(art/grass.png) 0 0 / 64px 64px;
+  image-rendering: pixelated;
+  padding-bottom: 48px;
+}
+.hero-sprite {
+  width: 96px;
+  height: 96px;
+  background: url(art/hero.png) 0 0 / 288px 384px;
+  image-rendering: pixelated;
+  animation: walk 0.6s steps(3) infinite;
+}
+.hero-sprite.mage {
+  background-image: url(art/mage.png);
+  animation-delay: -0.3s;
+}
+@keyframes walk {
+  to {
+    background-position-x: -288px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-sprite {
+    animation: none;
+    background-position-x: -96px;
+  }
+}
+
+/* Demo */
+.game-frame {
+  position: relative;
+  aspect-ratio: 480 / 352;
+  max-width: 960px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line);
+}
+.game-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Features */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.feature {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+}
+.feature h3 {
+  margin: 0 0 6px;
+  font-size: 1.05em;
+}
+.feature p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Downloads */
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.download {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+}
+.download:hover {
+  border-color: var(--accent);
+}
+.download span {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+/* Guides */
+.guide-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 40px;
+  margin-top: 24px;
+}
+.guide-nav {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  font-size: 0.92em;
+}
+.guide-nav > a {
+  display: block;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+.guide-nav > a[aria-current='page'] {
+  color: var(--text);
+}
+.guide-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  border-left: 2px solid var(--line);
+}
+.guide-nav li a {
+  display: block;
+  padding: 3px 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.guide-nav li a:hover {
+  color: var(--text);
+}
+.guide {
+  max-width: 46em;
+}
+.guide h1 {
+  font-size: 2.2em;
+}
+.guide h2 {
+  margin-top: 40px;
+  scroll-margin-top: 16px;
+}
+.guide h3 {
+  scroll-margin-top: 16px;
+}
+.guide blockquote {
+  margin: 16px 0;
+  padding: 4px 16px;
+  border-left: 4px solid var(--accent);
+  background: var(--panel);
+  border-radius: 0 8px 8px 0;
+}
+.table {
+  overflow-x: auto;
+}
+table {
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+th,
+td {
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+footer {
+  margin-top: 80px;
+  padding-top: 24px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.92em;
+}
+
+@media (max-width: 760px) {
+  .hero,
+  .guide-layout {
+    grid-template-columns: 1fr;
+  }
+  .guide-nav {
+    position: static;
+  }
+  .hero-art {
+    height: 160px;
+    padding-bottom: 24px;
+  }
+}

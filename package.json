@@ -28,7 +28,8 @@
     "gen:templates": "tsx scripts/gen-templates.ts",
     "gen:notices": "tsx scripts/gen-notices.ts",
     "version:set": "tsx scripts/set-version.ts",
-    "gen:schema": "pnpm --filter @freequest/schema run gen:schema"
+    "gen:schema": "pnpm --filter @freequest/schema run gen:schema",
+    "build:site": "tsx --conditions=@freequest/source scripts/build-site.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

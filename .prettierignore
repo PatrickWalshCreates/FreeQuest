@@ -13,3 +13,4 @@ apps/player-desktop/dist/
 apps/editor/dist-app/
 templates/**/*.json
 projects/
+site-dist/

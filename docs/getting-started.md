@@ -5,29 +5,32 @@ talk to, a door into a second map, your own art, and a fight. It takes about hal
 
 ## 1. Get the editor
 
-FreeQuest isn't downloadable yet, so you build the editor from the source code once.
+Download the editor for your computer from the
+[FreeQuest website](https://patrickwalshcreates.github.io/FreeQuest/) or the
+[latest release](https://github.com/PatrickWalshCreates/FreeQuest/releases/latest):
 
-You need:
+| Your computer                         | Download                                            |
+| ------------------------------------- | --------------------------------------------------- |
+| Mac with Apple silicon (M1 and later) | `FreeQuest-Editor-<version>-macOS-AppleSilicon.dmg` |
+| Older Mac with an Intel processor     | `FreeQuest-Editor-<version>-macOS-Intel.dmg`        |
+| Windows 10 or 11                      | `FreeQuest-Editor-<version>-Windows-setup.exe`      |
+| Linux (most distributions)            | `FreeQuest-Editor-<version>-Linux-x86_64.AppImage`  |
+| Debian, Ubuntu and similar            | `FreeQuest-Editor-<version>-Linux-amd64.deb`        |
 
-- [Node.js](https://nodejs.org/) 22 or newer, and [pnpm](https://pnpm.io/)
-  (`npm install -g pnpm`).
-- [Rust](https://rustup.rs) (stable), for the desktop app.
-- On macOS, Apple's command line tools (`xcode-select --install`).
+FreeQuest isn't signed by a registered developer yet, so each system asks once:
 
-Then, in the FreeQuest folder:
+- **Mac**: open the disk image and drag **FreeQuest Editor** into **Applications**. The first
+  time, right-click it and choose **Open**, then **Open** again (or **System Settings → Privacy &
+  Security → Open Anyway**). After that it opens normally.
+- **Windows**: run the setup program. If Windows says it protected your PC, choose **More info →
+  Run anyway**.
+- **Linux**: make the AppImage runnable (right-click → Properties → allow running, or
+  `chmod +x FreeQuest-Editor-*.AppImage`) and open it; or install the `.deb`
+  (`sudo apt install ./FreeQuest-Editor-*.deb`).
 
-```sh
-pnpm install
-pnpm build:editor-app
-```
-
-The app appears at `apps/editor/dist-app/macos/FreeQuest Editor.app`, with a disk image beside it
-(`FreeQuest-Editor-<version>-macOS.dmg`) to share. Drag the app into **Applications**. It isn't signed by a registered Apple developer, so the first time, right-click
-it and choose **Open**, then **Open** again. After that it opens normally.
-
-> Just want a look? `pnpm editor` runs the same editor in your browser at
-> http://localhost:5174, working on folders inside the FreeQuest repository (`samples/` and
-> `projects/`).
+> Prefer to build it yourself, or help make FreeQuest? See
+> [CONTRIBUTING.md](https://github.com/PatrickWalshCreates/FreeQuest/blob/main/CONTRIBUTING.md):
+> `pnpm editor` runs the editor in your browser straight from the source code.
 
 ## 2. Make a project
 

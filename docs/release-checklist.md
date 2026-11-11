@@ -39,4 +39,6 @@ this on the release build, ideally on a Mac user account that has never run Free
 ## After publishing
 
 - [ ] Download the release files from where players will get them and open them once more.
-- [ ] The website's playable demo starts.
+- [ ] Repository public, then Settings → Pages → Source: GitHub Actions; the Website workflow
+      ran (it starts on publishing the release; rerun it by hand if Pages wasn't on yet).
+- [ ] The website's playable demo starts, and each download link fetches its file.

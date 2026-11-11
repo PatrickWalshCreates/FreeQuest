@@ -55,7 +55,8 @@ if (!desktop && location.protocol === 'file:') {
     if (desktop) await (await import('./desktop.js')).startDesktop(parent);
     else await startGame({ parent, project: gameSource() });
     loading.classList.add('done');
-    parent.focus();
+    // Without preventScroll, a page embedding the game would jump to it.
+    parent.focus({ preventScroll: true });
   } catch (error) {
     showProblem(error);
   }

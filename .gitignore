@@ -22,3 +22,6 @@ apps/editor/dist-app/
 projects/
 dist-windows/
 apps/editor/src-tauri/players/
+
+# The website, built by pnpm build:site
+site-dist/

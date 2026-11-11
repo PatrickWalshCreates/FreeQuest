@@ -25,6 +25,19 @@ pnpm editor   # the editor in your browser at http://localhost:5174
 pnpm check    # lint + typecheck + tests: run before every commit
 ```
 
+To build the desktop apps yourself:
+
+```sh
+pnpm build:mac-player    # the game player for this system (exports are made from it)
+pnpm build:editor-app    # macOS: FreeQuest Editor.app and a .dmg in apps/editor/dist-app/macos/
+pnpm editor:desktop      # the desktop editor in development mode
+```
+
+On a Mac, install Rust with rustup and add both targets
+(`rustup target add aarch64-apple-darwin x86_64-apple-darwin`) for apps that run on Apple
+Silicon and Intel. The release workflow (`.github/workflows/release.yml`) builds every system's
+downloads.
+
 [docs/getting-started.md](docs/getting-started.md) shows the editor from a user's side, and
 [CLAUDE.md](CLAUDE.md) holds the architecture notes: how the packages fit together, the file
 format rules, and why things are the way they are. Read the parts near what you're changing.
