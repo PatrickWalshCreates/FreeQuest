@@ -5,6 +5,18 @@ import { MoveSteps } from './route.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
 
+/** Something a shop sells: an item or a piece of equipment, at its own price or another. */
+export const ShopGood = Type.Object(
+  {
+    kind: Type.Union([Type.Literal('item'), Type.Literal('equipment')]),
+    id: Id,
+    /** Leave out to use the entry's own price. */
+    price: Type.Optional(NonNegativeInt),
+  },
+  { additionalProperties: false },
+);
+export type ShopGood = Static<typeof ShopGood>;
+
 export const VariableOp = Type.Union([
   Type.Literal('set'),
   Type.Literal('add'),
@@ -179,6 +191,15 @@ export const Command = Type.Cyclic(
           wait: Type.Boolean(),
         },
         { additionalProperties: false, description: 'Walk the player or an event along a route.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('shop'),
+          goods: Type.Array(ShopGood, { minItems: 1 }),
+          /** Let the player sell what they carry (at half price) too. */
+          canSell: Type.Boolean(),
+        },
+        { additionalProperties: false, description: 'Open a shop to buy (and sell) goods.' },
       ),
       Type.Object(
         {

@@ -153,6 +153,16 @@ Never the other way.
   default is the system font (no bundled font asset). Not yet in the project format.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
+- **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
+  interpreter request answered with `continue()` when the player leaves. Rules are core's
+  `shop.ts` (`buyPrice`, `sellPrice` = half the entry price rounded down, key items and price-0
+  entries can't be sold, `maxBuy` by gold and bag space, `maxSell` by count and the gold cap,
+  `buy`/`sell` throw on anything the screen wouldn't offer). Runtime: `ShopController`
+  (PixiJS-free, tested: Buy / Sell / Leave, lists with prices, a quantity box with ↑↓ ±1
+  wrapping and ←→ ±10, feedback lines) and `ShopView`; `game.ts` opens it when the running
+  event's pending request is a shop, the world waits meanwhile (like the menu), and the message
+  before it is cleared. `checkMapReferences` checks every good.
+
 ### Database and battlers (M3)
 
 - **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
@@ -331,7 +341,9 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   any value from that; a `FormContext` supplies reference dropdowns by field name
   (`project-context.ts`: map, switch, variable, troop, actor, character, `id` by sibling `kind`,
   `path` = audio). Nested command lists are skipped (the tree editor owns them); an optional
-  one shows as a "“Else” branch" toggle. New fields in the format get controls for free; add
+  one shows as a "“Else” branch" toggle. When a change alters a sibling reference's choices
+  (an item `id` after its `kind`), an id no longer among them moves to the first valid one.
+  New fields in the format get controls for free; add
   labels/refs in `project-context.ts` rather than special-casing forms. Dialog values are
   validated against their own union variant (`events/validate.ts`) so errors are specific.
 - **Event editor**: pure edits in `editor-core/event-edits.ts` (add/move/duplicate/remove events,
@@ -527,7 +539,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
   map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
+  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
@@ -647,7 +659,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      a wanderer and a chaser into a battle tried in a playtest; routes come with step 3)
   3. ~~Move route command (event or player; repeat, skip if blocked, wait until done)~~ (done;
      also route page movement; added in the dialog and played in a playtest)
-  4. Shops (buy/sell screen from a `shop` command)
+  4. ~~Shops (buy/sell screen from a `shop` command)~~ (done; added in the editor, bought and
+     sold in a playtest)
   5. Icons (generated iconset; menus, battle, shop; icon picker in the editor)
   6. Options screen (volume, key rebinding; kept per player apart from saves)
   7. Enemy action conditions (HP below, turn number, state)

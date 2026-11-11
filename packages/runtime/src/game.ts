@@ -6,7 +6,7 @@ import {
   World,
   computeCamera,
 } from '@freequest/core';
-import type { SaveFile, SoundKey, Tileset } from '@freequest/schema';
+import type { SaveFile, ShopGood, SoundKey, Tileset } from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
 import { BattleView } from './battle-view.js';
@@ -22,6 +22,8 @@ import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
+import { ShopController } from './shop-controller.js';
+import { ShopView } from './shop-view.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
@@ -228,6 +230,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const activeMenu = (): MenuLike | null => {
     if (mode === 'title') return title.state;
     if (menu) return menu.state;
+    if (shop) return shop.state;
     const controller = battles.controller;
     if (controller) {
       const state = controller.state;
@@ -281,6 +284,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   let mode: 'title' | 'loading' | 'playing' = 'title';
   let menu: MenuController | null = null;
   let menuView: MenuView | null = null;
+  let shop: ShopController | null = null;
+  let shopView: ShopView | null = null;
   let playSeconds = 0;
 
   const closeMenu = () => {
@@ -289,9 +294,25 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     menu = null;
   };
 
+  const closeShop = () => {
+    shopView?.destroy();
+    shopView = null;
+    shop = null;
+  };
+
+  /** Open the shop a running event asked for. */
+  const openShop = (goods: readonly ShopGood[], canSell: boolean) => {
+    shop = new ShopController(world, goods, canSell);
+    // The message before the shop goes away (the dialog won't step while the shop is open).
+    dialog = new DialogController();
+    shopView = new ShopView(width, height, theme);
+    app.stage.addChildAt(shopView.container, app.stage.getChildIndex(titleView.container));
+  };
+
   /** Show the title screen (on boot, after "Quit", after game over). */
   const toTitle = (message: string | null = null) => {
     closeMenu();
+    closeShop();
     battles.reset();
     gameOverScreen.visible = false;
     scene.visible = false;
@@ -400,6 +421,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
           menu.update(input);
           if (menu.outcome === 'quit') toTitle();
           else if (menu.outcome === 'closed') closeMenu();
+        } else if (shop) {
+          // The world waits while the shop is open (like the menu).
+          shop.update(input);
+          if (shop.isClosed) {
+            closeShop();
+            world.interpreter?.continue();
+          }
+        } else if (world.interpreter?.pending?.type === 'shop') {
+          const request = world.interpreter.pending;
+          openShop(request.goods, request.canSell);
         } else {
           // Battles, dialog and transfers first: they consume the input and
           // answer the running event's requests before the world steps.
@@ -425,6 +456,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       render(alpha);
       dialogView.render(dialog, elapsed);
       if (menu && menuView) menuView.render(menu.state);
+      if (shop && shopView) shopView.render(shop.state);
     }
     const controller = battles.controller;
     if (battleView && controller) battleView.render(controller.state, elapsed);

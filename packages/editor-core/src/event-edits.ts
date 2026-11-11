@@ -431,6 +431,11 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return command.path === null ? 'Stop music' : `Play music ${fileName(command.path)}`;
     case 'playSound':
       return `Play sound ${fileName(command.path)}`;
+    case 'shop': {
+      const goods = command.goods.map((g) => names.item(g.kind, g.id));
+      const shown = goods.length > 3 ? [...goods.slice(0, 3), `+${goods.length - 3} more`] : goods;
+      return `Shop: ${shown.join(', ')}${command.canSell ? '' : ' (no selling)'}`;
+    }
     case 'moveRoute': {
       const who =
         command.target === 'player'
@@ -505,7 +510,10 @@ export const COMMAND_GROUPS: readonly {
   { label: 'Messages', types: ['message', 'choice', 'comment'] },
   { label: 'Flow', types: ['if', 'wait'] },
   { label: 'Game state', types: ['setSwitch', 'setVariable'] },
-  { label: 'Party', types: ['changeGold', 'changeItems', 'changeParty', 'gainExp', 'recoverAll'] },
+  {
+    label: 'Party',
+    types: ['changeGold', 'changeItems', 'shop', 'changeParty', 'gainExp', 'recoverAll'],
+  },
   { label: 'World', types: ['transfer', 'moveRoute', 'battle'] },
   { label: 'Audio', types: ['playMusic', 'playSound'] },
 ];
@@ -525,6 +533,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   recoverAll: 'Recover all',
   transfer: 'Transfer player',
   moveRoute: 'Move route',
+  shop: 'Open shop',
   battle: 'Start battle',
   playMusic: 'Play music',
   playSound: 'Play sound',

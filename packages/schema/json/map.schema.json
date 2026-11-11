@@ -801,6 +801,53 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Open a shop to buy (and sell) goods.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "shop"
+            },
+            "canSell": {
+              "type": "boolean"
+            },
+            "goods": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "item"
+                      },
+                      {
+                        "type": "string",
+                        "const": "equipment"
+                      }
+                    ]
+                  },
+                  "price": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["kind", "id"]
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["type", "goods", "canSell"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {

@@ -79,13 +79,30 @@ export function ObjectFields(props: {
   readonly omit?: readonly string[];
 }) {
   const { schema, value, onChange, ctx, omit } = props;
+  const fields = fieldsOf(schema);
   const set = (name: string, next: unknown) => {
+    let updated: Record_;
     if (next === undefined) {
       const { [name]: _removed, ...rest } = value;
-      onChange(rest);
-    } else onChange({ ...value, [name]: next });
+      updated = rest;
+    } else updated = { ...value, [name]: next };
+    // A reference whose choices depend on a sibling (an item's id on its kind) moves
+    // to its first valid choice when that sibling changes it into something invalid.
+    for (const field of fields) {
+      const current = updated[field.name];
+      if (field.name === name || typeof current !== 'string') continue;
+      const choices = ctx.refs(field.name, updated);
+      const first = choices?.[0];
+      // Only when this change altered the choices (never "fix" a missing file, say).
+      const before = ctx.refs(field.name, value);
+      const same =
+        before?.map((c) => c.value).join('\n') === choices?.map((c) => c.value).join('\n');
+      if (first && !same && !choices.some((c) => c.value === current)) {
+        updated = { ...updated, [field.name]: first.value };
+      }
+    }
+    onChange(updated);
   };
-  const fields = fieldsOf(schema);
   const visible = fields.filter(
     (f) => classify(f.schema).kind !== 'fixed' && !omit?.includes(f.name),
   );

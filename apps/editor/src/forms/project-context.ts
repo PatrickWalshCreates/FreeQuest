@@ -21,6 +21,8 @@ const LABELS: Record<string, string> = {
   target: 'Who moves',
   skipBlocked: 'Skip blocked steps',
   wait: 'Wait until done',
+  canSell: 'Can sell',
+  goods: 'Goods',
   op: 'Operation',
   x: 'X',
   y: 'Y',
@@ -57,6 +59,7 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   level: 1,
   maxLevel: 99,
   consumable: true,
+  canSell: true,
 };
 
 const AUDIO_FIELDS = new Set<string>([

@@ -163,6 +163,9 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
           case 'changeParty':
             checkEntry(at, 'actor', command.actor);
             break;
+          case 'shop':
+            command.goods.forEach((good, g) => checkEntry(`${at}.goods[${g}]`, good.kind, good.id));
+            break;
           case 'gainExp':
             if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
             checkOperand(at, command.amount);

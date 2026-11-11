@@ -1,4 +1,4 @@
-import type { Command, CommandOf, Direction, Operand } from '@freequest/schema';
+import type { Command, CommandOf, Direction, Operand, ShopGood } from '@freequest/schema';
 import {
   type EventContext,
   type GameState,
@@ -17,7 +17,9 @@ export type InterpreterRequest =
   | { type: 'message'; speaker: string | null; text: string }
   | { type: 'choice'; options: readonly string[]; cancel: number | null }
   | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
-  | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean };
+  | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean }
+  /** Answered with `continue()` when the player leaves the shop. */
+  | { type: 'shop'; goods: readonly ShopGood[]; canSell: boolean };
 
 export type BattleOutcome = 'win' | 'escape' | 'lose';
 
@@ -95,7 +97,7 @@ export class Interpreter {
     }
   }
 
-  /** Answer a pending message or transfer request. */
+  /** Answer a pending message, transfer or shop request. */
   continue(): void {
     const request = this.request;
     if (request === null || request.type === 'choice' || request.type === 'battle') {
@@ -269,6 +271,9 @@ export class Interpreter {
         if (command.wait && !command.repeat) this.waitFor = done;
         break;
       }
+      case 'shop':
+        this.request = { type: 'shop', goods: command.goods, canSell: command.canSell };
+        break;
       case 'comment':
         break;
       default: {
