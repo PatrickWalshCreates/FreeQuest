@@ -44,7 +44,7 @@ const hero = { id: 'hero' } as CharacterSheet;
 
 function mapWith(commands: Command[], extra: Partial<GameMap> = {}): GameMap {
   return {
-    formatVersion: 5,
+    formatVersion: 6,
     id: 'a',
     name: 'A',
     width: 2,

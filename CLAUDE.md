@@ -98,6 +98,16 @@ Never the other way.
   request it fades out while loading the target map, swaps it in, fades in, then answers _only that
   request_. Loading holds on black; a failed load or invalid target is reported via `onError`, the
   map stays, and the event continues.
+- **Moving events** (`World.moveEvents`): a page's optional `movement` (`random` or `approach`,
+  `speed` tiles/s, `pause` s between steps; random pauses vary 0.5–1.5×) walks the event's own
+  `GridMover` (`EventInstance.mover`; `x`/`y`/`direction` read through it). Events finish their
+  tile, then pause; the event whose commands run stands still. Approach closes the longer gap
+  first, tries the other axis, and sidesteps a lone obstacle when in line. A blocking event
+  `occupies` its tile and, while walking, the one it's leaving (the player does too), so no two
+  characters overlap; moving events never enter impassable tiles, blocking events or (when
+  blocking) the player. A blocking touch event that walks into the player starts its commands
+  (chasers). Positions aren't saved: events start from their placed tiles on map load.
+  `EventViews` interpolates them like the player (`remember()` before each logic step).
 - **Map events at runtime** (`EventInstance`): position, facing, active page. Pages are re-picked only
   when `GameState.version` changes. Events with `layer: "same"` block movement
   (`World.passability` = tiles + blocking events). A page change resets facing to the page graphic,
@@ -502,8 +512,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   run `pnpm gen:schema`, and re-save the samples through the migration.
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
-  map 5 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
+  map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  `playMusic`/`playSound`; v6: page `movement`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
@@ -548,7 +558,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   5. ~~Conditionals and switch/variable commands, end to end~~ (done; `core/test/demo-quest.test.ts`
      plays the demo quest through real movement and triggers)
   6. ~~Map transfers: lazy map loading, fade, second demo map~~ (done; house interior via the door)
-  - Deferred from M2: `parallel` trigger (non-blocking interpreters), moving NPCs / move routes.
+  - Deferred from M2: `parallel` trigger, moving NPCs, move routes (all M9).
 - **M3 (done)** Database: actors, classes, skills, items, equipment, states, enemies; formula
   language; battler model; party/inventory/equipment; effects engine; enemy battlers; party event
   commands/conditions; demo rewards, Mira joining, resting hearth; F9 debug panel.
@@ -619,7 +629,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
     installer, Developer ID signing, Windows/Linux editor builds, an auto-update.
 - **M9 (in progress)** Gameplay depth. Steps:
   1. ~~Parallel events (background interpreters; screen requests wait their turn)~~ (done)
-  2. NPCs that move: page movement (fixed, random, toward the player, route), speed, frequency
+  2. ~~NPCs that move: page movement (random, toward the player), speed, pause~~ (done; map v6;
+     a wanderer and a chaser into a battle tried in a playtest; routes come with step 3)
   3. Move route command (event or player; repeat, skip if blocked, wait until done)
   4. Shops (buy/sell screen from a `shop` command)
   5. Icons (generated iconset; menus, battle, shop; icon picker in the editor)

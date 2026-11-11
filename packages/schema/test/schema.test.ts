@@ -89,6 +89,13 @@ describe('migrate', () => {
     expect(odd.id).toBe('game');
   });
 
+  it('reads a v5 map (before event movement) unchanged as v6', () => {
+    const raw = JSON.parse(readFileSync(join(FIXTURES, 'v5', 'map001.json'), 'utf8')) as object;
+    const map = parseProjectFile('map', raw, 'map001.json');
+    expect(map.formatVersion).toBe(6);
+    expect({ ...map, formatVersion: 5 }).toEqual(raw);
+  });
+
   it('makes ids from names', () => {
     expect(idFromName('Fire Ball!')).toBe('fire-ball');
     expect(idFromName('  Ünïcode Sword ')).toBe('unicode-sword');

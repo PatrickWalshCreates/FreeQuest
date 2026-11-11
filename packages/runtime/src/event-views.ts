@@ -14,6 +14,8 @@ export function depthFor(y: number, layer: EventLayer = 'same'): number {
 /** Sprites for map events, kept in sync with their active pages. */
 export class EventViews {
   private readonly views = new Map<EventInstance, CharacterView>();
+  /** Each event's position before the latest logic step, for smooth drawing between steps. */
+  private readonly previous = new Map<EventInstance, { x: number; y: number }>();
 
   constructor(
     private readonly events: readonly EventInstance[],
@@ -28,7 +30,15 @@ export class EventViews {
     this.views.clear();
   }
 
-  update(tileWidth: number, tileHeight: number): void {
+  /** Call before every logic step: where events were, to interpolate from. */
+  remember(): void {
+    for (const event of this.events) {
+      this.previous.set(event, { x: event.mover.realX, y: event.mover.realY });
+    }
+  }
+
+  /** Draw every event `alpha` (0..1) of the way from its previous to its current position. */
+  update(tileWidth: number, tileHeight: number, alpha = 1): void {
     for (const event of this.events) {
       const page = event.page;
       const graphic = page?.graphic && this.graphics.get(page.graphic.character);
@@ -44,14 +54,22 @@ export class EventViews {
       }
       view.setGraphic(graphic);
       view.sprite.visible = true;
+      const { mover } = event;
+      const from = this.previous.get(event) ?? { x: mover.realX, y: mover.realY };
+      const x = from.x + (mover.realX - from.x) * alpha;
+      const y = from.y + (mover.realY - from.y) * alpha;
       view.update(
-        { direction: event.direction, isMoving: false, distanceWalked: 0 },
-        event.x,
-        event.y,
+        {
+          direction: event.direction,
+          isMoving: mover.isMoving,
+          distanceWalked: mover.distanceWalked,
+        },
+        x,
+        y,
         tileWidth,
         tileHeight,
       );
-      view.sprite.zIndex = depthFor(event.y, page.layer);
+      view.sprite.zIndex = depthFor(y, page.layer);
     }
   }
 }

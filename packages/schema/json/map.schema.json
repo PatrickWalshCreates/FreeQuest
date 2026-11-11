@@ -655,7 +655,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 5
+      "const": 6
     },
     "id": {
       "type": "string",
@@ -984,6 +984,38 @@
                     }
                   ],
                   "description": "Drawn below, level with, or above characters. Only \"same\" blocks movement."
+                },
+                "movement": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "random"
+                        },
+                        {
+                          "type": "string",
+                          "const": "approach"
+                        }
+                      ],
+                      "description": "random: wanders about. approach: walks toward the player."
+                    },
+                    "pause": {
+                      "type": "number",
+                      "description": "Seconds to stand still between steps (random movement varies it a little).",
+                      "maximum": 60,
+                      "minimum": 0
+                    },
+                    "speed": {
+                      "type": "number",
+                      "description": "Walking speed in tiles per second (the player usually walks at 4).",
+                      "exclusiveMinimum": 0,
+                      "maximum": 16
+                    }
+                  },
+                  "required": ["type", "speed", "pause"]
                 },
                 "trigger": {
                   "anyOf": [

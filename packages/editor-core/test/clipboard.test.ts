@@ -21,7 +21,7 @@ const inThen = [{ index: 1, branch: 'then' as const }];
 
 function map(events: Pick<MapEvent, 'x' | 'y'>[] = [], width = 3, height = 3): GameMap {
   return {
-    formatVersion: 5,
+    formatVersion: 6,
     id: 'm',
     name: 'M',
     width,

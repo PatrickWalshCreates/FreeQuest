@@ -29,6 +29,31 @@ export const EventLayer = Type.Union(
 export type EventLayer = Static<typeof EventLayer>;
 
 /**
+ * How an event moves on its own while its page is active. Leave it out for an
+ * event that stays put. Moving events walk tile by tile like the player and
+ * never walk through the player, blocking events or impassable tiles.
+ */
+export const EventMovement = Type.Object(
+  {
+    type: Type.Union([Type.Literal('random'), Type.Literal('approach')], {
+      description: 'random: wanders about. approach: walks toward the player.',
+    }),
+    speed: Type.Number({
+      exclusiveMinimum: 0,
+      maximum: 16,
+      description: 'Walking speed in tiles per second (the player usually walks at 4).',
+    }),
+    pause: Type.Number({
+      minimum: 0,
+      maximum: 60,
+      description: 'Seconds to stand still between steps (random movement varies it a little).',
+    }),
+  },
+  { additionalProperties: false },
+);
+export type EventMovement = Static<typeof EventMovement>;
+
+/**
  * One state of an event. The active page is the last one whose conditions
  * all hold; if none holds, the event is absent from the map.
  */
@@ -43,6 +68,7 @@ export const EventPage = Type.Object(
     ),
     trigger: EventTrigger,
     layer: EventLayer,
+    movement: Type.Optional(EventMovement),
     commands: Type.Array(Command),
   },
   { additionalProperties: false },

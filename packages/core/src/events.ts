@@ -1,5 +1,6 @@
 import type { Direction, EventPage, MapEvent } from '@freequest/schema';
 import { type EventContext, type GameState, evaluateConditions } from './game-state.js';
+import { GridMover } from './grid-mover.js';
 
 /**
  * Index of the event's active page: the last page whose conditions all hold,
@@ -20,17 +21,42 @@ export function activePage(event: MapEvent, context: EventContext | GameState): 
 /** Live state of a map event: where it is, which page is active, which way it faces. */
 export class EventInstance {
   readonly data: MapEvent;
-  x: number;
-  y: number;
-  direction: Direction;
+  /** Position and walking, tile by tile like the player (`x`/`y` = destination while moving). */
+  readonly mover: GridMover;
+  /** Seconds left standing still before the next step of its own movement. */
+  pauseLeft = 0;
   private index = -1;
 
   constructor(data: MapEvent, context: EventContext | GameState) {
     this.data = data;
-    this.x = data.x;
-    this.y = data.y;
-    this.direction = 'down';
+    this.mover = new GridMover({ x: data.x, y: data.y, direction: 'down', speed: 1 });
     this.refresh(context);
+  }
+
+  get x(): number {
+    return this.mover.x;
+  }
+
+  get y(): number {
+    return this.mover.y;
+  }
+
+  get direction(): Direction {
+    return this.mover.direction;
+  }
+
+  set direction(direction: Direction) {
+    this.mover.direction = direction;
+  }
+
+  /**
+   * True if the event takes up (x, y): its tile, and while it walks the tile
+   * it's leaving too, so nobody steps into a character half-way out of it.
+   */
+  occupies(x: number, y: number): boolean {
+    if (x === this.x && y === this.y) return true;
+    const m = this.mover;
+    return m.isMoving && Math.abs(m.realX - x) < 1 && Math.abs(m.realY - y) < 1;
   }
 
   get id(): string {

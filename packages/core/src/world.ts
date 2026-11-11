@@ -9,7 +9,7 @@ import {
 } from '@freequest/schema';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
-import { DIRECTION_DELTA, type Direction } from './direction.js';
+import { DIRECTIONS, DIRECTION_DELTA, type Direction } from './direction.js';
 import { EventInstance } from './events.js';
 import { type AudioSink, type EventContext, GameState } from './game-state.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
@@ -339,8 +339,105 @@ export class World {
     return this.events.filter((e) => e.page !== null && e.x === x && e.y === y);
   }
 
-  private blockingEventAt(x: number, y: number): boolean {
-    return this.events.some((e) => e.blocks && e.x === x && e.y === y);
+  private blockingEventAt(x: number, y: number, except?: EventInstance): boolean {
+    return this.events.some((e) => e !== except && e.blocks && e.occupies(x, y));
+  }
+
+  /** True if the player takes up (x, y): its tile, and the one it's leaving while it walks. */
+  private playerOccupies(x: number, y: number): boolean {
+    const p = this.player;
+    if (x === p.x && y === p.y) return true;
+    return p.isMoving && Math.abs(p.realX - x) < 1 && Math.abs(p.realY - y) < 1;
+  }
+
+  /** Where a moving event may step: walkable tiles, never into blocking events or the player. */
+  private passabilityFor(event: EventInstance): Passability {
+    return {
+      width: this.currentMap.width,
+      height: this.currentMap.height,
+      isPassable: (x, y) =>
+        this.collision.isPassable(x, y) &&
+        !this.blockingEventAt(x, y, event) &&
+        !(event.blocks && this.playerOccupies(x, y)),
+    };
+  }
+
+  /** The way an event with movement wants to step next, or null to stay put. */
+  private nextStep(event: EventInstance, passability: Passability): Direction | null {
+    const movement = event.page?.movement;
+    if (!movement) return null;
+    if (movement.type === 'random') {
+      return DIRECTIONS[Math.floor(this.random() * DIRECTIONS.length)] ?? null;
+    }
+    // Approach: close the longer gap first; if that way is blocked, try the other.
+    const dx = this.player.x - event.x;
+    const dy = this.player.y - event.y;
+    if (dx === 0 && dy === 0) return null;
+    const horizontal: Direction | null = dx === 0 ? null : dx > 0 ? 'right' : 'left';
+    const vertical: Direction | null = dy === 0 ? null : dy > 0 ? 'down' : 'up';
+    const ways = (
+      Math.abs(dx) >= Math.abs(dy) ? [horizontal, vertical] : [vertical, horizontal]
+    ).filter((d): d is Direction => d !== null);
+    const isOpen = (d: Direction) => {
+      const { dx: sx, dy: sy } = DIRECTION_DELTA[d];
+      return passability.isPassable(event.x + sx, event.y + sy);
+    };
+    const open = ways.find(isOpen);
+    if (open) return open;
+    // Next to the player: turn to them (and bump into them, for touch events).
+    if (Math.abs(dx) + Math.abs(dy) === 1) return ways[0] ?? null;
+    // Straight in line and blocked: sidestep (either way, at random) to get round it.
+    if (ways.length === 1 && ways[0]) {
+      const sides: Direction[] = horizontal ? ['up', 'down'] : ['left', 'right'];
+      if (this.random() < 0.5) sides.reverse();
+      const side = sides.find(isOpen);
+      if (side) return side;
+    }
+    return ways[0] ?? null;
+  }
+
+  /**
+   * Walk events that move on their own. Each finishes the tile it's on, then
+   * stands still for its page's pause before the next step. The event whose
+   * commands are running stands still (so an NPC doesn't walk off mid-talk).
+   * A blocking touch event that walks into the player starts its commands.
+   */
+  private moveEvents(dt: number): void {
+    for (const event of this.events) {
+      const movement = event.page?.movement;
+      const mover = event.mover;
+      if (!movement && !mover.isMoving) continue;
+      if (movement) mover.speed = movement.speed;
+      const passability = this.passabilityFor(event);
+      const still = event === this.runningEvent || !movement;
+      let wanted: Direction | null = null;
+      if (!mover.isMoving && !still) {
+        event.pauseLeft -= dt;
+        if (event.pauseLeft > 0) continue;
+        wanted = this.nextStep(event, passability);
+        const jitter = movement.type === 'random' ? 0.5 + this.random() : 1;
+        // Counted from now; a step that starts adds its walking time on top.
+        event.pauseLeft = movement.pause * jitter;
+        if (wanted === null) continue;
+      }
+      let offered = false;
+      mover.update(
+        dt,
+        passability,
+        () => {
+          if (offered) return null;
+          offered = true;
+          return wanted;
+        },
+        {
+          bumped: (x, y) => {
+            const page = event.page;
+            if (page?.trigger !== 'touch' || !event.blocks || this.running) return;
+            if (x === this.player.x && y === this.player.y) this.run(page.commands, event);
+          },
+        },
+      );
+    }
   }
 
   /** Start the first present event at (x, y) matching `accept`. Returns true if one started. */
@@ -435,6 +532,7 @@ export class World {
     const runningAtStart = this.running;
     this.advanceInterpreter(dt);
     this.advanceParallels(dt);
+    this.moveEvents(dt);
     if (!this.running) this.tryAutorun();
     if (!this.running && !runningAtStart && !this.player.isMoving && input.justPressed('confirm')) {
       this.tryAction();

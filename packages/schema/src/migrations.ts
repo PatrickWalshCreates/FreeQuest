@@ -61,6 +61,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 3, migrate: (d) => d },
     // v5: map music and the playMusic/playSound commands. Additive.
     { from: 4, migrate: (d) => d },
+    // v6: event page movement. Additive.
+    { from: 5, migrate: (d) => d },
   ],
   character: [],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.

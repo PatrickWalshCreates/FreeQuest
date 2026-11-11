@@ -18,7 +18,7 @@ const PATH = 'data/maps/m.json';
 function mapData(): GameMap {
   const ground = [0, 1, 2, 3].map(() => [0, 0, 1, 0, 0]);
   return {
-    formatVersion: 5,
+    formatVersion: 6,
     id: 'm',
     name: 'Test',
     width: 5,

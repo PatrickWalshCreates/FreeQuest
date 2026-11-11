@@ -367,7 +367,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const ry = prevY + (world.player.realY - prevY) * alpha;
     player.update(world.player, rx, ry, tileWidth, tileHeight);
     player.sprite.zIndex = depthFor(ry);
-    shown?.events.update(tileWidth, tileHeight);
+    shown?.events.update(tileWidth, tileHeight, alpha);
     const camera = computeCamera({
       focusX: (rx + 0.5) * tileWidth,
       focusY: (ry + 0.5) * tileHeight,
@@ -383,6 +383,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
+      shown?.events.remember();
       // Judged on the state before this step's input is handled.
       sfx(uiSoundFor(input, activeMenu()));
       if (mode === 'title') {

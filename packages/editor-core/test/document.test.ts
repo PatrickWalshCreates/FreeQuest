@@ -1,4 +1,4 @@
-import { EMPTY_TILE, type GameMap, stableStringify } from '@freequest/schema';
+import { EMPTY_TILE, type GameMap, MAP_FORMAT_VERSION, stableStringify } from '@freequest/schema';
 import { describe, expect, it } from 'vitest';
 import type { MemoryFs } from '../src/index.js';
 import {
@@ -206,7 +206,7 @@ describe('ProjectDocument saving', () => {
     expect(doc.dirty).toBe(false);
     expect(doc.project.maps.get('house')?.migrated).toBe(false);
     expect((JSON.parse(await fs.readText(HOUSE)) as { formatVersion: number }).formatVersion).toBe(
-      5,
+      MAP_FORMAT_VERSION,
     );
   });
 
@@ -241,7 +241,7 @@ describe('ProjectDocument saving', () => {
 
 describe('setTiles', () => {
   const map = (): GameMap => ({
-    formatVersion: 5,
+    formatVersion: 6,
     id: 'm',
     name: 'm',
     width: 3,

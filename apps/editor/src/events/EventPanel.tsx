@@ -21,6 +21,7 @@ import {
 import type {
   Condition,
   EventLayer,
+  EventMovement,
   EventPage,
   EventTrigger,
   GameMap,
@@ -40,6 +41,102 @@ interface Props {
   readonly map: GameMap;
   readonly selected: string | null;
   readonly onSelect: (id: string | null) => void;
+}
+
+const MOVEMENTS: readonly { value: EventMovement['type'] | ''; label: string }[] = [
+  { value: '', label: 'Stays put' },
+  { value: 'random', label: 'Wanders about' },
+  { value: 'approach', label: 'Walks toward the player' },
+];
+
+/** New movement: a gentle walk with a pause, like a villager. */
+const DEFAULT_MOVEMENT = { speed: 2, pause: 1.5 };
+
+/** How the page's event moves on its own (none = stays put), its speed and pause. */
+function MovementFields(props: {
+  readonly movement: EventMovement | undefined;
+  readonly onChange: (label: string, movement: EventMovement | null, coalesce?: string) => void;
+}) {
+  const { movement, onChange } = props;
+  return (
+    <div className="row">
+      <label className="field grow">
+        <span>Moves</span>
+        <select
+          value={movement?.type ?? ''}
+          onChange={(e) => {
+            const type = e.target.value as EventMovement['type'] | '';
+            onChange('Change movement', type ? { ...DEFAULT_MOVEMENT, ...movement, type } : null);
+          }}
+        >
+          {MOVEMENTS.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {movement && (
+        <>
+          <label className="field" title="Tiles per second (the player walks at 4)">
+            <span>Speed</span>
+            <NumberField
+              value={movement.speed}
+              min={0.01}
+              max={16}
+              step={0.5}
+              onCommit={(speed) =>
+                onChange('Change speed', { ...movement, speed }, 'movement-speed')
+              }
+            />
+          </label>
+          <label className="field" title="Seconds standing still between steps">
+            <span>Pause (s)</span>
+            <NumberField
+              value={movement.pause}
+              min={0}
+              max={60}
+              step={0.5}
+              onCommit={(pause) =>
+                onChange('Change pause', { ...movement, pause }, 'movement-pause')
+              }
+            />
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A number input that keeps what's typed while it has focus (so "0." isn't
+ * snapped back) and shows the document's value otherwise (so undo shows).
+ * Only values within [min, max] are committed.
+ */
+function NumberField(props: {
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+  readonly onCommit: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number"
+      min={props.min}
+      max={props.max}
+      step={props.step}
+      value={draft ?? String(props.value)}
+      onFocus={() => setDraft(String(props.value))}
+      onBlur={() => setDraft(null)}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        const n = e.target.valueAsNumber;
+        if (Number.isFinite(n) && n >= props.min && n <= props.max) props.onCommit(n);
+      }}
+    />
+  );
 }
 
 const TRIGGERS: readonly { value: EventTrigger; label: string }[] = [
@@ -382,6 +479,22 @@ function EventEditor(props: {
             </select>
           </label>
         </div>
+        <MovementFields
+          movement={page.movement}
+          onChange={(label, movement, coalesce) =>
+            editMap(
+              doc,
+              path,
+              label,
+              (m) =>
+                updatePage(m, event.id, shownPage, (p) => {
+                  const { movement: _, ...rest } = p;
+                  return movement ? { ...rest, movement } : rest;
+                }),
+              coalesce ? { coalesce: `${coalesce}:${event.id}:${shownPage}` } : {},
+            )
+          }
+        />
       </div>
 
       <h3>Conditions</h3>
