@@ -336,6 +336,21 @@ const SOUNDS: Record<string, () => Track> = {
     [72, 79, 84].forEach((n, i) => t.note(i * 0.1, 0.3, hz(n), 'triangle', 0.35));
     return t;
   },
+  // Not an interface sound: the demo's birdsong (a parallel event plays it now and then).
+  bird: () => {
+    const t = new Track(0.55);
+    [0, 0.12, 0.34].forEach((start, i) =>
+      t.note(
+        start,
+        i === 2 ? 0.14 : 0.07,
+        i === 2 ? 2400 : 2900,
+        'sine',
+        0.35,
+        i === 2 ? 1.25 : 1.15,
+      ),
+    );
+    return t;
+  },
   battleStart: () => {
     const t = new Track(0.6);
     t.note(0, 0.35, 400, 'noise', 0.4, 6);

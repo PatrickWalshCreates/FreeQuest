@@ -5,10 +5,12 @@ alternative to RPG Maker MZ. It is a clean-room implementation: no RPG Maker cod
 used.
 
 > **Status: pre-alpha.** FreeQuest has a desktop editor (maps, events, database, tilesets,
-> characters, assets) and exports games for the web and macOS. Games have tile maps, NPCs and
-> events (messages, choices, switches, variables, branches, map transfers), a full RPG database
-> with a safe formula language, turn-based battles, an in-game menu, save slots, and music and
-> sound. File formats may still change (older projects are upgraded automatically).
+> characters, assets) and exports games for the web and macOS. Games have tile maps, NPCs who
+> wander, chase or follow routes, events (messages, choices, switches, variables, branches, map
+> transfers, background events), shops, a full RPG database with a safe formula language and
+> icons, turn-based battles with enemies that pick moves by situation, an in-game menu, save
+> slots, an options screen (volume, keys), and music and sound. File formats may still change
+> (older projects are upgraded automatically).
 
 **New here? Read [Getting started](docs/getting-started.md)**: build the editor and make a small
 game in about half an hour.
@@ -62,7 +64,8 @@ pnpm editor:desktop   # or: the desktop app in development mode
 - **Maps**: paint tiles (pencil, rectangle, fill, eraser, pick), layers, a walkable overlay, and
   new / duplicate / resize / delete maps with their music and random battles.
 - **Events**: place NPCs, signs and doors (Events tool, V), with pages, conditions and a command
-  list (messages, choices, branches, battles, transfers…).
+  list (messages, choices, branches, battles, transfers, shops, move routes…); NPCs can wander,
+  chase the player or walk a route, and pages can run in the background.
 - **Database**: actors, classes, skills, items, equipment, states, enemies, troops and system
   settings, with formulas checked as you type.
 - **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
@@ -107,9 +110,10 @@ live in [`packages/schema/json`](packages/schema/json).
 ## Roadmap
 
 Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web and macOS
-export, and the editor workflow (templates, assets, tileset and character editors, copy/paste).
-Next candidates: parallel events and move routes, shops, an options screen, Windows/Linux builds,
-and a plugin API. See [CLAUDE.md](CLAUDE.md) for details.
+export, the editor workflow (templates, assets, tileset and character editors, copy/paste), and
+gameplay depth (moving NPCs, move routes, background events, shops, icons, options, smarter
+enemies). Next: a first public release (GitHub, signed downloads, Windows and Linux builds), then
+the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

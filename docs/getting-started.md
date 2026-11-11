@@ -96,6 +96,21 @@ how an NPC says something new after you've helped them.
 Select commands with Shift to copy a whole conversation (⌘C, ⌘V). Events and database entries
 copy and paste too, even into another project.
 
+### People who move, and things that happen on their own
+
+- **Moves** (on the page, under Graphic): **Wanders about**, **Walks toward the player**, or
+  **Walks a route** you set out step by step (↑ ↓ ← →, turns, waits). Speed is in tiles per second
+  (the player walks at 4); Pause is how long they stand between steps. Nobody walks through
+  walls, the player or each other, and an NPC stands still while you talk to them.
+- **Move route** (a command) walks the player, the event itself or any event on the map along a
+  route, for cutscenes: a guard stepping aside, the hero walking to the door. Tick **Wait until
+  done** to finish the walk before the next command.
+- **Trigger: Parallel** runs a page's commands over and over alongside play: a sound now and then,
+  a timer, a switch that flips. If one shows a message, it waits until nothing else is running.
+- **Trigger: Touch** on an NPC that walks toward the player makes a chaser: when it reaches the
+  player, its commands start (a message, a fight). Like autorun events, give it a switch to turn
+  it off afterwards, or it starts again.
+
 ## 5. A second map and a door
 
 1. Click **+** next to **Maps**, name it ("House"), choose a size, and paint it.
@@ -136,6 +151,18 @@ For random battles, open a map's settings and turn on **Random battles** with th
 roam there. For a set fight, use the **Start battle** command in an event; it can branch on
 winning, escaping or losing.
 
+Each enemy action can have **conditions**: its own HP below (or at least) a share of its max HP,
+the turn number (from turn 2, every 3 turns…), or a state it has. An enemy picks, by rating, among
+the actions whose conditions all hold, so a wolf can save its big attack for when it's hurt.
+
+**Icons**: items, skills, equipment and states can have an icon from the game's iconset (set in
+**System**; the templates come with one). Click **Choose…** on an entry's Icon to pick from the
+sheet. Icons show in the game's menus, in battle and in shops.
+
+**Shops**: the **Open shop** command lists goods (items and equipment, at their own price or the
+shop's) and whether players can sell there (at half price; key items never). The event carries on
+when the player leaves the shop.
+
 ## 8. Share it
 
 Click **Export…**. FreeQuest checks the game first and lists anything that would stop it from
@@ -146,6 +173,9 @@ starting. Then:
 
 [Exporting and sharing a game](exporting.md) covers both in detail, including what players need to
 know.
+
+Players can change the music and sound volume and rebind the keys under **Options**, on the title
+screen and in the menu. Their choices are kept with their saves.
 
 ## Keyboard shortcuts
 

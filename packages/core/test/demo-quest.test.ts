@@ -7,7 +7,14 @@ import rawHouse from '../../../samples/demo-project/data/maps/house.json' with {
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
 import rawTileset from '../../../samples/demo-project/data/tilesets/overworld.json' with { type: 'json' };
 import { demoDb } from './demo-db.js';
-import { ActionState, Battle, type BattleOutcome, type Direction, World } from '../src/index.js';
+import {
+  ActionState,
+  Battle,
+  type BattleOutcome,
+  type Direction,
+  World,
+  buy,
+} from '../src/index.js';
 
 /** Small seeded PRNG (mulberry32) so battles in this script are reproducible. */
 function seeded(seed: number): () => number {
@@ -124,7 +131,7 @@ function play() {
     }
   };
 
-  return { world, transcript, battles, walkTo, tap, finish };
+  return { world, transcript, battles, walkTo, tap, answer, finish };
 }
 
 describe('demo quest', () => {
@@ -273,5 +280,25 @@ describe('demo quest', () => {
     expect(hero.hp).toBe(hero.maxHp);
     expect(hero.states).toEqual([]);
     expect(transcript.at(-1)).toBe('Everyone is fully rested.');
+  });
+
+  it('buys a potion from the peddler', () => {
+    const { world, transcript, walkTo, tap, answer, finish } = play();
+    walkTo('down', 7, 12);
+    walkTo('left', 2, 12); // stops at (3, 12): the peddler's stall
+    expect([world.player.x, world.player.y]).toEqual([3, 12]);
+    tap('confirm');
+    expect(world.interpreterEvent?.id).toBe('peddler');
+    answer(); // the greeting
+    const request = world.interpreter?.pending;
+    if (request?.type !== 'shop') throw new Error(`expected the shop, got ${request?.type}`);
+    const potion = request.goods.find((g) => g.id === 'potion');
+    if (!potion) throw new Error('no potions for sale');
+    // What the shop screen does when the player buys one.
+    buy(world.party, world.db, potion, 1);
+    finish();
+    expect(world.party.gold).toBe(0);
+    expect(world.party.count('item', 'potion')).toBe(1);
+    expect(transcript.at(-1)).toBe('Peddler: Safe travels, friend.');
   });
 });

@@ -683,7 +683,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      launched; `docs/getting-started.md`)
   - Deferred: renaming ids and assets with reference updates, multi-tile stamps, a DMG or
     installer, Developer ID signing, Windows/Linux editor builds, an auto-update.
-- **M9 (in progress)** Gameplay depth. Steps:
+- **M9 (done)** Gameplay depth. Steps:
   1. ~~Parallel events (background interpreters; screen requests wait their turn)~~ (done)
   2. ~~NPCs that move: page movement (random, toward the player), speed, pause~~ (done; map v6;
      a wanderer and a chaser into a battle tried in a playtest; routes come with step 3)
@@ -697,12 +697,19 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      reloaded and played with the new key in the dev player)
   7. ~~Enemy action conditions (HP below, turn number, state)~~ (done; database v4; the demo
      wolf saves Power Strike for when it's hurt)
-  8. Demo, Starter, docs and export checks
-  - Format plan: map 6 (movement, moveRoute, shop), database 4 (enemy conditions); saves stay 1.
-- **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,
-  move routes, shops, options screen, icons, copy/paste and id renaming in the editor), getting the
-  repo onto GitHub so CI runs, Windows/Linux exports, an RPG Maker MZ project importer (reads
-  user's own projects; still clean-room), the plugin API.
+  8. ~~Demo, Starter, docs and export checks~~ (done; the demo meadow has a peddler's shop, a
+     wandering farmer and birdsong from a parallel event, the quest test buys a potion; the
+     Starter has a shopkeeper and 100 starting gold; the guide covers every M9 feature)
+  - Formats: map 6 (movement, moveRoute, shop), database 4 (enemy conditions); saves stay 1.
+  - Deferred: saving event positions and parallel progress, pathfinding for chasers, jump /
+    transparency / script steps in routes, shop sell-price overrides, a key-binding UI for
+    gamepads, battle animations.
+- **M10 (next)**: public release: the repo on GitHub with CI running, one shared FreeQuest
+  version, Developer ID signing and notarization, a DMG, Windows/Linux builds, a website or
+  itch.io page, first-run polish.
+- **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
+  multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
+  clean-room), the plugin API.
 
 ## Known gaps / notes for next milestones
 

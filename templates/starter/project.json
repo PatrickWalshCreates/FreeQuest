@@ -6,6 +6,10 @@
     {
       "id": "hero",
       "path": "data/characters/hero.json"
+    },
+    {
+      "id": "villager",
+      "path": "data/characters/villager.json"
     }
   ],
   "database": {
@@ -35,7 +39,7 @@
   },
   "start": {
     "direction": "up",
-    "gold": 0,
+    "gold": 100,
     "map": "map001",
     "party": ["hero"],
     "x": 8,

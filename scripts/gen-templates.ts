@@ -42,14 +42,16 @@ const keep = (file: string, ids: string[], change: (e: Entry) => Entry = (e) => 
 
 rmSync(OUT, { recursive: true, force: true });
 
-// Assets: the overworld tiles, the hero, the slime, and all the (small) audio.
+// Assets: the overworld tiles, the hero, a villager, the slime, icons, and all the (small) audio.
 copy('assets/tilesets/overworld.png');
 copy('assets/characters/hero.png');
+copy('assets/characters/villager.png');
 copy('assets/enemies/slime.png');
 copy('assets/system/iconset.png');
 copy('assets/audio');
 copy('data/tilesets/overworld.json');
 copy('data/characters/hero.json');
+copy('data/characters/villager.json');
 
 // Tile indices in the overworld tileset.
 const GRASS = 0;
@@ -117,6 +119,33 @@ const map: GameMap = {
         },
       ],
     },
+    {
+      id: 'shopkeeper',
+      name: 'Shopkeeper',
+      x: 11,
+      y: 8,
+      pages: [
+        {
+          conditions: [],
+          trigger: 'action',
+          layer: 'same',
+          graphic: { character: 'villager', direction: 'left' },
+          commands: [
+            { type: 'message', speaker: 'Shopkeeper', text: 'Supplies for the road?' },
+            {
+              type: 'shop',
+              canSell: true,
+              goods: [
+                { kind: 'item', id: 'potion' },
+                { kind: 'equipment', id: 'bronze-sword' },
+                { kind: 'equipment', id: 'leather-vest' },
+              ],
+            },
+            { type: 'message', speaker: 'Shopkeeper', text: 'Come back any time.' },
+          ],
+        },
+      ],
+    },
   ],
 };
 write('data/maps/map001.json', map);
@@ -144,11 +173,14 @@ const manifest: Manifest = {
   id: 'my-game',
   name: 'My Game',
   tilesets: [{ id: 'overworld', path: 'data/tilesets/overworld.json' }],
-  characters: [{ id: 'hero', path: 'data/characters/hero.json' }],
+  characters: [
+    { id: 'hero', path: 'data/characters/hero.json' },
+    { id: 'villager', path: 'data/characters/villager.json' },
+  ],
   maps: [{ id: 'map001', path: 'data/maps/map001.json' }],
   switches: [],
   variables: [],
-  start: { map: 'map001', x: 8, y: 8, direction: 'up', party: ['hero'], gold: 0 },
+  start: { map: 'map001', x: 8, y: 8, direction: 'up', party: ['hero'], gold: 100 },
 };
 write('project.json', manifest);
 
@@ -159,7 +191,7 @@ writeFileSync(
     {
       name: 'Starter',
       description:
-        'One small map with a sign, a hero, basic skills and a potion. Ready to play and grow.',
+        'One small map with a sign, a shopkeeper, a hero, basic skills and a potion. Ready to play and grow.',
     },
     null,
     2,

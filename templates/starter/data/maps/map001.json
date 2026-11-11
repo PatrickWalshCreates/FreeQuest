@@ -67,6 +67,53 @@
           ]
         }
       ]
+    },
+    {
+      "id": "shopkeeper",
+      "name": "Shopkeeper",
+      "x": 11,
+      "y": 8,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "left"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Shopkeeper",
+              "text": "Supplies for the road?"
+            },
+            {
+              "type": "shop",
+              "canSell": true,
+              "goods": [
+                {
+                  "id": "potion",
+                  "kind": "item"
+                },
+                {
+                  "id": "bronze-sword",
+                  "kind": "equipment"
+                },
+                {
+                  "id": "leather-vest",
+                  "kind": "equipment"
+                }
+              ]
+            },
+            {
+              "type": "message",
+              "speaker": "Shopkeeper",
+              "text": "Come back any time."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

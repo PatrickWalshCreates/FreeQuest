@@ -305,6 +305,117 @@
           ]
         }
       ]
+    },
+    {
+      "id": "peddler",
+      "name": "Peddler",
+      "x": 2,
+      "y": 12,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "right"
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Peddler",
+              "text": "Fresh goods, all the way from the city!"
+            },
+            {
+              "type": "shop",
+              "canSell": true,
+              "goods": [
+                {
+                  "id": "potion",
+                  "kind": "item"
+                },
+                {
+                  "id": "ether",
+                  "kind": "item"
+                },
+                {
+                  "id": "antidote",
+                  "kind": "item"
+                },
+                {
+                  "id": "straw-hat",
+                  "kind": "equipment"
+                },
+                {
+                  "id": "wooden-shield",
+                  "kind": "equipment"
+                }
+              ]
+            },
+            {
+              "type": "message",
+              "speaker": "Peddler",
+              "text": "Safe travels, friend."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "farmer",
+      "name": "Farmer",
+      "x": 16,
+      "y": 11,
+      "pages": [
+        {
+          "conditions": [],
+          "graphic": {
+            "character": "villager",
+            "direction": "down"
+          },
+          "layer": "same",
+          "movement": {
+            "type": "random",
+            "pause": 2,
+            "speed": 1.5
+          },
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Farmer",
+              "text": "I'm just stretching my legs. Lovely day for it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "birdsong",
+      "name": "Birdsong",
+      "x": 19,
+      "y": 0,
+      "pages": [
+        {
+          "conditions": [],
+          "layer": "below",
+          "trigger": "parallel",
+          "commands": [
+            {
+              "type": "comment",
+              "text": "Runs alongside play: a bird sings every few seconds."
+            },
+            {
+              "type": "wait",
+              "seconds": 7
+            },
+            {
+              "type": "playSound",
+              "path": "assets/audio/sfx-bird.wav"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
