@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: pre-alpha. Solo project for now; keep it structured so others can contribute.
+Status: 0.1.0 released (2026-11-11), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -39,8 +39,8 @@ in the repo does.
 | `pnpm gen:notices`      | Regenerate the third-party licence notices shipped with the editor, the player and exports            |
 | `pnpm version:set [v]`  | Set FreeQuest's version (root `package.json`) and write it into every other versioned file            |
 
-Run `pnpm check` before committing. The repo is on GitHub (private until v0.1.0:
-`PatrickWalshCreates/FreeQuest`); CI (`.github/workflows/ci.yml`) runs on every push and pull
+Run `pnpm check` before committing. The repo is public on GitHub
+(`PatrickWalshCreates/FreeQuest`); CI (`.github/workflows/ci.yml`) runs on every push and pull
 request, and `release.yml` builds the downloads (see Versions and releases).
 
 ## Layout
@@ -586,8 +586,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   the whole app, then makes `dist-app/macos/FreeQuest-Editor-<version>-macOS.dmg` with `hdiutil`
   (app + an Applications link), not Tauri's DMG bundler, which would pack the app before our
   signing. `hdiutil` warns it's deprecated; its `diskutil image` replacement needs newer macOS.
-- **GitHub** (since M10): `origin` is `github.com/PatrickWalshCreates/FreeQuest`, private until
-  v0.1.0. Commits use the account's private address (the history was rewritten once, before the
+- **GitHub** (since M10): `origin` is `github.com/PatrickWalshCreates/FreeQuest`, public since
+  v0.1.0 (the site is https://patrickwalshcreates.github.io/FreeQuest/). Commits use the account's private address (the history was rewritten once, before the
   first push, with `git filter-repo --mailmap`; a backup bundle of the old history is outside
   the repo). This clone's `user.email` is set to it; keep it that way.
 - **Release builds** (`.github/workflows/release.yml`): on a `v*` tag or by hand. macOS jobs
@@ -806,7 +806,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Deferred: saving event positions and parallel progress, pathfinding for chasers, jump /
     transparency / script steps in routes, shop sell-price overrides, a key-binding UI for
     gamepads, battle animations.
-- **M10 (in progress)** First public release (v0.1.0). Steps:
+- **M10 (done)** First public release (v0.1.0). Steps:
   1. ~~One version number and a changelog~~ (done; 0.1.0, `pnpm version:set`, `CHANGELOG.md`)
   2. ~~Release hygiene: third-party licence notices, an About box, CONTRIBUTING/SECURITY/issue
      templates, a history check before publishing~~ (done; the commit email is the open question)
@@ -823,10 +823,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      files were copied, not downloaded; web downloads carry the Mark of the Web and will warn.
      Linux not yet run on a real machine)
   7. ~~A website with the demo playable in the browser (GitHub Pages)~~ (done; built and played
-     in the browser pane; goes live with the first published release, once the repo is public)
-  8. Release dry run, tag v0.1.0, freeze the 0.1 formats
-  - Decided: GitHub `PatrickWalshCreates`, private until release, commits on the noreply address,
-    editor downloads for Apple Silicon, Intel Macs and Windows. Still open: Apple Developer ID
+     in the browser pane, and live on GitHub Pages)
+  8. ~~Release dry run, tag v0.1.0, freeze the 0.1 formats~~ (done; repo public, CI green, the
+     release built and both Mac DMGs checked from the release, tried by hand from a download,
+     published 2026-11-11; Pages on, the live demo played. The guides now cover every system)
+  - Decided: GitHub `PatrickWalshCreates`, public from 0.1.0, commits on the noreply address,
+    editor downloads for Apple Silicon and Intel Macs, Windows and Linux. Still open: Apple Developer ID
     ($99/yr), Windows signing, a name check.
 - **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
   multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
