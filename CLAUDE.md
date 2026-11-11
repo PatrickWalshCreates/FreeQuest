@@ -455,6 +455,20 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   `FRAMES_PER_TILE`). `useElementSize` fits both sheet views to their panel.
 - `checkCharacterShape` (schema, run by `contentProblems` and the runtime loader) reports a
   standing frame or walk cycle past the sheet's frames, which would stop the game drawing it.
+- **Clipboard** (`editor-core/clipboard.ts`, tested): one `clipboard` (`EditorClipboard`) for the
+  editor's life, so pasting into another project works; it holds commands, one event or one
+  database entry as deep copies, and references keep their ids (missing ones show as problems).
+  `insertCommands` / `removeCommands` / `sliceCommands` work on runs in one list; `pasteEvent`
+  takes a new id at `nearestFreeCell`; `pasteEntry` keeps a free id, else `<id>-2` and "(copy)".
+  UI: the command list selects runs with Shift+click / Shift+↑↓ (Copy, Paste, ⌘C/⌘X/⌘V; Move
+  is for single commands), events copy from their panel or ⌘C/⌘X/⌘V on the map (Events tool;
+  paste goes to the hovered cell), entries have Copy/Paste and ⌘C/⌘V on the list.
+- **Map point picker** (`events/MapPointPicker.tsx`): a transfer's dialog has "Choose on map…",
+  which draws the target map on a 2D canvas from its tileset (no PixiJS) with event markers,
+  picks a cell and facing, and warns when the cell isn't walkable (core's `CollisionMap`).
+  `ValueDialog`/`CommandList` take an `extra` render prop for such controls. Dialogs opened from
+  a dialog go through a portal (forms can't nest), and React still bubbles their events to the
+  parent, so the picker's submit calls `stopPropagation()`.
 - `checkMapReferences` reports map tiles past the end of the tileset (the game would throw), so
   shrinking a tileset shows up as a problem instead of a crash.
 
@@ -583,7 +597,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      the grid, tried in browser mode)
   5. ~~Character sheet editor~~ (done; new characters from an image, walk preview, tried in
      browser mode)
-  6. Copy/paste of commands, events and entries; a map picker for transfer targets
+  6. ~~Copy/paste of commands, events and entries; a map picker for transfer targets~~ (done;
+     tried in browser mode, including pasting an item into another project)
   7. A packaged FreeQuest Editor.app (unsigned) and a Getting started guide
 - **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,
   move routes, shops, options screen, icons, copy/paste and id renaming in the editor), getting the

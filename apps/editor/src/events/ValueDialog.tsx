@@ -5,7 +5,7 @@ import {
   variantIndex,
   variantLabel,
 } from '@freequest/editor-core';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Dialog } from '../Dialog.js';
 import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 
@@ -22,6 +22,8 @@ interface Props<T> {
   readonly variantName?: (label: string) => string;
   readonly onOk: (value: T) => void;
   readonly onClose: () => void;
+  /** More controls under the fields (e.g. a map picker for a transfer). */
+  readonly extra?: (value: T, setValue: (value: T) => void) => ReactNode;
 }
 
 /**
@@ -71,6 +73,7 @@ export function ValueDialog<T>(props: Props<T>) {
             ctx={props.ctx}
           />
         ) : null}
+        {props.extra?.(value, setValue)}
         {problem && <p className="error">{problem}</p>}
         <div className="actions">
           <button type="button" onClick={props.onClose}>

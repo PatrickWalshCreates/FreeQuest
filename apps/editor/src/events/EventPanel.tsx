@@ -6,10 +6,12 @@ import {
   describeCondition,
   duplicatePage,
   editMap,
-  insertCommand,
+  clipboard,
+  insertCommands,
+  pasteEvent,
   moveCommand,
   movePage,
-  removeCommand,
+  removeCommands,
   removeEvent,
   removePage,
   replaceCommand,
@@ -24,10 +26,11 @@ import type {
   GameMap,
   MapEvent,
 } from '@freequest/schema';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList } from './CommandList.js';
+import { TransferTargetButton } from './TransferTargetButton.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
 
@@ -60,13 +63,66 @@ const CONDITION_NAMES: Record<string, string> = {
   inParty: 'In party',
 };
 
+const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
+
+/** True while the clipboard holds an event (re-renders when it changes). */
+export function useClipboardHasEvent(): boolean {
+  useSyncExternalStore(subscribeClipboard, () => clipboard.version);
+  return clipboard.content?.kind === 'event';
+}
+
+/**
+ * Paste the clipboard's event onto the map at the free cell nearest (x, y).
+ * Returns its new id, or null when there's nothing to paste or no free cell.
+ */
+export function pasteEventAt(
+  doc: ProjectDocument,
+  path: string,
+  x: number,
+  y: number,
+): string | null {
+  const event = clipboard.event();
+  if (!event) return null;
+  let id: string | null = null;
+  try {
+    editMap(doc, path, 'Paste event', (m) => {
+      const result = pasteEvent(m, event, x, y);
+      id = result.id;
+      return result.map;
+    });
+  } catch {
+    return null;
+  }
+  return id;
+}
+
 /** The selected event's editor, and the list of the map's events. */
 export function EventPanel({ doc, path, map, selected, onSelect }: Props) {
   const event = map.events.find((e) => e.id === selected) ?? null;
+  const canPaste = useClipboardHasEvent();
+  const paste = () => {
+    const at = event ?? { x: Math.floor(map.width / 2), y: Math.floor(map.height / 2) };
+    const id = pasteEventAt(doc, path, at.x, at.y);
+    if (id) onSelect(id);
+  };
   return (
     <div className="event-panel">
       <section>
-        <h2>Events on this map</h2>
+        <h2 className="with-actions">
+          Events on this map
+          <button
+            className="small"
+            disabled={!canPaste}
+            title={
+              canPaste
+                ? 'Paste the copied event next to the selected one (or ⌘V on the map, where the pointer is)'
+                : 'Copy an event first'
+            }
+            onClick={paste}
+          >
+            Paste
+          </button>
+        </h2>
         {map.events.length === 0 ? (
           <p className="hint">Double-click an empty cell to add an event.</p>
         ) : (
@@ -119,20 +175,20 @@ function EventEditor(props: {
   const changePage = (label: string, fn: (p: EventPage) => EventPage) =>
     editMap(doc, path, label, (m) => updatePage(m, event.id, shownPage, fn));
   const commands: CommandActions = {
-    insert: (slot, command) =>
-      changePage('Add command', (p) => ({
+    insert: (slot, inserted, label) =>
+      changePage(label, (p) => ({
         ...p,
-        commands: insertCommand(p.commands, slot.path, slot.index, command),
+        commands: insertCommands(p.commands, slot.path, slot.index, inserted),
       })),
     replace: (slot, command) =>
       changePage('Edit command', (p) => ({
         ...p,
         commands: replaceCommand(p.commands, slot.path, slot.index, command),
       })),
-    remove: (slot) =>
-      changePage('Delete command', (p) => ({
+    remove: (slot, count, label) =>
+      changePage(label, (p) => ({
         ...p,
-        commands: removeCommand(p.commands, slot.path, slot.index),
+        commands: removeCommands(p.commands, slot.path, slot.index, count),
       })),
     move: (slot, delta) =>
       changePage('Move command', (p) => ({
@@ -161,6 +217,12 @@ function EventEditor(props: {
             onBlur={() => doc.endCoalescing()}
           />
         </label>
+        <button
+          title="Copy this event, all pages included (⌘C on the map)"
+          onClick={() => clipboard.set({ kind: 'event', event })}
+        >
+          Copy
+        </button>
         <button
           className="danger"
           title="Delete this event (Delete key on the map)"
@@ -371,6 +433,11 @@ function EventEditor(props: {
         ctx={ctx}
         names={names}
         actions={commands}
+        extra={(command, setCommand) =>
+          command.type === 'transfer' ? (
+            <TransferTargetButton doc={doc} command={command} onChange={setCommand} />
+          ) : null
+        }
       />
 
       {editingCondition && (

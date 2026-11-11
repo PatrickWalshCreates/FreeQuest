@@ -13,6 +13,7 @@ import {
   panBy,
   screenToTile,
   addEvent,
+  clipboard,
   editMap,
   eventAt,
   inBounds,
@@ -26,7 +27,7 @@ import {
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
 import { useMemo, useRef, useState } from 'react';
 import { type CanvasPoint, MapCanvas } from './MapCanvas.js';
-import { EventPanel } from '../events/EventPanel.js';
+import { EventPanel, pasteEventAt } from '../events/EventPanel.js';
 import { MapSettings } from './MapSettings.js';
 import { TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
@@ -270,9 +271,28 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
           target instanceof HTMLInputElement ||
           target instanceof HTMLTextAreaElement ||
           target instanceof HTMLSelectElement;
-        if (typing || event.metaKey || event.ctrlKey) return;
+        if (typing) return;
         const key = event.key.toLowerCase();
         const onCanvas = target instanceof HTMLElement && target.classList.contains('map-canvas');
+        if (event.metaKey || event.ctrlKey) {
+          // Copy, cut and paste events on the map (Events tool); paste lands where the pointer is.
+          if (!onCanvas || tool !== 'event' || event.altKey || event.shiftKey) return;
+          const chosen = map.events.find((e) => e.id === selectedEvent);
+          if ((key === 'c' || key === 'x') && chosen) {
+            clipboard.set({ kind: 'event', event: chosen });
+            if (key === 'x') {
+              editMap(doc, file.path, 'Cut event', (m) => removeEvent(m, chosen.id));
+              setSelectedEvent(null);
+            }
+          } else if (key === 'v') {
+            const at = hover ??
+              chosen ?? { x: Math.floor(map.width / 2), y: Math.floor(map.height / 2) };
+            const id = pasteEventAt(doc, file.path, at.x, at.y);
+            if (id) setSelectedEvent(id);
+          } else return;
+          event.preventDefault();
+          return;
+        }
         const shortcut = TOOLS.find((t) => t.key === key);
         if (key === 'escape' && pickingStart) setPickingStart(false);
         else if (key === 'escape' && stroke.current) cancelStroke();
@@ -428,7 +448,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
           ) : tool === 'event' && !hover ? (
             <span className="muted">
               Click an event to edit it, drag to move it, double-click an empty cell to add one,
-              Delete removes the selected event
+              Delete removes it, ⌘C / ⌘V copy and paste it
             </span>
           ) : hover ? (
             <>

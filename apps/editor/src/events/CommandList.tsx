@@ -5,13 +5,15 @@ import {
   type CommandRow,
   type ListPath,
   type NameLookup,
+  clipboard,
   defaultFor,
   describeCommand,
   flattenCommands,
   getList,
+  sliceCommands,
 } from '@freequest/editor-core';
 import type { Command, CommandType } from '@freequest/schema';
-import { useState } from 'react';
+import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import type { FormContext } from '../forms/SchemaField.js';
 import { ValueDialog } from './ValueDialog.js';
 import { commandProblem } from './validate.js';
@@ -23,10 +25,18 @@ export interface Slot {
 }
 
 export interface CommandActions {
-  insert(slot: Slot, command: Command): void;
+  insert(slot: Slot, commands: readonly Command[], label: string): void;
   replace(slot: Slot, command: Command): void;
-  remove(slot: Slot): void;
+  /** Remove `count` commands from the slot on. */
+  remove(slot: Slot, count: number, label: string): void;
   move(slot: Slot, delta: number): void;
+}
+
+const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
+/** The number of commands on the clipboard (0 when it holds something else). */
+function useClipboardCommands(): number {
+  useSyncExternalStore(subscribeClipboard, () => clipboard.version);
+  return clipboard.content?.kind === 'commands' ? clipboard.content.commands.length : 0;
 }
 
 interface Props {
@@ -34,6 +44,8 @@ interface Props {
   readonly ctx: FormContext;
   readonly names: NameLookup;
   readonly actions: CommandActions;
+  /** More controls in a command's dialog (e.g. a map picker for transfers). */
+  readonly extra?: (command: Command, setCommand: (command: Command) => void) => ReactNode;
 }
 
 const samePath = (a: ListPath, b: ListPath) =>
@@ -43,6 +55,8 @@ const samePath = (a: ListPath, b: ListPath) =>
   );
 const sameSlot = (a: Slot | null, b: Slot) =>
   !!a && a.index === b.index && samePath(a.path, b.path);
+const MOD = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
 type Editing =
   | { readonly mode: 'add'; readonly slot: Slot; readonly command: Command }
@@ -52,11 +66,19 @@ type Editing =
  * The command tree of one page as an indented list. Select a row (a command
  * or a list's end slot) and add, edit, delete or move from the toolbar, by
  * double-click, or with the keyboard (Enter edits, Delete removes, Alt+↑/↓
- * moves, Insert adds).
+ * moves, Insert adds). Shift+click or Shift+↑/↓ selects a run of commands in
+ * one list, for ⌘C / ⌘X / ⌘V (the clipboard outlives the project).
  */
-export function CommandList({ commands, ctx, names, actions }: Props) {
+export function CommandList({ commands, ctx, names, actions, extra }: Props) {
   const rows = flattenCommands(commands);
-  const [selected, setSelected] = useState<Slot | null>(null);
+  const [selected, setSelectedSlot] = useState<Slot | null>(null);
+  /** The other end of a Shift-selected run, in the same list as `selected`. */
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const setSelected = (next: Slot | null) => {
+    setSelectedSlot(next);
+    setAnchor(null);
+  };
+  const onClipboard = useClipboardCommands();
   const [menu, setMenu] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
 
@@ -64,13 +86,51 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
   const valid =
     selected && rows.some((r) => r.kind !== 'branch' && sameSlot(selected, r)) ? selected : null;
   const slot: Slot = valid ?? { path: [], index: commands.length };
-  const current = (() => {
+  const list = (() => {
     try {
-      return getList(commands, slot.path)[slot.index] ?? null;
+      return getList(commands, slot.path);
     } catch {
-      return null;
+      return [];
     }
   })();
+  const current = list[slot.index] ?? null;
+  // The selected run: from the anchor to the selection, commands only (never the end slot).
+  const run = (() => {
+    if (!current) return { start: slot.index, count: 0 };
+    if (anchor === null || anchor >= list.length) return { start: slot.index, count: 1 };
+    const start = Math.min(anchor, slot.index);
+    return { start, count: Math.abs(anchor - slot.index) + 1 };
+  })();
+  const inRun = (row: Slot) =>
+    samePath(row.path, slot.path) && row.index >= run.start && row.index < run.start + run.count;
+  const runSlot: Slot = { path: slot.path, index: run.start };
+
+  const copy = () => {
+    if (run.count === 0) return;
+    clipboard.set({
+      kind: 'commands',
+      commands: sliceCommands(commands, slot.path, run.start, run.count),
+    });
+  };
+  const cut = () => {
+    if (run.count === 0) return;
+    copy();
+    actions.remove(runSlot, run.count, run.count === 1 ? 'Cut command' : 'Cut commands');
+    setSelected(runSlot);
+  };
+  const paste = () => {
+    const pasted = clipboard.commands();
+    if (!pasted || pasted.length === 0) return;
+    actions.insert(slot, pasted, pasted.length === 1 ? 'Paste command' : 'Paste commands');
+    setSelectedSlot({ path: slot.path, index: slot.index + pasted.length - 1 });
+    setAnchor(pasted.length > 1 ? slot.index : null);
+  };
+  /** Extend the run to `index` in the same list (Shift+click, Shift+arrows). */
+  const extendTo = (index: number) => {
+    if (!current || index < 0 || index >= list.length) return;
+    setAnchor(anchor ?? slot.index);
+    setSelectedSlot({ path: slot.path, index });
+  };
 
   const add = (type: CommandType) => {
     setMenu(false);
@@ -80,11 +140,12 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
   };
   const edit = () => current && setEditing({ mode: 'edit', slot, command: current });
   const remove = () => {
-    if (!current) return;
-    actions.remove(slot);
+    if (run.count === 0) return;
+    actions.remove(runSlot, run.count, run.count === 1 ? 'Delete command' : 'Delete commands');
+    setSelected(runSlot);
   };
   const move = (delta: number) => {
-    if (!current) return;
+    if (!current || run.count > 1) return;
     const length = getList(commands, slot.path).length;
     const target = slot.index + delta;
     if (target < 0 || target >= length) return;
@@ -121,8 +182,26 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
           Delete
         </button>
         <button
-          onClick={() => move(-1)}
+          onClick={copy}
           disabled={!current}
+          title={`Copy ${run.count > 1 ? plural(run.count, 'command') : 'the command'} (${MOD}C)`}
+        >
+          Copy
+        </button>
+        <button
+          onClick={paste}
+          disabled={onClipboard === 0}
+          title={
+            onClipboard > 0
+              ? `Paste ${plural(onClipboard, 'command')} before the selection (${MOD}V)`
+              : 'Copy commands first'
+          }
+        >
+          Paste
+        </button>
+        <button
+          onClick={() => move(-1)}
+          disabled={!current || run.count > 1}
           title="Move up (Alt+↑)"
           aria-label="Move up"
         >
@@ -130,7 +209,7 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
         </button>
         <button
           onClick={() => move(1)}
-          disabled={!current}
+          disabled={!current || run.count > 1}
           title="Move down (Alt+↓)"
           aria-label="Move down"
         >
@@ -143,7 +222,14 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
         aria-label="Commands"
         onKeyDown={(event) => {
           const key = event.key;
-          if (key === 'Enter') edit();
+          const mod = event.metaKey || event.ctrlKey;
+          if (mod && key.toLowerCase() === 'c') copy();
+          else if (mod && key.toLowerCase() === 'x') cut();
+          else if (mod && key.toLowerCase() === 'v') paste();
+          else if (mod) return;
+          else if (event.shiftKey && (key === 'ArrowUp' || key === 'ArrowDown')) {
+            extendTo(slot.index + (key === 'ArrowUp' ? -1 : 1));
+          } else if (key === 'Enter') edit();
           else if (key === 'Delete' || key === 'Backspace') remove();
           else if (key === 'Insert') setMenu(true);
           else if (event.altKey && key === 'ArrowUp') move(-1);
@@ -169,8 +255,17 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
               </li>
             );
           }
-          const isSelected = sameSlot(slot, row);
-          const select = () => setSelected({ path: row.path, index: row.index });
+          const isSelected = row.kind === 'command' ? inRun(row) : sameSlot(slot, row);
+          const select = (event: React.MouseEvent) => {
+            if (
+              event.shiftKey &&
+              row.kind === 'command' &&
+              current &&
+              samePath(row.path, slot.path)
+            ) {
+              extendTo(row.index);
+            } else setSelected({ path: row.path, index: row.index });
+          };
           if (row.kind === 'end') {
             return (
               <li
@@ -205,10 +300,11 @@ export function CommandList({ commands, ctx, names, actions }: Props) {
           ctx={ctx}
           validate={commandProblem}
           okLabel={editing.mode === 'add' ? 'Add' : 'Save'}
+          {...(extra ? { extra } : {})}
           onClose={() => setEditing(null)}
           onOk={(command) => {
             if (editing.mode === 'add') {
-              actions.insert(editing.slot, command);
+              actions.insert(editing.slot, [command], 'Add command');
               setSelected({ path: editing.slot.path, index: editing.slot.index + 1 });
             } else actions.replace(editing.slot, command);
             setEditing(null);

@@ -18,7 +18,7 @@ export interface Entry {
   readonly name: string;
 }
 
-type EntriesFile = { readonly formatVersion: number; readonly entries: readonly Entry[] };
+export type EntriesFile = { readonly formatVersion: number; readonly entries: readonly Entry[] };
 
 /** The schema of one entry of a category. */
 export function entrySchema(kind: EntryKind): JsonSchema {

@@ -4,24 +4,29 @@ import {
   type ProjectDocument,
   type ProjectFile,
   addEntry,
+  clipboard,
   duplicateEntry,
   entrySchema,
   idProblem,
   moveEntry,
   newEntry,
+  pasteEntry,
   removeEntry,
   replaceEntry,
   slugify,
   uniqueId,
 } from '@freequest/editor-core';
 import { type DatabaseKind, SCHEMAS } from '@freequest/schema';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Dialog, Field } from '../Dialog.js';
 import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
+
+const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
+const MOD = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -123,6 +128,22 @@ function EntriesEditor(props: {
           .trim(),
       );
 
+  useSyncExternalStore(subscribeClipboard, () => clipboard.version);
+  const copied = clipboard.content;
+  const canPaste = copied?.kind === 'entry' && copied.category === kind;
+  const copy = () => entry && clipboard.set({ kind: 'entry', category: kind, entry });
+  const paste = () => {
+    const pasted = clipboard.entry(kind);
+    if (!pasted) return;
+    let id: string | null = null;
+    edit(`Paste ${singular}`, (d: EntriesData) => {
+      const result = pasteEntry(d, pasted, entry?.id);
+      id = result.id;
+      return result.file as never;
+    });
+    setSelected(id);
+  };
+
   const remove = async () => {
     if (!entry) return;
     const ok = await confirmAction(
@@ -151,7 +172,17 @@ function EntriesEditor(props: {
             + New
           </button>
         </div>
-        <ul aria-label={kind}>
+        <ul
+          aria-label={kind}
+          onKeyDown={(event) => {
+            if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+            const key = event.key.toLowerCase();
+            if (key === 'c') copy();
+            else if (key === 'v') paste();
+            else return;
+            event.preventDefault();
+          }}
+        >
           {shown.map((e) => (
             <li key={e.id}>
               <button
@@ -186,6 +217,24 @@ function EntriesEditor(props: {
             }}
           >
             Duplicate
+          </button>
+          <button
+            disabled={!entry}
+            title={`Copy this ${singular}, to paste here or in another project (${MOD}C)`}
+            onClick={copy}
+          >
+            Copy
+          </button>
+          <button
+            disabled={!canPaste}
+            title={
+              canPaste
+                ? `Paste the copied ${singular} after the selected one (${MOD}V)`
+                : `Copy a ${singular} first`
+            }
+            onClick={paste}
+          >
+            Paste
           </button>
           <button className="danger" disabled={!entry} onClick={() => void remove()}>
             Delete…

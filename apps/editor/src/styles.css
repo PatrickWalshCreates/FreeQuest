@@ -1237,6 +1237,7 @@ code {
 
 .db-list-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 8px;
   border-top: 1px solid var(--border);
@@ -1774,4 +1775,66 @@ a.button.primary {
 
 .row-order button {
   padding: 0 8px;
+}
+
+/* A heading with a small button at its end. */
+h2.with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+h2.with-actions button {
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Map point picker (transfer destinations). */
+.transfer-target {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.map-picker-view {
+  max-width: min(760px, 85vw);
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.map-picker-canvas {
+  position: relative;
+  cursor: crosshair;
+}
+
+.map-picker-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.map-picker-hover,
+.map-picker-chosen {
+  position: absolute;
+  pointer-events: none;
+}
+
+.map-picker-hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.map-picker-chosen {
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 0 0 1px #000;
+  background: rgba(95, 179, 161, 0.3);
 }

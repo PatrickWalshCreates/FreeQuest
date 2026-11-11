@@ -19,3 +19,4 @@ export * from './recent-projects.js';
 export * from './assets.js';
 export * from './tileset-edits.js';
 export * from './character-edits.js';
+export * from './clipboard.js';
