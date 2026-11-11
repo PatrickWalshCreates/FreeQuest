@@ -38,8 +38,9 @@ in the repo does.
 | `pnpm gen:notices`      | Regenerate the third-party licence notices shipped with the editor, the player and exports            |
 | `pnpm version:set [v]`  | Set FreeQuest's version (root `package.json`) and write it into every other versioned file            |
 
-Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
-GitHub yet, so nothing runs it automatically: run it locally.
+Run `pnpm check` before committing. The repo is on GitHub (private until v0.1.0:
+`PatrickWalshCreates/FreeQuest`); CI (`.github/workflows/ci.yml`) runs on every push and pull
+request, and `release.yml` builds the downloads (see Versions and releases).
 
 ## Layout
 
@@ -583,6 +584,17 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   the whole app, then makes `dist-app/macos/FreeQuest-Editor-<version>-macOS.dmg` with `hdiutil`
   (app + an Applications link), not Tauri's DMG bundler, which would pack the app before our
   signing. `hdiutil` warns it's deprecated; its `diskutil image` replacement needs newer macOS.
+- **GitHub** (since M10): `origin` is `github.com/PatrickWalshCreates/FreeQuest`, private until
+  v0.1.0. Commits use the account's private address (the history was rewritten once, before the
+  first push, with `git filter-repo --mailmap`; a backup bundle of the old history is outside
+  the repo). This clone's `user.email` is set to it; keep it that way.
+- **Release builds** (`.github/workflows/release.yml`): on a `v*` tag or by hand. macOS jobs
+  build the editor per architecture (`FREEQUEST_MAC_TARGET=aarch64-apple-darwin` /
+  `x86_64-apple-darwin`; DMGs named `…-macOS-AppleSilicon.dmg` / `…-macOS-Intel.dmg` from the
+  binary's `lipo -archs`), each bundling the universal player so exports run on every Mac; a
+  Windows job builds the editor's NSIS installer (`tauri.windows.conf.json` drops the Mac player
+  resource and picks NSIS). A tag also makes a draft GitHub Release with all three to check and
+  publish by hand.
 - **Help window** (`apps/editor/src/HelpDialog.tsx`): the guides in `docs/` are bundled with the
   editor (`?raw` imports, so they always match its version) and read by editor-core's
   `parseMarkdown` (`markdown.ts`, tested: headings with anchors, paragraphs, lists with
@@ -765,12 +777,14 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      by-hand checklist~~ (done; guides bundled in a Help window, `docs/release-checklist.md`)
   4. ~~Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor~~ (done; both
      slices checked with `lipo`, signatures verified in the DMG, launched under Rosetta)
-  5. GitHub and a release workflow (needs the user's account)
+  5. GitHub and a release workflow (repo pushed private, history on the noreply address; CI
+     running; release workflow in progress)
   6. Windows and Linux exports (from CI-built players)
   7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
   8. Release dry run, tag v0.1.0, freeze the 0.1 formats
-  - Decisions for the user: a GitHub account, the commit email in the history, Apple Developer
-    ID ($99/yr), Windows signing, a name check.
+  - Decided: GitHub `PatrickWalshCreates`, private until release, commits on the noreply address,
+    editor downloads for Apple Silicon, Intel Macs and Windows. Still open: Apple Developer ID
+    ($99/yr), Windows signing, a name check.
 - **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
   multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
   clean-room), the plugin API.

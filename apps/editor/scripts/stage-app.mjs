@@ -27,7 +27,21 @@ if (process.platform === 'darwin') {
   const version = JSON.parse(
     readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8'),
   ).version;
-  const dmg = join(out, `FreeQuest-Editor-${version}-macOS.dmg`);
+  // Named for the Macs it runs on (the release offers Apple Silicon and Intel downloads).
+  const archs = execFileSync(
+    '/usr/bin/lipo',
+    ['-archs', join(staged, 'Contents/MacOS/freequest-editor')],
+    {
+      encoding: 'utf8',
+    },
+  ).trim();
+  const kind =
+    archs.includes('x86_64') && archs.includes('arm64')
+      ? 'macOS-universal'
+      : archs.includes('arm64')
+        ? 'macOS-AppleSilicon'
+        : 'macOS-Intel';
+  const dmg = join(out, `FreeQuest-Editor-${version}-${kind}.dmg`);
   const root = join(out, '.dmg-root');
   rmSync(root, { recursive: true, force: true });
   mkdirSync(root, { recursive: true });

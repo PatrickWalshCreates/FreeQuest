@@ -5,8 +5,9 @@ import { join } from 'node:path';
 
 /** The newest built `<name>.app` under a Tauri project's target folder, or null. */
 export function builtMacApp(srcTauri, name) {
+  const targets = ['universal-apple-darwin', 'aarch64-apple-darwin', 'x86_64-apple-darwin'];
   const candidates = [
-    join(srcTauri, 'target', 'universal-apple-darwin', 'release', 'bundle', 'macos', name),
+    ...targets.map((t) => join(srcTauri, 'target', t, 'release', 'bundle', 'macos', name)),
     join(srcTauri, 'target', 'release', 'bundle', 'macos', name),
   ].filter((path) => existsSync(path));
   candidates.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
