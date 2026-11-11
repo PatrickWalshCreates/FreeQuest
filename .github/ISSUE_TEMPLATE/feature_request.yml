@@ -1,0 +1,20 @@
+name: Idea or feature request
+description: Something FreeQuest could do, or do better.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to make or do?
+      description: Start from your game or your workflow, not the feature. That helps find the best fix.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: Describe it in your own words (please don't paste another engine's docs, code or UI).
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How do you do it today, if at all?

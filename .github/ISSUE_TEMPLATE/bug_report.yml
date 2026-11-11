@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in the editor, a game or an export doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting! Please don't attach files from RPG Maker or other engines (see the
+        clean-room rule in CONTRIBUTING.md). For security problems, use the private form in
+        SECURITY.md instead.
+  - type: input
+    id: version
+    attributes:
+      label: FreeQuest version
+      description: On the editor's start screen, or `freequest --version`.
+      placeholder: '0.1.0'
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen?
+      options:
+        - Editor (desktop app)
+        - Editor (in a browser, from source)
+        - A game while playtesting
+        - An exported web game
+        - An exported Mac app
+        - The freequest command line
+        - Somewhere else
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Computer and system
+      placeholder: macOS 15 on Apple Silicon, Chrome 140…
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do?
+      description: The steps that lead to the problem, as exactly as you can.
+      placeholder: |
+        1. New project from the Starter template
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Error details, screenshots or a small project
+      description: Copy any error text here. A small project that shows the problem helps a lot.

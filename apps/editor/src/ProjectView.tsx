@@ -29,6 +29,7 @@ import { useAssetPaths } from './assets/use-assets.js';
 import { CharacterEditor } from './character/CharacterEditor.js';
 import { NewCharacterDialog } from './character/NewCharacterDialog.js';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
+import { AboutDialog } from './AboutDialog.js';
 import { ExportDialog } from './ExportDialog.js';
 import { MapEditor } from './map/MapEditor.js';
 import { NewMapDialog } from './map/NewMapDialog.js';
@@ -81,6 +82,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [status, setStatusState] = useState<Status | null>(null);
   const [creating, setCreating] = useState(false);
   const [creatingTileset, setCreatingTileset] = useState(false);
+  const [about, setAbout] = useState(false);
   const [creatingCharacter, setCreatingCharacter] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [playtest, setPlaytest] = useState<{
@@ -278,6 +280,9 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           Export…
         </button>
         <button onClick={onReload}>Reload</button>
+        <button onClick={() => setAbout(true)} title="About FreeQuest" aria-label="About FreeQuest">
+          ?
+        </button>
         <button onClick={onClose}>Close</button>
       </header>
 
@@ -432,6 +437,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       )}
 
       {exporting && <ExportDialog doc={doc} onClose={() => setExporting(false)} />}
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
 
       {creatingCharacter && (
         <NewCharacterDialog

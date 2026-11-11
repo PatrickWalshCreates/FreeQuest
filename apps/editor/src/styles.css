@@ -1955,3 +1955,34 @@ h2.with-actions button {
   align-items: center;
   gap: 6px;
 }
+
+/* About FreeQuest */
+/* Wide enough for licence texts' ~80 columns. */
+.dialog:has(.about) {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.about p {
+  margin: 0 0 10px;
+}
+
+.notices {
+  max-height: 320px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  /* Most texts are wrapped at ~80 columns already (the dialog fits that); long ones wrap. */
+  white-space: pre-wrap;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.start .about-link {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  font-size: 12px;
+}

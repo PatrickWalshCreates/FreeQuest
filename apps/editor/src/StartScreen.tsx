@@ -1,6 +1,7 @@
 import type { ProjectFs, RecentProject } from '@freequest/editor-core';
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
+import { AboutDialog } from './AboutDialog.js';
 import { NewProjectDialog } from './NewProjectDialog.js';
 import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
 import { forgetProject, loadRecent } from './recent.js';
@@ -15,6 +16,7 @@ interface Props {
 
 export function StartScreen({ error, failed, onOpen }: Props) {
   const [creating, setCreating] = useState(false);
+  const [about, setAbout] = useState(false);
   const [recent, setRecent] = useState(loadRecent);
   const forget = (location: string) => {
     forgetProject(location);
@@ -52,6 +54,10 @@ export function StartScreen({ error, failed, onOpen }: Props) {
           />
         )}
       </div>
+      <button className="link about-link" onClick={() => setAbout(true)}>
+        About FreeQuest
+      </button>
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
       {creating && (
         <NewProjectDialog
           onClose={() => setCreating(false)}

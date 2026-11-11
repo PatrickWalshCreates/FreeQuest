@@ -30,7 +30,8 @@
     "active": true,
     "targets": ["app"],
     "resources": {
-      "../../../samples/demo-project/": "game/"
+      "../../../samples/demo-project/": "game/",
+      "../THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.txt"
     },
     "icon": [
       "icons/32x32.png",

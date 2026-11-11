@@ -35,6 +35,7 @@ in the repo does.
 | `pnpm gen:art`          | Regenerate the demo project's placeholder PNGs (deterministic)                                        |
 | `pnpm gen:audio`        | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)                               |
 | `pnpm gen:templates`    | Regenerate `templates/starter` (New project's Starter template) from the demo's assets                |
+| `pnpm gen:notices`      | Regenerate the third-party licence notices shipped with the editor, the player and exports            |
 | `pnpm version:set [v]`  | Set FreeQuest's version (root `package.json`) and write it into every other versioned file            |
 
 Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
@@ -561,6 +562,22 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   `--version`, export markers and the editor's start screen). `scripts/version-files.ts` lists
   the files; `schema/test/version.test.ts` fails if any copy drifts. `CHANGELOG.md` gets an
   entry per release.
+- **Licence notices** (`scripts/gen-notices.ts`, `pnpm gen:notices`, generated and committed):
+  FreeQuest's MIT licence, then every shipped package (name, version, licence, source), then each
+  distinct licence text once (deduped ignoring whitespace) with its users. JavaScript from `pnpm
+licenses list --prod --filter <pkg>...` (the `...` follows our workspace packages), Rust from
+  `cargo metadata --filter-platform` for both Mac architectures (normal dependencies only:
+  build-dependencies and proc-macros aren't shipped). Files: `packages/player/public/`
+  (copied into every web export through `files.json`), `apps/player-desktop/` (bundled as a
+  resource, so Mac exports carry it), `apps/editor/public/` (the About box shows it). Re-run
+  after changing dependencies and before a release.
+- **About box** (`apps/editor/src/AboutDialog.tsx`): version, licence, and the notices; from the
+  start screen and the toolbar's "?".
+- Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`
+  (private advisories), `.github/ISSUE_TEMPLATE/` (bug report and idea forms, no blank issues)
+  and a pull request template.
+- History check (before publishing): only the commit identity is personal (name + email in every
+  commit); no local paths, secrets or large files in any commit's content.
 
 ## Project file format
 
@@ -715,8 +732,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
     gamepads, battle animations.
 - **M10 (in progress)** First public release (v0.1.0). Steps:
   1. ~~One version number and a changelog~~ (done; 0.1.0, `pnpm version:set`, `CHANGELOG.md`)
-  2. Release hygiene: third-party licence notices, an About box, CONTRIBUTING/SECURITY/issue
-     templates, a history check before publishing
+  2. ~~Release hygiene: third-party licence notices, an About box, CONTRIBUTING/SECURITY/issue
+     templates, a history check before publishing~~ (done; the commit email is the open question)
   3. First-run polish: welcome and guide link, an error screen instead of a blank window, a
      by-hand checklist
   4. Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor
