@@ -4,7 +4,7 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
-## 0.1.0 (not released yet)
+## 0.1.0 (2026-11-11)
 
 The first public release: an editor, a game engine and exporters for classic 2D role-playing
 games, free and open source (MIT).
