@@ -68,6 +68,10 @@ export class World {
   private currentEvents: EventInstance[];
   private running: Interpreter | null = null;
   private runningEvent: EventInstance | null = null;
+  /** Interpreters of parallel pages, running alongside play (one per event). */
+  private readonly parallels = new Map<EventInstance, Interpreter>();
+  /** Events whose pass finished as the running event this step (they start again next step). */
+  private readonly finishedRunning = new Set<EventInstance>();
   private seenVersion: string;
   private readonly random: () => number;
   /** Steps left until the next random encounter on this map. */
@@ -144,6 +148,8 @@ export class World {
     this.currentTileset = tileset;
     this.currentCollision = collision;
     this.currentEvents = map.events.map((e) => new EventInstance(e, this.eventContext));
+    // The old map's parallel events stop; the new map's start on the next step.
+    this.parallels.clear();
     this.player.placeAt(x, y);
     this.pendingEncounter = null;
     this.encounterCountdown = this.rollEncounterSteps();
@@ -200,7 +206,8 @@ export class World {
 
   /**
    * A save file of the game as it is now. Only valid when no event is
-   * running: saving happens from the menu.
+   * running: saving happens from the menu. Parallel events aren't saved;
+   * they start again from the top after loading.
    */
   toSave(options: { game: string; playSeconds: number; savedAt?: Date }): SaveFile {
     if (this.running) throw new Error('cannot save while an event is running');
@@ -277,6 +284,54 @@ export class World {
     this.running = new Interpreter(commands, this.eventContext);
     this.runningEvent = source;
     return this.running;
+  }
+
+  /** Events whose parallel pages are running in the background right now (for tests and debugging). */
+  get parallelEvents(): readonly EventInstance[] {
+    return [...this.parallels.keys()];
+  }
+
+  /**
+   * Run parallel pages for `dt` seconds. Each present parallel page has its
+   * own interpreter; a pass that finishes starts again on the next step (not
+   * this one, so a page without waits runs once per step). A pass always
+   * finishes, even if its page changes meanwhile; it just doesn't start again.
+   * A pass that needs the screen (a message, a choice, a battle, a transfer)
+   * waits until no other event runs, then becomes the running event, so the
+   * player waits for it like for any other event.
+   */
+  private advanceParallels(dt: number): void {
+    const finished = new Set(this.finishedRunning);
+    this.finishedRunning.clear();
+    for (const [event, interpreter] of this.parallels) {
+      interpreter.update(dt);
+      if (interpreter.isDone) {
+        this.parallels.delete(event);
+        finished.add(event);
+      }
+    }
+    for (const event of this.events) {
+      const page = event.page;
+      if (page?.trigger !== 'parallel' || this.parallels.has(event)) continue;
+      if (finished.has(event) || event === this.runningEvent) continue;
+      const interpreter = new Interpreter(page.commands, this.eventContext);
+      interpreter.update(dt);
+      if (!interpreter.isDone) this.parallels.set(event, interpreter);
+    }
+    this.refreshEvents();
+    this.promoteParallel();
+  }
+
+  /** Hand the screen to the first parallel pass waiting for it, when nothing else runs. */
+  private promoteParallel(): void {
+    if (this.running || this.pendingEncounter !== null) return;
+    for (const [event, interpreter] of this.parallels) {
+      if (interpreter.pending === null) continue;
+      this.parallels.delete(event);
+      this.running = interpreter;
+      this.runningEvent = event;
+      return;
+    }
   }
 
   /** Present events (with an active page) at a tile, in map order. */
@@ -366,6 +421,7 @@ export class World {
     this.running.update(dt);
     this.refreshEvents();
     if (this.running.isDone) {
+      if (this.runningEvent) this.finishedRunning.add(this.runningEvent);
       this.running = null;
       this.runningEvent = null;
     }
@@ -378,6 +434,7 @@ export class World {
     // the confirm press that closes its last message can't start a new one.
     const runningAtStart = this.running;
     this.advanceInterpreter(dt);
+    this.advanceParallels(dt);
     if (!this.running) this.tryAutorun();
     if (!this.running && !runningAtStart && !this.player.isMoving && input.justPressed('confirm')) {
       this.tryAction();

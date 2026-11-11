@@ -90,7 +90,7 @@ Never the other way.
   `transfer`. The runtime presents the request and answers with `continue()` / `choose(i)` /
   `cancel()`. Every new command that needs the outside world should be a request, not a callback.
   `World.run(commands)` starts the one blocking interpreter; while it runs the player finishes its
-  current tile but takes no new steps. Parallel events will get their own interpreters later.
+  current tile but takes no new steps. Parallel pages get their own interpreters (see Triggers).
 - **Maps change in place**: `World.changeMap(map, tileset, x, y, direction?)` swaps map, collision and
   events (fresh `EventInstance`s) but keeps the player, `GameState` and the running interpreter, so an
   event can transfer and keep going. The runtime rebuilds its map scene when `world.map` changes.
@@ -109,7 +109,14 @@ Never the other way.
     so chained steps can't skip it), or bumping into a blocking one. Not on the starting tile.
   - `autorun`: first present autorun page runs whenever nothing else is. It must switch itself off
     (e.g. set a switch its page conditions check) or it runs again forever, by design.
-  - `parallel`: not implemented yet (needs non-blocking interpreters).
+  - `parallel`: each present parallel page has its own interpreter (`World.advanceParallels`),
+    run every step right after the blocking one, also while a message is up. A finished pass
+    starts again on the next step, never the same one (so a page without waits runs once per
+    step). A started pass always finishes even if its page changes; it just doesn't restart. A
+    pass that issues a request (message, choice, battle, transfer) waits until nothing runs, then
+    is promoted to the blocking interpreter (`promoteParallel`), so the runtime needs nothing
+    new and the player waits for it. Map changes stop them; they're never saved (they restart
+    after a load) and don't block saving. `world.parallelEvents` lists them (F9 panel).
   - An event running at the start of a step owns that step's input: the confirm that closes the last
     message never re-triggers. A newly triggered event runs to its first pause in the same step.
 - **Dialog UI** is split into logic and view. `runtime/src/dialog.ts` (`DialogController`) is pure
@@ -610,6 +617,16 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      launched; `docs/getting-started.md`)
   - Deferred: renaming ids and assets with reference updates, multi-tile stamps, a DMG or
     installer, Developer ID signing, Windows/Linux editor builds, an auto-update.
+- **M9 (in progress)** Gameplay depth. Steps:
+  1. ~~Parallel events (background interpreters; screen requests wait their turn)~~ (done)
+  2. NPCs that move: page movement (fixed, random, toward the player, route), speed, frequency
+  3. Move route command (event or player; repeat, skip if blocked, wait until done)
+  4. Shops (buy/sell screen from a `shop` command)
+  5. Icons (generated iconset; menus, battle, shop; icon picker in the editor)
+  6. Options screen (volume, key rebinding; kept per player apart from saves)
+  7. Enemy action conditions (HP below, turn number, state)
+  8. Demo, Starter, docs and export checks
+  - Format plan: map 6 (movement, moveRoute, shop), database 4 (enemy conditions); saves stay 1.
 - **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,
   move routes, shops, options screen, icons, copy/paste and id renaming in the editor), getting the
   repo onto GitHub so CI runs, Windows/Linux exports, an RPG Maker MZ project importer (reads

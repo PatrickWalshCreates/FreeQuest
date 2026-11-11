@@ -29,6 +29,7 @@ function setup(events: MapEvent[], direction: Direction = 'down') {
     manifest: {
       ...makeManifest({ x: 2, y: 2, direction }),
       switches: [{ id: 'flag', name: 'Flag' }],
+      variables: [{ id: 'count', name: 'Count' }],
     },
     map,
     tileset,
@@ -204,5 +205,95 @@ describe('autorun trigger', () => {
     input.press('right');
     tick(15);
     expect(world.player.x).toBe(3);
+  });
+});
+
+describe('parallel trigger', () => {
+  const count = (by = 1): Command => ({
+    type: 'setVariable',
+    variable: 'count',
+    op: 'add',
+    value: by,
+  });
+  const wait = (seconds: number): Command => ({ type: 'wait', seconds });
+  const parallel = (commands: Command[], overrides: Partial<EventPage> = {}) =>
+    page({ trigger: 'parallel', layer: 'below', commands, ...overrides });
+
+  it('runs alongside play, once per step without waits, and never blocks the player', () => {
+    const { world, input, tick } = setup([event('ticker', 0, 0, parallel([count()]))]);
+    tick(10);
+    expect(world.state.getVariable('count')).toBe(10);
+    expect(world.interpreter).toBeNull();
+    input.press('right');
+    tick(15);
+    expect(world.player.x).toBe(3);
+  });
+
+  it('keeps time with waits and starts again after each pass', () => {
+    const { world, tick } = setup([event('clock', 0, 0, parallel([wait(0.5), count()]))]);
+    tick(29);
+    expect(world.state.getVariable('count')).toBe(0);
+    expect(world.parallelEvents.map((e) => e.id)).toEqual(['clock']);
+    tick(1);
+    expect(world.state.getVariable('count')).toBe(1);
+    tick(60);
+    expect(world.state.getVariable('count')).toBe(3);
+  });
+
+  it('keeps running while a blocking event shows a message', () => {
+    const { world, tap, tick } = setup([
+      event('npc', 2, 3),
+      event('ticker', 0, 0, parallel([count()])),
+    ]);
+    tap('confirm');
+    expect(world.interpreter?.pending).toMatchObject({ text: 'hi' });
+    const before = world.state.getVariable('count');
+    tick(5);
+    expect(world.state.getVariable('count')).toBe(before + 5);
+  });
+
+  it('takes the screen for a message once nothing else runs, and the player waits', () => {
+    const { world, input, tap, tick } = setup([
+      event('npc', 2, 3),
+      event('timer', 0, 0, parallel([wait(0.2), say('Time!'), count()])),
+    ]);
+    tap('confirm');
+    expect(world.interpreter?.pending).toMatchObject({ text: 'hi' });
+    tick(20);
+    // The NPC's message is still up: the timer's message waits its turn.
+    expect(world.interpreter?.pending).toMatchObject({ text: 'hi' });
+    world.interpreter?.continue();
+    tick();
+    expect(world.interpreter?.pending).toMatchObject({ text: 'Time!' });
+    expect(world.interpreterEvent?.id).toBe('timer');
+    input.press('right');
+    tick(15);
+    expect(world.player.x).toBe(2);
+    world.interpreter?.continue();
+    tick();
+    expect(world.state.getVariable('count')).toBe(1);
+  });
+
+  it('finishes a pass when its page changes, then stops', () => {
+    const once = parallel(
+      [{ type: 'setSwitch', switch: 'flag', value: true }, wait(0.1), count()],
+      {
+        conditions: [{ type: 'switch', switch: 'flag', value: false }],
+      },
+    );
+    const { world, tick } = setup([event('once', 0, 0, once)]);
+    tick(30);
+    expect(world.state.getSwitch('flag')).toBe(true);
+    expect(world.state.getVariable('count')).toBe(1);
+    expect(world.parallelEvents).toEqual([]);
+  });
+
+  it('stops on a map change and is never saved', () => {
+    const { world, tick } = setup([event('clock', 0, 0, parallel([wait(1), count()]))]);
+    tick(10);
+    expect(world.parallelEvents).toHaveLength(1);
+    expect(() => world.toSave({ game: 'test-game', playSeconds: 1 })).not.toThrow();
+    world.changeMap(makeMap(['...', '...']), tileset, 0, 0);
+    expect(world.parallelEvents).toEqual([]);
   });
 });

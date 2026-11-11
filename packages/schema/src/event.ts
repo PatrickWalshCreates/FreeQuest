@@ -14,7 +14,8 @@ export const EventTrigger = Type.Union(
     description:
       'action: player faces it and presses confirm. touch: player steps into or onto it. ' +
       'autorun: runs as soon as the page is active, blocking the player. ' +
-      'parallel: runs alongside play.',
+      'parallel: runs alongside play, over and over; messages, choices, battles and ' +
+      'transfers wait until nothing else runs.',
   },
 );
 export type EventTrigger = Static<typeof EventTrigger>;

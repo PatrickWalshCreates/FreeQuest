@@ -19,6 +19,8 @@ export function describeGame(world: World, manifest: Manifest): string {
       `Event: ${source} — ${running.pending ? `waiting on ${running.pending.type}` : 'running'}`,
     );
   }
+  const parallel = world.parallelEvents.map((e) => e.id);
+  if (parallel.length > 0) lines.push(`Parallel: ${parallel.join(', ')}`);
   lines.push('', `Gold: ${party.gold} ${currency}`, 'Party:');
   if (party.members.length === 0) lines.push('  (empty)');
   for (const m of party.members) {

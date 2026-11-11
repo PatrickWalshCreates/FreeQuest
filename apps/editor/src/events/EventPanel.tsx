@@ -46,7 +46,7 @@ const TRIGGERS: readonly { value: EventTrigger; label: string }[] = [
   { value: 'action', label: 'Talk / examine (confirm)' },
   { value: 'touch', label: 'Touch (step on or bump)' },
   { value: 'autorun', label: 'Autorun (when the page is active)' },
-  { value: 'parallel', label: 'Parallel (not running yet)' },
+  { value: 'parallel', label: 'Parallel (runs alongside play, again and again)' },
 ];
 
 const LAYERS: readonly { value: EventLayer; label: string }[] = [
