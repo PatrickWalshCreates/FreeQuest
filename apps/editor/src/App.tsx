@@ -2,24 +2,42 @@ import { ProjectDocument, type ProjectFs, openProject } from '@freequest/editor-
 import { useState } from 'react';
 import { ProjectView } from './ProjectView.js';
 import { StartScreen } from './StartScreen.js';
-import { confirmDiscard } from './platform.js';
+import { confirmDiscard, projectLocation } from './platform.js';
+import { rememberProject } from './recent.js';
 
 type AppState =
-  | { readonly screen: 'start'; readonly error: string | null }
+  | {
+      readonly screen: 'start';
+      readonly error: string | null;
+      /** The recent project that just failed to open, so the list can offer to remove it. */
+      readonly failed?: string;
+    }
   | { readonly screen: 'opening'; readonly label: string }
   | { readonly screen: 'project'; readonly doc: ProjectDocument };
 
 export function App() {
   const [state, setState] = useState<AppState>({ screen: 'start', error: null });
 
-  const open = async (pick: Promise<ProjectFs | null>) => {
+  /** Open the project `pick` resolves to; `recent` is its location when picked from the list. */
+  const open = async (pick: Promise<ProjectFs | null>, recent?: string) => {
     try {
       const fs = await pick;
       if (!fs) return;
       setState({ screen: 'opening', label: fs.label });
-      setState({ screen: 'project', doc: new ProjectDocument(await openProject(fs)) });
+      const doc = new ProjectDocument(await openProject(fs));
+      rememberProject(projectLocation(fs), doc.project.manifest.data.name);
+      setState({ screen: 'project', doc });
     } catch (error) {
-      setState({ screen: 'start', error: error instanceof Error ? error.message : String(error) });
+      const message = error instanceof Error ? error.message : String(error);
+      setState(
+        recent
+          ? {
+              screen: 'start',
+              error: `Could not open ${recent}. It may have been moved or deleted.\n${message}`,
+              failed: recent,
+            }
+          : { screen: 'start', error: message },
+      );
     }
   };
 
@@ -30,7 +48,13 @@ export function App() {
 
   switch (state.screen) {
     case 'start':
-      return <StartScreen error={state.error} onOpen={(fs) => void open(fs)} />;
+      return (
+        <StartScreen
+          error={state.error}
+          failed={state.failed ?? null}
+          onOpen={(fs, recent) => void open(fs, recent)}
+        />
+      );
     case 'opening':
       return <div className="centered muted">Opening {state.label}…</div>;
     case 'project': {

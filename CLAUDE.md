@@ -324,7 +324,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   starting values too (`NUMBER_DEFAULTS`: success rate 1, rating 5…). Typing in an entry is one
   undo step until the field loses focus. Problems whose message starts with `<kind> "<id>"`
   show on that entry.
-- **Rust stays minimal**: `src-tauri` only registers the dialog and fs plugins; permissions in
+- **Rust stays minimal**: `src-tauri` only registers the dialog, fs and persisted-scope plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
   the desktop app minus `TauriFs`). The app icon is generated (`pnpm --filter @freequest/editor
@@ -416,6 +416,13 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   `/project-templates/` in dev and copies them into the editor build. Browser mode creates
   projects in the git-ignored `projects/` dev area (listed on the start screen with `samples/`);
   desktop asks for a parent folder and creates `<parent>/<Game name>`.
+- **Recent projects** (`editor-core/recent-projects.ts`, tested): newest first, one per location,
+  at most 10, damaged storage ignored; the app keeps them in localStorage (`apps/editor/src/
+recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name>` in browser
+  mode (`projectFsAt` reopens either). Every successful open (and New project) records the game's
+  name. A failed recent open says the folder may have moved and offers "Remove it from Recent".
+  On desktop, `tauri-plugin-persisted-scope` saves the fs scope the dialogs grant (they ask for
+  `recursive: true`), so recent folders stay readable after a restart.
 
 ## Project file format
 
@@ -534,7 +541,8 @@ target, player, … })` writes `game/` + the player files + the marker into an e
     and the editor each declare `0.0.0`).
 - **M8 (in progress)** Editor workflow. Steps:
   1. ~~New project from a template (Starter, Demo)~~ (done; created and played in browser mode)
-  2. Recent projects (desktop keeps folder access between launches)
+  2. ~~Recent projects (desktop keeps folder access between launches)~~ (done; tried in browser
+     mode, the desktop restart still to be tried by hand)
   3. Asset import and an Assets panel (files are copied into the project)
   4. Tileset editor (passability, above flags)
   5. Character sheet editor

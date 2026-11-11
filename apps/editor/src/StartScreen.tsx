@@ -1,15 +1,24 @@
-import type { ProjectFs } from '@freequest/editor-core';
+import type { ProjectFs, RecentProject } from '@freequest/editor-core';
 import { useEffect, useState } from 'react';
 import { NewProjectDialog } from './NewProjectDialog.js';
-import { IN_DESKTOP_APP, desktopFs, devFs } from './platform.js';
+import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
+import { forgetProject, loadRecent } from './recent.js';
 
 interface Props {
   readonly error: string | null;
-  readonly onOpen: (fs: Promise<ProjectFs | null>) => void;
+  /** A recent project that just failed to open. */
+  readonly failed: string | null;
+  /** `recent` is the location when the project was picked from the recent list. */
+  readonly onOpen: (fs: Promise<ProjectFs | null>, recent?: string) => void;
 }
 
-export function StartScreen({ error, onOpen }: Props) {
+export function StartScreen({ error, failed, onOpen }: Props) {
   const [creating, setCreating] = useState(false);
+  const [recent, setRecent] = useState(loadRecent);
+  const forget = (location: string) => {
+    forgetProject(location);
+    setRecent(loadRecent());
+  };
   return (
     <main className="start">
       <div className="start-card">
@@ -30,6 +39,16 @@ export function StartScreen({ error, onOpen }: Props) {
           )}
         </div>
         {error && <pre className="error">{error}</pre>}
+        {failed && recent.some((p) => p.location === failed) && (
+          <button onClick={() => forget(failed)}>Remove it from Recent</button>
+        )}
+        {recent.length > 0 && (
+          <RecentList
+            projects={recent}
+            onOpen={(location) => onOpen(projectFsAt(location), location)}
+            onForget={forget}
+          />
+        )}
       </div>
       {creating && (
         <NewProjectDialog
@@ -41,6 +60,40 @@ export function StartScreen({ error, onOpen }: Props) {
         />
       )}
     </main>
+  );
+}
+
+function RecentList({
+  projects,
+  onOpen,
+  onForget,
+}: {
+  readonly projects: readonly RecentProject[];
+  readonly onOpen: (location: string) => void;
+  readonly onForget: (location: string) => void;
+}) {
+  return (
+    <section className="recent">
+      <h2>Recent</h2>
+      <ul>
+        {projects.map((p) => (
+          <li key={p.location}>
+            <button className="recent-open" title={p.location} onClick={() => onOpen(p.location)}>
+              <span className="recent-name">{p.name}</span>
+              <span className="recent-where">{p.location}</span>
+            </button>
+            <button
+              className="recent-forget"
+              title="Remove from Recent (the project's files stay)"
+              aria-label={`Remove ${p.name} from Recent`}
+              onClick={() => onForget(p.location)}
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

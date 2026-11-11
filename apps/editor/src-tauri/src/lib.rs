@@ -1,6 +1,7 @@
 // The desktop shell. Editor logic lives in TypeScript; Rust only hosts the
-// window, the file-system and dialog plugins, and the one thing a web page
-// can't do: run codesign on an exported Mac app.
+// window, the file-system and dialog plugins (picked folders are remembered
+// across launches), and the one thing a web page can't do: run codesign on
+// an exported Mac app.
 
 /// Ad-hoc sign an exported Mac app. Exporting changes the player app's
 /// contents, which breaks its signature; macOS refuses to open apps with a
@@ -29,6 +30,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        // Folders picked in the dialogs stay readable after a restart (recent projects).
+        .plugin(tauri_plugin_persisted_scope::init())
         .invoke_handler(tauri::generate_handler![sign_mac_app])
         .run(tauri::generate_context!())
         .expect("error while running the FreeQuest editor");

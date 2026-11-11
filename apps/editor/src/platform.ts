@@ -192,3 +192,25 @@ export async function newProjectFs(parent: string | null, folder: string): Promi
   }
   return devFs(folder, 'projects');
 }
+
+/** Where the project in `fs` can be reopened from (see `projectFsAt`). */
+export function projectLocation(fs: ProjectFs): string {
+  return fs.label;
+}
+
+/**
+ * Reopen a project from its location: a folder path on the desktop (still
+ * readable after a restart thanks to the persisted-scope plugin), or
+ * "<area>/<name>" in browser mode.
+ */
+export async function projectFsAt(location: string): Promise<ProjectFs> {
+  if (IN_DESKTOP_APP) {
+    const { TauriFs } = await import('./fs/tauri-fs.js');
+    return new TauriFs(location);
+  }
+  const [area, name, ...rest] = location.split('/');
+  if ((area !== 'samples' && area !== 'projects') || !name || rest.length > 0) {
+    throw new Error(`Not a browser-mode project: ${location}`);
+  }
+  return devFs(name, area);
+}

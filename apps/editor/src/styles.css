@@ -124,6 +124,68 @@ button.primary {
   gap: 8px;
 }
 
+/* Recent projects: game name over its location, a remove button at the end. */
+.recent {
+  margin-top: 20px;
+}
+
+.recent h2 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.recent ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.recent li {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.recent-open {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+
+.recent-open:hover,
+.recent-forget:hover {
+  background: var(--panel-raised);
+}
+
+.recent-name {
+  font-weight: 600;
+}
+
+.recent-where {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-forget {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+}
+
 .hint {
   margin: 0;
   font-size: 12px;

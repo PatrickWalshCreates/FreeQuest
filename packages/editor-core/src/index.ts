@@ -15,3 +15,4 @@ export * from './utf8.js';
 export * from './web-export.js';
 export * from './mac-export.js';
 export * from './new-project.js';
+export * from './recent-projects.js';
