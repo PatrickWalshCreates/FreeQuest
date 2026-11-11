@@ -11,7 +11,7 @@
     "tauri": "tauri",
     "gen:icon": "tsx scripts/gen-icon.ts",
     "desktop": "tauri dev",
-    "build:app": "tauri build --bundles app && node scripts/stage-app.mjs"
+    "build:app": "node ../../scripts/tauri-mac-build.mjs && node scripts/stage-app.mjs"
   },
   "dependencies": {
     "@freequest/core": "workspace:*",

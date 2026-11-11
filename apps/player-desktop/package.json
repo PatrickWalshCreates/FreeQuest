@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
-    "build:shell": "tauri build --bundles app && node scripts/stage-shell.mjs",
+    "build:shell": "node ../../scripts/tauri-mac-build.mjs && node scripts/stage-shell.mjs",
     "tauri": "tauri"
   },
   "devDependencies": {
