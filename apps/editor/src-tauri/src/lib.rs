@@ -32,6 +32,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         // Folders picked in the dialogs stay readable after a restart (recent projects).
         .plugin(tauri_plugin_persisted_scope::init())
+        // Links in the guide open in the default browser.
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![sign_mac_app])
         .run(tauri::generate_context!())
         .expect("error while running the FreeQuest editor");

@@ -214,3 +214,14 @@ export async function projectFsAt(location: string): Promise<ProjectFs> {
   }
   return devFs(name, area);
 }
+
+/** Open a web link in the user's browser (the desktop app can't navigate away from itself). */
+export async function openExternal(url: string): Promise<void> {
+  if (!/^(https?:|mailto:)/.test(url)) return;
+  if (IN_DESKTOP_APP) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(url);
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+}

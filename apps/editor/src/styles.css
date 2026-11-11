@@ -1957,9 +1957,9 @@ h2.with-actions button {
 }
 
 /* About FreeQuest */
-/* Wide enough for licence texts' ~80 columns. */
-.dialog:has(.about) {
-  width: min(640px, calc(100vw - 32px));
+/* Narrow enough to read; the notices below keep their ~80 columns. */
+.about {
+  max-width: 640px;
 }
 
 .about p {
@@ -1980,9 +1980,176 @@ h2.with-actions button {
   border-radius: var(--radius);
 }
 
-.start .about-link {
+.start-links {
   position: fixed;
   right: 16px;
   bottom: 12px;
+  display: flex;
+  gap: 16px;
   font-size: 12px;
+}
+
+.welcome {
+  margin: 8px 0 16px;
+}
+
+.welcome p {
+  margin: 0 0 6px;
+}
+
+/* Help window: page list and sections | the guide. */
+.dialog:has(.help) {
+  width: min(980px, calc(100vw - 32px));
+}
+
+.help {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 18px;
+  height: min(640px, calc(100vh - 180px));
+}
+
+.help-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding-right: 10px;
+}
+
+.help-sections {
+  margin: 8px 0 0;
+  padding: 0 0 0 10px;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.help-sections .link {
+  text-align: left;
+}
+
+.help-body {
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.guide {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.guide h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.guide h3 {
+  margin: 22px 0 8px;
+  font-size: 16px;
+}
+
+.guide h4 {
+  margin: 16px 0 6px;
+  font-size: 14px;
+}
+
+.guide p,
+.guide ul,
+.guide ol {
+  margin: 0 0 10px;
+}
+
+.guide li {
+  margin-bottom: 4px;
+}
+
+.guide code {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--panel-raised);
+}
+
+.guide pre {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.guide pre code {
+  padding: 0;
+  background: none;
+}
+
+.guide table {
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.guide th,
+.guide td {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.guide th {
+  background: var(--panel-raised);
+}
+
+.guide blockquote {
+  margin: 0 0 12px;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel-raised);
+}
+
+.guide a {
+  color: var(--accent);
+}
+
+/* The error screen (a crash in the UI). */
+.error-screen {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 16px;
+  overflow: auto;
+}
+
+.error-card {
+  width: min(640px, 100%);
+  padding: 24px 28px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.error-card h1 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.error-card p {
+  margin: 0 0 10px;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 8px;
+}
+
+.error-card details {
+  margin-top: 10px;
 }

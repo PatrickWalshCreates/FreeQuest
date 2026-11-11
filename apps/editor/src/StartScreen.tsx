@@ -1,7 +1,7 @@
 import type { ProjectFs, RecentProject } from '@freequest/editor-core';
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
-import { AboutDialog } from './AboutDialog.js';
+import { type HelpPage, HelpDialog } from './HelpDialog.js';
 import { NewProjectDialog } from './NewProjectDialog.js';
 import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
 import { forgetProject, loadRecent } from './recent.js';
@@ -16,7 +16,7 @@ interface Props {
 
 export function StartScreen({ error, failed, onOpen }: Props) {
   const [creating, setCreating] = useState(false);
-  const [about, setAbout] = useState(false);
+  const [help, setHelp] = useState<HelpPage | null>(null);
   const [recent, setRecent] = useState(loadRecent);
   const forget = (location: string) => {
     forgetProject(location);
@@ -29,9 +29,22 @@ export function StartScreen({ error, failed, onOpen }: Props) {
           FreeQuest <span className="muted">Editor</span>
           <span className="version">{FREEQUEST_VERSION}</span>
         </h1>
-        <p className="muted">
-          Start a new game, or open a project folder (the one with project.json).
-        </p>
+        {recent.length === 0 ? (
+          <div className="welcome">
+            <p>
+              Welcome! Make a game from the <strong>Starter</strong> template, or pick{' '}
+              <strong>Demo</strong> to see what FreeQuest can do. The guide walks you through a
+              first game in about half an hour.
+            </p>
+            <button className="link" onClick={() => setHelp('getting-started')}>
+              Open the Getting started guide
+            </button>
+          </div>
+        ) : (
+          <p className="muted">
+            Start a new game, or open a project folder (the one with project.json).
+          </p>
+        )}
         <div className="stack">
           <button className="primary" onClick={() => setCreating(true)}>
             New project…
@@ -54,10 +67,15 @@ export function StartScreen({ error, failed, onOpen }: Props) {
           />
         )}
       </div>
-      <button className="link about-link" onClick={() => setAbout(true)}>
-        About FreeQuest
-      </button>
-      {about && <AboutDialog onClose={() => setAbout(false)} />}
+      <div className="start-links">
+        <button className="link" onClick={() => setHelp('getting-started')}>
+          Guide
+        </button>
+        <button className="link" onClick={() => setHelp('about')}>
+          About FreeQuest
+        </button>
+      </div>
+      {help && <HelpDialog page={help} onClose={() => setHelp(null)} />}
       {creating && (
         <NewProjectDialog
           onClose={() => setCreating(false)}

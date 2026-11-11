@@ -1,5 +1,6 @@
 import { ProjectDocument, type ProjectFs, openProject } from '@freequest/editor-core';
 import { useState } from 'react';
+import { ErrorBoundary } from './ErrorScreen.js';
 import { ProjectView } from './ProjectView.js';
 import { StartScreen } from './StartScreen.js';
 import { confirmDiscard, projectLocation } from './platform.js';
@@ -59,22 +60,25 @@ export function App() {
       return <div className="centered muted">Opening {state.label}…</div>;
     case 'project': {
       const { doc } = state;
+      const close = () =>
+        void leave(doc, 'Close the project and lose your unsaved changes?', () =>
+          setState({ screen: 'start', error: null }),
+        );
       return (
-        <ProjectView
-          doc={doc}
-          onClose={() =>
-            void leave(doc, 'Close the project and lose your unsaved changes?', () =>
-              setState({ screen: 'start', error: null }),
-            )
-          }
-          onReload={() =>
-            void leave(
-              doc,
-              'Reload from disk and lose your unsaved changes?',
-              () => void open(Promise.resolve(doc.fs)),
-            )
-          }
-        />
+        // A crash inside the project's screens keeps the document: its changes can still be saved.
+        <ErrorBoundary key={doc.fs.label} doc={doc} onLeave={close} leaveLabel="Close the project">
+          <ProjectView
+            doc={doc}
+            onClose={close}
+            onReload={() =>
+              void leave(
+                doc,
+                'Reload from disk and lose your unsaved changes?',
+                () => void open(Promise.resolve(doc.fs)),
+              )
+            }
+          />
+        </ErrorBoundary>
       );
     }
   }

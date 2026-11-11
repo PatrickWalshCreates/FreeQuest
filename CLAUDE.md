@@ -400,7 +400,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   starting values too (`NUMBER_DEFAULTS`: success rate 1, rating 5…). Typing in an entry is one
   undo step until the field loses focus. Problems whose message starts with `<kind> "<id>"`
   show on that entry.
-- **Rust stays minimal**: `src-tauri` only registers the dialog, fs and persisted-scope plugins; permissions in
+- **Rust stays minimal**: `src-tauri` only registers the dialog, fs, persisted-scope and opener plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
   the desktop app minus `TauriFs`). The app icon is generated (`pnpm --filter @freequest/editor
@@ -573,6 +573,23 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   after changing dependencies and before a release.
 - **About box** (`apps/editor/src/AboutDialog.tsx`): version, licence, and the notices; from the
   start screen and the toolbar's "?".
+- **Help window** (`apps/editor/src/HelpDialog.tsx`): the guides in `docs/` are bundled with the
+  editor (`?raw` imports, so they always match its version) and read by editor-core's
+  `parseMarkdown` (`markdown.ts`, tested: headings with anchors, paragraphs, lists with
+  continued lines, tables, fenced code, quotes, bold/italic/code/links; plain data, drawn as React
+  elements, never as HTML). Tabs: Getting started, Exporting games, About (`AboutPanel`), with a
+  section list. Links: other guides switch tabs, `#anchor` scrolls, web links open in the
+  browser (`openExternal`: Tauri's opener plugin, `opener:default`; `window.open` in browser
+  mode). Opened from the start screen (welcome text when there are no recent projects, Guide and
+  About links) and the toolbar's Help.
+- **Error screen** (`ErrorScreen.tsx`): an `ErrorBoundary` around the whole app (Reload) and one
+  around an open project (keyed by the project; the document lives outside it, so **Save my
+  changes** still works, then **Try again** re-renders with the changes intact, or **Close the
+  project**). **Copy details** gives the version, browser and stacks. Dev builds: set
+  `sessionStorage['freequest:test-crash'] = '1'` to make the project screen throw (React retries
+  a failed render once, so the boundary, not the thrower, clears the flag).
+- `docs/release-checklist.md`: the by-hand checks for a release (dialogs, restarts, Gatekeeper,
+  playing the demo).
 - Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`
   (private advisories), `.github/ISSUE_TEMPLATE/` (bug report and idea forms, no blank issues)
   and a pull request template.
@@ -734,8 +751,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   1. ~~One version number and a changelog~~ (done; 0.1.0, `pnpm version:set`, `CHANGELOG.md`)
   2. ~~Release hygiene: third-party licence notices, an About box, CONTRIBUTING/SECURITY/issue
      templates, a history check before publishing~~ (done; the commit email is the open question)
-  3. First-run polish: welcome and guide link, an error screen instead of a blank window, a
-     by-hand checklist
+  3. ~~First-run polish: welcome and guide link, an error screen instead of a blank window, a
+     by-hand checklist~~ (done; guides bundled in a Help window, `docs/release-checklist.md`)
   4. Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor
   5. GitHub and a release workflow (needs the user's account)
   6. Windows and Linux exports (from CI-built players)
