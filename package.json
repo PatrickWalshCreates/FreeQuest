@@ -1,6 +1,6 @@
 {
   "name": "freequest-monorepo",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "FreeQuest: a free, open-source 2D RPG engine and editor.",
   "license": "MIT",
@@ -26,6 +26,7 @@
     "gen:art": "tsx scripts/gen-placeholder-art.ts",
     "gen:audio": "tsx scripts/gen-placeholder-audio.ts",
     "gen:templates": "tsx scripts/gen-templates.ts",
+    "version:set": "tsx scripts/set-version.ts",
     "gen:schema": "pnpm --filter @freequest/schema run gen:schema"
   },
   "devDependencies": {

@@ -7,6 +7,7 @@ import {
   inspectTarget,
   planExport,
 } from '@freequest/editor-core';
+import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { Dialog, Field } from './Dialog.js';
 import {
@@ -24,7 +25,6 @@ import {
 type Target = 'web' | 'mac';
 
 /** The editor's version, recorded in each export's marker file. */
-const FREEQUEST_VERSION = '0.0.0';
 
 type Phase =
   | { readonly step: 'review' }

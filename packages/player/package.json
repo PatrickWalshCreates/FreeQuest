@@ -1,6 +1,6 @@
 {
   "name": "@freequest/player",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The release player: the page a FreeQuest game runs in once exported. Built once; exporters copy dist/.",
   "license": "MIT",
   "type": "module",

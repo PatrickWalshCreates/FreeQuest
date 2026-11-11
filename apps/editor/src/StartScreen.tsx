@@ -1,4 +1,5 @@
 import type { ProjectFs, RecentProject } from '@freequest/editor-core';
+import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { NewProjectDialog } from './NewProjectDialog.js';
 import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
@@ -24,6 +25,7 @@ export function StartScreen({ error, failed, onOpen }: Props) {
       <div className="start-card">
         <h1>
           FreeQuest <span className="muted">Editor</span>
+          <span className="version">{FREEQUEST_VERSION}</span>
         </h1>
         <p className="muted">
           Start a new game, or open a project folder (the one with project.json).

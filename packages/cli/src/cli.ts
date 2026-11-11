@@ -23,6 +23,7 @@ import {
   openProject,
   planExport,
 } from '@freequest/editor-core';
+import { FREEQUEST_VERSION } from '@freequest/schema';
 import { NodeFs } from './node-fs.js';
 
 export interface Io {
@@ -39,7 +40,8 @@ export interface Io {
   readonly platform?: string;
 }
 
-export const VERSION = '0.0.0';
+/** FreeQuest's one version (from the root package.json). */
+export const VERSION = FREEQUEST_VERSION;
 
 /** Marks a folder as a FreeQuest export, so `--clean` only ever deletes exports. */
 export { EXPORT_MARKER };

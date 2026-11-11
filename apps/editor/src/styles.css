@@ -119,6 +119,14 @@ button.primary {
   font-size: 22px;
 }
 
+.start-card h1 .version {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--muted);
+  vertical-align: middle;
+}
+
 .stack {
   display: grid;
   gap: 8px;

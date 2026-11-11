@@ -1,6 +1,6 @@
 {
   "name": "@freequest/schema",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Types and JSON Schema for the FreeQuest project file format.",
   "license": "MIT",
   "type": "module",

@@ -1,3 +1,4 @@
+import { FREEQUEST_VERSION } from '@freequest/schema';
 import {
   cpSync,
   existsSync,
@@ -185,7 +186,7 @@ describe('usage', () => {
   it('shows help, the version, and usage errors', async () => {
     expect((await cli(['--help'])).out).toMatch(/freequest check \[project\]/);
     expect((await cli([])).code).toBe(2);
-    expect((await cli(['-v'])).out).toBe('0.0.0');
+    expect((await cli(['-v'])).out).toBe(FREEQUEST_VERSION);
     const unknown = await cli(['frobnicate']);
     expect(unknown).toMatchObject({ code: 2, err: expect.stringMatching(/Unknown command/) });
     expect((await cli(['export', 'zip', '-o', 'x'])).err).toMatch(/supported: web/);

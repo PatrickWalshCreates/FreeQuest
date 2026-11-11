@@ -35,6 +35,7 @@ in the repo does.
 | `pnpm gen:art`          | Regenerate the demo project's placeholder PNGs (deterministic)                                        |
 | `pnpm gen:audio`        | Regenerate the demo's music and sound effects (deterministic 8-bit WAV)                               |
 | `pnpm gen:templates`    | Regenerate `templates/starter` (New project's Starter template) from the demo's assets                |
+| `pnpm version:set [v]`  | Set FreeQuest's version (root `package.json`) and write it into every other versioned file            |
 
 Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) is ready but the repo is not on
 GitHub yet, so nothing runs it automatically: run it locally.
@@ -552,6 +553,15 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
 - `checkMapReferences` reports map tiles past the end of the tileset (the game would throw), so
   shrinking a tileset shows up as a problem instead of a crash.
 
+### Versions and releases (M10)
+
+- **One version**: the root `package.json`'s. `pnpm version:set 0.2.0` writes it into every
+  package.json, both `tauri.conf.json`, both `Cargo.toml` and `Cargo.lock` entries, and the
+  generated `packages/schema/src/version.ts` (`FREEQUEST_VERSION`, used by the CLI's
+  `--version`, export markers and the editor's start screen). `scripts/version-files.ts` lists
+  the files; `schema/test/version.test.ts` fails if any copy drifts. `CHANGELOG.md` gets an
+  entry per release.
+
 ## Project file format
 
 - Plain JSON, written **only** via `stableStringify` (`packages/schema/src/serialize.ts`): leading keys
@@ -665,8 +675,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      CI has a macOS job that builds the player app and verifies a Mac export's signature)
   - Deferred: Windows/Linux player apps (build on those systems, e.g. in CI), installers (DMG,
     setup programs), a packaged editor app, custom app icons per game, Developer ID signing and
-    notarization, uploading to itch.io, mobile, one shared FreeQuest version constant (the CLI
-    and the editor each declare `0.0.0`).
+    notarization, uploading to itch.io, mobile (the shared version came in M10).
 - **M8 (done)** Editor workflow. Steps:
   1. ~~New project from a template (Starter, Demo)~~ (done; created and played in browser mode)
   2. ~~Recent projects (desktop keeps folder access between launches)~~ (done; tried in browser
@@ -704,9 +713,19 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   - Deferred: saving event positions and parallel progress, pathfinding for chasers, jump /
     transparency / script steps in routes, shop sell-price overrides, a key-binding UI for
     gamepads, battle animations.
-- **M10 (next)**: public release: the repo on GitHub with CI running, one shared FreeQuest
-  version, Developer ID signing and notarization, a DMG, Windows/Linux builds, a website or
-  itch.io page, first-run polish.
+- **M10 (in progress)** First public release (v0.1.0). Steps:
+  1. ~~One version number and a changelog~~ (done; 0.1.0, `pnpm version:set`, `CHANGELOG.md`)
+  2. Release hygiene: third-party licence notices, an About box, CONTRIBUTING/SECURITY/issue
+     templates, a history check before publishing
+  3. First-run polish: welcome and guide link, an error screen instead of a blank window, a
+     by-hand checklist
+  4. Universal (Apple Silicon + Intel) macOS builds and a DMG for the editor
+  5. GitHub and a release workflow (needs the user's account)
+  6. Windows and Linux exports (from CI-built players)
+  7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
+  8. Release dry run, tag v0.1.0, freeze the 0.1 formats
+  - Decisions for the user: a GitHub account, the commit email in the history, Apple Developer
+    ID ($99/yr), Windows signing, a name check.
 - **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
   multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
   clean-room), the plugin API.

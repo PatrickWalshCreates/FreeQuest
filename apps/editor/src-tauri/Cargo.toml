@@ -1,6 +1,6 @@
 [package]
 name = "freequest-editor"
-version = "0.0.0"
+version = "0.1.0"
 description = "FreeQuest Editor"
 license = "MIT"
 edition = "2021"
