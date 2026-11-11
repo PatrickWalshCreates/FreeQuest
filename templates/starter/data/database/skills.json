@@ -1,0 +1,45 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "attack",
+      "name": "Attack",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": true,
+          "element": "attack",
+          "formula": "a.attack * 4 - b.defense * 2",
+          "pool": "hp",
+          "variance": 0.2
+        }
+      ],
+      "hitType": "physical",
+      "mpCost": 0,
+      "occasion": "battle",
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "enemy"
+      }
+    },
+    {
+      "id": "guard",
+      "name": "Guard",
+      "effects": [
+        {
+          "type": "addState",
+          "chance": 1,
+          "state": "guarding"
+        }
+      ],
+      "hitType": "certain",
+      "mpCost": 0,
+      "occasion": "battle",
+      "successRate": 1,
+      "target": {
+        "side": "user"
+      }
+    }
+  ]
+}

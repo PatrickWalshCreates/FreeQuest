@@ -6,5 +6,11 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "vite.config.ts", "dev-fs-plugin.ts", "release-player-plugin.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "dev-fs-plugin.ts",
+    "release-player-plugin.ts",
+    "templates-plugin.ts"
+  ]
 }

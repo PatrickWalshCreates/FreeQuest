@@ -1293,7 +1293,7 @@ input[type='search'] {
   gap: 8px;
 }
 
-.export .export-target {
+.export-target {
   display: grid;
   gap: 2px;
   align-content: start;
@@ -1304,7 +1304,7 @@ input[type='search'] {
   background: var(--panel-raised);
 }
 
-.export .export-target.on {
+.export-target.on {
   border-color: var(--accent);
   background: var(--selected);
 }

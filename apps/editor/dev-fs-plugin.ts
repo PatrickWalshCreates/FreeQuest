@@ -1,7 +1,8 @@
-// Dev-server file access for running the editor in a normal browser. Two
-// areas, each a folder of folders: "samples" (the sample projects) and
-// "exports" (where browser-mode exports go). Only active in `vite dev`.
-//   GET    /__freequest/projects                       → ["demo-project", ...]
+// Dev-server file access for running the editor in a normal browser.
+// Areas, each a folder of folders: "samples" (the sample projects),
+// "projects" (made with New project in browser mode) and "exports" (where
+// browser-mode exports go). Only active in `vite dev`.
+//   GET    /__freequest/projects                       → [{ area, name }, ...]
 //   GET    /__freequest/<area>/fs/<folder>/<path>      → file contents
 //   PUT    /__freequest/<area>/fs/<folder>/<path>      → write the request body
 //   DELETE /__freequest/<area>/fs/<folder>/<path>      → delete the file
@@ -60,15 +61,19 @@ export function devFsPlugin(areas: Readonly<Record<string, string>>): Plugin {
       server.middlewares.use('/__freequest', (request, response) => {
         void (async () => {
           const url = new URL(request.url ?? '/', 'http://localhost');
-          const samples = roots.get('samples');
-          if (url.pathname === '/projects' && request.method === 'GET' && samples) {
-            const entries = await readdir(samples, { withFileTypes: true });
-            const projects = entries
-              .filter(
-                (e) => e.isDirectory() && existsSync(resolve(samples, e.name, 'project.json')),
-              )
-              .map((e) => e.name)
-              .sort();
+          if (url.pathname === '/projects' && request.method === 'GET') {
+            // Every folder holding a project.json, in the samples and projects areas.
+            const projects: { area: string; name: string }[] = [];
+            for (const area of ['samples', 'projects']) {
+              const root = roots.get(area);
+              if (!root || !existsSync(root)) continue;
+              for (const e of await readdir(root, { withFileTypes: true })) {
+                if (e.isDirectory() && existsSync(resolve(root, e.name, 'project.json'))) {
+                  projects.push({ area, name: e.name });
+                }
+              }
+            }
+            projects.sort((a, b) => a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
             response.setHeader('Content-Type', 'application/json');
             response.end(JSON.stringify(projects));
             return;

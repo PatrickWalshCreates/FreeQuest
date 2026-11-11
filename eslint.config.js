@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/dist/**',
       // Exports made by the editor in browser mode: built player code.
       'exports/**',
+      'projects/**',
       '**/src-tauri/target/**',
       '**/src-tauri/gen/**',
       '**/coverage/**',

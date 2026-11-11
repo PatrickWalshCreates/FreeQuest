@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defaultClientConditions, defineConfig } from 'vite';
 import { devFsPlugin } from './dev-fs-plugin.js';
 import { releasePlayerPlugin } from './release-player-plugin.js';
+import { templatesPlugin } from './templates-plugin.js';
 
 export default defineConfig({
   plugins: [
@@ -10,9 +11,20 @@ export default defineConfig({
     devFsPlugin({
       samples: fileURLToPath(new URL('../../samples', import.meta.url)),
       // Browser-mode exports land here (git-ignored).
+      projects: fileURLToPath(new URL('../../projects', import.meta.url)),
       exports: fileURLToPath(new URL('../../exports', import.meta.url)),
     }),
     releasePlayerPlugin(fileURLToPath(new URL('../../packages/player/dist', import.meta.url))),
+    templatesPlugin([
+      { id: 'starter', dir: fileURLToPath(new URL('../../templates/starter', import.meta.url)) },
+      {
+        id: 'demo',
+        dir: fileURLToPath(new URL('../../samples/demo-project', import.meta.url)),
+        name: 'Demo',
+        description:
+          'The full FreeQuest demo: two maps, a quest, battles and a party member to learn from.',
+      },
+    ]),
   ],
   resolve: {
     // Resolve @freequest/* packages to their TypeScript sources: no prebuild needed.

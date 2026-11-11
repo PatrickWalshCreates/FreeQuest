@@ -1,5 +1,5 @@
-import { type ProjectFs } from '@freequest/editor-core';
-import { isTauri } from '@tauri-apps/api/core';
+import type { ProjectFs, TemplateInfo, TemplateSource } from '@freequest/editor-core';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 
 /** True in the desktop app; false in a browser tab during development. */
 export const IN_DESKTOP_APP = isTauri();
@@ -11,9 +11,12 @@ export async function desktopFs(): Promise<ProjectFs | null> {
   return folder ? new TauriFs(folder) : null;
 }
 
-export async function devFs(project: string): Promise<ProjectFs> {
+export async function devFs(
+  project: string,
+  area: 'samples' | 'projects' = 'samples',
+): Promise<ProjectFs> {
   const { DevServerFs } = await import('./fs/dev-fs.js');
-  return new DevServerFs(project);
+  return new DevServerFs(project, area);
 }
 
 /** Ask the user to confirm something destructive. Resolves true when they agree. */
@@ -131,6 +134,61 @@ export async function macShell(): Promise<ProjectFs> {
 
 /** Ad-hoc sign an exported app (runs codesign through the editor's Rust side). */
 export async function signMacApp(appPath: string): Promise<void> {
-  const { invoke } = await import('@tauri-apps/api/core');
   await invoke('sign_mac_app', { path: appPath });
+}
+
+export interface BundledTemplate extends TemplateInfo {
+  readonly files: readonly string[];
+}
+
+/** The project templates bundled with the editor (served at /project-templates/). */
+export async function bundledTemplates(): Promise<BundledTemplate[]> {
+  const response = await fetch(new URL('project-templates/index.json', window.location.href));
+  if (!response.ok) throw new Error(`Project templates are missing (HTTP ${response.status})`);
+  return (await response.json()) as BundledTemplate[];
+}
+
+export function templateSource(template: BundledTemplate): TemplateSource {
+  const base = new URL(`project-templates/${template.id}/`, window.location.href);
+  return {
+    files: template.files,
+    read: async (path) => {
+      const response = await fetch(
+        new URL(path.split('/').map(encodeURIComponent).join('/'), base),
+      );
+      if (!response.ok) throw new Error(`Template file ${path}: HTTP ${response.status}`);
+      return new Uint8Array(await response.arrayBuffer());
+    },
+  };
+}
+
+/** A folder name for a project: the game's name without characters file systems dislike. */
+export function projectFolderName(name: string): string {
+  return (
+    [...name.trim()]
+      .map((c) => (c.charCodeAt(0) < 0x20 || '/\\:*?"<>|'.includes(c) ? '-' : c))
+      .join('')
+      .replace(/^\.+/, '') || 'My Game'
+  );
+}
+
+/** Where a new project goes: a new folder inside one the user picks (desktop). */
+export async function pickNewProjectParent(): Promise<string | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const picked = await open({
+    directory: true,
+    recursive: true,
+    title: 'Choose where to put the new project',
+  });
+  return typeof picked === 'string' ? picked : null;
+}
+
+/** The new project's folder: `<parent>/<folder>` on the desktop, projects/<folder> in browser mode. */
+export async function newProjectFs(parent: string | null, folder: string): Promise<ProjectFs> {
+  if (IN_DESKTOP_APP) {
+    if (!parent) throw new Error('Choose where to put the project');
+    const { TauriFs } = await import('./fs/tauri-fs.js');
+    return new TauriFs(`${parent.replace(/[\\/]+$/, '')}/${folder}`);
+  }
+  return devFs(folder, 'projects');
 }

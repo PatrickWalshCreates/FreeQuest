@@ -9,7 +9,7 @@ import {
 const BASE = '/__freequest';
 
 /** Folders the dev server offers: sample projects, and where browser-mode exports go. */
-export type DevArea = 'samples' | 'exports';
+export type DevArea = 'samples' | 'projects' | 'exports';
 
 export class DevServerFs implements ProjectFs {
   readonly label: string;
@@ -73,9 +73,9 @@ export class DevServerFs implements ProjectFs {
   }
 }
 
-/** Sample projects the dev server can open. */
-export async function listDevProjects(): Promise<string[]> {
+/** Projects the dev server can open: samples, and ones made with New project. */
+export async function listDevProjects(): Promise<{ area: DevArea; name: string }[]> {
   const response = await fetch(`${BASE}/projects`);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return (await response.json()) as string[];
+  return (await response.json()) as { area: DevArea; name: string }[];
 }

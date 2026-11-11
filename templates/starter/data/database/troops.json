@@ -1,0 +1,10 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "slimes",
+      "name": "Slimes",
+      "enemies": ["slime", "slime"]
+    }
+  ]
+}

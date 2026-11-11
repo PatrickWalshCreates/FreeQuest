@@ -1,0 +1,27 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "potion",
+      "name": "Potion",
+      "consumable": true,
+      "description": "Restores 30% of max HP, at least 100.",
+      "effects": [
+        {
+          "type": "recover",
+          "formula": "max(100, b.maxHp * 0.3)",
+          "pool": "hp"
+        }
+      ],
+      "hitType": "certain",
+      "key": false,
+      "occasion": "always",
+      "price": 50,
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "ally"
+      }
+    }
+  ]
+}

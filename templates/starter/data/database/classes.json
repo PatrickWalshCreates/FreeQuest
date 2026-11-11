@@ -1,0 +1,75 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "exp": {
+        "base": 30,
+        "exponent": 2.2
+      },
+      "modifiers": [
+        {
+          "type": "equipType",
+          "equipmentType": "sword"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "shield"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "light-armor"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "hat"
+        },
+        {
+          "type": "equipType",
+          "equipmentType": "accessory"
+        },
+        {
+          "type": "attackElement",
+          "element": "physical"
+        }
+      ],
+      "skills": [],
+      "stats": {
+        "agility": {
+          "1": 10,
+          "99": 240
+        },
+        "attack": {
+          "1": 14,
+          "99": 320
+        },
+        "defense": {
+          "1": 12,
+          "99": 300
+        },
+        "luck": {
+          "1": 10,
+          "99": 200
+        },
+        "magicAttack": {
+          "1": 6,
+          "99": 150
+        },
+        "magicDefense": {
+          "1": 8,
+          "99": 200
+        },
+        "maxHp": {
+          "1": 120,
+          "50": 2400,
+          "99": 5200
+        },
+        "maxMp": {
+          "1": 10,
+          "99": 400
+        }
+      }
+    }
+  ]
+}

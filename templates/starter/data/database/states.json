@@ -1,0 +1,36 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "knockout",
+      "name": "Knocked out",
+      "knockout": true,
+      "modifiers": [],
+      "priority": 100,
+      "removal": {
+        "battleEnd": false
+      },
+      "restriction": "cannotAct"
+    },
+    {
+      "id": "guarding",
+      "name": "Guarding",
+      "knockout": false,
+      "modifiers": [
+        {
+          "type": "damageTaken",
+          "value": 0.5
+        }
+      ],
+      "priority": 0,
+      "removal": {
+        "battleEnd": true,
+        "turns": {
+          "max": 1,
+          "min": 1
+        }
+      },
+      "restriction": "none"
+    }
+  ]
+}

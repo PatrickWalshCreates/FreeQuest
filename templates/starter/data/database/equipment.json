@@ -1,0 +1,33 @@
+{
+  "formatVersion": 3,
+  "entries": [
+    {
+      "id": "bronze-sword",
+      "name": "Bronze Sword",
+      "equipmentType": "sword",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "attack",
+          "value": 10
+        }
+      ],
+      "price": 100,
+      "slot": "weapon"
+    },
+    {
+      "id": "leather-vest",
+      "name": "Leather Vest",
+      "equipmentType": "light-armor",
+      "modifiers": [
+        {
+          "type": "statFlat",
+          "stat": "defense",
+          "value": 8
+        }
+      ],
+      "price": 80,
+      "slot": "body"
+    }
+  ]
+}

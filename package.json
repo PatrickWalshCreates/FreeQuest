@@ -24,6 +24,7 @@
     "format": "prettier --write .",
     "gen:art": "tsx scripts/gen-placeholder-art.ts",
     "gen:audio": "tsx scripts/gen-placeholder-audio.ts",
+    "gen:templates": "tsx scripts/gen-templates.ts",
     "gen:schema": "pnpm --filter @freequest/schema run gen:schema"
   },
   "devDependencies": {
