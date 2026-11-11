@@ -36,7 +36,7 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../../player-desktop/dist/macos/FreeQuest Player.app/": "mac-player/FreeQuest Player.app/"
+      "players/": "players/"
     }
   }
 }

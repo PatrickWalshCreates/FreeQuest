@@ -21,3 +21,4 @@ export * from './tileset-edits.js';
 export * from './character-edits.js';
 export * from './clipboard.js';
 export * from './markdown.js';
+export * from './desktop-export.js';

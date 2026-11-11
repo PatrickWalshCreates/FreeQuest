@@ -16,8 +16,12 @@ import {
   MAC_SHELL_NAME,
   ProjectOpenError,
   clearExport,
+  type DesktopTarget,
+  DESKTOP_TARGET_NAMES,
+  exportDesktop,
   exportMac,
   exportWeb,
+  desktopShellProblem,
   macSignCommand,
   inspectTarget,
   openProject,
@@ -34,6 +38,8 @@ export interface Io {
   readonly playerDir?: string;
   /** The desktop player app to export Mac apps from (default: the repo's staged shell). */
   readonly macShell?: string;
+  /** The Windows and Linux player folders (tests replace them). */
+  readonly desktopShells?: Partial<Record<DesktopTarget, string>>;
   /** Runs codesign (tests replace it). */
   readonly sign?: SignRunner;
   /** Overrides process.platform (tests). */
@@ -54,11 +60,14 @@ Usage:
                                           Export a game for the web (any static host)
   freequest export mac [project] --out <folder> [--clean] [--shell <app>]
                                           Export a macOS app (signed ad-hoc on a Mac)
+  freequest export windows|linux [project] --out <folder> [--clean] [--shell <folder>]
+                                          Export a Windows or Linux game (a folder to zip)
 
 [project] is the folder containing project.json (default: the current folder).
 --clean replaces a previous export in the output folder; other folders must be empty.
---shell is the desktop player app to build from (default: the one staged by
-"pnpm --filter @freequest/player-desktop build:shell").
+--shell is the desktop player to build from (default: the one staged by
+"pnpm build:mac-player" for Mac, or apps/player-desktop/dist/windows|linux, which the
+release workflow builds on those systems).
 
 Options:
   -h, --help       Show this help
@@ -108,10 +117,20 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         if (target === 'mac') {
           return await exportMacCommand(more, values.out, values.clean === true, values.shell, io);
         }
+        if (target === 'windows' || target === 'linux') {
+          return await exportDesktopCommand(
+            target,
+            more,
+            values.out,
+            values.clean === true,
+            values.shell,
+            io,
+          );
+        }
         throw new UsageError(
           target
-            ? `Unknown export target "${target}" (supported: web, mac)`
-            : 'Missing export target (web or mac)',
+            ? `Unknown export target "${target}" (supported: web, mac, windows, linux)`
+            : 'Missing export target (web, mac, windows or linux)',
         );
       }
       default:
@@ -301,5 +320,60 @@ async function exportMacCommand(
   } else {
     io.err('Not signed: run "codesign --force --deep --sign - <app>" on a Mac before sharing it.');
   }
+  return 0;
+}
+
+/** Where the repo keeps the Windows and Linux players (CI builds them on those systems). */
+const desktopShellDir = (target: DesktopTarget) =>
+  fileURLToPath(new URL(`../../../apps/player-desktop/dist/${target}`, import.meta.url));
+
+async function exportDesktopCommand(
+  target: DesktopTarget,
+  args: readonly string[],
+  out: string | undefined,
+  clean: boolean,
+  shellPath: string | undefined,
+  io: Io,
+): Promise<number> {
+  const dir = projectDir(args, io);
+  if (!out) throw new UsageError('Missing --out <folder>');
+  const outDir = resolve(io.cwd, out);
+  const shellDir = shellPath
+    ? resolve(io.cwd, shellPath)
+    : (io.desktopShells?.[target] ?? desktopShellDir(target));
+  const shell = new NodeFs(shellDir);
+  const problem = existsSync(shellDir) ? await desktopShellProblem(target, shell) : 'no folder';
+  if (problem) {
+    throw new Error(
+      `No ${DESKTOP_TARGET_NAMES[target]} player at ${shellDir} (${problem}). It's built on ` +
+        `${DESKTOP_TARGET_NAMES[target]} (see the release workflow); pass --shell <folder> to use one.`,
+    );
+  }
+  const { fs, project, plan: result } = await plan(dir);
+  printProblems(io, 'Warnings', result.warnings);
+  if (result.errors.length > 0) {
+    printProblems(io, 'Problems', result.errors);
+    io.err('Not exported: fix the problems above first (the game would not start).');
+    return 1;
+  }
+  const output = await prepareOut(outDir, dir, clean);
+  const written = await exportDesktop({
+    target,
+    project,
+    plan: result,
+    source: fs,
+    shell,
+    output,
+    freequestVersion: VERSION,
+  });
+  const size = (written.bytes / 1024 / 1024).toFixed(1);
+  io.out(
+    `Exported ${project.manifest.data.name} for ${DESKTOP_TARGET_NAMES[target]} to ${join(outDir, written.folder)} (${size} MB).`,
+  );
+  io.out(
+    target === 'windows'
+      ? `Zip the "${written.folder}" folder to share; players unzip it and run ${written.program}.`
+      : `Share the "${written.folder}" folder as a .tar.gz (keeps ${written.program} runnable); it needs WebKitGTK 4.1.`,
+  );
   return 0;
 }

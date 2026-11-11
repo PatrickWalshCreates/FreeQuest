@@ -20,7 +20,7 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$RESOURCE/mac-player/**"
+          "path": "$RESOURCE/players/**"
         }
       ]
     },

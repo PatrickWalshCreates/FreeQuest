@@ -1,8 +1,11 @@
 name: Release
 
-# Builds the editor downloads. On a version tag (v0.1.0…) they go on a draft
-# GitHub Release to check and publish by hand; started by hand ("Run
-# workflow"), they're kept as the run's artifacts, to try a build.
+# Builds the downloads in two stages. First the desktop player ("shell") on
+# each system: exported games are made from these. Then the editor for each
+# system, with all three players bundled, so any editor can export games for
+# macOS, Windows and Linux. On a version tag (v0.1.0…) the editors go on a
+# draft GitHub Release to check and publish by hand; started by hand ("Run
+# workflow") they're kept as the run's artifacts, to try a build.
 on:
   push:
     tags: ['v*']
@@ -11,18 +14,27 @@ on:
 permissions:
   contents: write
 
+env:
+  # Tauri's Linux build needs these system libraries (ubuntu-22.04, so the
+  # Linux builds also run on older distributions).
+  LINUX_DEPS: >-
+    libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev
+    patchelf file build-essential libfuse2
+
 jobs:
-  mac:
-    name: macOS (${{ matrix.label }})
-    runs-on: macos-latest
+  player:
+    name: Player (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: aarch64-apple-darwin
-            label: Apple Silicon
-          - target: x86_64-apple-darwin
-            label: Intel
+          - system: macos
+            runner: macos-latest
+          - system: windows
+            runner: windows-latest
+          - system: linux
+            runner: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -30,24 +42,45 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - if: matrix.system == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_DEPS
+      - if: matrix.system == 'macos'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - run: pnpm install --frozen-lockfile
-      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - run: pnpm build
-      # The player inside the editor is universal, so games exported from either download run on any Mac.
-      - run: pnpm build:mac-player
-      - run: pnpm --filter @freequest/editor build:app
-        env:
-          FREEQUEST_MAC_TARGET: ${{ matrix.target }}
-      - run: lipo -archs apps/editor/dist-app/macos/*.app/Contents/MacOS/freequest-editor
+      - run: pnpm --filter @freequest/player-desktop build:shell
+      # Packed with tar so the programs stay executable.
+      - name: Pack the player
+        shell: bash
+        run: tar -czf player-${{ matrix.system }}.tgz -C apps/player-desktop/dist ${{ matrix.system }}
       - uses: actions/upload-artifact@v4
         with:
-          name: editor-${{ matrix.target }}
-          path: apps/editor/dist-app/macos/*.dmg
+          name: player-${{ matrix.system }}
+          path: player-${{ matrix.system }}.tgz
           if-no-files-found: error
 
-  windows:
-    name: Windows
-    runs-on: windows-latest
+  editor:
+    name: Editor (${{ matrix.label }})
+    needs: player
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS Apple Silicon
+            runner: macos-latest
+            system: macos
+            mac-target: aarch64-apple-darwin
+          - label: macOS Intel
+            runner: macos-latest
+            system: macos
+            mac-target: x86_64-apple-darwin
+          - label: Windows
+            runner: windows-latest
+            system: windows
+          - label: Linux
+            runner: ubuntu-22.04
+            system: linux
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -55,31 +88,67 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - if: matrix.system == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_DEPS
+      - if: matrix.system == 'macos'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: player-*
+          path: players
+          merge-multiple: true
+      - name: Unpack the players
+        shell: bash
+        run: |
+          mkdir -p apps/player-desktop/dist
+          for f in players/*.tgz; do tar -xzf "$f" -C apps/player-desktop/dist; done
+          ls apps/player-desktop/dist
       - run: pnpm build
-      - run: pnpm --filter @freequest/editor tauri build --bundles nsis
-      # Named like the Mac downloads (Tauri calls it "FreeQuest Editor_<version>_x64-setup.exe").
-      - name: Name the installer
+
+      - if: matrix.system == 'macos'
+        run: pnpm --filter @freequest/editor build:app
+        env:
+          FREEQUEST_MAC_TARGET: ${{ matrix.mac-target }}
+      - if: matrix.system == 'macos'
+        run: lipo -archs apps/editor/dist-app/macos/*.app/Contents/MacOS/freequest-editor
+
+      - if: matrix.system == 'windows'
+        run: pnpm --filter @freequest/editor build:desktop --bundles nsis
+      - if: matrix.system == 'linux'
+        run: pnpm --filter @freequest/editor build:desktop --bundles appimage,deb
+
+      # Every download is named FreeQuest-Editor-<version>-<system>.
+      - name: Name the downloads
         shell: bash
         run: |
           version=$(node -p "require('./package.json').version")
-          mkdir -p dist-windows
-          mv apps/editor/src-tauri/target/release/bundle/nsis/*-setup.exe "dist-windows/FreeQuest-Editor-$version-Windows-setup.exe"
+          mkdir -p downloads
+          bundle=apps/editor/src-tauri/target/release/bundle
+          case "${{ matrix.system }}" in
+            macos) mv apps/editor/dist-app/macos/*.dmg downloads/ ;;
+            windows) mv $bundle/nsis/*-setup.exe "downloads/FreeQuest-Editor-$version-Windows-setup.exe" ;;
+            linux)
+              mv $bundle/appimage/*.AppImage "downloads/FreeQuest-Editor-$version-Linux-x86_64.AppImage"
+              mv $bundle/deb/*.deb "downloads/FreeQuest-Editor-$version-Linux-amd64.deb" ;;
+          esac
+          ls -l downloads
       - uses: actions/upload-artifact@v4
         with:
-          name: editor-windows
-          path: dist-windows/*.exe
+          name: editor-${{ matrix.system }}-${{ matrix.mac-target || 'x86_64' }}
+          path: downloads/*
           if-no-files-found: error
 
   release:
     name: Draft release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [mac, windows]
+    needs: editor
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          pattern: editor-*
           path: downloads
           merge-multiple: true
       - name: Create the draft release
@@ -88,4 +157,4 @@ jobs:
         run: >-
           gh release create "$GITHUB_REF_NAME" downloads/*
           --draft --title "FreeQuest ${GITHUB_REF_NAME#v}"
-          --notes "Downloads: the editor for Apple Silicon Macs, Intel Macs and Windows. See CHANGELOG.md for what's new."
+          --notes "Downloads: the editor for Apple Silicon Macs, Intel Macs, Windows and Linux (AppImage or .deb). Any of them exports games for the web, Windows and Linux; the Mac editors also make Mac apps. See CHANGELOG.md for what's new."

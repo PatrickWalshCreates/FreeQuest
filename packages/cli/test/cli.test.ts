@@ -53,6 +53,14 @@ function fakeShell(): string {
   return app;
 }
 
+/** Stand-ins for the Windows and Linux players: the program and its notices. */
+function fakeDesktopShell(program: string): string {
+  const dir = temp();
+  writeFileSync(join(dir, program), 'binary');
+  writeFileSync(join(dir, 'THIRD_PARTY_NOTICES.txt'), 'notices');
+  return dir;
+}
+
 const signed: string[][] = [];
 
 async function cli(args: string[], cwd = DEMO, platform = 'darwin') {
@@ -64,6 +72,10 @@ async function cli(args: string[], cwd = DEMO, platform = 'darwin') {
     cwd,
     playerDir: fakePlayer(),
     macShell: fakeShell(),
+    desktopShells: {
+      windows: fakeDesktopShell('freequest-player.exe'),
+      linux: fakeDesktopShell('freequest-player'),
+    },
     platform,
     sign: async (command, a) => void signed.push([command, ...a]),
   });
@@ -149,6 +161,31 @@ describe('freequest export web', () => {
     expect(broken.code).toBe(1);
     expect(broken.err).toMatch(/Not exported/);
     expect(existsSync(out)).toBe(false);
+  });
+});
+
+describe('freequest export windows and linux', () => {
+  it('writes a game folder with the renamed program', async () => {
+    const out = join(temp(), 'win');
+    const result = await cli(['export', 'windows', '--out', out]);
+    expect(result.code).toBe(0);
+    expect(result.out).toMatch(/Exported FreeQuest Demo for Windows/);
+    expect(existsSync(join(out, 'FreeQuest Demo', 'FreeQuest Demo.exe'))).toBe(true);
+    expect(existsSync(join(out, 'FreeQuest Demo', 'game', 'project.json'))).toBe(true);
+    expect(existsSync(join(out, 'FreeQuest Demo', 'THIRD_PARTY_NOTICES.txt'))).toBe(true);
+  });
+
+  it('keeps the Linux program executable', async () => {
+    const out = join(temp(), 'linux');
+    expect((await cli(['export', 'linux', '--out', out])).code).toBe(0);
+    const program = join(out, 'FreeQuest Demo', 'freequest-demo');
+    expect(statSync(program).mode & 0o111).not.toBe(0);
+  });
+
+  it('explains a missing player', async () => {
+    await expect(
+      cli(['export', 'linux', '--out', join(temp(), 'x'), '--shell', temp()]),
+    ).rejects.toThrow(/No Linux player .*release workflow/);
   });
 });
 

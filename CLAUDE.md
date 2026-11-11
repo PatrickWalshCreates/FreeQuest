@@ -23,7 +23,7 @@ in the repo does.
 | `pnpm editor`           | Run the editor in a browser at http://localhost:5174 (opens samples/)                                 |
 | `pnpm editor:desktop`   | Run the editor as the Tauri desktop app (needs Rust; see below)                                       |
 | `pnpm freequest …`      | The `freequest` CLI from source: `check [project]`, `export web\|mac [project] --out <dir> [--clean]` |
-| `pnpm build:mac-player` | Build the desktop player app Mac exports are made from (Rust, macOS; needed by `editor:desktop`)      |
+| `pnpm build:mac-player` | Build the desktop player for this system into `apps/player-desktop/dist/<system>` (Rust)              |
 | `pnpm build:editor-app` | Build everything, then `FreeQuest Editor.app` at `apps/editor/dist-app/macos/` (ad-hoc signed)        |
 | `pnpm test`             | Run all unit tests once (Vitest); `pnpm test:watch` to watch                                          |
 | `pnpm check`            | lint + typecheck + test: run before every commit (CI runs this + build)                               |
@@ -471,8 +471,9 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   `execFile` on macOS (elsewhere it warns), the editor via its one Rust command `sign_mac_app`.
   Without re-signing macOS calls the modified app "damaged". Players still see "unidentified
   developer" (right-click → Open) until a Developer ID signs it. The desktop editor bundles the
-  shell as a resource (`mac-player/`), so `pnpm build:mac-player` must run before
-  `pnpm editor:desktop` or an editor build; the Export dialog offers "macOS app" only there.
+  shell as a resource (`players/macos/`), so `pnpm build:mac-player` must run before
+  `pnpm editor:desktop` or an editor build (now through `players/`, see M10); the Export dialog
+  offers "macOS app" only there.
 - Checking a built desktop app without seeing it: the window list (Swift
   `CGWindowListCopyWindowInfo`) shows the owner and size but not titles without screen-recording
   access; a temporary write to `$APPDATA/saves/` is the reliable "did the game start" probe. A
@@ -596,6 +597,24 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   resource and picks NSIS), renamed `FreeQuest-Editor-<version>-Windows-setup.exe`. Note: while
   the repo is private, Actions minutes come from the free allowance (macOS counts 10×). A tag also makes a draft GitHub Release with all three to check and
   publish by hand.
+- **Windows and Linux exports** (`editor-core/desktop-export.ts`, tested; CLI `export windows|linux`;
+  the Export dialog): a folder `<Game>/` with the player program renamed (`<Game>.exe`, or the
+  game id on Linux, executable), `game/` and `THIRD_PARTY_NOTICES.txt`. A plain (unbundled)
+  Tauri program's resource folder is its own folder on both systems, so the player's
+  `resourceDir()/game` lookup works unchanged; its CSP already allows `http://asset.localhost`
+  (Windows). No signing, so any editor can make them. Players (`DESKTOP_SHELL_PROGRAM`) come from
+  `apps/player-desktop/dist/<system>/`: `scripts/build-shell.mjs` builds the one for the system
+  it runs on (macOS universal app; Windows/Linux `tauri build --no-bundle` + notices).
+- **Players bundled with the editor**: `apps/editor/scripts/stage-players.mjs` copies every built
+  `apps/player-desktop/dist/{macos,windows,linux}` into `src-tauri/players/` (git-ignored, with a
+  README so it's never empty), bundled as the `players/` resource (fs scope
+  `$RESOURCE/players/**`); `build:app`, `build:desktop` and `desktop` run it first. The editor's
+  `macShell()` / `desktopShell(target)` read from there (in browser mode, the dev server's
+  `players` area). The release workflow builds the three players first (one job per system,
+  packed as .tgz to keep permissions) and every editor job unpacks all of them, so each editor
+  download exports for every desktop. Editors: Apple Silicon and Intel DMGs, Windows NSIS
+  installer, Linux AppImage + .deb (`tauri.linux.conf.json`), built on ubuntu-22.04 for older
+  glibc. Licence notices cover all four platforms' crates.
 - **Help window** (`apps/editor/src/HelpDialog.tsx`): the guides in `docs/` are bundled with the
   editor (`?raw` imports, so they always match its version) and read by editor-core's
   `parseMarkdown` (`markdown.ts`, tested: headings with anchors, paragraphs, lists with
@@ -781,7 +800,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   5. ~~GitHub and a release workflow~~ (done; private repo, history on the noreply address, CI
      green; a test release run built all three downloads: Apple Silicon and Intel DMGs checked
      with `lipo` and `codesign`, the Windows installer built but not yet run on Windows)
-  6. Windows and Linux exports (from CI-built players)
+  6. ~~Windows and Linux exports (from CI-built players)~~ (done; plus a Linux editor download)
   7. A website with the demo playable in the browser (GitHub Pages; itch.io optional)
   8. Release dry run, tag v0.1.0, freeze the 0.1 formats
   - Decided: GitHub `PatrickWalshCreates`, private until release, commits on the noreply address,

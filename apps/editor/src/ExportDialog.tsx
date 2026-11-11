@@ -1,7 +1,10 @@
 import {
+  DESKTOP_TARGET_NAMES,
+  type DesktopTarget,
   type ExportPlan,
   type ProjectDocument,
   clearExport,
+  exportDesktop,
   exportMac,
   exportWeb,
   inspectTarget,
@@ -16,15 +19,16 @@ import {
   IN_DESKTOP_APP,
   bundledPlayer,
   confirmAction,
+  desktopShell,
   devExportFolder,
   macShell,
   pickExportFolder,
   signMacApp,
 } from './platform.js';
 
-type Target = 'web' | 'mac';
+type Target = 'web' | 'mac' | DesktopTarget;
 
-/** The editor's version, recorded in each export's marker file. */
+const DESKTOP_TARGETS: readonly DesktopTarget[] = ['windows', 'linux'];
 
 type Phase =
   | { readonly step: 'review' }
@@ -33,8 +37,10 @@ type Phase =
       readonly step: 'done';
       readonly target: Target;
       readonly folder: ExportFolder;
-      /** The exported app's name, for Mac exports. */
+      /** The exported app (Mac) or game folder (Windows, Linux), for desktop exports. */
       readonly app: string | null;
+      /** The program to run, for Windows and Linux exports. */
+      readonly program?: string;
       readonly files: number;
       readonly bytes: number;
     }
@@ -58,6 +64,22 @@ export function ExportDialog({
   const [folder, setFolder] = useState<ExportFolder | null>(null);
   const [target, setTarget] = useState<Target>('web');
   const [devName, setDevName] = useState(`${manifest.id}-web`);
+  /** Pick a target; in browser mode the suggested folder name follows it. */
+  const choose = (next: Target) => {
+    setTarget(next);
+    setDevName(`${manifest.id}-${next}`);
+  };
+  // Which desktop players this editor has bundled (the release builds have all of them).
+  const [desktop, setDesktop] = useState<Partial<Record<DesktopTarget, boolean>>>({});
+  useEffect(() => {
+    let current = true;
+    void Promise.all(
+      DESKTOP_TARGETS.map(async (t) => [t, (await desktopShell(t)) !== null] as const),
+    ).then((found) => current && setDesktop(Object.fromEntries(found)));
+    return () => {
+      current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let current = true;
@@ -97,7 +119,30 @@ export function ExportDialog({
       setPhase({ step: 'exporting', done: 0, total: 1 });
       const onProgress = (p: { done: number; total: number }) =>
         setPhase({ step: 'exporting', done: p.done, total: p.total });
-      if (kind === 'mac') {
+      if (kind === 'windows' || kind === 'linux') {
+        const shell = await desktopShell(kind);
+        if (!shell)
+          throw new Error(`This editor doesn't include the ${DESKTOP_TARGET_NAMES[kind]} player.`);
+        const result = await exportDesktop({
+          target: kind,
+          project,
+          plan,
+          source: doc.fs,
+          shell,
+          output: target.fs,
+          freequestVersion: FREEQUEST_VERSION,
+          onProgress,
+        });
+        setPhase({
+          step: 'done',
+          target: kind,
+          folder: target,
+          app: result.folder,
+          program: result.program,
+          files: result.files,
+          bytes: result.bytes,
+        });
+      } else if (kind === 'mac') {
         const result = await exportMac({
           project,
           plan,
@@ -148,7 +193,13 @@ export function ExportDialog({
                 : `Exported ${plural(phase.files, 'game file')} (${megabytes(phase.bytes)}) to `}
               <code>{phase.folder.label}</code>.
             </p>
-            {phase.target === 'mac' ? (
+            {phase.target === 'windows' || phase.target === 'linux' ? (
+              <p className="hint">
+                {phase.target === 'windows'
+                  ? `To share it, zip the “${phase.app}” folder. Players unzip it and run ${phase.program ?? 'the program'}. Windows may warn about an unknown publisher the first time (More info → Run anyway).`
+                  : `To share it, pack the “${phase.app}” folder as a .tar.gz (it keeps ${phase.program ?? 'the program'} runnable). Players need WebKitGTK 4.1, which most Linux desktops have.`}
+              </p>
+            ) : phase.target === 'mac' ? (
               <p className="hint">
                 Double-click it to play. To share it, zip the app. Because it isn’t signed with an
                 Apple developer ID, players open it the first time with right-click → Open (or
@@ -162,7 +213,7 @@ export function ExportDialog({
               </p>
             )}
             <div className="actions">
-              {phase.folder.playUrl && (
+              {phase.target === 'web' && phase.folder.playUrl && (
                 <a
                   className="button primary"
                   href={phase.folder.playUrl}
@@ -182,7 +233,7 @@ export function ExportDialog({
                 role="radio"
                 aria-checked={target === 'web'}
                 className={target === 'web' ? 'export-target on' : 'export-target'}
-                onClick={() => setTarget('web')}
+                onClick={() => choose('web')}
               >
                 <strong>Web</strong>
                 <span className="hint">
@@ -195,7 +246,7 @@ export function ExportDialog({
                 aria-checked={target === 'mac'}
                 className={target === 'mac' ? 'export-target on' : 'export-target'}
                 disabled={!CAN_EXPORT_MAC}
-                onClick={() => setTarget('mac')}
+                onClick={() => choose('mac')}
               >
                 <strong>macOS app</strong>
                 <span className="hint">
@@ -204,6 +255,23 @@ export function ExportDialog({
                     : 'Needs the desktop editor on a Mac (or “freequest export mac”).'}
                 </span>
               </button>
+              {DESKTOP_TARGETS.map((t) => (
+                <button
+                  key={t}
+                  role="radio"
+                  aria-checked={target === t}
+                  className={target === t ? 'export-target on' : 'export-target'}
+                  disabled={!desktop[t]}
+                  onClick={() => choose(t)}
+                >
+                  <strong>{DESKTOP_TARGET_NAMES[t]}</strong>
+                  <span className="hint">
+                    {desktop[t]
+                      ? `A folder with a program that plays offline and keeps saves as files${t === 'linux' ? ' (needs WebKitGTK 4.1)' : ''}.`
+                      : `This editor doesn’t include the ${DESKTOP_TARGET_NAMES[t]} player (the downloadable editors do).`}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {!plan ? (

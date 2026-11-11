@@ -13,6 +13,8 @@ export default defineConfig({
       // Browser-mode exports land here (git-ignored).
       projects: fileURLToPath(new URL('../../projects', import.meta.url)),
       exports: fileURLToPath(new URL('../../exports', import.meta.url)),
+      // The built desktop players (read to export Windows and Linux games in browser mode).
+      players: fileURLToPath(new URL('../player-desktop/dist', import.meta.url)),
     }),
     releasePlayerPlugin(fileURLToPath(new URL('../../packages/player/dist', import.meta.url))),
     templatesPlugin([

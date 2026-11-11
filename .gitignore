@@ -21,3 +21,4 @@ apps/player-desktop/dist/
 apps/editor/dist-app/
 projects/
 dist-windows/
+apps/editor/src-tauri/players/

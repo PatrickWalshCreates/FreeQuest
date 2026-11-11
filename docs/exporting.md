@@ -1,15 +1,17 @@
 # Exporting and sharing a game
 
-FreeQuest turns a project into a game other people can play, either as a **web game** (a folder
-you upload to a website) or as a **macOS app**. Both contain only the files your game uses, and
-both are checked first: if something would stop the game from starting, FreeQuest tells you what
-and exports nothing.
+FreeQuest turns a project into a game other people can play: a **web game** (a folder you upload
+to a website), a **macOS app**, or a **Windows** or **Linux** game. Every export contains only the
+files your game uses, and is checked first: if something would stop the game from starting,
+FreeQuest tells you what and exports nothing.
 
 ## From the editor
 
 Click **Export…** in the top bar.
 
-1. Pick **Web** or **macOS app** (the Mac option needs the desktop editor on a Mac).
+1. Pick **Web**, **macOS app**, **Windows** or **Linux**. Mac apps need the editor on a Mac
+   (they're signed with macOS's own tools); the downloadable editors make the other three
+   anywhere.
 2. Read the check: problems must be fixed first; warnings (such as a missing sound) are fine to
    ship. Unsaved changes are included.
 3. Choose an **empty folder**. Exporting again into the same folder replaces the previous export
@@ -22,7 +24,12 @@ pnpm build                     # once, and after updating FreeQuest
 pnpm freequest check <project>
 pnpm freequest export web <project> --out <folder>
 pnpm freequest export mac <project> --out <folder>   # macOS; see below
+pnpm freequest export windows <project> --out <folder>
+pnpm freequest export linux <project> --out <folder>
 ```
+
+Windows and Linux exports need those systems' players in `apps/player-desktop/dist/windows` and
+`…/linux` (the release workflow builds them; `--shell <folder>` points elsewhere).
 
 Add `--clean` to replace a previous export in the same folder. Exit codes: 0 done, 1 the project
 has problems, 2 the command was mistyped.
@@ -66,7 +73,20 @@ account) and notarizing removes the warning; FreeQuest doesn't do that yet.
 Saves live in `~/Library/Application Support/org.freequest.player/saves/<game id>/`, one folder per
 game id (set in Project settings; don't change it once players have saves).
 
+## Windows and Linux games
+
+The export is a folder named after your game. It holds the program (`My Quest.exe` on Windows,
+`my-quest` on Linux, named after the game's id), a `game` folder and the licence notices. It plays
+offline and keeps saves as files.
+
+- **Windows:** zip the folder to share it. Players unzip it and run the program. It isn't signed
+  by a registered publisher, so Windows may say it protected the PC: **More info → Run anyway**.
+  It needs Microsoft's WebView2, which Windows 10 and 11 normally have.
+- **Linux:** share it as a `.tar.gz` (right-click → Compress, or
+  `tar -czf my-quest.tar.gz "My Quest"`), which keeps the program runnable. It needs WebKitGTK
+  4.1, which most desktop Linux systems have (`libwebkit2gtk-4.1-0` on Debian and Ubuntu).
+
 ## Not yet
 
-Windows and Linux apps (the player has to be built on those systems first), installers (DMG or
-setup programs), custom app icons, code signing with a Developer ID, and mobile.
+Installers for exported games, custom app icons, code signing with a registered developer
+identity, and mobile.

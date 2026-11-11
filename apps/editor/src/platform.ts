@@ -1,4 +1,10 @@
-import type { ProjectFs, TemplateInfo, TemplateSource } from '@freequest/editor-core';
+import {
+  type DesktopTarget,
+  type ProjectFs,
+  type TemplateInfo,
+  type TemplateSource,
+  desktopShellProblem,
+} from '@freequest/editor-core';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 
 /** True in the desktop app; false in a browser tab during development. */
@@ -125,11 +131,33 @@ export async function bundledPlayer(): Promise<{
 /** Mac apps can be exported only from the desktop editor on a Mac (signing needs codesign). */
 export const CAN_EXPORT_MAC = IN_DESKTOP_APP && /Mac/i.test(navigator.userAgent);
 
-/** The desktop player app bundled with the editor, which Mac exports are made from. */
-export async function macShell(): Promise<ProjectFs> {
+/** A bundled desktop player folder: the editor's players/ resource, or the dev server's in browser mode. */
+async function bundledShell(path: string): Promise<ProjectFs> {
+  if (!IN_DESKTOP_APP) {
+    const { DevServerFs } = await import('./fs/dev-fs.js');
+    return new DevServerFs(path, 'players');
+  }
   const { resourceDir, join } = await import('@tauri-apps/api/path');
   const { TauriFs } = await import('./fs/tauri-fs.js');
-  return new TauriFs(await join(await resourceDir(), 'mac-player', 'FreeQuest Player.app'));
+  return new TauriFs(await join(await resourceDir(), 'players', ...path.split('/')));
+}
+
+/** The desktop player app bundled with the editor, which Mac exports are made from. */
+export function macShell(): Promise<ProjectFs> {
+  return bundledShell('macos/FreeQuest Player.app');
+}
+
+/**
+ * The Windows or Linux player bundled with the editor (built by the release
+ * workflow on those systems), or null if this editor doesn't have it.
+ */
+export async function desktopShell(target: DesktopTarget): Promise<ProjectFs | null> {
+  try {
+    const shell = await bundledShell(target);
+    return (await desktopShellProblem(target, shell)) === null ? shell : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Ad-hoc sign an exported app (runs codesign through the editor's Rust side). */

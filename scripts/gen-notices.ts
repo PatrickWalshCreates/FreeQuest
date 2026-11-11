@@ -3,7 +3,7 @@
 // licence, then every package it includes (name, version, licence, where
 // it's from), then each distinct licence text once, with the packages that
 // use it. JavaScript packages come from `pnpm licenses`, Rust crates from
-// `cargo metadata` (normal dependencies built into the app; build tools and
+// `cargo metadata` for every release platform (normal dependencies built into the app; build tools and
 // proc-macros aren't shipped). Re-run before a release, or after changing
 // dependencies.
 import { execFileSync } from 'node:child_process';
@@ -13,7 +13,12 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 /** The platforms desktop builds are made for (Rust dependencies differ per platform). */
-const PLATFORMS = ['aarch64-apple-darwin', 'x86_64-apple-darwin'];
+const PLATFORMS = [
+  'aarch64-apple-darwin',
+  'x86_64-apple-darwin',
+  'x86_64-pc-windows-msvc',
+  'x86_64-unknown-linux-gnu',
+];
 
 interface Dependency {
   readonly name: string;

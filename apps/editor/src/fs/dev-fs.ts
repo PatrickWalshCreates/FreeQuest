@@ -9,7 +9,7 @@ import {
 const BASE = '/__freequest';
 
 /** Folders the dev server offers: sample projects, and where browser-mode exports go. */
-export type DevArea = 'samples' | 'projects' | 'exports';
+export type DevArea = 'samples' | 'projects' | 'exports' | 'players';
 
 export class DevServerFs implements ProjectFs {
   readonly label: string;
