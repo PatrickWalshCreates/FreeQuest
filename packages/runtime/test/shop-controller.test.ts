@@ -50,9 +50,9 @@ describe('ShopController', () => {
     tap('confirm');
     expect(shop.state.screen).toBe('buy');
     expect(shop.state.options).toEqual([
-      { label: 'Potion', detail: '50', enabled: true },
-      { label: 'Ether', detail: '120', enabled: false },
-      { label: 'Bronze Sword', detail: '100', enabled: true },
+      { label: 'Potion', detail: '50', enabled: true, icon: 0 },
+      { label: 'Ether', detail: '120', enabled: false, icon: 1 },
+      { label: 'Bronze Sword', detail: '100', enabled: true, icon: 8 },
     ]);
     tap('down', 2);
     expect(shop.state.info).toEqual(

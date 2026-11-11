@@ -14,6 +14,7 @@ import {
 } from '@freequest/core';
 import type { ShopGood } from '@freequest/schema';
 import type { MenuOption } from './battle-controller.js';
+import { withIcon } from './icons.js';
 
 export type ShopScreen = 'root' | 'buy' | 'sell' | 'quantity';
 
@@ -85,6 +86,10 @@ export class ShopController {
     return kind === 'item' ? this.db.items.get(id).name : this.db.equipment.get(id).name;
   }
 
+  private iconOf(kind: InventoryKind, id: string): number | undefined {
+    return kind === 'item' ? this.db.items.get(id).icon : this.db.equipment.get(id).icon;
+  }
+
   private rootOptions(): MenuOption[] {
     return [
       { label: ROOT_BUY, enabled: true },
@@ -108,6 +113,7 @@ export class ShopController {
       case 'buy':
         return this.goods.map((good) => ({
           label: this.nameOf(good.kind, good.id),
+          ...withIcon(this.iconOf(good.kind, good.id)),
           detail: String(buyPrice(this.db, good)),
           enabled: maxBuy(this.party, this.db, good) > 0,
         }));
@@ -116,6 +122,7 @@ export class ShopController {
           const price = sellPrice(this.db, kind, id);
           return {
             label: `${this.nameOf(kind, id)} ×${this.party.count(kind, id)}`,
+            ...withIcon(this.iconOf(kind, id)),
             detail: price > 0 ? String(price) : '—',
             enabled: maxSell(this.party, this.db, kind, id) > 0,
           };

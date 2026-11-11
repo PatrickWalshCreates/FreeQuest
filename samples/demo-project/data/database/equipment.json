@@ -5,6 +5,7 @@
       "id": "bronze-sword",
       "name": "Bronze Sword",
       "equipmentType": "sword",
+      "icon": 8,
       "modifiers": [
         {
           "type": "statFlat",
@@ -19,6 +20,7 @@
       "id": "oak-staff",
       "name": "Oak Staff",
       "equipmentType": "staff",
+      "icon": 9,
       "modifiers": [
         {
           "type": "statFlat",
@@ -38,6 +40,7 @@
       "id": "wooden-shield",
       "name": "Wooden Shield",
       "equipmentType": "shield",
+      "icon": 10,
       "modifiers": [
         {
           "type": "statFlat",
@@ -52,6 +55,7 @@
       "id": "leather-vest",
       "name": "Leather Vest",
       "equipmentType": "light-armor",
+      "icon": 11,
       "modifiers": [
         {
           "type": "statFlat",
@@ -66,6 +70,7 @@
       "id": "cloth-robe",
       "name": "Cloth Robe",
       "equipmentType": "robe",
+      "icon": 12,
       "modifiers": [
         {
           "type": "statFlat",
@@ -85,6 +90,7 @@
       "id": "straw-hat",
       "name": "Straw Hat",
       "equipmentType": "hat",
+      "icon": 13,
       "modifiers": [
         {
           "type": "statFlat",
@@ -99,6 +105,7 @@
       "id": "lucky-charm",
       "name": "Lucky Charm",
       "equipmentType": "accessory",
+      "icon": 14,
       "modifiers": [
         {
           "type": "statFlat",

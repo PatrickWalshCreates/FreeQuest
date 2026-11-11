@@ -13,6 +13,7 @@ import {
   canTarget,
 } from '@freequest/core';
 import type { ItemEntry, SkillEntry } from '@freequest/schema';
+import { withIcon } from './icons.js';
 import { describeEvent } from './battle-text.js';
 
 export interface MenuOption {
@@ -20,6 +21,8 @@ export interface MenuOption {
   /** Right-aligned extra text, e.g. MP cost or item count. */
   readonly detail?: string;
   readonly enabled: boolean;
+  /** Index into the game's iconset, drawn before the label. */
+  readonly icon?: number;
 }
 
 export interface BattleMenu {
@@ -211,6 +214,7 @@ export class BattleController {
       case 'skill':
         return this.skillEntries().map((s) => ({
           label: s.name,
+          ...withIcon(s.icon),
           detail: s.mpCost > 0 ? `${s.mpCost} MP` : '',
           enabled:
             actor !== null &&
@@ -219,6 +223,7 @@ export class BattleController {
       case 'item':
         return this.itemEntries().map(({ entry, count }) => ({
           label: entry.name,
+          ...withIcon(entry.icon),
           detail: `×${count}`,
           enabled:
             actor !== null &&

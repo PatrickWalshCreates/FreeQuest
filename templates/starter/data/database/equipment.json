@@ -5,6 +5,7 @@
       "id": "bronze-sword",
       "name": "Bronze Sword",
       "equipmentType": "sword",
+      "icon": 8,
       "modifiers": [
         {
           "type": "statFlat",
@@ -19,6 +20,7 @@
       "id": "leather-vest",
       "name": "Leather Vest",
       "equipmentType": "light-armor",
+      "icon": 11,
       "modifiers": [
         {
           "type": "statFlat",

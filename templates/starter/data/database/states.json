@@ -4,6 +4,7 @@
     {
       "id": "knockout",
       "name": "Knocked out",
+      "icon": 25,
       "knockout": true,
       "modifiers": [],
       "priority": 100,
@@ -15,6 +16,7 @@
     {
       "id": "guarding",
       "name": "Guarding",
+      "icon": 17,
       "knockout": false,
       "modifiers": [
         {

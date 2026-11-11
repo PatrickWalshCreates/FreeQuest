@@ -24,6 +24,7 @@ import { projectFormContext } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
+import { IconField, IconImage, useIconset } from './IconField.js';
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
 const MOD = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
@@ -50,7 +51,20 @@ type EntriesData = { readonly formatVersion: number; readonly entries: readonly 
 export function DatabaseEditor({ doc, file }: Props) {
   const lists = useProjectLists(doc);
   const project = doc.project;
-  const ctx = useMemo(() => projectFormContext(project, lists), [project, lists]);
+  const ctx = useMemo(
+    () => ({
+      ...projectFormContext(project, lists),
+      render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
+        field === 'icon' ? (
+          <IconField
+            doc={doc}
+            value={typeof value === 'number' ? value : undefined}
+            onChange={onChange}
+          />
+        ) : undefined,
+    }),
+    [doc, project, lists],
+  );
   if (!file.data) return <p className="error">This file could not be loaded.</p>;
   return file.kind === 'system' ? (
     <SystemEditor doc={doc} file={file} ctx={ctx} />
@@ -111,6 +125,12 @@ function EntriesEditor(props: {
   const [selected, setSelected] = useState<string | null>(data.entries[0]?.id ?? null);
   const [filter, setFilter] = useState('');
   const [creating, setCreating] = useState(false);
+  const loadedIcons = useIconset(doc);
+  const icons = loadedIcons === 'missing' ? null : loadedIcons;
+  const iconOf = (e: Entry) => {
+    const icon = (e as { icon?: unknown }).icon;
+    return typeof icon === 'number' ? icon : undefined;
+  };
   const entry = data.entries.find((e) => e.id === selected) ?? null;
   const singular = SINGULAR[kind];
   const needle = filter.trim().toLowerCase();
@@ -189,7 +209,12 @@ function EntriesEditor(props: {
                 className={e.id === selected ? 'item selected' : 'item'}
                 onClick={() => setSelected(e.id)}
               >
-                <span>{e.name}</span>
+                <span className="db-entry-name">
+                  {icons && (iconOf(e) ?? Infinity) < icons.count && (
+                    <IconImage icons={icons} index={iconOf(e) ?? 0} scale={1} />
+                  )}
+                  {e.name}
+                </span>
                 {problemsFor(e.id).length > 0 && (
                   <span className="badge">{problemsFor(e.id).length}</span>
                 )}

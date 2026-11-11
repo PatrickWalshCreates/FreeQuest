@@ -2,6 +2,7 @@ import type { Actor, Battle, BattleEvent, Battler, Enemy } from '@freequest/core
 import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from 'pixi.js';
 import type { BattleUiState } from './battle-controller.js';
 import { DEFAULT_UI_THEME, type UiTheme, drawWindow } from './dialog-view.js';
+import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 
 const STATUS_ROW = 22;
 const POPUP_SECONDS = 0.9;
@@ -53,6 +54,7 @@ export class BattleView {
     private readonly height: number,
     enemyTextures: ReadonlyMap<string, Texture>,
     private readonly theme: UiTheme = DEFAULT_UI_THEME,
+    private readonly icons: IconSheet = NO_ICONS,
   ) {
     this.style = new TextStyle({
       fontFamily: theme.fontFamily,
@@ -266,6 +268,9 @@ export class BattleView {
       none.position.set(x + theme.padding + 12, y + theme.padding + theme.lineHeight);
       this.menuLayer.addChild(none);
     }
+    const iconWidth = menu.options.some((o) => o.icon !== undefined && this.icons.texture(o.icon))
+      ? Math.min(this.icons.size, theme.lineHeight) + 4
+      : 0;
     menu.options.forEach((option, i) => {
       const rowY = y + theme.padding + (i + 1) * theme.lineHeight;
       if (i === menu.cursor) {
@@ -286,7 +291,17 @@ export class BattleView {
       }
       const label = new Text({ text: option.label, style: this.style });
       label.alpha = option.enabled ? 1 : 0.4;
-      label.position.set(x + theme.padding + 12, rowY);
+      label.position.set(x + theme.padding + 12 + iconWidth, rowY);
+      const icon =
+        option.icon === undefined ? null : iconSprite(this.icons, option.icon, theme.lineHeight);
+      if (icon) {
+        icon.alpha = label.alpha;
+        icon.position.set(
+          x + theme.padding + 12,
+          rowY + Math.floor((theme.lineHeight - icon.height) / 2),
+        );
+        this.menuLayer.addChild(icon);
+      }
       this.menuLayer.addChild(label);
       if (option.detail) {
         const detail = new Text({ text: option.detail, style: this.small });

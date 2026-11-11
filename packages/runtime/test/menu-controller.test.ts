@@ -60,8 +60,8 @@ describe('MenuController', () => {
     hero.setHp(10);
     tap('confirm'); // Items
     expect(menu.state.options).toEqual([
-      { label: 'Potion', detail: '×2', enabled: true },
-      { label: "Elder's Map", detail: '×1', enabled: false }, // key item, never usable
+      { label: 'Potion', detail: '×2', enabled: true, icon: 0 },
+      { label: "Elder's Map", detail: '×1', enabled: false, icon: 4 }, // key item, never usable
     ]);
     tap('confirm'); // Potion
     expect(menu.state).toMatchObject({ screen: 'target', title: 'Use Potion on' });

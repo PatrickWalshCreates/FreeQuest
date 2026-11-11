@@ -1,5 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { type UiTheme, drawWindow } from './dialog-view.js';
+import { type IconSheet, NO_ICONS } from './icons.js';
 import { ListWindow } from './list-window.js';
 import type { ShopUiState } from './shop-controller.js';
 
@@ -27,8 +28,9 @@ export class ShopView {
     private readonly width: number,
     private readonly height: number,
     private readonly theme: UiTheme,
+    icons: IconSheet = NO_ICONS,
   ) {
-    this.list = new ListWindow(theme);
+    this.list = new ListWindow(theme, icons);
     this.style = new TextStyle({
       fontFamily: theme.fontFamily,
       fontSize: theme.fontSize,

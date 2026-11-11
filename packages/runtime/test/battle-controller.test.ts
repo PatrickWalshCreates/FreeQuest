@@ -125,7 +125,9 @@ describe('BattleController', () => {
     tap('up'); // wrap to Item
     tap('confirm');
     expect(ui.state.stage).toBe('item');
-    expect(ui.state.menu?.options).toEqual([{ label: 'Potion', detail: '×2', enabled: true }]);
+    expect(ui.state.menu?.options).toEqual([
+      { label: 'Potion', detail: '×2', enabled: true, icon: 0 },
+    ]);
     tap('confirm');
     expect(ui.state.stage).toBe('target');
     expect(ui.state.target).toBe(battle.actors[0]);

@@ -89,6 +89,11 @@
     }
   ],
   "guardSkill": "guard",
+  "iconset": {
+    "columns": 8,
+    "iconSize": 16,
+    "image": "assets/system/iconset.png"
+  },
   "skillTypes": [
     {
       "id": "magic",

@@ -46,6 +46,7 @@ rmSync(OUT, { recursive: true, force: true });
 copy('assets/tilesets/overworld.png');
 copy('assets/characters/hero.png');
 copy('assets/enemies/slime.png');
+copy('assets/system/iconset.png');
 copy('assets/audio');
 copy('data/tilesets/overworld.json');
 copy('data/characters/hero.json');

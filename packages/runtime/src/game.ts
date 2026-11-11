@@ -22,6 +22,7 @@ import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
+import { loadIconSheet } from './icons.js';
 import { ShopController } from './shop-controller.js';
 import { ShopView } from './shop-view.js';
 import { type KeyBindings, bindKeyboard } from './keyboard.js';
@@ -94,6 +95,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     loadCharacterGraphics(project),
   ]);
   readyTiles.set(tileset.id, startTiles);
+  const icons = await loadIconSheet(project.database.system?.iconset, (path) =>
+    project.assetUrl(path),
+  );
 
   const db = new DatabaseIndex(project.database);
   const position = start && {
@@ -178,7 +182,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       );
     },
     begin(battle) {
-      battleView = new BattleView(battle, width, height, enemyTextures, theme);
+      battleView = new BattleView(battle, width, height, enemyTextures, theme, icons);
       scene.visible = false;
       dialogView.container.visible = false;
       app.stage.addChildAt(battleView.container, app.stage.getChildIndex(fadeOverlay));
@@ -305,7 +309,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     shop = new ShopController(world, goods, canSell);
     // The message before the shop goes away (the dialog won't step while the shop is open).
     dialog = new DialogController();
-    shopView = new ShopView(width, height, theme);
+    shopView = new ShopView(width, height, theme, icons);
     app.stage.addChildAt(shopView.container, app.stage.getChildIndex(titleView.container));
   };
 
@@ -363,7 +367,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       playSeconds: () => playSeconds,
       onSaved: () => sfx('save'),
     });
-    menuView = new MenuView(() => world, width, height, theme);
+    menuView = new MenuView(() => world, width, height, theme, icons);
     app.stage.addChildAt(menuView.container, app.stage.getChildIndex(titleView.container));
   };
 

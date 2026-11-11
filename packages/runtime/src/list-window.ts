@@ -1,6 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { MenuOption } from './battle-controller.js';
 import { type UiTheme, drawWindow } from './dialog-view.js';
+import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 import { fitText } from './text-fit.js';
 
 /** Space kept between a row's label and its detail. */
@@ -27,7 +28,10 @@ export class ListWindow {
   private readonly content = new Container();
   private key = '';
 
-  constructor(private readonly theme: UiTheme) {
+  constructor(
+    private readonly theme: UiTheme,
+    private readonly icons: IconSheet = NO_ICONS,
+  ) {
     this.container.addChild(this.frame, this.content);
   }
 
@@ -83,6 +87,10 @@ export class ListWindow {
       this.content.addChild(none);
       return;
     }
+    // When any row has an icon, every label moves right by one icon, so they line up.
+    const iconWidth = options.some((o) => o.icon !== undefined && this.icons.texture(o.icon))
+      ? Math.min(this.icons.size, theme.lineHeight) + 4
+      : 0;
     // Scroll so the cursor stays in view.
     const first = Math.min(Math.max(0, cursor - rows + 1), Math.max(0, options.length - rows));
     options.slice(first, first + rows).forEach((option, i) => {
@@ -105,7 +113,14 @@ export class ListWindow {
       }
       const label = new Text({ text: option.label, style });
       label.alpha = option.enabled ? 1 : 0.4;
-      label.position.set(theme.padding + 12, y);
+      label.position.set(theme.padding + 12 + iconWidth, y);
+      const icon =
+        option.icon === undefined ? null : iconSprite(this.icons, option.icon, theme.lineHeight);
+      if (icon) {
+        icon.alpha = label.alpha;
+        icon.position.set(theme.padding + 12, y + Math.floor((theme.lineHeight - icon.height) / 2));
+        this.content.addChild(icon);
+      }
       this.content.addChild(label);
       let labelRight = layout.width - theme.padding;
       if (option.detail) {

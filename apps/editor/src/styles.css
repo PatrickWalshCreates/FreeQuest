@@ -1889,3 +1889,61 @@ h2.with-actions button {
 .route-add button {
   padding: 2px 8px;
 }
+
+/* Icons from the iconset: a sprite view, a picker grid, and next to entry names. */
+.icon-image {
+  display: inline-block;
+  flex: none;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+}
+
+.icon-field {
+  display: grid;
+  gap: 6px;
+}
+
+.icon-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-none {
+  color: var(--muted);
+  min-width: 32px;
+}
+
+.icon-grid {
+  display: grid;
+  gap: 2px;
+  justify-content: start;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.icon-cell {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  background: none;
+  border-color: transparent;
+}
+
+.icon-cell:hover {
+  background: var(--panel-raised);
+}
+
+.icon-cell.selected {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+
+.db-entry-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -4,6 +4,7 @@
     {
       "id": "knockout",
       "name": "Knocked out",
+      "icon": 25,
       "knockout": true,
       "modifiers": [],
       "priority": 100,
@@ -15,6 +16,7 @@
     {
       "id": "poison",
       "name": "Poison",
+      "icon": 22,
       "knockout": false,
       "modifiers": [
         {
@@ -32,6 +34,7 @@
     {
       "id": "sleep",
       "name": "Sleep",
+      "icon": 24,
       "knockout": false,
       "modifiers": [],
       "priority": 60,
@@ -48,6 +51,7 @@
     {
       "id": "guarding",
       "name": "Guarding",
+      "icon": 17,
       "knockout": false,
       "modifiers": [
         {

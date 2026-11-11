@@ -2,6 +2,7 @@ import type { Actor, World } from '@freequest/core';
 import { STAT_KEYS } from '@freequest/schema';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { type UiTheme, drawWindow } from './dialog-view.js';
+import { type IconSheet, NO_ICONS } from './icons.js';
 import { ListWindow } from './list-window.js';
 import type { MenuUiState } from './menu-controller.js';
 
@@ -35,9 +36,10 @@ export class MenuView {
     private readonly width: number,
     private readonly height: number,
     private readonly theme: UiTheme,
+    icons: IconSheet = NO_ICONS,
   ) {
     this.dim = new Graphics().rect(0, 0, width, height).fill({ color: 0x000000, alpha: 0.45 });
-    this.list = new ListWindow(theme);
+    this.list = new ListWindow(theme, icons);
     this.style = new TextStyle({
       fontFamily: theme.fontFamily,
       fontSize: theme.fontSize,

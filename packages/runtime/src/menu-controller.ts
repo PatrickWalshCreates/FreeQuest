@@ -14,6 +14,7 @@ import {
 import type { ItemEntry, SkillEntry, TargetScope } from '@freequest/schema';
 import { describeEvent } from './battle-text.js';
 import type { MenuOption } from './battle-controller.js';
+import { withIcon } from './icons.js';
 import type { SaveStore, SlotInfo } from './save-store.js';
 
 export type MenuScreen =
@@ -166,6 +167,7 @@ export class MenuController {
       case 'items':
         return this.carriedItems().map(({ entry, count }) => ({
           label: entry.name,
+          ...withIcon(entry.icon),
           detail: `×${count}`,
           enabled:
             itemProblem(this.party, entry, 'menu') === null && this.scopeHasTargets(entry.target),
@@ -180,6 +182,7 @@ export class MenuController {
         if (!actor) return [];
         return this.menuSkills(actor).map((s) => ({
           label: s.name,
+          ...withIcon(s.icon),
           detail: s.mpCost > 0 ? `${s.mpCost} MP` : '',
           enabled: skillProblem(actor, s, 'menu') === null && this.scopeHasTargets(s.target),
         }));
@@ -193,6 +196,7 @@ export class MenuController {
             label: slot.name,
             detail: worn ? this.db.equipment.get(worn).name : '—',
             enabled: true,
+            ...withIcon(worn ? this.db.equipment.get(worn).icon : undefined),
           };
         });
       }
@@ -200,6 +204,7 @@ export class MenuController {
         return [
           ...this.equipChoices(screen).map((id) => ({
             label: this.db.equipment.get(id).name,
+            ...withIcon(this.db.equipment.get(id).icon),
             detail: `×${this.party.count('equipment', id)}`,
             enabled: true,
           })),

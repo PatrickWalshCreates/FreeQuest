@@ -163,6 +163,16 @@ Never the other way.
   event's pending request is a shop, the world waits meanwhile (like the menu), and the message
   before it is cleared. `checkMapReferences` checks every good.
 
+- **Icons**: `system.json` `iconset` (`image`, `iconSize`, `columns`) and every listed entry's
+  `icon` index. The demo's sheet is `assets/system/iconset.png` (8×4 of 16 px, drawn by
+  `gen-placeholder-art.ts`: potions, gear, spell schools, states; outlined so they read on any
+  window). Runtime `icons.ts`: `loadIconSheet` slices it once (missing image → `NO_ICONS`
+  after a warning), `MenuOption.icon` (set with `withIcon`), drawn by `ListWindow` and the
+  battle menu; labels shift only in lists where some row has an icon. Menus (items, skills,
+  equipment choices, worn slots), battle skills/items and the shop set icons. Editor:
+  `database/IconField.tsx` picks from a grid of the sheet (via `FormContext.render` for
+  `icon`), entry lists show icons; without an iconset it's a number field with a hint.
+
 ### Database and battlers (M3)
 
 - **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
@@ -661,7 +671,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      also route page movement; added in the dialog and played in a playtest)
   4. ~~Shops (buy/sell screen from a `shop` command)~~ (done; added in the editor, bought and
      sold in a playtest)
-  5. Icons (generated iconset; menus, battle, shop; icon picker in the editor)
+  5. ~~Icons (generated iconset; menus, battle, shop; icon picker in the editor)~~ (done; picked
+     in the editor, seen in the game's menu)
   6. Options screen (volume, key rebinding; kept per player apart from saves)
   7. Enemy action conditions (HP below, turn number, state)
   8. Demo, Starter, docs and export checks

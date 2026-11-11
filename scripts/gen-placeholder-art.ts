@@ -2,6 +2,7 @@
 //   assets/tilesets/overworld.png  4x4 grid of 32px tiles
 //   assets/characters/<name>.png   3 frames x 4 directions, 32px frames
 //   assets/enemies/<id>.png        64x64 battle art
+//   assets/system/iconset.png      8x4 grid of 16px item, gear, skill and state icons
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,6 +39,19 @@ class Canvas {
   circle(cx: number, cy: number, r: number, c: RGBA): void {
     for (let j = -r; j <= r; j++)
       for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r + r) this.set(cx + i, cy + j, c);
+  }
+  get(x: number, y: number): RGBA {
+    const i = (y * this.png.width + x) * 4;
+    const d = this.png.data;
+    return [d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0, d[i + 3] ?? 0];
+  }
+  /** Copy another canvas onto this one at (ox, oy). */
+  blit(src: Canvas, ox: number, oy: number): void {
+    for (let y = 0; y < src.png.height; y++)
+      for (let x = 0; x < src.png.width; x++) {
+        const c = src.get(x, y);
+        if (c[3] > 0) this.set(ox + x, oy + y, c);
+      }
   }
   save(path: string): void {
     mkdirSync(dirname(path), { recursive: true });
@@ -385,6 +399,386 @@ function drawEnemies(): void {
   }
 }
 
+// Icons: 16x16, drawn inside a 1px margin, then outlined in a dark color so
+// they read on any window. Index order is what the database's `icon` fields use.
+const I = 16;
+const ICON_OUTLINE = hex('#1a1420');
+
+/** A line, `width` pixels thick (Bresenham with a square brush). */
+function line(c: Canvas, x0: number, y0: number, x1: number, y1: number, color: RGBA, width = 1) {
+  const dx = Math.abs(x1 - x0);
+  const dy = -Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  let x = x0;
+  let y = y0;
+  for (;;) {
+    c.rect(x, y, width, width, color);
+    if (x === x1 && y === y1) return;
+    const e2 = 2 * err;
+    if (e2 >= dy) {
+      err += dy;
+      x += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y += sy;
+    }
+  }
+}
+
+/** Darken transparent pixels next to the drawing: a 1px outline. */
+function outline(c: Canvas): void {
+  const solid = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < I && y < I && c.get(x, y)[3] > 0 && !same(c.get(x, y), ICON_OUTLINE);
+  const same = (a: RGBA, b: RGBA) => a.every((v, i) => v === b[i]);
+  const edge: [number, number][] = [];
+  for (let y = 0; y < I; y++)
+    for (let x = 0; x < I; x++) {
+      if (c.get(x, y)[3] > 0) continue;
+      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))
+        edge.push([x, y]);
+    }
+  for (const [x, y] of edge) c.set(x, y, ICON_OUTLINE);
+}
+
+function flask(c: Canvas, liquid: string, shine: string): void {
+  c.rect(7, 2, 2, 1, hex('#8a5a2b'));
+  c.rect(6, 3, 4, 3, hex('#cfd8e3'));
+  c.circle(8, 10, 4, hex('#cfd8e3'));
+  c.circle(8, 10, 3, hex(liquid));
+  c.rect(5, 9, 7, 1, hex(liquid));
+  c.rect(6, 8, 2, 2, hex(shine));
+}
+
+const ICONS: ((c: Canvas) => void)[] = [
+  // 0 potion (red), 1 ether (blue), 2 antidote (green)
+  (c) => flask(c, '#d8333b', '#ff9aa0'),
+  (c) => flask(c, '#2f6fd8', '#9cc4ff'),
+  (c) => flask(c, '#3aa65a', '#a8f0b6'),
+  // 3 revive leaf
+  (c) => {
+    ellipse(c, 8, 8, 3, 6, hex('#4fbf5a'));
+    line(c, 8, 3, 8, 14, hex('#2c7a35'));
+    line(c, 8, 7, 10, 5, hex('#2c7a35'));
+    line(c, 8, 10, 6, 8, hex('#2c7a35'));
+  },
+  // 4 map / scroll
+  (c) => {
+    c.rect(3, 4, 10, 8, hex('#eed9a6'));
+    c.rect(2, 3, 2, 10, hex('#c9a86a'));
+    c.rect(12, 3, 2, 10, hex('#c9a86a'));
+    line(c, 5, 6, 10, 9, hex('#c2453b'));
+    c.rect(9, 8, 2, 2, hex('#c2453b'));
+  },
+  // 5 key
+  (c) => {
+    c.circle(5, 7, 3, hex('#e6b83a'));
+    c.circle(5, 7, 1, [0, 0, 0, 0]);
+    c.rect(5, 7, 1, 1, [0, 0, 0, 0]);
+    c.rect(8, 7, 6, 2, hex('#e6b83a'));
+    c.rect(11, 9, 1, 2, hex('#e6b83a'));
+    c.rect(13, 9, 1, 3, hex('#e6b83a'));
+  },
+  // 6 coins
+  (c) => {
+    c.circle(6, 10, 4, hex('#d9a227'));
+    c.circle(6, 10, 2, hex('#f4d35e'));
+    c.circle(10, 6, 4, hex('#e6b83a'));
+    c.circle(10, 6, 2, hex('#fbe38a'));
+  },
+  // 7 gem
+  (c) => {
+    triangle(
+      c,
+      [
+        [3, 6],
+        [13, 6],
+        [8, 14],
+      ],
+      hex('#3cc7d6'),
+    );
+    c.rect(5, 3, 7, 3, hex('#7fe6ef'));
+    triangle(
+      c,
+      [
+        [3, 6],
+        [5, 3],
+        [5, 6],
+      ],
+      hex('#7fe6ef'),
+    );
+    triangle(
+      c,
+      [
+        [13, 6],
+        [11, 3],
+        [11, 6],
+      ],
+      hex('#7fe6ef'),
+    );
+    line(c, 6, 7, 8, 12, hex('#c9f7fb'));
+  },
+  // 8 sword
+  (c) => {
+    line(c, 4, 11, 12, 3, hex('#d8dee8'), 2);
+    line(c, 5, 11, 12, 4, hex('#9aa6b8'));
+    line(c, 2, 9, 6, 13, hex('#8a5a2b'), 2);
+    line(c, 2, 13, 4, 11, hex('#5e3a1a'), 2);
+  },
+  // 9 staff
+  (c) => {
+    line(c, 3, 13, 10, 6, hex('#8a5a2b'), 2);
+    c.circle(11, 4, 2, hex('#a35bd8'));
+    c.set(10, 3, hex('#e3c2ff'));
+  },
+  // 10 shield
+  (c) => {
+    c.rect(3, 2, 10, 7, hex('#3f6fb5'));
+    triangle(
+      c,
+      [
+        [3, 9],
+        [12, 9],
+        [8, 14],
+      ],
+      hex('#3f6fb5'),
+    );
+    c.rect(7, 3, 2, 9, hex('#e6b83a'));
+    c.rect(4, 6, 8, 2, hex('#e6b83a'));
+  },
+  // 11 vest (light armor)
+  (c) => {
+    c.rect(4, 4, 8, 10, hex('#8f5f34'));
+    c.rect(2, 4, 3, 4, hex('#8f5f34'));
+    c.rect(11, 4, 3, 4, hex('#8f5f34'));
+    c.rect(7, 2, 2, 4, [0, 0, 0, 0]);
+    line(c, 8, 6, 8, 13, hex('#5e3a1a'));
+    c.rect(5, 9, 6, 1, hex('#b98552'));
+  },
+  // 12 robe
+  (c) => {
+    triangle(
+      c,
+      [
+        [8, 2],
+        [2, 14],
+        [14, 14],
+      ],
+      hex('#5a4fc0'),
+    );
+    c.rect(6, 3, 4, 3, hex('#5a4fc0'));
+    line(c, 8, 4, 8, 14, hex('#c9c2ff'));
+    c.rect(5, 9, 6, 1, hex('#e6b83a'));
+  },
+  // 13 hat
+  (c) => {
+    ellipse(c, 8, 11, 7, 2, hex('#e2c46a'));
+    c.rect(5, 5, 6, 6, hex('#e2c46a'));
+    c.rect(5, 9, 6, 1, hex('#c2453b'));
+  },
+  // 14 charm
+  (c) => {
+    line(c, 4, 2, 8, 6, hex('#c9a86a'));
+    line(c, 12, 2, 8, 6, hex('#c9a86a'));
+    c.circle(8, 10, 4, hex('#3aa65a'));
+    c.circle(8, 10, 2, hex('#a8f0b6'));
+  },
+  // 15 boots
+  (c) => {
+    c.rect(4, 3, 5, 8, hex('#6b4426'));
+    c.rect(4, 10, 9, 4, hex('#6b4426'));
+    c.rect(4, 12, 9, 2, hex('#3f2814'));
+    c.rect(4, 4, 5, 1, hex('#9b6a3f'));
+  },
+  // 16 attack (slash)
+  (c) => {
+    line(c, 2, 12, 12, 2, hex('#ffffff'));
+    line(c, 4, 13, 13, 4, hex('#d8dee8'));
+    line(c, 6, 14, 14, 6, hex('#9aa6b8'));
+  },
+  // 17 guard
+  (c) => {
+    c.rect(3, 2, 10, 7, hex('#9aa6b8'));
+    triangle(
+      c,
+      [
+        [3, 9],
+        [12, 9],
+        [8, 14],
+      ],
+      hex('#9aa6b8'),
+    );
+    c.rect(5, 4, 6, 5, hex('#d8dee8'));
+    triangle(
+      c,
+      [
+        [5, 9],
+        [10, 9],
+        [8, 12],
+      ],
+      hex('#d8dee8'),
+    );
+  },
+  // 18 fire
+  (c) => {
+    triangle(
+      c,
+      [
+        [8, 1],
+        [2, 13],
+        [14, 13],
+      ],
+      hex('#d8333b'),
+    );
+    ellipse(c, 8, 11, 5, 3, hex('#d8333b'));
+    triangle(
+      c,
+      [
+        [8, 5],
+        [4, 13],
+        [12, 13],
+      ],
+      hex('#f0882e'),
+    );
+    ellipse(c, 8, 12, 2, 2, hex('#ffd84a'));
+  },
+  // 19 ice
+  (c) => {
+    line(c, 8, 1, 8, 14, hex('#9cdcff'));
+    line(c, 2, 4, 14, 11, hex('#9cdcff'));
+    line(c, 2, 11, 14, 4, hex('#9cdcff'));
+    c.circle(8, 8, 1, hex('#ffffff'));
+  },
+  // 20 lightning
+  (c) => {
+    triangle(
+      c,
+      [
+        [10, 1],
+        [4, 9],
+        [9, 9],
+      ],
+      hex('#ffd84a'),
+    );
+    triangle(
+      c,
+      [
+        [7, 7],
+        [12, 7],
+        [5, 14],
+      ],
+      hex('#ffd84a'),
+    );
+  },
+  // 21 heal (heart)
+  (c) => {
+    c.circle(5, 6, 3, hex('#ff6fa0'));
+    c.circle(11, 6, 3, hex('#ff6fa0'));
+    triangle(
+      c,
+      [
+        [2, 7],
+        [14, 7],
+        [8, 14],
+      ],
+      hex('#ff6fa0'),
+    );
+    c.rect(4, 4, 2, 2, hex('#ffc2d6'));
+  },
+  // 22 poison
+  (c) => {
+    c.circle(8, 10, 4, hex('#8e4fc0'));
+    triangle(
+      c,
+      [
+        [8, 1],
+        [4, 9],
+        [12, 9],
+      ],
+      hex('#8e4fc0'),
+    );
+    c.rect(6, 9, 2, 2, hex('#d3a8f5'));
+    c.set(12, 3, hex('#8e4fc0'));
+    c.set(13, 5, hex('#8e4fc0'));
+  },
+  // 23 star (strength)
+  (c) => {
+    triangle(
+      c,
+      [
+        [8, 1],
+        [5, 10],
+        [11, 10],
+      ],
+      hex('#ffd84a'),
+    );
+    triangle(
+      c,
+      [
+        [1, 6],
+        [15, 6],
+        [8, 11],
+      ],
+      hex('#ffd84a'),
+    );
+    triangle(
+      c,
+      [
+        [8, 9],
+        [3, 14],
+        [6, 7],
+      ],
+      hex('#ffd84a'),
+    );
+    triangle(
+      c,
+      [
+        [8, 9],
+        [13, 14],
+        [10, 7],
+      ],
+      hex('#ffd84a'),
+    );
+  },
+  // 24 sleep
+  (c) => {
+    const z = (x: number, y: number, s: number, color: RGBA) => {
+      line(c, x, y, x + s, y, color);
+      line(c, x + s, y, x, y + s, color);
+      line(c, x, y + s, x + s, y + s, color);
+    };
+    z(2, 8, 5, hex('#9cc4ff'));
+    z(9, 3, 4, hex('#c9dcff'));
+  },
+  // 25 knockout (skull)
+  (c) => {
+    c.circle(8, 7, 5, hex('#eeeae0'));
+    c.rect(5, 11, 6, 3, hex('#eeeae0'));
+    c.rect(5, 6, 2, 2, hex('#1a1420'));
+    c.rect(9, 6, 2, 2, hex('#1a1420'));
+    c.rect(7, 12, 1, 2, hex('#1a1420'));
+    c.rect(9, 12, 1, 2, hex('#1a1420'));
+  },
+];
+
+/** Where each demo entry's icon is (the editor's icon picker shows the same grid). */
+export const ICON_COLUMNS = 8;
+
+function drawIconset(): void {
+  const rows = Math.ceil(ICONS.length / ICON_COLUMNS);
+  const sheet = new Canvas(I * ICON_COLUMNS, I * rows);
+  ICONS.forEach((draw, i) => {
+    const icon = new Canvas(I, I);
+    draw(icon);
+    outline(icon);
+    sheet.blit(icon, (i % ICON_COLUMNS) * I, Math.floor(i / ICON_COLUMNS) * I);
+  });
+  sheet.save(join(ROOT, 'assets', 'system', 'iconset.png'));
+}
+
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
 drawEnemies();
+drawIconset();
