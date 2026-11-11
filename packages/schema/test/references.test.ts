@@ -8,6 +8,7 @@ import {
   type ProjectData,
   type Tileset,
   checkManifestReferences,
+  checkCharacterShape,
   checkMapReferences,
   checkMapShape,
   checkReferences,
@@ -141,6 +142,28 @@ describe('checkReferences', () => {
         expect.stringMatching(/unknown character "ghost"/),
       ]),
     );
+  });
+});
+
+describe('checkCharacterShape', () => {
+  it('flags frames past the end of the sheet', () => {
+    const sheet = {
+      formatVersion: 1,
+      id: 'c',
+      name: 'C',
+      image: 'c.png',
+      frameWidth: 32,
+      frameHeight: 32,
+      frames: 3,
+      rows: ['down', 'left', 'right', 'up'],
+      idleFrame: 1,
+      walkCycle: [0, 1, 2, 1],
+    } satisfies CharacterSheet;
+    expect(checkCharacterShape(sheet)).toEqual([]);
+    expect(checkCharacterShape({ ...sheet, idleFrame: 3, walkCycle: [0, 4, 5, 4] })).toEqual([
+      'standing frame 3 is past the last frame (2)',
+      'walk cycle uses frames 4, 5, past the last frame (2)',
+    ]);
   });
 });
 

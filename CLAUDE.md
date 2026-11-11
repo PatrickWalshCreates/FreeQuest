@@ -445,6 +445,16 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   image with a grid of cells over it: modes Walkable / Above / Select (W/A/S); a click or drag is
   one undo step (coalesced until pointer-up). Re-cutting a tileset that maps use asks first.
   Image sizes come from the browser (`useImage`), so any image format works.
+- **Character editor** (`editor-core/character-edits.ts`, tested; UI `apps/editor/src/character/`):
+  `fitCharacter` cuts the sheet into frames of a size (frames = columns that fit; a standing
+  frame or walk cycle the new width lacks resets to `defaultIdleFrame` / `defaultWalkCycle`),
+  `sheetImageProblem` (the image needs 4 rows), `parseFrameList` (walk cycle typed as "0 1 2 1"),
+  `moveRow` (direction order), `characterUsages` (player, actors, event graphics),
+  `createCharacter` / `deleteCharacter` like tilesets. The view shows the sheet with direction
+  labels and a preview of all four directions walking at the player's speed (runtime's
+  `FRAMES_PER_TILE`). `useElementSize` fits both sheet views to their panel.
+- `checkCharacterShape` (schema, run by `contentProblems` and the runtime loader) reports a
+  standing frame or walk cycle past the sheet's frames, which would stop the game drawing it.
 - `checkMapReferences` reports map tiles past the end of the tileset (the game would throw), so
   shrinking a tileset shows up as a problem instead of a crash.
 
@@ -571,7 +581,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      browser mode with dropped files; renaming assets with reference updates later)
   4. ~~Tileset editor (passability, above flags)~~ (done; new tilesets from an image, re-cutting
      the grid, tried in browser mode)
-  5. Character sheet editor
+  5. ~~Character sheet editor~~ (done; new characters from an image, walk preview, tried in
+     browser mode)
   6. Copy/paste of commands, events and entries; a map picker for transfer targets
   7. A packaged FreeQuest Editor.app (unsigned) and a Getting started guide
 - **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,

@@ -68,6 +68,21 @@ export function parseProjectFile<K extends FileKind>(
   throw new ProjectFileError(source, problems);
 }
 
+/** Frames a character sheet refers to must exist (the game would stop drawing it otherwise). */
+export function checkCharacterShape(sheet: CharacterSheet): string[] {
+  const problems: string[] = [];
+  if (sheet.idleFrame >= sheet.frames) {
+    problems.push(`standing frame ${sheet.idleFrame} is past the last frame (${sheet.frames - 1})`);
+  }
+  const bad = [...new Set(sheet.walkCycle.filter((f) => f >= sheet.frames))];
+  if (bad.length > 0) {
+    problems.push(
+      `walk cycle uses frame${bad.length === 1 ? '' : 's'} ${bad.join(', ')}, past the last frame (${sheet.frames - 1})`,
+    );
+  }
+  return problems;
+}
+
 /** Structural checks the JSON Schema cannot express (e.g. layer sizes match the map). */
 export function checkMapShape(map: GameMap): string[] {
   const problems: string[] = [];

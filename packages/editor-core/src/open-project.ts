@@ -10,6 +10,7 @@ import {
   ProjectFileError,
   assembleDatabase,
   checkDatabase,
+  checkCharacterShape,
   checkMapShape,
   checkReferences,
   parseProjectFile,
@@ -74,6 +75,7 @@ export function contentProblems(kind: DataFileKind, data: unknown, id: string): 
     problems.push(`id "${dataId}" does not match the id "${id}" in ${MANIFEST_PATH}`);
   }
   if (kind === 'map') problems.push(...checkMapShape(data as FileData<'map'>));
+  if (kind === 'character') problems.push(...checkCharacterShape(data as FileData<'character'>));
   return problems;
 }
 

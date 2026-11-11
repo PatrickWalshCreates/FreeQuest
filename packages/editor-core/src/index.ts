@@ -18,3 +18,4 @@ export * from './new-project.js';
 export * from './recent-projects.js';
 export * from './assets.js';
 export * from './tileset-edits.js';
+export * from './character-edits.js';

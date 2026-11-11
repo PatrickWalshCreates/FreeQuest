@@ -2,8 +2,8 @@ import type { Direction } from '@freequest/core';
 import type { CharacterSheet } from '@freequest/schema';
 import { Sprite, type Texture } from 'pixi.js';
 
-/** Animation frames advanced per tile walked. */
-const FRAMES_PER_TILE = 2;
+/** Animation frames advanced per tile walked (the editor's walk preview uses it too). */
+export const FRAMES_PER_TILE = 2;
 
 /** What a character view needs to know to pick a frame. GridMover satisfies it. */
 export interface CharacterPose {

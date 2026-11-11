@@ -16,6 +16,7 @@ import type { Tileset } from '@freequest/schema';
 import { useEffect, useRef, useState } from 'react';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { confirmAction } from '../platform.js';
+import { useElementSize } from '../use-element-size.js';
 import { type ImageInfo, useImage } from './image-size.js';
 
 type Mode = 'passage' | 'above' | 'select';
@@ -53,17 +54,8 @@ export function TilesetEditor({ doc, file }: Props) {
   const [zoom, setZoom] = useState<number | null>(null);
   const paint = useRef<{ value: boolean; key: string } | null>(null);
   const canvas = useRef<HTMLDivElement>(null);
-  const [space, setSpace] = useState({ width: 640, height: 480 });
-  useEffect(() => {
-    const element = canvas.current;
-    if (!element) return;
-    const observer = new ResizeObserver(() =>
-      // Room inside the padding (16 px each side).
-      setSpace({ width: element.clientWidth - 32, height: element.clientHeight - 32 }),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  // Room inside the canvas's padding (16 px each side).
+  const space = useElementSize(canvas, 16);
 
   const change = (label: string, fn: (t: Tileset) => Tileset, coalesce?: string) =>
     doc.update(file.path, 'tileset', label, fn, coalesce ? { coalesce } : {});

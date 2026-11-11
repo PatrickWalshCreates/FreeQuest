@@ -14,6 +14,7 @@ import {
   checkDatabase,
   checkManifestReferences,
   checkMapReferences,
+  checkCharacterShape,
   checkMapShape,
   parseProjectFile,
 } from '@freequest/schema';
@@ -117,6 +118,11 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
     fetchAll(source, 'character', manifest.characters),
     fetchDatabase(source, manifest),
   ]);
+  for (const ref of manifest.characters) {
+    const sheet = characters.get(ref.id);
+    const problems = sheet ? checkCharacterShape(sheet) : [];
+    if (problems.length > 0) throw new ProjectFileError(ref.path, problems);
+  }
   const databaseProblems = checkDatabase(database, { manifest, characters });
   if (databaseProblems.length > 0) throw new ProjectFileError('database', databaseProblems);
   const maps = new Map<string, GameMap>();

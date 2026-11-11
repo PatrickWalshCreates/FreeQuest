@@ -6,6 +6,8 @@ import {
   MANIFEST_PATH,
   deleteMap,
   deleteTileset,
+  characterUsages,
+  deleteCharacter,
   tilesetUsages,
   duplicateMap,
   mapPath,
@@ -18,11 +20,14 @@ import {
   type DatabaseKind,
   type GameMap,
   ID_PATTERN,
+  type CharacterSheet,
   type Tileset,
 } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { AssetsPanel } from './assets/AssetsPanel.js';
 import { useAssetPaths } from './assets/use-assets.js';
+import { CharacterEditor } from './character/CharacterEditor.js';
+import { NewCharacterDialog } from './character/NewCharacterDialog.js';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
 import { ExportDialog } from './ExportDialog.js';
 import { MapEditor } from './map/MapEditor.js';
@@ -76,6 +81,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [status, setStatusState] = useState<Status | null>(null);
   const [creating, setCreating] = useState(false);
   const [creatingTileset, setCreatingTileset] = useState(false);
+  const [creatingCharacter, setCreatingCharacter] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [playtest, setPlaytest] = useState<{
     readonly source: PlaytestSource;
@@ -128,6 +134,21 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
     } catch (error) {
       setStatus({ kind: 'error', text: error instanceof Error ? error.message : String(error) });
     }
+  };
+  const removeCharacter = async (id: string) => {
+    const name = project.characters.get(id)?.data?.name ?? id;
+    const uses = characterUsages(project, id);
+    if (uses.length > 0) {
+      setStatus({ kind: 'error', text: `${name} can't be deleted: used by ${uses.join(', ')}` });
+      return;
+    }
+    const ok = await confirmAction(
+      `Delete the character "${name}"? Its file is deleted when you save (you can undo until then). The image stays in the project's assets.`,
+      { title: 'Delete character', okLabel: 'Delete character' },
+    );
+    if (!ok) return;
+    deleteCharacter(doc, id);
+    setStatus({ kind: 'info', text: `Deleted ${name}` });
   };
   const removeTileset = async (id: string) => {
     const name = project.tilesets.get(id)?.data?.name ?? id;
@@ -196,7 +217,11 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       files: [...project.tilesets.values()],
       add: { label: 'New tileset', onClick: () => setCreatingTileset(true) },
     },
-    { title: 'Characters', files: [...project.characters.values()] },
+    {
+      title: 'Characters',
+      files: [...project.characters.values()],
+      add: { label: 'New character', onClick: () => setCreatingCharacter(true) },
+    },
     { title: 'Database', files: files.filter(isDatabase) },
   ];
   const problemCount = new Map<string, number>();
@@ -364,6 +389,21 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
             file={current as ProjectFile<'tileset'> & { data: Tileset }}
           />
         </main>
+      ) : current.kind === 'character' && current.data ? (
+        <main className="details map-details">
+          <div className="map-header">
+            <NameField doc={doc} file={current} />
+            <span className="spacer" />
+            <button className="danger" onClick={() => void removeCharacter(current.id)}>
+              Delete…
+            </button>
+          </div>
+          <CharacterEditor
+            key={current.path}
+            doc={doc}
+            file={current as ProjectFile<'character'> & { data: CharacterSheet }}
+          />
+        </main>
       ) : isDatabase(current) && current.data ? (
         <main className="details db-details">
           <DatabaseEditor
@@ -392,6 +432,22 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       )}
 
       {exporting && <ExportDialog doc={doc} onClose={() => setExporting(false)} />}
+
+      {creatingCharacter && (
+        <NewCharacterDialog
+          doc={doc}
+          onClose={() => setCreatingCharacter(false)}
+          onImport={() => {
+            setCreatingCharacter(false);
+            setSelected(ASSETS_VIEW);
+          }}
+          onCreated={(id) => {
+            setCreatingCharacter(false);
+            const created = doc.project.characters.get(id);
+            if (created) setSelected(created.path);
+          }}
+        />
+      )}
 
       {creatingTileset && (
         <NewTilesetDialog
