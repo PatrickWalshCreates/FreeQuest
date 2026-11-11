@@ -7,7 +7,10 @@ import { slotOption } from './menu-controller.js';
 import type { SaveStore } from './save-store.js';
 
 export type TitleChoice =
-  { readonly kind: 'new' } | { readonly kind: 'load'; readonly save: SaveFile };
+  | { readonly kind: 'new' }
+  | { readonly kind: 'load'; readonly save: SaveFile }
+  /** Open the options screen; the game calls `resume()` when it closes. */
+  | { readonly kind: 'options' };
 
 export interface TitleUiState {
   readonly screen: 'main' | 'load';
@@ -17,7 +20,7 @@ export interface TitleUiState {
   readonly message: string | null;
 }
 
-const MAIN = ['New Game', 'Continue', 'Load'] as const;
+const MAIN = ['New Game', 'Continue', 'Load', 'Options'] as const;
 
 export class TitleController {
   private screen: 'main' | 'load' = 'main';
@@ -55,7 +58,10 @@ export class TitleController {
         .map((info) => ({ ...slotOption(info), enabled: info.kind === 'save' }));
     }
     const hasSave = this.saves.latest() !== null;
-    return MAIN.map((label) => ({ label, enabled: label === 'New Game' || hasSave }));
+    return MAIN.map((label) => ({
+      label,
+      enabled: label === 'New Game' || label === 'Options' || hasSave,
+    }));
   }
 
   update(input: InputState): void {
@@ -87,10 +93,17 @@ export class TitleController {
     } else if (option.label === 'Continue') {
       const latest = this.saves.latest();
       if (latest) this.chosen = { kind: 'load', save: latest.save };
+    } else if (option.label === 'Options') {
+      this.chosen = { kind: 'options' };
     } else {
       this.screen = 'load';
       this.cursor = 0;
     }
+  }
+
+  /** Back from the options screen, with the cursor where it was. */
+  resume(): void {
+    this.chosen = null;
   }
 
   /** Back to the main title options (after a failed load or returning from the game). */

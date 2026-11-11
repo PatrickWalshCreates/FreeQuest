@@ -23,9 +23,12 @@ import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
 import { loadIconSheet } from './icons.js';
+import { OptionsController } from './options-controller.js';
+import { OptionsView } from './options-view.js';
+import { type GameOptions, OptionsStore, defaultOptions, volumeGain } from './options.js';
 import { ShopController } from './shop-controller.js';
 import { ShopView } from './shop-view.js';
-import { type KeyBindings, bindKeyboard } from './keyboard.js';
+import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { fitScale } from './scale.js';
@@ -214,7 +217,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   resizeObserver.observe(options.parent);
   fit();
 
-  const unbindKeyboard = bindKeyboard(window, input, options.keyBindings);
+  const keyboard = bindKeyboard(window, input, options.keyBindings);
   const removeDebugPanel = options.debug
     ? createDebugPanel(options.parent, () => world, manifest)
     : () => undefined;
@@ -232,6 +235,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   /** The list the player is moving through this step, for interface sounds. */
   const activeMenu = (): MenuLike | null => {
+    if (optionsScreen) return optionsScreen.state;
     if (mode === 'title') return title.state;
     if (menu) return menu.state;
     if (shop) return shop.state;
@@ -281,7 +285,42 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   // Title screen, menu and saves ---------------------------------------------
-  const saves = new SaveStore(options.saveStorage ?? defaultStorage(), manifest);
+  const storage = options.saveStorage ?? defaultStorage();
+  const saves = new SaveStore(storage, manifest);
+  // The player's options (volumes, keys) live beside the saves, per game.
+  const optionsStore = new OptionsStore(
+    storage,
+    manifest.id,
+    defaultOptions(options.keyBindings ?? DEFAULT_KEY_BINDINGS),
+  );
+  const applyOptions = (o: GameOptions) => {
+    audio.setVolumes(volumeGain(o.music), volumeGain(o.sound));
+    keyboard.setBindings(o.keys);
+  };
+  let gameOptions = optionsStore.load();
+  applyOptions(gameOptions);
+  let optionsScreen: OptionsController | null = null;
+  let optionsView: OptionsView | null = null;
+  let capturing = false;
+  const openOptions = () => {
+    optionsScreen = new OptionsController(
+      gameOptions,
+      defaultOptions(options.keyBindings ?? DEFAULT_KEY_BINDINGS),
+      (next) => {
+        gameOptions = next;
+        optionsStore.save(next);
+        applyOptions(next);
+      },
+    );
+    optionsView = new OptionsView(width, height, theme);
+    app.stage.addChildAt(optionsView.container, app.stage.getChildIndex(fadeOverlay));
+  };
+  const closeOptions = () => {
+    optionsView?.destroy();
+    optionsView = null;
+    optionsScreen = null;
+    capturing = false;
+  };
   const title = new TitleController(manifest.name, saves);
   const titleView = new TitleView(width, height, theme);
   app.stage.addChildAt(titleView.container, app.stage.getChildIndex(fadeOverlay));
@@ -412,11 +451,28 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       shown?.events.remember();
       // Judged on the state before this step's input is handled.
       sfx(uiSoundFor(input, activeMenu()));
-      if (mode === 'title') {
+      if (optionsScreen) {
+        // Over the title or the map menu; nothing behind it moves meanwhile.
+        const screen = optionsScreen;
+        screen.update(input);
+        if (screen.state.capturing && !capturing) {
+          capturing = true;
+          keyboard.captureNext((code) => {
+            capturing = false;
+            screen.keyPressed(code);
+          });
+        }
+        if (screen.isClosed) {
+          closeOptions();
+          title.resume();
+          menu?.resume();
+        }
+      } else if (mode === 'title') {
         title.update(input);
         const choice = title.choice;
         if (choice?.kind === 'new') play(createWorld(), 0);
         else if (choice?.kind === 'load') void loadGame(choice.save);
+        else if (choice?.kind === 'options') openOptions();
       } else if (mode === 'playing') {
         playSeconds += dt;
         if (battles.isGameOver) {
@@ -425,6 +481,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
           menu.update(input);
           if (menu.outcome === 'quit') toTitle();
           else if (menu.outcome === 'closed') closeMenu();
+          else if (menu.outcome === 'options') openOptions();
         } else if (shop) {
           // The world waits while the shop is open (like the menu).
           shop.update(input);
@@ -462,6 +519,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       if (menu && menuView) menuView.render(menu.state);
       if (shop && shopView) shopView.render(shop.state);
     }
+    if (optionsScreen && optionsView) optionsView.render(optionsScreen.state);
     const controller = battles.controller;
     if (battleView && controller) battleView.render(controller.state, elapsed);
     fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
@@ -480,7 +538,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     app,
     destroy() {
       app.ticker.remove(tick);
-      unbindKeyboard();
+      keyboard.dispose();
       window.removeEventListener('keydown', unlockAudio);
       audio.destroy();
       removeDebugPanel();

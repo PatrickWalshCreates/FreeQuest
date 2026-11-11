@@ -42,6 +42,7 @@ describe('TitleController', () => {
       ['New Game', true],
       ['Continue', false],
       ['Load', false],
+      ['Options', true],
     ]);
     tap('down');
     tap('confirm'); // Continue is disabled

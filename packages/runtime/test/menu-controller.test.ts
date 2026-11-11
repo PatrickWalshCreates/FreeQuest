@@ -46,11 +46,22 @@ describe('MenuController', () => {
       'Equipment',
       'Status',
       'Save',
+      'Options',
       'Quit',
     ]);
     expect(menu.state.options[1]?.enabled).toBe(false); // the hero alone knows no menu skills
     tap('cancel');
     expect(menu.outcome).toBe('closed');
+  });
+
+  it('asks for the options screen and comes back to the root list', () => {
+    const { menu, tap } = setup();
+    tap('up', 2); // wraps: Quit, then Options
+    tap('confirm');
+    expect(menu.outcome).toBe('options');
+    menu.resume();
+    expect(menu.outcome).toBeNull();
+    expect(menu.state).toMatchObject({ screen: 'root', cursor: 5 });
   });
 
   it('uses a potion on a chosen member and reports the result', () => {

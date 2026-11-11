@@ -173,6 +173,18 @@ Never the other way.
   `database/IconField.tsx` picks from a grid of the sheet (via `FormContext.render` for
   `icon`), entry lists show icons; without an iconset it's a number field with a hint.
 
+- **Options** (`runtime/src/options.ts`, `options-controller.ts`, `options-view.ts`, tested): music
+  and sound volume (0–10, `volumeGain` → `AudioPlayer.setVolumes`, which also changes the music
+  playing) and key bindings (`KeyboardEvent.code` → action). `rebind` makes the pressed key the
+  action's only key, moving it from another action unless it's that action's last key (every
+  action always keeps one). `OptionsStore` keeps them per game id beside the saves
+  (`freequest:game:<id>:options`, same `KeyValueStorage`, so the desktop player writes a file);
+  damaged data falls back to the defaults (`startGame`'s `keyBindings` are the default keys).
+  The screen opens from the title (`TitleChoice` `options`) and the map menu (outcome
+  `options`); both `resume()` after it closes. Rebinding: `bindKeyboard` now returns a
+  `KeyboardInput` (`setBindings`, `captureNext`, `dispose`); the game arms `captureNext` while
+  the controller is `capturing`, and Escape keeps the old keys.
+
 ### Database and battlers (M3)
 
 - **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
@@ -255,6 +267,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   missing files after a warning. A demo test checks every referenced image/audio file exists.
 - **Testing in the browser pane**: when the pane is hidden, requestAnimationFrame doesn't fire, so
   drive the game with `freequest.app.ticker.update(t)` from the console instead of real-time waits.
+  Start the dev player with `pnpm dev` from the repo root if a preview config fails to start it.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
@@ -673,7 +686,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      sold in a playtest)
   5. ~~Icons (generated iconset; menus, battle, shop; icon picker in the editor)~~ (done; picked
      in the editor, seen in the game's menu)
-  6. Options screen (volume, key rebinding; kept per player apart from saves)
+  6. ~~Options screen (volume, key rebinding; kept per player apart from saves)~~ (done; changed,
+     reloaded and played with the new key in the dev player)
   7. Enemy action conditions (HP below, turn number, state)
   8. Demo, Starter, docs and export checks
   - Format plan: map 6 (movement, moveRoute, shop), database 4 (enemy conditions); saves stay 1.

@@ -43,8 +43,11 @@ export interface MenuUiState {
   readonly message: string | null;
 }
 
-/** How the menu ended: closed back to the map, or quit to the title screen. */
-export type MenuOutcome = 'closed' | 'quit';
+/**
+ * How the menu ended: closed back to the map, quit to the title screen, or
+ * asked for the options screen (the game calls `resume()` when it closes).
+ */
+export type MenuOutcome = 'closed' | 'quit' | 'options';
 
 interface Screen {
   readonly kind: MenuScreen;
@@ -67,7 +70,7 @@ export interface MenuControllerOptions {
   readonly onSaved?: (slot: number) => void;
 }
 
-const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Quit'] as const;
+const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Options', 'Quit'] as const;
 
 const usableInMenu = (o: SkillEntry['occasion']) => o === 'always' || o === 'menu';
 
@@ -81,6 +84,11 @@ export class MenuController {
   constructor(private readonly options: MenuControllerOptions) {
     this.world = options.world;
     this.random = options.random ?? Math.random;
+  }
+
+  /** Back from the options screen, still on the root list. */
+  resume(): void {
+    if (this.result === 'options') this.result = null;
   }
 
   /** Set once the menu is done; the game then closes it (or goes to the title). */
@@ -287,6 +295,7 @@ export class MenuController {
         else if (command === 'Equipment') this.push({ kind: 'equipActor' });
         else if (command === 'Status') this.push({ kind: 'statusActor' });
         else if (command === 'Save') this.push({ kind: 'save' });
+        else if (command === 'Options') this.result = 'options';
         else if (command === 'Quit') this.push({ kind: 'quit' });
         return;
       }

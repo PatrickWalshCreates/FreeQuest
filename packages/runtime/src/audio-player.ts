@@ -66,6 +66,18 @@ export class AudioPlayer {
     });
   }
 
+  /** Change the volumes (0..1); the music playing now follows at once. */
+  setVolumes(music: number, sound: number): void {
+    this.musicVolume = music;
+    this.soundVolume = sound;
+    const current = this.playing;
+    const context = this.context;
+    if (!current || !context) return;
+    const now = context.currentTime;
+    current.gain.gain.cancelScheduledValues(now);
+    current.gain.gain.setValueAtTime(music, now);
+  }
+
   playSound(path: string): void {
     const context = this.context;
     if (!context) return;

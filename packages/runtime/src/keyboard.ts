@@ -22,17 +22,35 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   Tab: 'menu',
 };
 
-/** Feed keyboard events into an ActionState. Returns a function that removes the listeners. */
+/** The keyboard feeding the game: bindings can change while it runs. */
+export interface KeyboardInput {
+  setBindings(bindings: KeyBindings): void;
+  /** Hand the next key press (its `code`) to `handler` instead of the game (rebinding). */
+  captureNext(handler: (code: string) => void): void;
+  /** Remove the listeners. */
+  dispose(): void;
+}
+
+/** Feed keyboard events into an ActionState. */
 export function bindKeyboard(
   target: Window,
   input: ActionState,
-  bindings: KeyBindings = DEFAULT_KEY_BINDINGS,
-): () => void {
+  initial: KeyBindings = DEFAULT_KEY_BINDINGS,
+): KeyboardInput {
+  let bindings = initial;
+  let capture: ((code: string) => void) | null = null;
   // Keys currently held per action, so releasing one of two keys bound to
   // the same action (e.g. ArrowUp and W) doesn't release the action.
   const held = new Map<Action, Set<string>>();
 
   const onDown = (e: KeyboardEvent) => {
+    if (capture && !e.repeat) {
+      e.preventDefault();
+      const handler = capture;
+      capture = null;
+      handler(e.code);
+      return;
+    }
     const action = bindings[e.code];
     if (!action) return;
     e.preventDefault();
@@ -57,9 +75,20 @@ export function bindKeyboard(
   target.addEventListener('keydown', onDown);
   target.addEventListener('keyup', onUp);
   target.addEventListener('blur', onBlur);
-  return () => {
-    target.removeEventListener('keydown', onDown);
-    target.removeEventListener('keyup', onUp);
-    target.removeEventListener('blur', onBlur);
+  return {
+    setBindings(next) {
+      // Keys held under the old bindings would never be released: start clean.
+      bindings = next;
+      held.clear();
+      input.releaseAll();
+    },
+    captureNext(handler) {
+      capture = handler;
+    },
+    dispose() {
+      target.removeEventListener('keydown', onDown);
+      target.removeEventListener('keyup', onUp);
+      target.removeEventListener('blur', onBlur);
+    },
   };
 }
