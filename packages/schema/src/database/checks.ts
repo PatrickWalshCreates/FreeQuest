@@ -217,7 +217,13 @@ export function checkDatabase(
     en.drops.forEach((d, i) =>
       need(d.kind === 'item' ? items : equipment, d.id, d.kind, `${where} drops[${i}]`),
     );
-    en.actions.forEach((act, i) => need(skills, act.skill, 'skill', `${where} actions[${i}]`));
+    en.actions.forEach((act, i) => {
+      const at = `${where} actions[${i}]`;
+      need(skills, act.skill, 'skill', at);
+      act.conditions.forEach((c, j) => {
+        if (c.type === 'state') need(states, c.state, 'state', `${at} conditions[${j}]`);
+      });
+    });
     checkModifiers(en.modifiers, where);
   }
 

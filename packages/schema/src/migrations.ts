@@ -27,6 +27,27 @@ export interface Migration {
   migrate(data: Record<string, unknown>): Record<string, unknown>;
 }
 
+/** Database v4: every enemy action gets `conditions: []` (always usable, as before). */
+function addActionConditions(d: Record<string, unknown>): Record<string, unknown> {
+  const entries = Array.isArray(d['entries']) ? (d['entries'] as unknown[]) : [];
+  return {
+    ...d,
+    entries: entries.map((entry) => {
+      if (typeof entry !== 'object' || entry === null) return entry;
+      const e = entry as Record<string, unknown>;
+      const actions = Array.isArray(e['actions']) ? (e['actions'] as unknown[]) : [];
+      return {
+        ...e,
+        actions: actions.map((a) =>
+          typeof a === 'object' && a !== null && !('conditions' in a)
+            ? { ...a, conditions: [] }
+            : a,
+        ),
+      };
+    }),
+  };
+}
+
 /**
  * Registered migrations per file kind. When bumping a format version, add an
  * entry here (and a test with a fixture of the old format) in the same change.
@@ -66,11 +87,17 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
   ],
   character: [],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
-  // Both additive.
+  // Both additive. v4: enemy action conditions (every action gets an empty list).
   ...(Object.fromEntries(
     DATABASE_KINDS.map((k) => [
       k,
-      [1, 2].map((from) => ({ from, migrate: (d: Record<string, unknown>) => d })),
+      [
+        ...[1, 2].map((from) => ({ from, migrate: (d: Record<string, unknown>) => d })),
+        {
+          from: 3,
+          migrate: k === 'enemies' ? addActionConditions : (d: Record<string, unknown>) => d,
+        },
+      ],
     ]),
   ) as Record<DatabaseKind, Migration[]>),
 };

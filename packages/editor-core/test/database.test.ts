@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCHEMAS } from '@freequest/schema';
+import { DATABASE_FORMAT_VERSION, SCHEMAS } from '@freequest/schema';
 import Value from 'typebox/value';
 import {
   ENTRY_KINDS,
@@ -56,7 +56,7 @@ describe('database entries', () => {
   it('creates a valid new entry for every category', () => {
     for (const kind of ENTRY_KINDS) {
       const entry = newEntry(kind, 'new-one', 'New one', pick);
-      const data = { formatVersion: 3, entries: [entry] };
+      const data = { formatVersion: DATABASE_FORMAT_VERSION, entries: [entry] };
       expect(Value.Check(SCHEMAS[kind], data), `${kind}: ${JSON.stringify(entry)}`).toBe(true);
     }
   });

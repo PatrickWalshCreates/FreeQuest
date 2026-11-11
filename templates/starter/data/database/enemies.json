@@ -1,11 +1,12 @@
 {
-  "formatVersion": 3,
+  "formatVersion": 4,
   "entries": [
     {
       "id": "slime",
       "name": "Slime",
       "actions": [
         {
+          "conditions": [],
           "rating": 5,
           "skill": "attack"
         }

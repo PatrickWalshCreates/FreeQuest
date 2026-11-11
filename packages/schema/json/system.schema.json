@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 3
+      "const": 4
     },
     "attackSkill": {
       "type": "string",

@@ -57,6 +57,8 @@ const VARIANT_NAMES: Record<string, string> = {
   integer: 'Number',
   number: 'Number',
   variable: 'Variable',
+  hp: 'HP',
+  mp: 'MP',
 };
 
 function labelFor(ctx: FormContext, name: string): string {

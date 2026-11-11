@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 3
+      "const": 4
     },
     "entries": {
       "type": "array",
@@ -28,6 +28,82 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
+                "conditions": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "description": "Its own HP, as a share of its max HP.",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "hp"
+                          },
+                          "compare": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "const": "below"
+                              },
+                              {
+                                "type": "string",
+                                "const": "atLeast"
+                              }
+                            ]
+                          },
+                          "percent": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                          }
+                        },
+                        "required": ["type", "compare", "percent"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "description": "Turn numbers, e.g. from 2, every 3: 2, 5, 8…",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "turn"
+                          },
+                          "every": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "from": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": ["type", "from", "every"]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "description": "A state on the enemy itself.",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "state"
+                          },
+                          "has": {
+                            "type": "boolean"
+                          },
+                          "state": {
+                            "type": "string",
+                            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                          }
+                        },
+                        "required": ["type", "state", "has"]
+                      }
+                    ]
+                  }
+                },
                 "rating": {
                   "type": "integer",
                   "description": "Higher = chosen more.",
@@ -40,7 +116,7 @@
                   "pattern": "^[a-z0-9][a-z0-9_-]*$"
                 }
               },
-              "required": ["skill", "rating"]
+              "required": ["skill", "rating", "conditions"]
             },
             "minItems": 1
           },

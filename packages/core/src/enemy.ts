@@ -1,4 +1,4 @@
-import type { EnemyEntry, Modifier, StatKey } from '@freequest/schema';
+import type { EnemyCondition, EnemyEntry, Modifier, StatKey } from '@freequest/schema';
 import { Battler } from './battler.js';
 import type { DatabaseIndex } from './database.js';
 import { skillProblem } from './effects.js';
@@ -58,14 +58,35 @@ export class Enemy extends Battler {
       .map((d) => ({ kind: d.kind, id: d.id }));
   }
 
+  /** Whether one of its action conditions holds on battle turn `turn` (1 = the first). */
+  meets(condition: EnemyCondition, turn: number): boolean {
+    switch (condition.type) {
+      case 'hp': {
+        const share = (this.hp / this.maxHp) * 100;
+        return condition.compare === 'below'
+          ? share < condition.percent
+          : share >= condition.percent;
+      }
+      case 'turn':
+        return condition.every === 0
+          ? turn === condition.from
+          : turn >= condition.from && (turn - condition.from) % condition.every === 0;
+      case 'state':
+        return this.hasState(condition.state) === condition.has;
+    }
+  }
+
   /**
-   * Pick a skill to use: weighted by rating among actions it can use right
-   * now (enough MP, usable in battle). Null if it can't act or has no option.
+   * Pick a skill to use on battle turn `turn`: weighted by rating among the
+   * actions whose conditions all hold and that it can use right now (enough
+   * MP, usable in battle). Null if it can't act or nothing qualifies.
    */
-  chooseAction(random: () => number): string | null {
+  chooseAction(random: () => number, turn = 1): string | null {
     if (!this.canAct) return null;
     const options = this.entry.actions.filter(
-      (a) => skillProblem(this, this.db.skills.get(a.skill), 'battle') === null,
+      (a) =>
+        a.conditions.every((c) => this.meets(c, turn)) &&
+        skillProblem(this, this.db.skills.get(a.skill), 'battle') === null,
     );
     const total = options.reduce((sum, a) => sum + a.rating, 0);
     let roll = random() * total;

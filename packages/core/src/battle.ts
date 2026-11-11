@@ -218,7 +218,8 @@ export class Battle {
   }
 
   private enemyAction(enemy: Enemy): BattleAction | null {
-    const skill = enemy.chooseAction(this.random);
+    // Actions are planned before the turn starts: this is the coming turn's number.
+    const skill = enemy.chooseAction(this.random, this.turnCount + 1);
     return skill === null ? null : { kind: 'skill', skill };
   }
 

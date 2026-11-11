@@ -223,6 +223,13 @@ Never the other way.
   turn countdowns. Escape = 0.5 × party/enemy average agility + 0.1 per failed try; failing gives
   the enemies a free turn. Victory: full exp to every standing actor, gold, rolled drops; battle-end
   states clear. Everything takes an injected `random` for tests.
+- **Enemy action conditions** (database v4): each enemy action has `conditions` (all must hold):
+  `hp` (`below` / `atLeast` a percent of max HP), `turn` (`from` turn N, then `every` M; 0 = only
+  that turn), `state` (`has` true/false, on itself). `Enemy.meets(condition, turn)`;
+  `chooseAction(random, turn)` weighs by rating only among qualifying, usable actions (none →
+  it does nothing that turn). The battle passes the coming turn's number (`turnCount + 1`,
+  since actions are planned before the turn starts). `checkDatabase` checks condition states.
+  The demo wolf uses Power Strike only below 50% HP (rating 7).
 - **Combat rates**: physical hit = successRate × hitRate (0.95 base) − evasionRate (0.05 base);
   crit = criticalRate (0.04 base); HP damage × `damageTaken`; self-targeted uses never miss. All
   are modifiers. Guard is data: the guard skill adds a 1-turn `guarding` state with damageTaken 0.5.
@@ -562,8 +569,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
 - Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`),
   map 6 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`), tileset 1, character 1, every database file 3 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`), save 1. Additive bumps migrate as no-ops.
+  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 1. Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -615,7 +622,7 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
 - **M4 (done)** Turn-based battle: troops, combat modifiers, battle engine, battle screen
   (controller + view), random encounters, event battles with outcome branches, transitions, game
   over and new game; demo enemy art, meadow encounters, wolf ambush at the bridge.
-  - Deferred: enemy action conditions (e.g. "below 50% HP"), battle animations/effects art,
+  - Deferred: enemy action conditions (done in M9), battle animations/effects art,
     battle music (M5), multi-row/positioned troop layouts, a "can lose" recovery rule.
 - **M5 (done)** Title screen, in-game menu (items, skills, equipment, status, save, quit), three
   save slots in localStorage with a versioned save format, music and sound (format, core cues, Web
@@ -688,7 +695,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      in the editor, seen in the game's menu)
   6. ~~Options screen (volume, key rebinding; kept per player apart from saves)~~ (done; changed,
      reloaded and played with the new key in the dev player)
-  7. Enemy action conditions (HP below, turn number, state)
+  7. ~~Enemy action conditions (HP below, turn number, state)~~ (done; database v4; the demo
+     wolf saves Power Strike for when it's hurt)
   8. Demo, Starter, docs and export checks
   - Format plan: map 6 (movement, moveRoute, shop), database 4 (enemy conditions); saves stay 1.
 - **Next / later**: candidates, in no fixed order: the deferred items above (parallel events,

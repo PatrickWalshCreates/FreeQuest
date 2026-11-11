@@ -1,11 +1,12 @@
 {
-  "formatVersion": 3,
+  "formatVersion": 4,
   "entries": [
     {
       "id": "slime",
       "name": "Slime",
       "actions": [
         {
+          "conditions": [],
           "rating": 5,
           "skill": "attack"
         }
@@ -43,6 +44,7 @@
       "name": "Bat",
       "actions": [
         {
+          "conditions": [],
           "rating": 5,
           "skill": "attack"
         }
@@ -74,11 +76,19 @@
       "name": "Wolf",
       "actions": [
         {
+          "conditions": [],
           "rating": 5,
           "skill": "attack"
         },
         {
-          "rating": 2,
+          "conditions": [
+            {
+              "type": "hp",
+              "compare": "below",
+              "percent": 50
+            }
+          ],
+          "rating": 7,
           "skill": "power-strike"
         }
       ],

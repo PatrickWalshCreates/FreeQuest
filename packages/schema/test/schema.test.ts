@@ -96,6 +96,21 @@ describe('migrate', () => {
     expect({ ...map, formatVersion: 5 }).toEqual(raw);
   });
 
+  it('gives v3 enemy actions an empty list of conditions', () => {
+    const raw = JSON.parse(readFileSync(join(FIXTURES, 'v3', 'enemies.json'), 'utf8')) as {
+      entries: { actions: object[] }[];
+    };
+    const data = parseProjectFile('enemies', raw, 'enemies.json');
+    expect(data.formatVersion).toBe(4);
+    const actions = data.entries.flatMap((e) => e.actions);
+    expect(actions.length).toBe(raw.entries.flatMap((e) => e.actions).length);
+    expect(actions.every((a) => Array.isArray(a.conditions) && a.conditions.length === 0)).toBe(
+      true,
+    );
+    // Other database files pass through unchanged.
+    expect(parseProjectFile('items', { formatVersion: 3, entries: [] }).formatVersion).toBe(4);
+  });
+
   it('makes ids from names', () => {
     expect(idFromName('Fire Ball!')).toBe('fire-ball');
     expect(idFromName('  Ünïcode Sword ')).toBe('unicode-sword');

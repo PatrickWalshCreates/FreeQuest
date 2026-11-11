@@ -1,5 +1,5 @@
 {
-  "formatVersion": 3,
+  "formatVersion": 4,
   "attackSkill": "attack",
   "audio": {
     "battleMusic": "assets/audio/battle.wav",

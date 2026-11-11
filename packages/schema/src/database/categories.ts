@@ -13,7 +13,7 @@ import {
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 3;
+export const DATABASE_FORMAT_VERSION = 4;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
@@ -210,6 +210,39 @@ export type StateEntry = Static<typeof StateEntry>;
 
 export const DropKind = Type.Union([Type.Literal('item'), Type.Literal('equipment')]);
 
+/** When an enemy may use an action: about itself, or the battle's turn number (1, 2, …). */
+export const EnemyCondition = Type.Union([
+  Type.Object(
+    {
+      type: Type.Literal('hp'),
+      /** below: HP under this share of max HP. atLeast: this share or more. */
+      compare: Type.Union([Type.Literal('below'), Type.Literal('atLeast')]),
+      percent: Type.Integer({ minimum: 1, maximum: 100 }),
+    },
+    { additionalProperties: false, description: 'Its own HP, as a share of its max HP.' },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('turn'),
+      /** The first turn it may be used on. */
+      from: PositiveInt,
+      /** Then every this many turns (0 = only on that turn). */
+      every: NonNegativeInt,
+    },
+    { additionalProperties: false, description: 'Turn numbers, e.g. from 2, every 3: 2, 5, 8…' },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('state'),
+      state: Id,
+      /** true: only while it has the state. false: only while it doesn't. */
+      has: Type.Boolean(),
+    },
+    { additionalProperties: false, description: 'A state on the enemy itself.' },
+  ),
+]);
+export type EnemyCondition = Static<typeof EnemyCondition>;
+
 export const EnemyEntry = Type.Object(
   {
     ...Listed,
@@ -228,6 +261,8 @@ export const EnemyEntry = Type.Object(
         {
           skill: Id,
           rating: Type.Integer({ minimum: 1, maximum: 9, description: 'Higher = chosen more.' }),
+          /** All must hold for the enemy to consider this action (none = always). */
+          conditions: Type.Array(EnemyCondition),
         },
         { additionalProperties: false },
       ),
