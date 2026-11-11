@@ -436,6 +436,17 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
   `dragDropEnabled: false` so HTML drops reach the page; the webview reads the bytes, so no fs
   scope is needed for the source files) and previews images (size from `pngSize`) and sounds.
   `TauriFs` drops a cached blob URL when its file is written or removed.
+- **Tileset editor** (`editor-core/tileset-edits.ts`, tested; UI `apps/editor/src/tileset/`):
+  `fitTileset` cuts the image into tiles of a size (columns from the image width; flags and names
+  stay by index, new tiles walkable; returns the same object when it already fits), `setPassable`
+  / `setAbove` / `setTileName` (unchanged tiles keep their objects; `above: false` and empty names
+  are left out), `createTileset` (id from the name, `data/tilesets/<id>.json`, one undo step with
+  the manifest), `deleteTileset` (refused while `tilesetUsages` lists maps). The view draws the
+  image with a grid of cells over it: modes Walkable / Above / Select (W/A/S); a click or drag is
+  one undo step (coalesced until pointer-up). Re-cutting a tileset that maps use asks first.
+  Image sizes come from the browser (`useImage`), so any image format works.
+- `checkMapReferences` reports map tiles past the end of the tileset (the game would throw), so
+  shrinking a tileset shows up as a problem instead of a crash.
 
 ## Project file format
 
@@ -558,7 +569,8 @@ recent.ts`). A location is `fs.label`: the folder path on desktop, `<area>/<name
      mode, the desktop restart still to be tried by hand)
   3. ~~Asset import and an Assets panel (files are copied into the project)~~ (done; tried in
      browser mode with dropped files; renaming assets with reference updates later)
-  4. Tileset editor (passability, above flags)
+  4. ~~Tileset editor (passability, above flags)~~ (done; new tilesets from an image, re-cutting
+     the grid, tried in browser mode)
   5. Character sheet editor
   6. Copy/paste of commands, events and entries; a map picker for transfer targets
   7. A packaged FreeQuest Editor.app (unsigned) and a Getting started guide

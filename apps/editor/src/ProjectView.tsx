@@ -5,13 +5,21 @@ import {
   allFiles,
   MANIFEST_PATH,
   deleteMap,
+  deleteTileset,
+  tilesetUsages,
   duplicateMap,
   mapPath,
   mapUsages,
   type PlaytestSource,
   playtestSource,
 } from '@freequest/editor-core';
-import { DATABASE_KINDS, type DatabaseKind, type GameMap, ID_PATTERN } from '@freequest/schema';
+import {
+  DATABASE_KINDS,
+  type DatabaseKind,
+  type GameMap,
+  ID_PATTERN,
+  type Tileset,
+} from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { AssetsPanel } from './assets/AssetsPanel.js';
 import { useAssetPaths } from './assets/use-assets.js';
@@ -22,6 +30,8 @@ import { NewMapDialog } from './map/NewMapDialog.js';
 import { Playtest, type PlaytestStart } from './Playtest.js';
 import { confirmAction, guardWindowClose } from './platform.js';
 import { summarize } from './summary.js';
+import { NewTilesetDialog } from './tileset/NewTilesetDialog.js';
+import { TilesetEditor } from './tileset/TilesetEditor.js';
 import { useDocumentVersion } from './use-document.js';
 
 interface Props {
@@ -65,6 +75,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [selected, setSelected] = useState(project.manifest.path);
   const [status, setStatusState] = useState<Status | null>(null);
   const [creating, setCreating] = useState(false);
+  const [creatingTileset, setCreatingTileset] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [playtest, setPlaytest] = useState<{
     readonly source: PlaytestSource;
@@ -118,6 +129,24 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       setStatus({ kind: 'error', text: error instanceof Error ? error.message : String(error) });
     }
   };
+  const removeTileset = async (id: string) => {
+    const name = project.tilesets.get(id)?.data?.name ?? id;
+    const users = tilesetUsages(project, id);
+    if (users.length > 0) {
+      setStatus({
+        kind: 'error',
+        text: `${name} can't be deleted: used by ${users.join(', ')}`,
+      });
+      return;
+    }
+    const ok = await confirmAction(
+      `Delete the tileset "${name}"? Its file is deleted when you save (you can undo until then). The image stays in the project's assets.`,
+      { title: 'Delete tileset', okLabel: 'Delete tileset' },
+    );
+    if (!ok) return;
+    deleteTileset(doc, id);
+    setStatus({ kind: 'info', text: `Deleted ${name}` });
+  };
   const undo = () => {
     const label = doc.undo();
     setStatus(label ? { kind: 'info', text: `Undid ${label.toLowerCase()}` } : null);
@@ -162,7 +191,11 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       files: [...project.maps.values()],
       add: { label: 'New map', onClick: () => setCreating(true) },
     },
-    { title: 'Tilesets', files: [...project.tilesets.values()] },
+    {
+      title: 'Tilesets',
+      files: [...project.tilesets.values()],
+      add: { label: 'New tileset', onClick: () => setCreatingTileset(true) },
+    },
     { title: 'Characters', files: [...project.characters.values()] },
     { title: 'Database', files: files.filter(isDatabase) },
   ];
@@ -316,6 +349,21 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
             onPlayFrom={(x, y) => play({ map: current.id, x, y, label: labelOf(current) })}
           />
         </main>
+      ) : current.kind === 'tileset' && current.data ? (
+        <main className="details map-details">
+          <div className="map-header">
+            <NameField doc={doc} file={current} />
+            <span className="spacer" />
+            <button className="danger" onClick={() => void removeTileset(current.id)}>
+              Delete…
+            </button>
+          </div>
+          <TilesetEditor
+            key={current.path}
+            doc={doc}
+            file={current as ProjectFile<'tileset'> & { data: Tileset }}
+          />
+        </main>
       ) : isDatabase(current) && current.data ? (
         <main className="details db-details">
           <DatabaseEditor
@@ -344,6 +392,22 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       )}
 
       {exporting && <ExportDialog doc={doc} onClose={() => setExporting(false)} />}
+
+      {creatingTileset && (
+        <NewTilesetDialog
+          doc={doc}
+          onClose={() => setCreatingTileset(false)}
+          onImport={() => {
+            setCreatingTileset(false);
+            setSelected(ASSETS_VIEW);
+          }}
+          onCreated={(id) => {
+            setCreatingTileset(false);
+            const created = doc.project.tilesets.get(id);
+            if (created) setSelected(created.path);
+          }}
+        />
+      )}
 
       {creating && (
         <NewMapDialog

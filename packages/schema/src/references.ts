@@ -3,7 +3,7 @@ import { type Operand, walkCommands } from './command.js';
 import type { Condition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
-import type { GameMap } from './map.js';
+import { EMPTY_TILE, type GameMap } from './map.js';
 import type { Tileset } from './tileset.js';
 
 /** All data files of a project, keyed by id. */
@@ -111,7 +111,22 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
   const { checkTile, checkSwitch, checkVariable, checkConditions, checkEntry, checkOperand } =
     makeChecks(ctx, problems);
   const file = `map "${map.id}"`;
-  if (!ctx.tilesets.has(map.tileset)) problems.push(`${file}: unknown tileset "${map.tileset}"`);
+  const tileset = ctx.tilesets.get(map.tileset);
+  if (!tileset) problems.push(`${file}: unknown tileset "${map.tileset}"`);
+  else {
+    // A tile the tileset doesn't have would stop the game (no image, no flags).
+    for (const layer of map.layers) {
+      const highest = Math.max(
+        EMPTY_TILE,
+        ...layer.data.map((row) => Math.max(EMPTY_TILE, ...row)),
+      );
+      if (highest >= tileset.tiles.length) {
+        problems.push(
+          `${file} layer "${layer.name}": uses tile ${highest}, but tileset "${tileset.id}" has only ${tileset.tiles.length === 1 ? '1 tile' : `${tileset.tiles.length} tiles`}`,
+        );
+      }
+    }
+  }
   map.encounters?.troops.forEach((t, i) =>
     checkEntry(`${file} encounters.troops[${i}]`, 'troop', t.troop),
   );

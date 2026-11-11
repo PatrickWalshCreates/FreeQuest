@@ -144,6 +144,25 @@ describe('checkReferences', () => {
   });
 });
 
+describe('map tiles', () => {
+  it('flags tiles the tileset does not have', () => {
+    const map = mapWith([]);
+    const ctx = {
+      manifest,
+      tilesets: new Map([['ts', tileset]]),
+      characters: new Map([['hero', hero]]),
+      maps: new Map([['a', map]]),
+    };
+    expect(checkMapReferences(map, ctx)).toEqual([]);
+    const row = map.layers[0]?.data[1];
+    if (!row) throw new Error('fixture');
+    row[1] = 3;
+    expect(checkMapReferences(map, ctx)).toEqual([
+      'map "a" layer "g": uses tile 3, but tileset "ts" has only 1 tile',
+    ]);
+  });
+});
+
 describe('checkMapShape events', () => {
   it('rejects duplicate ids, out-of-bounds events and bad cancel indices', () => {
     const map = mapWith([{ type: 'choice', cancel: 3, options: [{ label: 'a', commands: [] }] }]);
