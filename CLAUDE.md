@@ -705,6 +705,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   repo files GitHub links; `<version>` in code is filled in), and `play/`, a real web export of the
   demo (`exportWeb`). Relative links only, light/dark. `.github/workflows/pages.yml` deploys it
   on a published release or by hand (Pages needs the repo public, Source = GitHub Actions).
+  The `github-pages` environment only deploys from `main`, so a release run only dispatches
+  the workflow on `main`, which builds and deploys. After publishing, check the site shows the
+  new version: its download links name the version, and stay broken until it updates.
   The player focuses with `preventScroll` so an embedding page doesn't jump to the game.
   Preview: launch config `site` (`vite preview --outDir site-dist --port 5180`).
 - Shortcut labels in the editor come from `apps/editor/src/keys.ts` (`MOD`: ⌘ on a Mac, `Ctrl+`

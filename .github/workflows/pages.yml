@@ -6,6 +6,11 @@ name: Website
 # point at files that exist, or by hand ("Run workflow"). Pages on a free
 # account needs the repository to be public, and Settings → Pages → Source
 # set to "GitHub Actions".
+#
+# The github-pages environment only deploys from main, and a release event
+# runs on its tag (0.2.0's first deploy was refused that way). So on a release
+# this only starts the workflow again on main; that run builds and deploys.
+# (A workflow_dispatch started with the workflow's own token does run.)
 on:
   release:
     types: [published]
@@ -21,7 +26,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  start-on-main:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Build and deploy the site from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main -R "$GITHUB_REPOSITORY"
+
   build:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
