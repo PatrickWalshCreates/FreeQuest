@@ -43,4 +43,6 @@ this on the release build, ideally on a Mac user account that has never run Free
 - [ ] Download the release files from where players will get them and open them once more.
 - [ ] Repository public, then Settings → Pages → Source: GitHub Actions; the Website workflow
       ran (it starts on publishing the release; rerun it by hand if Pages wasn't on yet).
-- [ ] The website's playable demo starts, and each download link fetches its file.
+- [ ] The website shows the new version (its download buttons name it: until the site updates,
+      they point at the previous release's files and fail), the playable demo starts, and each
+      download link fetches its file. If the Website run failed, run it by hand on main.

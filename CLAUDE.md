@@ -904,7 +904,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Decided: GitHub `PatrickWalshCreates`, public from 0.1.0, commits on the noreply address,
     editor downloads for Apple Silicon and Intel Macs, Windows and Linux. Still open: Apple Developer ID
     ($99/yr), Windows signing, a name check.
-- **M11 (in progress)** Events for real games, released as 0.2.0. The event language is what limits
+- **M11 (done)** Events for real games, released as 0.2.0. The event language is what limits
   games now: no per-event memory, no reusable logic, plain-text messages, no loops or screen
   effects. Steps:
   1. ~~Event flags: each event's own on/off flags (a chest remembers it was opened, no global
@@ -931,8 +931,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      the flag condition's name. Walked through in the editor: a new common event, a flag
      condition, bad codes in a choice, a 0.1 project gaining common events and saving, the
      guide, a playtest, and a web export)
-  7. Demo, Starter, guides (every system), the quest test, and a 0.2.0 release through the
-     checklist
+  7. ~~Demo, Starter, guides (every system), the quest test, and a 0.2.0 release through the
+     checklist~~ (done; 0.2 formats frozen; the user's by-hand check found the desktop editor's
+     playtests silent (its CSP) and the wall map and hearth invisible: fixed, the draft
+     rebuilt, checked again by hand, published 2026-11-12. The site's release deploy was refused
+     by the github-pages branch rule; deployed by hand, and the workflow now redeploys from main)
   - Formats: map 7 (flags, new commands), manifest 6 (common events), save 2 (flags); each with a
     migration and 0.1's frozen project and save still opening.
   - Not in M11 (M12 candidates, "editor comfort"): renaming ids/assets with reference updates,

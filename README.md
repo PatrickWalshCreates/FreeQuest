@@ -129,7 +129,7 @@ live in [`packages/schema/json`](packages/schema/json).
 Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web, Windows,
 macOS and Linux exports, the editor workflow (templates, assets, tileset and character editors, copy/paste), and
 gameplay depth (moving NPCs, move routes, background events, shops, icons, options, smarter
-enemies). Released: 0.1.0, the first public release. Next: the plugin API and the items deferred along the way. See [CLAUDE.md](CLAUDE.md) for details.
+enemies). Released: 0.1.0 (the first public release) and 0.2.0 (event flags, common events, text codes, loops, screen effects). Next: editor comfort (renaming ids, multi-tile stamps, big maps) and the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 
