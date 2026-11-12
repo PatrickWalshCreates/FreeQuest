@@ -318,6 +318,8 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   missing files after a warning. A demo test checks every referenced image/audio file exists.
 - **Testing in the browser pane**: when the pane is hidden, requestAnimationFrame doesn't fire, so
   drive the game with `freequest.app.ticker.update(t)` from the console instead of real-time waits.
+  A hidden pane can also stop images decoding (`image.decode()` never settles): then the player
+  never starts and the editor shows no icons. Ask for the pane to be shown for visual checks.
   Start the dev player with `pnpm dev` from the repo root if a preview config fails to start it.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
@@ -884,9 +886,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      and rested at the demo's hearth in the dev player)
   3. ~~Text codes in messages and choices: variables, actor and party names, gold, item names,
      colours and icons, in FreeQuest's own `{…}` syntax (parsed in core, drawn as styled runs);
-     the editor previews them and reports unknown codes~~ (done; the preview's text and colours
-     checked in the editor. The game's drawing still to be seen: the browser pane was hidden,
-     so images never decoded and the player couldn't start)
+     the editor previews them and reports unknown codes~~ (done; the chest's message seen in the
+     dev player, icon and yellow "Potion", matching the editor's preview)
   4. Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
      goto)
   5. Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
