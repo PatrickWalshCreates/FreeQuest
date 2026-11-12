@@ -7,14 +7,10 @@ import {
   duplicatePage,
   editMap,
   clipboard,
-  insertCommands,
   pasteEvent,
-  moveCommand,
   movePage,
-  removeCommands,
   removeEvent,
   removePage,
-  replaceCommand,
   updateEvent,
   mapFlagNames,
   updatePage,
@@ -32,7 +28,7 @@ import type {
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
-import { type CommandActions, CommandList } from './CommandList.js';
+import { type CommandActions, CommandList, listActions } from './CommandList.js';
 import { RouteSteps } from './RouteSteps.js';
 import { TransferTargetButton } from './TransferTargetButton.js';
 import { ValueDialog } from './ValueDialog.js';
@@ -323,28 +319,9 @@ function EventEditor(props: {
     editMap(doc, path, label, (m) => updateEvent(m, event.id, fn), coalesce ? { coalesce } : {});
   const changePage = (label: string, fn: (p: EventPage) => EventPage) =>
     editMap(doc, path, label, (m) => updatePage(m, event.id, shownPage, fn));
-  const commands: CommandActions = {
-    insert: (slot, inserted, label) =>
-      changePage(label, (p) => ({
-        ...p,
-        commands: insertCommands(p.commands, slot.path, slot.index, inserted),
-      })),
-    replace: (slot, command) =>
-      changePage('Edit command', (p) => ({
-        ...p,
-        commands: replaceCommand(p.commands, slot.path, slot.index, command),
-      })),
-    remove: (slot, count, label) =>
-      changePage(label, (p) => ({
-        ...p,
-        commands: removeCommands(p.commands, slot.path, slot.index, count),
-      })),
-    move: (slot, delta) =>
-      changePage('Move command', (p) => ({
-        ...p,
-        commands: moveCommand(p.commands, slot.path, slot.index, delta),
-      })),
-  };
+  const commands: CommandActions = listActions((label, edit) =>
+    changePage(label, (p) => ({ ...p, commands: edit(p.commands) })),
+  );
   const [editingCondition, setEditingCondition] = useState<{
     readonly index: number | null;
     readonly value: Condition;

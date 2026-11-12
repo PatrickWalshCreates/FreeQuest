@@ -3,7 +3,11 @@ import { DATABASE_FORMAT_VERSION, SCHEMAS } from '@freequest/schema';
 import Value from 'typebox/value';
 import {
   ENTRY_KINDS,
+  ProjectDocument,
   addEntry,
+  createDatabaseFile,
+  missingDatabaseKinds,
+  openProject,
   asSchema,
   classify,
   defaultFor,
@@ -18,6 +22,7 @@ import {
   uniqueId,
   variantLabel,
 } from '../src/index.js';
+import { DEMO, memoryCopy } from './helpers.js';
 
 const file = {
   formatVersion: 3,
@@ -106,5 +111,49 @@ describe('database entries', () => {
       'ally / enemy · one / all',
       'enemy · random',
     ]);
+  });
+});
+
+describe('adding a database category a project lacks', () => {
+  it('creates an empty, listed file in one undo step, and saves it', async () => {
+    // A project from before common events: no file for them in the manifest.
+    const fs = await memoryCopy(DEMO);
+    const manifest = JSON.parse(fs.files.get('project.json') ?? '{}') as {
+      database: Record<string, string>;
+    };
+    delete manifest.database['commonEvents'];
+    fs.files.set('project.json', `${JSON.stringify(manifest, null, 2)}\n`);
+    fs.files.delete('data/database/commonEvents.json');
+    // The hearth calls a common event the project no longer has; give it a plain message.
+    const house = fs.files.get('data/maps/house.json') ?? '';
+    fs.files.set(
+      'data/maps/house.json',
+      house.replace(
+        /\{\s*"type": "callCommon",\s*"common": "rest"\s*\}/,
+        '{ "type": "message", "text": "Rested." }',
+      ),
+    );
+    const doc = new ProjectDocument(await openProject(fs));
+    expect(doc.project.problems).toEqual([]);
+    expect(missingDatabaseKinds(doc)).toEqual(['commonEvents']);
+
+    const path = createDatabaseFile(doc, 'commonEvents');
+    expect(path).toBe('data/database/commonEvents.json');
+    expect(missingDatabaseKinds(doc)).toEqual([]);
+    expect(doc.project.database.commonEvents?.data).toEqual({
+      formatVersion: DATABASE_FORMAT_VERSION,
+      entries: [],
+    });
+    expect(doc.project.manifest.data.database?.commonEvents).toBe(path);
+    expect(doc.project.problems).toEqual([]);
+    expect(() => createDatabaseFile(doc, 'commonEvents')).toThrow(/already has/);
+
+    doc.undo();
+    expect(missingDatabaseKinds(doc)).toEqual(['commonEvents']);
+    doc.redo();
+    await doc.save();
+    expect(fs.files.get(path)).toBe(
+      `{\n  "formatVersion": ${DATABASE_FORMAT_VERSION},\n  "entries": []\n}\n`,
+    );
   });
 });

@@ -10,6 +10,7 @@ import type {
   SkillEntry,
   StateEntry,
   TroopEntry,
+  CommonEventEntry,
 } from '@freequest/schema';
 
 class Lookup<T extends { id: string }> {
@@ -48,6 +49,7 @@ export class DatabaseIndex {
   readonly states: Lookup<StateEntry>;
   readonly enemies: Lookup<EnemyEntry>;
   readonly troops: Lookup<TroopEntry>;
+  readonly commonEvents: Lookup<CommonEventEntry>;
   /** The state that means "knocked out", if the database defines one. */
   readonly knockoutState: StateEntry | undefined;
 
@@ -60,6 +62,7 @@ export class DatabaseIndex {
     this.states = new Lookup(data.states, 'state');
     this.enemies = new Lookup(data.enemies, 'enemy');
     this.troops = new Lookup(data.troops, 'troop');
+    this.commonEvents = new Lookup(data.commonEvents, 'common event');
     this.knockoutState = data.states.find((s) => s.knockout);
   }
 

@@ -82,7 +82,7 @@ describe('migrate', () => {
   it('gives a v4 manifest a game id made from its name', () => {
     const raw: unknown = JSON.parse(readFileSync(join(FIXTURES, 'v4', 'project.json'), 'utf8'));
     const manifest = parseProjectFile('manifest', raw, 'project.json');
-    expect(manifest.formatVersion).toBe(5);
+    expect(manifest.formatVersion).toBe(CURRENT_FORMAT_VERSION.manifest);
     expect(manifest.id).toBe('freequest-demo');
     // Names with nothing usable still get a valid id.
     const odd = parseProjectFile('manifest', { ...(raw as object), name: '★★★' });

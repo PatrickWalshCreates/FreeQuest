@@ -166,6 +166,8 @@ keep('enemies', ['slime'], (e) => ({
   drops: ((e['drops'] as { id: string }[] | undefined) ?? []).filter((d) => d.id === 'potion'),
 }));
 keep('troops', ['slimes']);
+// A shared "rest" any event can call (an inn, a bed), as an example of common events.
+keep('commonEvents', ['rest']);
 
 const demo = readJson<Manifest>('project.json');
 const manifest: Manifest = {

@@ -12,6 +12,7 @@ import {
   StatesFile,
   SystemData,
   TroopsFile,
+  CommonEventsFile,
 } from './database/index.js';
 import { walkCommands } from './command.js';
 import { Manifest } from './manifest.js';
@@ -34,6 +35,7 @@ export const SCHEMAS = {
   states: StatesFile,
   enemies: EnemiesFile,
   troops: TroopsFile,
+  commonEvents: CommonEventsFile,
 } satisfies Record<FileKind, TSchema>;
 
 export type FileData<K extends FileKind> = Static<(typeof SCHEMAS)[K]>;

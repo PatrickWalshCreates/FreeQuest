@@ -1,5 +1,5 @@
 import type { CharacterSheet } from './character.js';
-import { type Operand, walkCommands } from './command.js';
+import { type Command, type Operand, walkCommands } from './command.js';
 import type { Condition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
@@ -46,18 +46,21 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     troop: new Set(db.troops.map((e) => e.id)),
     equipment: new Set(db.equipment.map((e) => e.id)),
     actor: new Set(db.actors.map((e) => e.id)),
+    common: new Set(db.commonEvents.map((e) => e.id)),
   };
   const checkEntry = (
     where: string,
-    kind: 'item' | 'equipment' | 'actor' | 'troop',
+    kind: 'item' | 'equipment' | 'actor' | 'troop' | 'common',
     id: string,
   ) => {
-    if (dbIds && !dbIds[kind].has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);
+    if (dbIds && !dbIds[kind].has(id)) {
+      problems.push(`${where}: unknown ${kind === 'common' ? 'common event' : kind} "${id}"`);
+    }
   };
   const checkOperand = (where: string, operand: Operand) => {
     if (typeof operand === 'object') checkVariable(where, operand.variable);
   };
-  return {
+  const checks = {
     checkSwitch,
     checkVariable,
     checkEntry,
@@ -80,7 +83,55 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
         else if (c.type === 'inParty') checkEntry(where, 'actor', c.actor);
       }
     },
+    /** Every reference made by a command list (and the lists inside it). */
+    checkCommands(commands: readonly Command[], where: string) {
+      walkCommands(commands, (command, path) => {
+        const at = `${where}.${path}`;
+        switch (command.type) {
+          case 'if':
+            checks.checkConditions(at, command.conditions);
+            break;
+          case 'setSwitch':
+            checkSwitch(at, command.switch);
+            break;
+          case 'setVariable':
+            checkVariable(at, command.variable);
+            checkOperand(at, command.value);
+            break;
+          case 'transfer':
+            checks.checkTile(at, command.map, command.x, command.y);
+            break;
+          case 'changeGold':
+            checkOperand(at, command.amount);
+            break;
+          case 'changeItems':
+            checkEntry(at, command.kind, command.id);
+            checkOperand(at, command.amount);
+            break;
+          case 'changeParty':
+            checkEntry(at, 'actor', command.actor);
+            break;
+          case 'shop':
+            command.goods.forEach((good, g) => checkEntry(`${at}.goods[${g}]`, good.kind, good.id));
+            break;
+          case 'gainExp':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            checkOperand(at, command.amount);
+            break;
+          case 'recoverAll':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            break;
+          case 'battle':
+            checkEntry(at, 'troop', command.troop);
+            break;
+          case 'callCommon':
+            checkEntry(at, 'common', command.common);
+            break;
+        }
+      });
+    },
   };
+  return checks;
 }
 
 /** References made by project.json itself: start position, player character, flag declarations. */
@@ -108,8 +159,7 @@ export function checkManifestReferences(ctx: ReferenceContext): string[] {
 /** References made by one map: its tileset, event graphics, flags and transfer targets. */
 export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[] {
   const problems: string[] = [];
-  const { checkTile, checkSwitch, checkVariable, checkConditions, checkEntry, checkOperand } =
-    makeChecks(ctx, problems);
+  const { checkConditions, checkEntry, checkCommands } = makeChecks(ctx, problems);
   const file = `map "${map.id}"`;
   const tileset = ctx.tilesets.get(map.tileset);
   if (!tileset) problems.push(`${file}: unknown tileset "${map.tileset}"`);
@@ -137,49 +187,57 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
       if (page.graphic && !ctx.characters.has(page.graphic.character)) {
         problems.push(`${where}: unknown character "${page.graphic.character}"`);
       }
-      walkCommands(page.commands, (command, path) => {
-        const at = `${where}.${path}`;
-        switch (command.type) {
-          case 'if':
-            checkConditions(at, command.conditions);
-            break;
-          case 'setSwitch':
-            checkSwitch(at, command.switch);
-            break;
-          case 'setVariable':
-            checkVariable(at, command.variable);
-            checkOperand(at, command.value);
-            break;
-          case 'transfer':
-            checkTile(at, command.map, command.x, command.y);
-            break;
-          case 'changeGold':
-            checkOperand(at, command.amount);
-            break;
-          case 'changeItems':
-            checkEntry(at, command.kind, command.id);
-            checkOperand(at, command.amount);
-            break;
-          case 'changeParty':
-            checkEntry(at, 'actor', command.actor);
-            break;
-          case 'shop':
-            command.goods.forEach((good, g) => checkEntry(`${at}.goods[${g}]`, good.kind, good.id));
-            break;
-          case 'gainExp':
-            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
-            checkOperand(at, command.amount);
-            break;
-          case 'recoverAll':
-            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
-            break;
-          case 'battle':
-            checkEntry(at, 'troop', command.troop);
-            break;
-        }
-      });
+      checkCommands(page.commands, where);
     });
   }
+  return problems;
+}
+
+/**
+ * References made by the common events: their switches and their commands.
+ * Commands are checked like a map event's (`this` means whichever event
+ * calls them, so there's nothing to check for it).
+ */
+export function checkCommonEventReferences(ctx: ReferenceContext): string[] {
+  const problems: string[] = [];
+  const { checkSwitch, checkCommands } = makeChecks(ctx, problems);
+  for (const common of ctx.database?.commonEvents ?? []) {
+    const where = `commonEvents "${common.id}"`;
+    if (common.switch !== undefined) checkSwitch(where, common.switch);
+    checkCommands(common.commands, where);
+  }
+  problems.push(...commonEventCycles(ctx.database?.commonEvents ?? []));
+  return problems;
+}
+
+/** Common events that end up calling themselves, which would never finish. */
+function commonEventCycles(
+  commons: readonly { readonly id: string; readonly commands: readonly Command[] }[],
+): string[] {
+  const calls = new Map<string, string[]>();
+  for (const common of commons) {
+    const called: string[] = [];
+    walkCommands(common.commands, (command) => {
+      if (command.type === 'callCommon') called.push(command.common);
+    });
+    calls.set(common.id, called);
+  }
+  const problems: string[] = [];
+  const reported = new Set<string>();
+  const visit = (id: string, path: string[]): void => {
+    const start = path.indexOf(id);
+    if (start >= 0) {
+      const cycle = path.slice(start);
+      if (!cycle.some((c) => reported.has(c))) {
+        for (const c of cycle) reported.add(c);
+        const chain = [...cycle, id].map((c) => `"${c}"`).join(' → ');
+        problems.push(`commonEvents "${id}": calls itself (${chain}), so it would never finish`);
+      }
+      return;
+    }
+    for (const next of calls.get(id) ?? []) visit(next, [...path, id]);
+  };
+  for (const id of calls.keys()) visit(id, []);
   return problems;
 }
 
@@ -192,5 +250,6 @@ export function checkReferences(project: ProjectData): string[] {
   return [
     ...checkManifestReferences(project),
     ...[...project.maps.values()].flatMap((map) => checkMapReferences(map, project)),
+    ...checkCommonEventReferences(project),
   ];
 }

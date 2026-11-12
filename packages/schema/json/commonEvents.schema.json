@@ -1,0 +1,985 @@
+{
+  "type": "object",
+  "$defs": {
+    "Command": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Show a message box and wait for confirm.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "message"
+            },
+            "speaker": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "text"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Let the player pick one option.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "choice"
+            },
+            "cancel": {
+              "type": "integer",
+              "description": "Option index taken when the player cancels. Omit to disallow cancel.",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "commands": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Command"
+                    }
+                  }
+                },
+                "required": ["label", "commands"]
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["type", "options"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "if"
+            },
+            "conditions": {
+              "type": "array",
+              "description": "All conditions must hold.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "switch"
+                      },
+                      "switch": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "switch", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "variable"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer"
+                      },
+                      "variable": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "variable", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "gold"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "hasItem"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "includeEquipped": {
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "item"
+                          },
+                          {
+                            "type": "string",
+                            "const": "equipment"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "kind", "id"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "inParty"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "actor"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "One of this event's own flags, e.g. a chest's \"opened\".",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "flag"
+                      },
+                      "flag": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "flag", "value"]
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "then": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "else": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            }
+          },
+          "required": ["type", "conditions", "then"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setSwitch"
+            },
+            "switch": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "switch", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Turn one of an event's own flags on or off (kept in saves).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setFlag"
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "flag": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "flag", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setVariable"
+            },
+            "op": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "set"
+                },
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "sub"
+                },
+                {
+                  "type": "string",
+                  "const": "mul"
+                },
+                {
+                  "type": "string",
+                  "const": "div"
+                },
+                {
+                  "type": "string",
+                  "const": "mod"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "variable": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "variable", "op", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move the player to another map or tile.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "transfer"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "up"
+                }
+              ]
+            },
+            "map": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "x": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["type", "map", "x", "y"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "wait"
+            },
+            "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["type", "seconds"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Negative amounts take gold away.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeGold"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Negative amounts take items away.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": {
+              "type": "string",
+              "const": "changeItems"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "item"
+                },
+                {
+                  "type": "string",
+                  "const": "equipment"
+                }
+              ]
+            }
+          },
+          "required": ["type", "kind", "id", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeParty"
+            },
+            "action": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "remove"
+                }
+              ]
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "action", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gainExp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Full HP/MP and clear states (e.g. an inn).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "recoverAll"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Fight a troop, then branch on the outcome.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "battle"
+            },
+            "canEscape": {
+              "type": "boolean"
+            },
+            "canLose": {
+              "type": "boolean"
+            },
+            "onEscape": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onLose": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onWin": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "troop": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "troop", "canEscape", "canLose"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playMusic"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playSound"
+            },
+            "path": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Walk the player or an event along a route.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "moveRoute"
+            },
+            "repeat": {
+              "type": "boolean"
+            },
+            "skipBlocked": {
+              "type": "boolean"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk one tile.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "move"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "forward"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          }
+                        ],
+                        "description": "forward: the way the character faces; the player ones are worked out at the time."
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Face a direction without moving.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "turn"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "around"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Stand still.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "wait"
+                      },
+                      "seconds": {
+                        "type": "number",
+                        "maximum": 60,
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "seconds"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk faster or slower from here on.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "speed"
+                      },
+                      "speed": {
+                        "type": "number",
+                        "description": "Tiles per second.",
+                        "exclusiveMinimum": 0,
+                        "maximum": 16
+                      }
+                    },
+                    "required": ["type", "speed"]
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "target", "steps", "repeat", "skipBlocked", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Open a shop to buy (and sell) goods.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "shop"
+            },
+            "canSell": {
+              "type": "boolean"
+            },
+            "goods": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "item"
+                      },
+                      {
+                        "type": "string",
+                        "const": "equipment"
+                      }
+                    ]
+                  },
+                  "price": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["kind", "id"]
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["type", "goods", "canSell"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Run a common event’s commands, then carry on here.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "callCommon"
+            },
+            "common": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "common"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Note for authors. Does nothing.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "comment"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "text"]
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 4
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "switch": {
+            "type": "string",
+            "description": "For autorun and parallel: runs only while this switch is on.",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "call"
+              },
+              {
+                "type": "string",
+                "const": "autorun"
+              },
+              {
+                "type": "string",
+                "const": "parallel"
+              }
+            ],
+            "description": "call: only when an event calls it. autorun: runs when nothing else does. parallel: runs alongside play."
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Command"
+            }
+          }
+        },
+        "required": ["id", "name", "trigger", "commands"]
+      }
+    }
+  },
+  "required": ["formatVersion", "entries"],
+  "title": "FreeQuest common events"
+}

@@ -336,6 +336,8 @@ export interface NameLookup {
   actor(id: string): string;
   item(kind: 'item' | 'equipment', id: string): string;
   troop(id: string): string;
+  /** A common event (ids are shown without one). */
+  common?(id: string): string;
   /** An event on the map being edited (for move routes); ids are shown without one. */
   event?(id: string): string;
 }
@@ -402,6 +404,8 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `If ${command.conditions.map((c) => describeCondition(c, names)).join(' and ')}`;
     case 'setSwitch':
       return `Turn ${names.switchName(command.switch)} ${command.value ? 'on' : 'off'}`;
+    case 'callCommon':
+      return `Call ${names.common?.(command.common) ?? command.common}`;
     case 'setFlag': {
       const whose = command.event
         ? `${names.event?.(command.event) ?? command.event}’s flag`
@@ -538,7 +542,7 @@ export const COMMAND_GROUPS: readonly {
   readonly types: readonly Command['type'][];
 }[] = [
   { label: 'Messages', types: ['message', 'choice', 'comment'] },
-  { label: 'Flow', types: ['if', 'wait'] },
+  { label: 'Flow', types: ['if', 'wait', 'callCommon'] },
   { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag'] },
   {
     label: 'Party',
@@ -554,6 +558,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   comment: 'Comment',
   if: 'If…',
   wait: 'Wait',
+  callCommon: 'Call common event',
   setSwitch: 'Set switch',
   setVariable: 'Set variable',
   setFlag: 'Set event flag',

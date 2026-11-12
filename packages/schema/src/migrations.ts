@@ -71,6 +71,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
         id: idFromName(typeof d['name'] === 'string' ? d['name'] : '', 'game'),
       }),
     },
+    // v6: the common events database category. Additive.
+    { from: 5, migrate: (d) => d },
   ],
   tileset: [],
   map: [

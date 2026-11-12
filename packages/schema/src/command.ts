@@ -216,6 +216,16 @@ export const Command = Type.Cyclic(
       ),
       Type.Object(
         {
+          type: Type.Literal('callCommon'),
+          common: Id,
+        },
+        {
+          additionalProperties: false,
+          description: 'Run a common event’s commands, then carry on here.',
+        },
+      ),
+      Type.Object(
+        {
           type: Type.Literal('comment'),
           text: Type.String(),
         },

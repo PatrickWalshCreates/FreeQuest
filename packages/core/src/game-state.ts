@@ -1,4 +1,5 @@
 import type {
+  Command,
   CommandOf,
   CompareOp,
   Condition,
@@ -197,6 +198,8 @@ export interface EventContext {
   readonly self?: string | null;
   /** The current map's id (event flags belong to an event on a map). */
   readonly map?: string;
+  /** The commands of a common event, for callCommon (throws for an unknown id). */
+  readonly commonEvent?: (id: string) => readonly Command[];
 }
 
 /** Starts move routes for the interpreter. */

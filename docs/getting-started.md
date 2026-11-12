@@ -107,6 +107,16 @@ that works this way: its chest character shows the lid closed facing down and op
 and both pages tick **Keep this facing**, so the chest doesn't turn toward the player like a
 person would.
 
+**Common events** are command lists kept in one place and shared, found under **Database →
+Common events**. Make one for anything several events do the same way (an inn, a healer, a
+cutscene that plays from different places), and use **Call common event** in each event: the
+commands run there, then the event carries on. A common event can also start on its own:
+**Autorun** runs it when nothing else is running, and **Parallel** runs it alongside play, both
+while its **Switch** is on (an autorun one must turn that switch off, or it runs again and
+again). The demo's hearth calls a "Rest" common event, and new Starter projects have one too.
+Projects made before common events existed show **+ Common events** under Database: click it
+to start the list.
+
 Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries
 copy and paste too, even into another project.
 

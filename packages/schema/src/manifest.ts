@@ -9,7 +9,7 @@ import {
   RelativePath,
 } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 5;
+export const MANIFEST_FORMAT_VERSION = 6;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -22,6 +22,7 @@ export const DATABASE_KINDS = [
   'states',
   'enemies',
   'troops',
+  'commonEvents',
 ] as const;
 export type DatabaseKind = (typeof DATABASE_KINDS)[number];
 

@@ -17,7 +17,7 @@ export interface AssetUse {
 /**
  * Every asset path the project's data refers to: tileset and character
  * images, enemy images, the iconset, map music, system music and sounds,
- * and playMusic / playSound commands in events.
+ * and playMusic / playSound commands in events and common events.
  */
 export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
   const found = new Map<string, { kind: AssetKind; usedBy: string[] }>();
@@ -57,6 +57,13 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
   }
   for (const enemy of project.database.enemies?.data?.entries ?? []) {
     add(enemy.image, 'image', `enemy ${enemy.name}`);
+  }
+  for (const common of project.database.commonEvents?.data?.entries ?? []) {
+    walkCommands(common.commands, (command) => {
+      const at = `common event ${common.name}`;
+      if (command.type === 'playMusic') add(command.path, 'audio', at);
+      if (command.type === 'playSound') add(command.path, 'audio', at);
+    });
   }
   return new Map([...found].sort(([a], [b]) => a.localeCompare(b)));
 }

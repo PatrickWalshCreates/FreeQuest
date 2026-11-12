@@ -27,6 +27,9 @@ export type BattleOutcome = 'win' | 'escape' | 'lose';
 /** Commands executed in one update before we assume a runaway loop. */
 const MAX_COMMANDS_PER_UPDATE = 10_000;
 
+/** How deeply lists may nest (if/choice branches and common events calling others). */
+const MAX_DEPTH = 100;
+
 /** Slack for float rounding, so a wait doesn't overrun by a whole step (e.g. 0.3 + 0.3 - 0.5 < 0.1). */
 const TIME_EPSILON = 1e-9;
 
@@ -280,6 +283,18 @@ export class Interpreter {
       case 'shop':
         this.request = { type: 'shop', goods: command.goods, canSell: command.canSell };
         break;
+      case 'callCommon': {
+        const lookup = this.context.commonEvent;
+        if (!lookup) throw new Error('callCommon needs the common events, but none were provided');
+        if (this.stack.length >= MAX_DEPTH) {
+          throw new Error(
+            `common event "${command.common}": calls nest ${MAX_DEPTH} deep; does one call itself?`,
+          );
+        }
+        // The called commands run as if they were here: "this" is still the calling event.
+        this.stack.push({ commands: lookup(command.common), index: 0 });
+        break;
+      }
       case 'comment':
         break;
       default: {

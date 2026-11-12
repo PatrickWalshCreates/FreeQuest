@@ -53,6 +53,7 @@ describe('openProject', () => {
     expect(Object.keys(project.database).sort()).toEqual([
       'actors',
       'classes',
+      'commonEvents',
       'enemies',
       'equipment',
       'items',

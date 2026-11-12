@@ -1,5 +1,5 @@
 import Type, { type Static } from 'typebox';
-import { Id, NonNegativeInt, PositiveInt, RelativePath } from '../common.js';
+import { ID_PATTERN, Id, NonNegativeInt, PositiveInt, RelativePath } from '../common.js';
 import {
   DatabaseFile,
   LevelCurve,
@@ -10,6 +10,7 @@ import {
   type StatKey,
   TargetScope,
 } from './common.js';
+import { Command } from '../command.js';
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
@@ -285,6 +286,31 @@ export const TroopEntry = Type.Object(
 );
 export type TroopEntry = Static<typeof TroopEntry>;
 
+/**
+ * Commands kept in one place and shared: called from any event with
+ * `callCommon`, or started by the game itself (autorun, parallel) while
+ * their switch is on.
+ */
+export const CommonEventEntry = Type.Object(
+  {
+    id: Id,
+    name: Type.String({ minLength: 1 }),
+    trigger: Type.Union([Type.Literal('call'), Type.Literal('autorun'), Type.Literal('parallel')], {
+      description:
+        'call: only when an event calls it. autorun: runs when nothing else does. parallel: runs alongside play.',
+    }),
+    switch: Type.Optional(
+      Type.String({
+        pattern: ID_PATTERN,
+        description: 'For autorun and parallel: runs only while this switch is on.',
+      }),
+    ),
+    commands: Type.Array(Command),
+  },
+  { additionalProperties: false },
+);
+export type CommonEventEntry = Static<typeof CommonEventEntry>;
+
 const V = DATABASE_FORMAT_VERSION;
 export const ActorsFile = DatabaseFile('FreeQuest actors', ActorEntry, V);
 export const ClassesFile = DatabaseFile('FreeQuest classes', ClassEntry, V);
@@ -294,3 +320,4 @@ export const EquipmentFile = DatabaseFile('FreeQuest equipment', EquipmentEntry,
 export const StatesFile = DatabaseFile('FreeQuest states', StateEntry, V);
 export const EnemiesFile = DatabaseFile('FreeQuest enemies', EnemyEntry, V);
 export const TroopsFile = DatabaseFile('FreeQuest troops', TroopEntry, V);
+export const CommonEventsFile = DatabaseFile('FreeQuest common events', CommonEventEntry, V);

@@ -20,7 +20,10 @@ import { type DatabaseKind, SCHEMAS } from '@freequest/schema';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Dialog, Field } from '../Dialog.js';
 import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
-import { projectFormContext } from '../forms/project-context.js';
+import { projectFormContext, projectNames } from '../forms/project-context.js';
+import { CommandList, listActions } from '../events/CommandList.js';
+import { TransferTargetButton } from '../events/TransferTargetButton.js';
+import type { Command } from '@freequest/schema';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
@@ -43,6 +46,7 @@ const SINGULAR: Record<EntryKind, string> = {
   states: 'state',
   enemies: 'enemy',
   troops: 'troop',
+  commonEvents: 'common event',
 };
 
 type EntriesData = { readonly formatVersion: number; readonly entries: readonly Entry[] };
@@ -318,6 +322,25 @@ function EntriesEditor(props: {
                 )
               }
             />
+            {kind === 'commonEvents' && (
+              <CommonEventCommands
+                key={`commands:${entry.id}`}
+                doc={doc}
+                entry={entry as Entry & { readonly commands: readonly Command[] }}
+                ctx={ctx}
+                edit={(label, change) =>
+                  edit(label, (d: EntriesData) => {
+                    const current = d.entries.find((e) => e.id === entry.id) as
+                      (Entry & { readonly commands: readonly Command[] }) | undefined;
+                    if (!current) return d as never;
+                    return replaceEntry(d, entry.id, {
+                      ...current,
+                      commands: change(current.commands),
+                    } as Entry) as never;
+                  })
+                }
+              />
+            )}
           </>
         ) : (
           <p className="hint">Select an entry, or add one with + New.</p>
@@ -406,5 +429,38 @@ function Problems({ messages }: { readonly messages: readonly string[] }) {
         <li key={i}>{m}</li>
       ))}
     </ul>
+  );
+}
+
+/** A common event's commands, edited like an event page's. */
+function CommonEventCommands(props: {
+  readonly doc: ProjectDocument;
+  readonly entry: Entry & { readonly commands: readonly Command[] };
+  readonly ctx: FormContext;
+  readonly edit: (label: string, change: (commands: readonly Command[]) => Command[]) => void;
+}) {
+  const { doc, entry, ctx, edit } = props;
+  const project = doc.project;
+  const names = useMemo(() => projectNames(project), [project]);
+  const actions = useMemo(() => listActions(edit), [edit]);
+  return (
+    <section className="db-commands">
+      <h2>Commands</h2>
+      <p className="hint">
+        Called with <strong>Call common event</strong>, these run as part of the calling event (its
+        flags, “this event” in move routes). Autorun and parallel ones run on their own.
+      </p>
+      <CommandList
+        commands={entry.commands}
+        ctx={ctx}
+        names={names}
+        actions={actions}
+        extra={(command, setCommand) =>
+          command.type === 'transfer' ? (
+            <TransferTargetButton doc={doc} command={command} onChange={setCommand} />
+          ) : null
+        }
+      />
+    </section>
   );
 }

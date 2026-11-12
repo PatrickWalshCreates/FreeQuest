@@ -88,15 +88,8 @@
                   "text": "The fire crackles. You rest a while by the warmth."
                 },
                 {
-                  "type": "playSound",
-                  "path": "assets/audio/sfx-heal.wav"
-                },
-                {
-                  "type": "recoverAll"
-                },
-                {
-                  "type": "message",
-                  "text": "Everyone is fully rested."
+                  "type": "callCommon",
+                  "common": "rest"
                 }
               ],
               "else": [

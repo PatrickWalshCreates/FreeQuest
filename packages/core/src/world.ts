@@ -72,6 +72,12 @@ export class World {
   private runningEvent: EventInstance | null = null;
   /** Interpreters of parallel pages, running alongside play (one per event). */
   private readonly parallels = new Map<EventInstance, Interpreter>();
+  /** Interpreters of parallel common events, by id. */
+  private readonly commonParallels = new Map<string, Interpreter>();
+  /** Common events whose pass finished as the running event (they restart next step). */
+  private readonly finishedCommons = new Set<string>();
+  /** The common event running as the blocking event, if that's what runs. */
+  private runningCommon: string | null = null;
   /** Routes started by moveRoute commands, by character (they replace page movement meanwhile). */
   private readonly routes = new Map<EventInstance | 'player', RouteRunner>();
   /** Routes of pages whose movement is a route, with the page they belong to. */
@@ -158,7 +164,9 @@ export class World {
     this.currentCollision = collision;
     this.currentEvents = map.events.map((e) => new EventInstance(e, this.eventContext));
     // The old map's parallel events and routes stop; the new map's start on the next step.
+    // Parallel common events start their pass again too (they may refer to map events).
     this.parallels.clear();
+    this.commonParallels.clear();
     this.endPlayerRoute();
     this.routes.clear();
     this.pageRoutes.clear();
@@ -295,12 +303,30 @@ export class World {
     if (this.running) throw new Error('an event is already running');
     this.running = new Interpreter(commands, this.contextFor(source));
     this.runningEvent = source;
+    this.runningCommon = null;
     return this.running;
   }
 
   /** Events whose parallel pages are running in the background right now (for tests and debugging). */
   get parallelEvents(): readonly EventInstance[] {
     return [...this.parallels.keys()];
+  }
+
+  /** Ids of the parallel common events running right now. */
+  get parallelCommonEvents(): readonly string[] {
+    return [...this.commonParallels.keys()];
+  }
+
+  /** The common event running as the blocking event (an autorun one, or a promoted pass). */
+  get interpreterCommonEvent(): string | null {
+    return this.runningCommon;
+  }
+
+  /** True when a common event with this trigger should run now (its switch, if any, is on). */
+  private activeCommons(trigger: 'autorun' | 'parallel') {
+    return this.db.commonEvents.all.filter(
+      (c) => c.trigger === trigger && (c.switch === undefined || this.state.getSwitch(c.switch)),
+    );
   }
 
   /**
@@ -330,6 +356,25 @@ export class World {
       interpreter.update(dt);
       if (!interpreter.isDone) this.parallels.set(event, interpreter);
     }
+    // Parallel common events work the same, game-wide, while their switch is on.
+    const finishedCommons = new Set(this.finishedCommons);
+    this.finishedCommons.clear();
+    for (const [id, interpreter] of this.commonParallels) {
+      interpreter.update(dt);
+      if (interpreter.isDone) {
+        this.commonParallels.delete(id);
+        finishedCommons.add(id);
+      }
+    }
+    for (const common of this.activeCommons('parallel')) {
+      const id = common.id;
+      if (this.commonParallels.has(id) || finishedCommons.has(id) || id === this.runningCommon) {
+        continue;
+      }
+      const interpreter = new Interpreter(common.commands, this.contextFor(null));
+      interpreter.update(dt);
+      if (!interpreter.isDone) this.commonParallels.set(id, interpreter);
+    }
     this.refreshEvents();
     this.promoteParallel();
   }
@@ -342,6 +387,13 @@ export class World {
       this.parallels.delete(event);
       this.running = interpreter;
       this.runningEvent = event;
+      return;
+    }
+    for (const [id, interpreter] of this.commonParallels) {
+      if (interpreter.pending === null) continue;
+      this.commonParallels.delete(id);
+      this.running = interpreter;
+      this.runningCommon = id;
       return;
     }
   }
@@ -505,6 +557,7 @@ export class World {
       audio: this.audio,
       routes: this.routeHost,
       map: this.currentMap.id,
+      commonEvent: this.commonEventCommands,
     };
   }
 
@@ -512,6 +565,8 @@ export class World {
   private contextFor(event: EventInstance | null): EventContext {
     return { ...this.eventContext, self: event?.id ?? null };
   }
+
+  private readonly commonEventCommands = (id: string) => this.db.commonEvents.get(id).commands;
 
   private readonly routeHost = {
     start: (command: CommandOf<'moveRoute'>, self: string | null) => this.startRoute(command, self),
@@ -594,9 +649,18 @@ export class World {
     this.triggerAt(x, y, (e) => isAction(e) && !e.blocks);
   }
 
+  /** The map's first autorun page, else the first autorun common event whose switch is on. */
   private tryAutorun(): void {
     const event = this.events.find((e) => e.page?.trigger === 'autorun');
-    if (event?.page) this.run(event.page.commands, event);
+    if (event?.page) {
+      this.run(event.page.commands, event);
+      return;
+    }
+    const common = this.activeCommons('autorun')[0];
+    if (common) {
+      this.run(common.commands);
+      this.runningCommon = common.id;
+    }
   }
 
   private readonly moveHooks: MoveHooks = {
@@ -621,8 +685,10 @@ export class World {
     this.refreshEvents();
     if (this.running.isDone) {
       if (this.runningEvent) this.finishedRunning.add(this.runningEvent);
+      if (this.runningCommon) this.finishedCommons.add(this.runningCommon);
       this.running = null;
       this.runningEvent = null;
+      this.runningCommon = null;
     }
   }
 

@@ -1,12 +1,16 @@
 // Database entries (actors, items, enemies…): new, duplicate, delete,
 // reorder, all pure functions over a category file's data.
 import {
+  DATABASE_FORMAT_VERSION,
   DATABASE_KINDS,
   type DatabaseKind,
   ID_PATTERN,
   SCHEMAS,
+  emptySystem,
   idFromName,
 } from '@freequest/schema';
+import type { ProjectDocument } from './document.js';
+import { MANIFEST_PATH } from './open-project.js';
 import { type DefaultPicker, type JsonSchema, asSchema, defaultFor } from './schema-form.js';
 
 /** Categories stored as `{ formatVersion, entries: [...] }` (everything but system). */
@@ -19,6 +23,45 @@ export interface Entry {
 }
 
 export type EntriesFile = { readonly formatVersion: number; readonly entries: readonly Entry[] };
+
+/** What each database category is called in the editor. */
+export const DATABASE_LABELS: Readonly<Record<DatabaseKind, string>> = {
+  system: 'System',
+  actors: 'Actors',
+  classes: 'Classes',
+  skills: 'Skills',
+  items: 'Items',
+  equipment: 'Equipment',
+  states: 'States',
+  enemies: 'Enemies',
+  troops: 'Troops',
+  commonEvents: 'Common events',
+};
+
+/** Categories the project has no file for yet (they count as empty), in the usual order. */
+export function missingDatabaseKinds(doc: ProjectDocument): DatabaseKind[] {
+  return DATABASE_KINDS.filter((kind) => !doc.project.database[kind]);
+}
+
+/**
+ * Give the project a file for a category it doesn't have yet (projects
+ * from before common events, say): `data/database/<kind>.json`, empty,
+ * listed in the manifest. One undo step; returns the file's path.
+ */
+export function createDatabaseFile(doc: ProjectDocument, kind: DatabaseKind): string {
+  if (doc.project.database[kind]) throw new Error(`The project already has ${kind}`);
+  let path = `data/database/${kind}.json`;
+  for (let n = 2; doc.file(path); n++) path = `data/database/${kind}-${n}.json`;
+  doc.edit(`Add ${DATABASE_LABELS[kind].toLowerCase()}`, (tx) => {
+    if (kind === 'system') tx.create(path, 'system', 'system', emptySystem());
+    else tx.create(path, kind, kind, { formatVersion: DATABASE_FORMAT_VERSION, entries: [] });
+    tx.update(MANIFEST_PATH, 'manifest', (m) => ({
+      ...m,
+      database: { ...m.database, [kind]: path },
+    }));
+  });
+  return path;
+}
 
 /** The schema of one entry of a category. */
 export function entrySchema(kind: EntryKind): JsonSchema {

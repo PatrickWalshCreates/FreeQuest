@@ -35,7 +35,9 @@ describe('new projects', () => {
     expect(project.manifest.data).toMatchObject({ name: 'Moonlit Quest', id: 'moonlit-quest' });
     expect([...project.maps.keys()]).toEqual(['map001']);
     // Written in canonical form, like everything the editor saves.
-    expect(await target.readText('project.json')).toMatch(/^\{\n {2}"formatVersion": 5,\n {2}"id"/);
+    expect(await target.readText('project.json')).toMatch(
+      /^\{\n {2}"formatVersion": \d+,\n {2}"id"/,
+    );
     expect((await planExport(project, target)).errors).toEqual([]);
     expect(progress.at(-1)).toBe(progress.length);
   });

@@ -1,4 +1,4 @@
-import { MAP_FORMAT_VERSION } from '@freequest/schema';
+import { MANIFEST_FORMAT_VERSION, MAP_FORMAT_VERSION } from '@freequest/schema';
 import type { GameMap, Manifest, Tileset } from '@freequest/schema';
 
 // Tile 0: floor, 1: wall, 2: treetop (above, impassable flag ignored), 3: floor with passable overlay.
@@ -38,7 +38,7 @@ export function makeMap(rows: string[], overlay?: string[]): GameMap {
 
 export function makeManifest(start: Partial<Manifest['start']> = {}): Manifest {
   return {
-    formatVersion: 5,
+    formatVersion: MANIFEST_FORMAT_VERSION,
     id: 'test-game',
     name: 'Test',
     screen: { width: 64, height: 64 },

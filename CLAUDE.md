@@ -138,6 +138,20 @@ Never the other way.
   `fixed` (also v7; "Keep this facing" in the panel) stops the turn toward the player on talk,
   and a fixed new page's facing applies even to the running event, so a chest shows its open
   lid right away.
+- **Common events** (manifest v6, database category `commonEvents`, file
+  `data/database/commonEvents.json`; entry: name, `trigger` call/autorun/parallel, optional
+  gate `switch`, `commands`): `callCommon` pushes the entry's commands as a frame on the
+  calling interpreter (via `EventContext.commonEvent`), so they run as the caller ("this",
+  flags); nesting is capped at 100 frames. The world runs autorun ones after the map's autorun
+  pages (`runningCommon`, `interpreterCommonEvent`) and parallel ones like parallel pages
+  (`commonParallels`, keyed by id, restarted after map changes, promoted to the screen when they
+  issue a request). `checkCommonEventReferences` (schema; run by `checkReferences` and at game
+  start by the loader) checks gate switches, commands (`makeChecks().checkCommands`, shared with
+  maps) and call loops. `assetReferences` scans their sounds/music. Editor: the Database
+  category shows the schema form plus a `CommandList` (`listActions` builds the actions for
+  any stored list); `createDatabaseFile` / `missingDatabaseKinds` add a category an older
+  project lacks ("+ Common events" in the sidebar); `FormContext.choiceLabel` gives the
+  trigger readable choices. Demo/Starter: "Rest", called by the hearth.
 - **Map events at runtime** (`EventInstance`): position, facing, active page. Pages are re-picked only
   when `GameState.version` changes. Events with `layer: "same"` block movement
   (`World.passability` = tiles + blocking events). A page change resets facing to the page graphic,
@@ -681,13 +695,14 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   the bytes). `editor-core/test/release-formats.test.ts` opens it with no problems and
   `core/test/release-formats.test.ts` loads the save. Change a format only with a migration; a
   release that changes one adds its own `release-<v>/` folder.
-- Current versions: manifest 5 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
-  v5: `id`, the permanent game id, migrated from the name with `idFromName`),
+- Current versions: manifest 6 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+  v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
+  `commonEvents` database category),
   map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags), tileset 1, character 1, every database file 4 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
-  `items`, `equipment`, `states`, `enemies`), each `{ formatVersion, entries: [...] }` except
+  `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
   files are empty categories. Ids are strings. Stat growth is a level curve (`{ "1": 450, "99": 9000 }`,
   linear between points, must include level 1); exp needed for level L = `round(base × (L−1)^exponent)`.
@@ -849,8 +864,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      switch per chest), as page conditions and a command; kept in saves (save v2, migrating
      0.1 saves through the frozen fixture)~~ (done; plus "Keep this facing" for graphics. The
      demo's house chest was opened in the dev player; the flag dialog tried in the editor)
-  2. Common events: shared command lists in their own file (manifest v6), a `callCommon` command,
-     and optional autorun/parallel triggers gated by a switch; an editor list beside the database
+  2. ~~Common events: shared command lists in their own file (manifest v6), a `callCommon` command,
+     and optional autorun/parallel triggers gated by a switch; an editor list beside the database~~
+     (done; a database category, so lists, copy/paste and exports come free. Tried in the editor
+     and rested at the demo's hearth in the dev player)
   3. Text codes in messages and choices: variables, actor and party names, gold, item names,
      colours and icons, in FreeQuest's own `{…}` syntax (parsed in core, drawn as styled runs);
      the editor previews them and reports unknown codes

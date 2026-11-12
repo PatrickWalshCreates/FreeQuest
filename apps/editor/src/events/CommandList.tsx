@@ -10,6 +10,10 @@ import {
   describeCommand,
   flattenCommands,
   getList,
+  insertCommands,
+  moveCommand,
+  removeCommands,
+  replaceCommand,
   sliceCommands,
 } from '@freequest/editor-core';
 import type { Command, CommandType } from '@freequest/schema';
@@ -31,6 +35,25 @@ export interface CommandActions {
   /** Remove `count` commands from the slot on. */
   remove(slot: Slot, count: number, label: string): void;
   move(slot: Slot, delta: number): void;
+}
+
+/**
+ * The actions for a command list kept somewhere in the document: `change`
+ * applies an edit of the whole list as one undo step.
+ */
+export function listActions(
+  change: (label: string, edit: (commands: readonly Command[]) => Command[]) => void,
+): CommandActions {
+  return {
+    insert: (slot, inserted, label) =>
+      change(label, (c) => insertCommands(c, slot.path, slot.index, inserted)),
+    replace: (slot, command) =>
+      change('Edit command', (c) => replaceCommand(c, slot.path, slot.index, command)),
+    remove: (slot, count, label) =>
+      change(label, (c) => removeCommands(c, slot.path, slot.index, count)),
+    move: (slot, delta) =>
+      change('Move command', (c) => moveCommand(c, slot.path, slot.index, delta)),
+  };
 }
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);

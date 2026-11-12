@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MANIFEST_FORMAT_VERSION,
   MAP_FORMAT_VERSION,
   type CharacterSheet,
   type Command,
@@ -12,12 +13,13 @@ import {
   checkCharacterShape,
   checkMapReferences,
   checkMapShape,
+  checkCommonEventReferences,
   checkReferences,
   emptyDatabase,
 } from '../src/index.js';
 
 const manifest: Manifest = {
-  formatVersion: 5,
+  formatVersion: MANIFEST_FORMAT_VERSION,
   id: 'test-game',
   name: 'T',
   screen: { width: 32, height: 32 },
@@ -318,6 +320,59 @@ describe('battle references', () => {
     expect(checkMapReferences(map, ctx)).toEqual([
       expect.stringMatching(/encounters\.troops\[0\]: unknown troop "ghosts"/),
       expect.stringMatching(/onWin\[0\]: unknown troop "dragons"/),
+    ]);
+  });
+});
+
+describe('checkCommonEventReferences', () => {
+  const ctx = (commonEvents: Database['commonEvents']) => ({
+    manifest,
+    tilesets: new Map(),
+    characters: new Map(),
+    database: { ...emptyDatabase(), commonEvents },
+  });
+  const call = (common: string): Command => ({ type: 'callCommon', common });
+
+  it('checks switches, commands and calls to other common events', () => {
+    expect(
+      checkCommonEventReferences(
+        ctx([
+          { id: 'ok', name: 'Ok', trigger: 'parallel', switch: 'flag', commands: [call('other')] },
+          { id: 'other', name: 'Other', trigger: 'call', commands: [] },
+        ]),
+      ),
+    ).toEqual([]);
+    expect(
+      checkCommonEventReferences(
+        ctx([
+          {
+            id: 'bad',
+            name: 'Bad',
+            trigger: 'autorun',
+            switch: 'nope',
+            commands: [call('ghost'), { type: 'setSwitch', switch: 'nope', value: true }],
+          },
+        ]),
+      ),
+    ).toEqual([
+      'commonEvents "bad": undeclared switch "nope"',
+      'commonEvents "bad".commands[0]: unknown common event "ghost"',
+      'commonEvents "bad".commands[1]: undeclared switch "nope"',
+    ]);
+  });
+
+  it('reports common events that end up calling themselves, once per loop', () => {
+    const problems = checkCommonEventReferences(
+      ctx([
+        { id: 'a', name: 'A', trigger: 'call', commands: [call('b')] },
+        { id: 'b', name: 'B', trigger: 'call', commands: [call('a')] },
+        { id: 'c', name: 'C', trigger: 'call', commands: [call('a')] },
+        { id: 'self', name: 'Self', trigger: 'call', commands: [call('self')] },
+      ]),
+    );
+    expect(problems).toEqual([
+      'commonEvents "a": calls itself ("a" → "b" → "a"), so it would never finish',
+      'commonEvents "self": calls itself ("self" → "self"), so it would never finish',
     ]);
   });
 });

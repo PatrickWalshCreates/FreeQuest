@@ -12,6 +12,7 @@ import type {
   StateEntry,
   SystemData,
   TroopEntry,
+  CommonEventEntry,
 } from './categories.js';
 import { DATABASE_FORMAT_VERSION } from './categories.js';
 import { STAT_KEYS } from './common.js';
@@ -29,6 +30,7 @@ export interface Database {
   readonly states: readonly StateEntry[];
   readonly enemies: readonly EnemyEntry[];
   readonly troops: readonly TroopEntry[];
+  readonly commonEvents: readonly CommonEventEntry[];
 }
 
 export function emptySystem(): SystemData {
@@ -53,6 +55,7 @@ export function emptyDatabase(): Database {
     states: [],
     enemies: [],
     troops: [],
+    commonEvents: [],
   };
 }
 
@@ -71,6 +74,7 @@ export function assembleDatabase(files: DatabaseFiles): Database {
     states: files.states?.entries ?? [],
     enemies: files.enemies?.entries ?? [],
     troops: files.troops?.entries ?? [],
+    commonEvents: files.commonEvents?.entries ?? [],
   };
 }
 
@@ -118,6 +122,7 @@ export function checkDatabase(
   const states = ids(db.states, 'states');
   const enemies = ids(db.enemies, 'enemies');
   ids(db.troops, 'troops');
+  ids(db.commonEvents, 'commonEvents');
 
   const need = (set: Set<string>, id: string, kind: string, where: string) => {
     if (!set.has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);

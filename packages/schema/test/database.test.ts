@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MANIFEST_FORMAT_VERSION,
   type ActorEntry,
   type ClassEntry,
   type Database,
@@ -159,7 +160,7 @@ describe('checkDatabase', () => {
 
   it('checks the starting party against actors', () => {
     const manifest: Manifest = {
-      formatVersion: 5,
+      formatVersion: MANIFEST_FORMAT_VERSION,
       id: 'test-game',
       name: 'T',
       screen: { width: 1, height: 1 },

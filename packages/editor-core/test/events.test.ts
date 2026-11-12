@@ -270,6 +270,7 @@ describe('schema forms', () => {
         path: 'assets/audio/a.wav',
         target: 'this',
         flag: 'opened',
+        common: 'rest',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);

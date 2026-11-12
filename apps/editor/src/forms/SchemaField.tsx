@@ -29,6 +29,8 @@ export interface FormContext {
     field: string,
     parent: Readonly<Record<string, unknown>> | null,
   ): readonly RefOption[] | null;
+  /** A friendlier label for one value of a fixed-choice field (e.g. a trigger). */
+  choiceLabel?(field: string, value: string): string | undefined;
   /** Names to offer while typing in a free-text field (e.g. flags this map already uses). */
   suggest?(field: string): readonly string[];
   /** Fields edited in a multi-line text box. */
@@ -239,7 +241,10 @@ function Control(props: FieldProps & { readonly id: string; readonly optional: b
           id={id}
           value={value === undefined ? '' : String(value)}
           none={none}
-          options={shape.options.map((o) => ({ value: String(o), label: String(o) }))}
+          options={shape.options.map((o) => ({
+            value: String(o),
+            label: ctx.choiceLabel?.(name, String(o)) ?? String(o),
+          }))}
           onChange={(v) =>
             onChange(v === '' ? undefined : shape.options.find((o) => String(o) === v))
           }

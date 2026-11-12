@@ -893,6 +893,23 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Run a common event’s commands, then carry on here.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "callCommon"
+            },
+            "common": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "common"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Note for authors. Does nothing.",
           "properties": {
             "type": {

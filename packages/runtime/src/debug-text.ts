@@ -14,12 +14,16 @@ export function describeGame(world: World, manifest: Manifest): string {
   );
   const running = world.interpreter;
   if (running) {
-    const source = world.interpreterEvent?.id ?? 'script';
+    const common = world.interpreterCommonEvent;
+    const source = world.interpreterEvent?.id ?? (common ? `common event ${common}` : 'script');
     lines.push(
       `Event: ${source} — ${running.pending ? `waiting on ${running.pending.type}` : 'running'}`,
     );
   }
-  const parallel = world.parallelEvents.map((e) => e.id);
+  const parallel = [
+    ...world.parallelEvents.map((e) => e.id),
+    ...world.parallelCommonEvents.map((id) => `common event ${id}`),
+  ];
   if (parallel.length > 0) lines.push(`Parallel: ${parallel.join(', ')}`);
   lines.push('', `Gold: ${party.gold} ${currency}`, 'Party:');
   if (party.members.length === 0) lines.push('  (empty)');

@@ -1,0 +1,23 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "rest",
+      "name": "Rest",
+      "trigger": "call",
+      "commands": [
+        {
+          "type": "playSound",
+          "path": "assets/audio/sfx-heal.wav"
+        },
+        {
+          "type": "recoverAll"
+        },
+        {
+          "type": "message",
+          "text": "Everyone is fully rested."
+        }
+      ]
+    }
+  ]
+}

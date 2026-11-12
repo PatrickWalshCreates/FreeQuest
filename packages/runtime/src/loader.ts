@@ -13,6 +13,7 @@ import {
   assembleDatabase,
   checkDatabase,
   checkManifestReferences,
+  checkCommonEventReferences,
   checkMapReferences,
   checkCharacterShape,
   checkMapShape,
@@ -158,6 +159,12 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
 
   const problems = checkManifestReferences(context);
   if (problems.length > 0) throw new ProjectFileError('project.json', problems);
+  // Common events run anywhere, so their references are checked at start (a transfer's
+  // target bounds only once that map is loaded, like a map's own).
+  const commonProblems = checkCommonEventReferences(context);
+  if (commonProblems.length > 0) {
+    throw new ProjectFileError(manifest.database?.commonEvents ?? 'commonEvents', commonProblems);
+  }
   // The start map is needed immediately; loading it here also bounds-checks the start position.
   await loadMap(manifest.start.map);
   const startProblems = checkManifestReferences(context);

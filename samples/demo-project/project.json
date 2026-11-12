@@ -1,5 +1,5 @@
 {
-  "formatVersion": 5,
+  "formatVersion": 6,
   "id": "freequest-demo",
   "name": "FreeQuest Demo",
   "characters": [
@@ -23,6 +23,7 @@
   "database": {
     "actors": "data/database/actors.json",
     "classes": "data/database/classes.json",
+    "commonEvents": "data/database/commonEvents.json",
     "enemies": "data/database/enemies.json",
     "equipment": "data/database/equipment.json",
     "items": "data/database/items.json",

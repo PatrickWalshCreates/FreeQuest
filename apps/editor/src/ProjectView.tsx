@@ -14,6 +14,9 @@ import {
   mapUsages,
   type PlaytestSource,
   playtestSource,
+  DATABASE_LABELS,
+  createDatabaseFile,
+  missingDatabaseKinds,
 } from '@freequest/editor-core';
 import {
   DATABASE_KINDS,
@@ -52,6 +55,8 @@ interface Group {
   readonly title: string;
   readonly files: readonly ProjectFile[];
   readonly add?: { readonly label: string; readonly onClick: () => void };
+  /** Things the project doesn't have yet, offered as "+ <label>" items (empty categories). */
+  readonly missing?: readonly { readonly label: string; readonly onClick: () => void }[];
 }
 
 interface Status {
@@ -64,14 +69,13 @@ interface Status {
 /** The sidebar selection for the Assets panel (not a file path). */
 const ASSETS_VIEW = '#assets';
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const isDatabase = (file: ProjectFile) => DATABASE_KINDS.some((k) => k === file.kind);
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Sidebar label: the file's own name when it has one, else its id. */
 function labelOf(file: ProjectFile): string {
   if (file.kind === 'manifest') return 'Project settings';
-  if (isDatabase(file)) return capitalize(file.kind);
+  if (isDatabase(file)) return DATABASE_LABELS[file.kind as DatabaseKind];
   const name = (file.data as { name?: unknown } | null)?.name;
   return typeof name === 'string' && name ? name : file.id;
 }
@@ -226,7 +230,14 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
       files: [...project.characters.values()],
       add: { label: 'New character', onClick: () => setCreatingCharacter(true) },
     },
-    { title: 'Database', files: files.filter(isDatabase) },
+    {
+      title: 'Database',
+      files: files.filter(isDatabase),
+      missing: missingDatabaseKinds(doc).map((kind) => ({
+        label: DATABASE_LABELS[kind],
+        onClick: () => setSelected(createDatabaseFile(doc, kind)),
+      })),
+    },
   ];
   const problemCount = new Map<string, number>();
   for (const p of project.problems) {
@@ -337,6 +348,17 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
                   </li>
                 );
               })}
+              {group.missing?.map((item) => (
+                <li key={item.label}>
+                  <button
+                    className="item missing"
+                    title={`This project has no ${item.label.toLowerCase()} yet: add an empty list`}
+                    onClick={item.onClick}
+                  >
+                    <span>+ {item.label}</span>
+                  </button>
+                </li>
+              ))}
               {groupIndex === 0 && (
                 <li>
                   <button

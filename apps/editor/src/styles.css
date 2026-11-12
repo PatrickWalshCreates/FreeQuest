@@ -271,6 +271,15 @@ button.primary {
   background: var(--selected);
 }
 
+/* A category the project doesn't have yet: offered, not listed as a file. */
+.item.missing {
+  color: var(--muted);
+}
+
+.item.missing:hover {
+  color: inherit;
+}
+
 .badge {
   min-width: 18px;
   padding: 0 5px;
@@ -2152,4 +2161,15 @@ h2.with-actions button {
 
 .error-card details {
   margin-top: 10px;
+}
+
+/* A common event's command list, under its form. */
+.db-commands {
+  margin-top: 20px;
+  max-width: 720px;
+}
+
+.db-commands h2 {
+  font-size: 14px;
+  margin: 0 0 4px;
 }

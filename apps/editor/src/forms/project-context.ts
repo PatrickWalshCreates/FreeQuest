@@ -45,7 +45,17 @@ const LABELS: Record<string, string> = {
   successRate: 'Success rate (0–1)',
   chance: 'Chance (0–1)',
   flag: 'Flag',
+  common: 'Common event',
+  trigger: 'Starts when',
+  switch: 'Switch',
   event: 'Another event (none: this one)',
+};
+
+/** How a common event's triggers read in its form. */
+const COMMON_TRIGGERS: Record<string, string> = {
+  call: 'Only when an event calls it',
+  autorun: 'Autorun (when nothing else runs, while its switch is on)',
+  parallel: 'Parallel (alongside play, while its switch is on)',
 };
 
 export interface ProjectLists {
@@ -83,7 +93,15 @@ const AUDIO_FIELDS = new Set<string>([
 export function projectFormContext(project: OpenedProject, lists: ProjectLists): FormContext {
   const m = project.manifest.data;
   type EntryKind =
-    'actors' | 'classes' | 'skills' | 'items' | 'equipment' | 'states' | 'enemies' | 'troops';
+    | 'actors'
+    | 'classes'
+    | 'skills'
+    | 'items'
+    | 'equipment'
+    | 'states'
+    | 'enemies'
+    | 'troops'
+    | 'commonEvents';
   const db = (kind: EntryKind): Named[] =>
     (project.database[kind]?.data?.entries as Named[] | undefined) ?? [];
   const system = project.database.system?.data;
@@ -141,6 +159,8 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return images;
       case 'event':
         return options(lists.events ?? []);
+      case 'common':
+        return options(db('commonEvents'));
       case 'target':
         return [
           { value: 'this', label: 'This event' },
@@ -154,6 +174,7 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
   return {
     refs,
     multiline: (field) => field === 'text' || field === 'description',
+    choiceLabel: (field, value) => (field === 'trigger' ? COMMON_TRIGGERS[value] : undefined),
     suggest: (field) => (field === 'flag' ? (lists.flags ?? []) : []),
     check: (field, value) => {
       if (field === 'formula' && typeof value === 'string' && value !== '') {
@@ -182,7 +203,7 @@ export function projectNames(
   const m = project.manifest.data;
   const find = (list: readonly Named[] | undefined, id: string) =>
     list?.find((x) => x.id === id)?.name ?? id;
-  const entries = (kind: 'actors' | 'items' | 'equipment' | 'troops') =>
+  const entries = (kind: 'actors' | 'items' | 'equipment' | 'troops' | 'commonEvents') =>
     project.database[kind]?.data?.entries as Named[] | undefined;
   return {
     map: (id) => project.maps.get(id)?.data?.name ?? id,
@@ -191,6 +212,7 @@ export function projectNames(
     actor: (id) => find(entries('actors'), id),
     item: (kind, id) => find(entries(kind === 'equipment' ? 'equipment' : 'items'), id),
     troop: (id) => find(entries('troops'), id),
+    common: (id) => find(entries('commonEvents'), id),
     event: (id) => find(events, id),
   };
 }

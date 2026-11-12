@@ -1,4 +1,4 @@
-import { MAP_FORMAT_VERSION } from '@freequest/schema';
+import { MANIFEST_FORMAT_VERSION, MAP_FORMAT_VERSION } from '@freequest/schema';
 import { ActionState, World } from '@freequest/core';
 import type { Command, GameMap, Manifest, Tileset } from '@freequest/schema';
 import { describe, expect, it, vi } from 'vitest';
@@ -31,7 +31,7 @@ function map(id: string, width: number, height: number): GameMap {
 }
 
 const manifest: Manifest = {
-  formatVersion: 5,
+  formatVersion: MANIFEST_FORMAT_VERSION,
   id: 'test-game',
   name: 'T',
   screen: { width: 64, height: 64 },
