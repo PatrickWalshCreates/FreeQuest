@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.1.0 released (2026-11-11), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.2.0 released (2026-11-11), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
