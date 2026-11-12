@@ -46,6 +46,22 @@ export const SaveFile = Type.Object(
     direction: Direction,
     switches: Type.Record(Type.String(), Type.Boolean()),
     variables: Type.Record(Type.String(), Type.Integer()),
+    /** The screen's tint and fade, as events left them (v2). */
+    screen: Type.Optional(
+      Type.Object(
+        {
+          fade: Type.Number({ minimum: 0, maximum: 1 }),
+          tint: Type.Object(
+            {
+              color: Type.String({ pattern: '^#[0-9a-fA-F]{6}$' }),
+              strength: Type.Number({ minimum: 0, maximum: 1 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     /** Event flags that are on: map id → event id → flag ids (v2). */
     flags: Type.Record(Type.String(), Type.Record(Type.String(), Type.Array(Id))),
     party: Type.Object(

@@ -329,6 +329,29 @@ export class Interpreter {
         this.stack.push({ commands: lookup(command.common), index: 0, call: true });
         break;
       }
+      case 'fadeScreen':
+      case 'tintScreen':
+      case 'flashScreen':
+      case 'shakeScreen': {
+        const screen = this.context.screen;
+        if (!screen) break;
+        const done =
+          command.type === 'fadeScreen'
+            ? screen.fadeTo(command.to, command.seconds)
+            : command.type === 'tintScreen'
+              ? screen.tintTo(command.color, command.strength, command.seconds)
+              : command.type === 'flashScreen'
+                ? screen.flashOnce(command.color, command.seconds)
+                : screen.shake(command.power, command.seconds);
+        if (command.wait && command.seconds > 0) this.waitFor = done;
+        break;
+      }
+      case 'hideEvent': {
+        const id = command.event ?? this.context.self;
+        if (!id) throw new Error('hideEvent needs a map event, but there is none here');
+        this.context.hideEvent?.(id, command.hidden);
+        break;
+      }
       case 'loop':
         if (this.stack.length >= MAX_DEPTH) throw new Error(`loops nest ${MAX_DEPTH} deep`);
         this.stack.push({ commands: command.commands, index: 0, loop: true });

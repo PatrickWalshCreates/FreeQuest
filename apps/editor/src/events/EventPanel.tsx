@@ -30,6 +30,7 @@ import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList, listActions } from './CommandList.js';
 import { RouteSteps } from './RouteSteps.js';
+import { ColorField } from '../forms/ColorField.js';
 import { CommandExtras } from './CommandExtras.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
@@ -309,6 +310,8 @@ function EventEditor(props: {
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
         field === 'steps' ? (
           <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
+        ) : field === 'color' ? (
+          <ColorField value={value} onChange={onChange} />
         ) : undefined,
     }),
     [project, audio, mapEvents, flags],

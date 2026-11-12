@@ -8,6 +8,7 @@ import type {
   VariableOp,
 } from '@freequest/schema';
 import type { Party } from './party.js';
+import type { ScreenEffects } from './screen.js';
 
 /** Event flags that are on: map id → event id → flag ids (as saves store them). */
 export type FlagData = Record<string, Record<string, string[]>>;
@@ -200,6 +201,10 @@ export interface EventContext {
   readonly map?: string;
   /** The commands of a common event, for callCommon (throws for an unknown id). */
   readonly commonEvent?: (id: string) => readonly Command[];
+  /** Fades, tints, flashes and shakes (the world's). Without one they do nothing. */
+  readonly screen?: ScreenEffects;
+  /** Hide an event on the map (or show it again) until the map loads again. */
+  readonly hideEvent?: (id: string, hidden: boolean) => void;
 }
 
 /** Starts move routes for the interpreter. */

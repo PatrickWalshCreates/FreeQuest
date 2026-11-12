@@ -192,6 +192,28 @@ describe('descriptions', () => {
       [{ type: 'playMusic', path: null }, 'Stop music'],
       [{ type: 'playSound', path: 'assets/audio/heal.wav' }, 'Play sound heal.wav'],
       [{ type: 'comment', text: 'todo' }, '// todo'],
+      [
+        { type: 'fadeScreen', to: 'out', seconds: 0.5, wait: true },
+        'Fade out to black over 0.5 s, and wait',
+      ],
+      [
+        { type: 'tintScreen', color: '#203060', strength: 0.4, seconds: 0, wait: false },
+        'Tint the screen #203060 at 40%',
+      ],
+      [
+        { type: 'tintScreen', color: '#000000', strength: 0, seconds: 2, wait: false },
+        'Clear the screen tint over 2 s',
+      ],
+      [
+        { type: 'flashScreen', color: '#ffffff', seconds: 1, wait: false },
+        'Flash the screen #ffffff over 1 s',
+      ],
+      [
+        { type: 'shakeScreen', power: 6, seconds: 1, wait: true },
+        'Shake the screen (power 6) over 1 s, and wait',
+      ],
+      [{ type: 'hideEvent', hidden: true }, 'Hide this event'],
+      [{ type: 'hideEvent', hidden: false, event: 'gate' }, 'Show gate'],
     ];
     for (const [command, text] of cases) expect(describeCommand(command)).toBe(text);
     expect(
@@ -272,6 +294,7 @@ describe('schema forms', () => {
         target: 'this',
         flag: 'opened',
         common: 'rest',
+        color: '#ffffff',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);

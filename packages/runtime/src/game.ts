@@ -137,6 +137,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const scene = new Container({ label: 'scene' });
   scene.addChild(characters);
   app.stage.addChild(scene);
+  // Events' fades, tints and flashes: over the map, under messages and menus.
+  const screenEffects = new Graphics({ label: 'screen-effects' });
+  app.stage.addChild(screenEffects);
 
   // Everything drawn for the current map. Rebuilt whenever the world's map changes.
   let shown: { map: World['map']; view: MapView; events: EventViews } | null = null;
@@ -441,7 +444,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       mapWidth: world.pixelWidth,
       mapHeight: world.pixelHeight,
     });
-    scene.position.set(-Math.round(camera.x), -Math.round(camera.y));
+    const screen = world.screen;
+    scene.position.set(-Math.round(camera.x) + screen.shakeX, -Math.round(camera.y));
+    drawScreenEffects(screenEffects, screen, width, height);
   };
 
   const tick = () => {
@@ -511,6 +516,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       for (const path of world.drainSounds()) audio.playSound(path);
       elapsed += dt;
     });
+    screenEffects.visible = mode === 'playing';
     if (mode === 'title' || mode === 'loading') {
       titleView.render(title.state, manifest.name);
     } else {
@@ -603,4 +609,21 @@ function defaultStorage(): KeyValueStorage {
     console.warn('localStorage is unavailable; saves will not persist across reloads.');
     return new MemoryStorage();
   }
+}
+
+/** Draw the screen's tint, flash and fade (in that order, so a fade covers everything). */
+function drawScreenEffects(
+  g: Graphics,
+  screen: World['screen'],
+  width: number,
+  height: number,
+): void {
+  g.clear();
+  const layer = (color: string, alpha: number) => {
+    if (alpha <= 0) return;
+    g.rect(0, 0, width, height).fill({ color: parseInt(color.slice(1), 16), alpha });
+  };
+  layer(screen.tint.color, screen.tint.strength);
+  layer(screen.flash.color, screen.flash.alpha);
+  layer('#000000', screen.fade);
 }

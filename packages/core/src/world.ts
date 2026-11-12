@@ -8,6 +8,7 @@ import {
   type Tileset,
   emptyDatabase,
 } from '@freequest/schema';
+import { ScreenEffects } from './screen.js';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
 import { DIRECTIONS, DIRECTION_DELTA, type Direction } from './direction.js';
@@ -70,6 +71,8 @@ export class World {
   private currentEvents: EventInstance[];
   private running: Interpreter | null = null;
   private runningEvent: EventInstance | null = null;
+  /** Fades, tints, flashes and shakes: game-wide, kept across maps (and the tint in saves). */
+  readonly screen = new ScreenEffects();
   /** Interpreters of parallel pages, running alongside play (one per event). */
   private readonly parallels = new Map<EventInstance, Interpreter>();
   /** Interpreters of parallel common events, by id. */
@@ -242,6 +245,7 @@ export class World {
       y: this.player.y,
       direction: this.player.direction,
       ...this.state.toData(),
+      screen: this.screen.toData(),
       party: {
         members: party.members,
         gold: party.gold,
@@ -264,7 +268,7 @@ export class World {
     const state = new GameState(options.manifest);
     state.loadData(save);
     const party = Party.fromData(options.database, save.party);
-    return new World({
+    const world = new World({
       manifest: options.manifest,
       map: options.map,
       tileset: options.tileset,
@@ -274,6 +278,8 @@ export class World {
       position: { x: save.x, y: save.y, direction: save.direction },
       ...(options.random ? { random: options.random } : {}),
     });
+    world.screen.loadData(save.screen);
+    return world;
   }
 
   /** Map size in pixels. */
@@ -558,6 +564,8 @@ export class World {
       routes: this.routeHost,
       map: this.currentMap.id,
       commonEvent: this.commonEventCommands,
+      screen: this.screen,
+      hideEvent: this.hideEventById,
     };
   }
 
@@ -567,6 +575,10 @@ export class World {
   }
 
   private readonly commonEventCommands = (id: string) => this.db.commonEvents.get(id).commands;
+
+  private readonly hideEventById = (id: string, hidden: boolean) => {
+    this.events.find((e) => e.id === id)?.setHidden(hidden, this.eventContext);
+  };
 
   private readonly routeHost = {
     start: (command: CommandOf<'moveRoute'>, self: string | null) => this.startRoute(command, self),
@@ -694,6 +706,7 @@ export class World {
 
   /** Advance the simulation by one fixed step of `dt` seconds. */
   step(dt: number, input: InputState): void {
+    this.screen.update(dt);
     this.refreshEvents();
     // An event running at the start of this step owns this step's input, so
     // the confirm press that closes its last message can't start a new one.

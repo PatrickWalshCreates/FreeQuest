@@ -2220,3 +2220,15 @@ h2.with-actions button {
   padding: 1px 8px 1px 0;
   vertical-align: top;
 }
+
+.color-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-field input[type='color'] {
+  width: 40px;
+  height: 26px;
+  padding: 0 2px;
+}

@@ -28,6 +28,7 @@ import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
 import { IconField, IconImage, useIconset } from './IconField.js';
+import { ColorField } from '../forms/ColorField.js';
 import { MOD } from '../keys.js';
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
@@ -65,6 +66,8 @@ export function DatabaseEditor({ doc, file }: Props) {
             value={typeof value === 'number' ? value : undefined}
             onChange={onChange}
           />
+        ) : field === 'color' ? (
+          <ColorField value={value} onChange={onChange} />
         ) : undefined,
     }),
     [doc, project, lists],

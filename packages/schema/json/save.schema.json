@@ -165,6 +165,34 @@
     "savedAt": {
       "type": "string"
     },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fade": {
+          "type": "number",
+          "maximum": 1,
+          "minimum": 0
+        },
+        "tint": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "strength": {
+              "type": "number",
+              "maximum": 1,
+              "minimum": 0
+            }
+          },
+          "required": ["color", "strength"]
+        }
+      },
+      "required": ["fade", "tint"]
+    },
     "summary": {
       "type": "object",
       "additionalProperties": false,

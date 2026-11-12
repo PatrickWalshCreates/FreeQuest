@@ -258,6 +258,18 @@
                   "text": "The planks creak, but the bridge holds."
                 },
                 {
+                  "type": "shakeScreen",
+                  "power": 6,
+                  "seconds": 0.5,
+                  "wait": false
+                },
+                {
+                  "type": "flashScreen",
+                  "color": "#ff5050",
+                  "seconds": 0.4,
+                  "wait": true
+                },
+                {
                   "type": "message",
                   "text": "A {color:red}wolf{/color} leaps out from under the bridge!"
                 },

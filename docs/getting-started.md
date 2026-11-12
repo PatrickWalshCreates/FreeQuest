@@ -123,6 +123,13 @@ choice in it, or a way out, or the game stops it. **Exit event** ends the event 
 from inside a loop or a common event it called. The map on the wall in the demo's house is a
 loop: look closer as often as you like, then step back.
 
+**Screen effects** set the mood: **Fade screen** to black and back (the screen stays black
+until you fade it in), **Tint screen** for dusk or a cave (it lasts until the next tint, also in
+saves; strength 0 clears it), **Flash screen** for a hit or a spell, and **Shake screen** for an
+earthquake. Each can wait until it's done before the event goes on. **Hide or show event** makes
+an event vanish (a door that opens, a guard who leaves) until the map loads again. In the demo,
+the wolf's ambush shakes and flashes red, and resting fades to black and back.
+
 **Text codes** put names, numbers, colours and icons into messages, speakers and choices. Type
 them in curly brackets:
 

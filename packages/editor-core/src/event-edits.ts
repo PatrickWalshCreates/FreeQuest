@@ -402,6 +402,12 @@ export function describeCondition(condition: Condition, names: NameLookup = ID_N
   }
 }
 
+/** ", over 1 s, then wait" and the like, for screen effects. */
+function timing(command: { readonly seconds: number; readonly wait: boolean }): string {
+  if (command.seconds === 0) return '';
+  return ` over ${command.seconds} s${command.wait ? ', and wait' : ''}`;
+}
+
 /** One line summarising a command, as shown in the command list. */
 export function describeCommand(command: Command, names: NameLookup = ID_NAMES): string {
   switch (command.type) {
@@ -415,6 +421,20 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `Turn ${names.switchName(command.switch)} ${command.value ? 'on' : 'off'}`;
     case 'callCommon':
       return `Call ${names.common?.(command.common) ?? command.common}`;
+    case 'fadeScreen':
+      return `Fade ${command.to === 'out' ? 'out to black' : 'in'}${timing(command)}`;
+    case 'tintScreen':
+      return command.strength === 0
+        ? `Clear the screen tint${timing(command)}`
+        : `Tint the screen ${command.color} at ${Math.round(command.strength * 100)}%${timing(command)}`;
+    case 'flashScreen':
+      return `Flash the screen ${command.color}${timing(command)}`;
+    case 'shakeScreen':
+      return `Shake the screen (power ${command.power})${timing(command)}`;
+    case 'hideEvent': {
+      const who = command.event ? (names.event?.(command.event) ?? command.event) : 'this event';
+      return `${command.hidden ? 'Hide' : 'Show'} ${who}`;
+    }
     case 'loop':
       return 'Loop (repeats until Break loop)';
     case 'break':
@@ -563,7 +583,8 @@ export const COMMAND_GROUPS: readonly {
     label: 'Party',
     types: ['changeGold', 'changeItems', 'shop', 'changeParty', 'gainExp', 'recoverAll'],
   },
-  { label: 'World', types: ['transfer', 'moveRoute', 'battle'] },
+  { label: 'World', types: ['transfer', 'moveRoute', 'hideEvent', 'battle'] },
+  { label: 'Screen', types: ['fadeScreen', 'tintScreen', 'flashScreen', 'shakeScreen'] },
   { label: 'Audio', types: ['playMusic', 'playSound'] },
 ];
 
@@ -574,6 +595,11 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   if: 'If…',
   wait: 'Wait',
   callCommon: 'Call common event',
+  fadeScreen: 'Fade screen',
+  tintScreen: 'Tint screen',
+  flashScreen: 'Flash screen',
+  shakeScreen: 'Shake screen',
+  hideEvent: 'Hide or show event',
   loop: 'Loop',
   break: 'Break loop',
   exitEvent: 'Exit event',

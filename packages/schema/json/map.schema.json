@@ -893,6 +893,144 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Fade the screen to black (out) or back (in). It stays black until faded in.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "fadeScreen"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "to": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "out"
+                },
+                {
+                  "type": "string",
+                  "const": "in"
+                }
+              ]
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "to", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Tint the screen a colour (e.g. dusk), until tinted again. Kept in saves.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "tintScreen"
+            },
+            "color": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "strength": {
+              "type": "number",
+              "description": "0 = no tint, 1 = all that colour.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "color", "strength", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Flash the screen a colour, fading away.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "flashScreen"
+            },
+            "color": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "color", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Shake the screen side to side.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "shakeScreen"
+            },
+            "power": {
+              "type": "integer",
+              "description": "How far it shakes, in pixels.",
+              "maximum": 20,
+              "minimum": 1
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "power", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Hide an event (as if it had no page) or show it again, until the map loads again.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "hideEvent"
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "hidden"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Repeat these commands until a Break loop (or Exit event) inside them.",
           "properties": {
             "type": {

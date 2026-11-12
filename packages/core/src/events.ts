@@ -81,6 +81,19 @@ export class EventInstance {
   }
 
   /** True when the event is present and on the characters' layer, so it blocks movement. */
+  /** Hidden by a hideEvent command: absent (no page) until shown or the map loads again. */
+  private hiddenByEvent = false;
+
+  get hidden(): boolean {
+    return this.hiddenByEvent;
+  }
+
+  /** Hide or show it; its page is picked again at once. */
+  setHidden(hidden: boolean, context: EventContext | GameState): void {
+    this.hiddenByEvent = hidden;
+    this.refresh(context, true);
+  }
+
   get blocks(): boolean {
     return this.page?.layer === 'same';
   }
@@ -90,7 +103,7 @@ export class EventInstance {
    * graphic unless `keepDirection` (used for the event that is mid-conversation).
    */
   refresh(context: EventContext | GameState, keepDirection = false): void {
-    const next = activePageIndex(this.data, context);
+    const next = this.hiddenByEvent ? -1 : activePageIndex(this.data, context);
     if (next === this.index) return;
     this.index = next;
     // A running event keeps facing the player, unless its new page's facing is fixed (a chest

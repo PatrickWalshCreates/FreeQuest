@@ -45,6 +45,11 @@ const LABELS: Record<string, string> = {
   successRate: 'Success rate (0–1)',
   chance: 'Chance (0–1)',
   flag: 'Flag',
+  to: 'Fade',
+  color: 'Colour',
+  strength: 'Strength (0–1)',
+  power: 'Power (pixels)',
+  hidden: 'Hidden',
   common: 'Common event',
   trigger: 'Starts when',
   switch: 'Switch',
@@ -82,6 +87,11 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   maxLevel: 99,
   consumable: true,
   canSell: true,
+  // Screen effects: a second, half strength, a clear shake, and wait for it.
+  seconds: 1,
+  strength: 0.5,
+  power: 6,
+  wait: true,
 };
 
 const AUDIO_FIELDS = new Set<string>([
@@ -177,7 +187,12 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
   return {
     refs,
     multiline: (field) => field === 'text' || field === 'description',
-    choiceLabel: (field, value) => (field === 'trigger' ? COMMON_TRIGGERS[value] : undefined),
+    choiceLabel: (field, value) =>
+      field === 'trigger'
+        ? COMMON_TRIGGERS[value]
+        : field === 'to'
+          ? { out: 'Out (to black)', in: 'In (back from black)' }[value]
+          : undefined,
     suggest: (field) => (field === 'flag' ? (lists.flags ?? []) : []),
     check: (field, value, parent) => {
       if (field === 'formula' && typeof value === 'string' && value !== '') {
@@ -197,6 +212,7 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
     pick: (field) => {
       if (field in NUMBER_DEFAULTS) return NUMBER_DEFAULTS[field];
       if (field === 'flag') return lists.flags?.[0] ?? 'done';
+      if (field === 'color') return '#ffffff';
       const first = refs(field, null)?.[0];
       return first ? first.value : undefined;
     },

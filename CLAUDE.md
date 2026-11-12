@@ -181,6 +181,18 @@ Never the other way.
   messages) and stays visible under a following choice. Text is wrapped before revealing so words
   never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
   default is the system font (no bundled font asset). Not yet in the project format.
+- **Screen effects** (map v7: `fadeScreen` out/in, `tintScreen` colour + strength,
+  `flashScreen`, `shakeScreen` power in px, each with `seconds` and `wait`; `hideEvent`;
+  save v2 `screen` = fade + tint): core `screen.ts` `ScreenEffects` (tweens advanced by
+  `World.step`, so effects pause with the menu; each start returns a "finished" check the
+  interpreter waits on, replaced effects count as finished; tints blend colour and strength;
+  flashes start at `FLASH_START`; `shakeX` is a whole-pixel sideways offset). `World.screen` is
+  game-wide (kept across maps; fade and tint in saves). Runtime draws tint, flash, then fade in
+  a `screen-effects` Graphics between the map and the dialog, and adds `shakeX` to the scene.
+  `hideEvent` (`EventContext.hideEvent`, `EventInstance.setHidden`) makes an event absent until
+  shown or the map reloads (`checkMapShape` checks its target). Editor: `ColorField` for
+  `color`, defaults (1 s, 0.5, power 6, wait on) and choice labels in `project-context.ts`.
+  Demo: the wolf ambush shakes and flashes red; Rest fades out and in.
 - **Loops** (map v7, additive): `loop` (its `commands` repeat; a list path step `branch:
 'loop'`), `break`, `exitEvent`. Interpreter frames carry `loop` (restarts at its end; an
   empty loop just ends) and `call` (a common event's frame): `break` truncates the stack to the
@@ -725,8 +737,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   `commonEvents` database category),
   map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
-  facing, `callCommon`, `loop`/`break`/`exitEvent`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves). Additive bumps migrate as no-ops.
+  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves, and optional `screen`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -900,8 +912,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      dev player, icon and yellow "Potion", matching the editor's preview)
   4. ~~Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
      goto)~~ (done; the demo's wall map loops; tried in the editor and the game)
-  5. Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
-     runtime), plus hiding/showing an event until the map reloads
+  5. ~~Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
+     runtime), plus hiding/showing an event until the map reloads~~ (done; save v2 keeps the
+     tint and fade; tried in the editor and the dev player)
   6. Editor support for all of it: forms come from the schema, plus the flag picker, the common
      event list and the text-code preview
   7. Demo, Starter, guides (every system), the quest test, and a 0.2.0 release through the

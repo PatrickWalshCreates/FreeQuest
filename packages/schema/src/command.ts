@@ -5,6 +5,18 @@ import { MoveSteps } from './route.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
 
+/** A colour as #rrggbb. */
+export const HexColor = Type.String({
+  pattern: '^#[0-9a-fA-F]{6}$',
+  description: 'A colour, #rrggbb.',
+});
+
+/** Seconds an effect takes (0 = at once). */
+const EffectSeconds = Type.Number({ minimum: 0, maximum: 60 });
+
+/** Whether the event waits for an effect to finish before its next command. */
+const WaitForIt = Type.Boolean({ description: 'Wait until it has finished.' });
+
 /** Something a shop sells: an item or a piece of equipment, at its own price or another. */
 export const ShopGood = Type.Object(
   {
@@ -213,6 +225,71 @@ export const Command = Type.Cyclic(
           canSell: Type.Boolean(),
         },
         { additionalProperties: false, description: 'Open a shop to buy (and sell) goods.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('fadeScreen'),
+          to: Type.Union([Type.Literal('out'), Type.Literal('in')]),
+          seconds: EffectSeconds,
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Fade the screen to black (out) or back (in). It stays black until faded in.',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('tintScreen'),
+          color: HexColor,
+          strength: Type.Number({
+            minimum: 0,
+            maximum: 1,
+            description: '0 = no tint, 1 = all that colour.',
+          }),
+          seconds: EffectSeconds,
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description: 'Tint the screen a colour (e.g. dusk), until tinted again. Kept in saves.',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('flashScreen'),
+          color: HexColor,
+          seconds: EffectSeconds,
+          wait: WaitForIt,
+        },
+        { additionalProperties: false, description: 'Flash the screen a colour, fading away.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('shakeScreen'),
+          power: Type.Integer({
+            minimum: 1,
+            maximum: 20,
+            description: 'How far it shakes, in pixels.',
+          }),
+          seconds: EffectSeconds,
+          wait: WaitForIt,
+        },
+        { additionalProperties: false, description: 'Shake the screen side to side.' },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('hideEvent'),
+          hidden: Type.Boolean(),
+          /** Another event on this map; leave out for the event running the command. */
+          event: Type.Optional(Id),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Hide an event (as if it had no page) or show it again, until the map loads again.',
+        },
       ),
       Type.Object(
         { type: Type.Literal('loop'), commands: CommandList },
