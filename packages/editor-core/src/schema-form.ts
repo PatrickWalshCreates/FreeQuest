@@ -228,6 +228,20 @@ export function defaultFor(
   }
 }
 
+/**
+ * True when a command type has something to fill in: a field other than its
+ * `type` and the command lists it holds (which the tree editor fills).
+ * Loop, Break loop and Exit event don't, so the editor adds them at once.
+ */
+export function commandHasFields(type: CommandType): boolean {
+  const props = COMMAND_SCHEMAS.get(type)?.properties ?? {};
+  return Object.entries(props).some(([name, schema]) => {
+    if (name === 'type') return false;
+    const shape = classify(schema);
+    return !(shape.kind === 'array' && classify(shape.item).kind === 'ref');
+  });
+}
+
 /** The schema of each command type, for building command forms. */
 export const COMMAND_SCHEMAS: ReadonlyMap<CommandType, JsonSchema> = new Map(
   (asSchema(Command) as { $defs?: Record<string, JsonSchema> }).$defs?.['Command']?.anyOf?.map(

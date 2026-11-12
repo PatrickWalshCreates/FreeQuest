@@ -208,6 +208,23 @@ describe('checkMapShape events', () => {
     ]);
   });
 
+  it('rejects a Break loop outside any loop', () => {
+    const inLoop: Command = {
+      type: 'loop',
+      commands: [
+        {
+          type: 'if',
+          conditions: [{ type: 'switch', switch: 'flag', value: true }],
+          then: [{ type: 'break' }],
+        },
+      ],
+    };
+    expect(checkMapShape(mapWith([inLoop]))).toEqual([]);
+    expect(checkMapShape(mapWith([inLoop, { type: 'break' }]))).toEqual([
+      expect.stringMatching(/pages\[0\]\.commands\[1\]: Break loop isn't inside a loop/),
+    ]);
+  });
+
   it('rejects a flag set on an event that is not on the map', () => {
     const own: Command = { type: 'setFlag', flag: 'opened', value: true };
     expect(checkMapShape(mapWith([own]))).toEqual([]);

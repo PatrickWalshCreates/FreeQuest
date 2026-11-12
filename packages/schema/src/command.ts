@@ -215,6 +215,24 @@ export const Command = Type.Cyclic(
         { additionalProperties: false, description: 'Open a shop to buy (and sell) goods.' },
       ),
       Type.Object(
+        { type: Type.Literal('loop'), commands: CommandList },
+        {
+          additionalProperties: false,
+          description: 'Repeat these commands until a Break loop (or Exit event) inside them.',
+        },
+      ),
+      Type.Object(
+        { type: Type.Literal('break') },
+        { additionalProperties: false, description: 'Leave the loop this is in.' },
+      ),
+      Type.Object(
+        { type: Type.Literal('exitEvent') },
+        {
+          additionalProperties: false,
+          description: 'Stop the event here (also from inside a common event it called).',
+        },
+      ),
+      Type.Object(
         {
           type: Type.Literal('callCommon'),
           common: Id,
@@ -251,6 +269,8 @@ export function walkCommands(
     if (command.type === 'if') {
       walkCommands(command.then, visit, `${here}.then`);
       if (command.else) walkCommands(command.else, visit, `${here}.else`);
+    } else if (command.type === 'loop') {
+      walkCommands(command.commands, visit, `${here}.commands`);
     } else if (command.type === 'choice') {
       command.options.forEach((option, j) =>
         walkCommands(option.commands, visit, `${here}.options[${j}].commands`),
@@ -269,6 +289,35 @@ export function walkCommands(
  * each command. Unchanged lists and commands keep their identity, so
  * `mapCommands(list, (c) => c) === list`.
  */
+/**
+ * Paths (as walkCommands writes them) of `break` commands that aren't inside
+ * a loop of the same list, where they'd do nothing.
+ */
+export function strayBreaks(commands: readonly Command[], path = 'commands'): string[] {
+  const found: string[] = [];
+  const visit = (list: readonly Command[], at: string, inLoop: boolean) =>
+    list.forEach((command, i) => {
+      const here = `${at}[${i}]`;
+      if (command.type === 'break' && !inLoop) found.push(here);
+      if (command.type === 'loop') visit(command.commands, `${here}.commands`, true);
+      else if (command.type === 'if') {
+        visit(command.then, `${here}.then`, inLoop);
+        if (command.else) visit(command.else, `${here}.else`, inLoop);
+      } else if (command.type === 'choice') {
+        command.options.forEach((o, j) =>
+          visit(o.commands, `${here}.options[${j}].commands`, inLoop),
+        );
+      } else if (command.type === 'battle') {
+        for (const branch of ['onWin', 'onEscape', 'onLose'] as const) {
+          const list = command[branch];
+          if (list) visit(list, `${here}.${branch}`, inLoop);
+        }
+      }
+    });
+  visit(commands, path, false);
+  return found;
+}
+
 export function mapCommands(
   commands: readonly Command[],
   change: (command: Command) => Command,
@@ -282,6 +331,9 @@ export function mapCommands(
       if (then !== command.then || otherwise !== command.else) {
         inner = { ...command, then, ...(otherwise ? { else: otherwise } : {}) };
       }
+    } else if (command.type === 'loop') {
+      const list = mapCommands(command.commands, change);
+      if (list !== command.commands) inner = { ...command, commands: list };
     } else if (command.type === 'choice') {
       const options = command.options.map((option) => {
         const list = mapCommands(option.commands, change);

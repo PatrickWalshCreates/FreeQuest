@@ -41,6 +41,10 @@ const TIME_EPSILON = 1e-9;
 interface Frame {
   readonly commands: readonly Command[];
   index: number;
+  /** A loop's body: starts over at its end, until a break. */
+  readonly loop?: true;
+  /** A common event's commands: a break inside them never leaves to the caller's loop. */
+  readonly call?: true;
 }
 
 /**
@@ -100,7 +104,9 @@ export class Interpreter {
       const command = this.next();
       if (command === null) return;
       if (++executed > MAX_COMMANDS_PER_UPDATE) {
-        throw new Error(`interpreter ran ${MAX_COMMANDS_PER_UPDATE} commands without pausing`);
+        throw new Error(
+          `interpreter ran ${MAX_COMMANDS_PER_UPDATE} commands without pausing (does a loop need a Wait, a message or a Break loop?)`,
+        );
       }
       this.execute(command);
     }
@@ -180,7 +186,8 @@ export class Interpreter {
     for (let i = this.stack.length - 1; i >= 0; i--) {
       const frame = this.stack[i];
       if (frame) {
-        const command = frame.commands[frame.index];
+        // A loop with commands always has a next one: it starts over.
+        const command = frame.commands[frame.index] ?? (frame.loop ? frame.commands[0] : undefined);
         if (command) return command;
       }
     }
@@ -196,7 +203,20 @@ export class Interpreter {
         frame.index++;
         return command;
       }
-      this.stack.pop();
+      if (frame.loop && frame.commands.length > 0) frame.index = 0;
+      else this.stack.pop();
+    }
+  }
+
+  /** Leave the innermost loop, but never from a common event into its caller. */
+  private breakLoop(): void {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const frame = this.stack[i];
+      if (frame?.call) return;
+      if (frame?.loop) {
+        this.stack.length = i;
+        return;
+      }
     }
   }
 
@@ -306,9 +326,19 @@ export class Interpreter {
           );
         }
         // The called commands run as if they were here: "this" is still the calling event.
-        this.stack.push({ commands: lookup(command.common), index: 0 });
+        this.stack.push({ commands: lookup(command.common), index: 0, call: true });
         break;
       }
+      case 'loop':
+        if (this.stack.length >= MAX_DEPTH) throw new Error(`loops nest ${MAX_DEPTH} deep`);
+        this.stack.push({ commands: command.commands, index: 0, loop: true });
+        break;
+      case 'break':
+        this.breakLoop();
+        break;
+      case 'exitEvent':
+        this.stack.length = 0;
+        break;
       case 'comment':
         break;
       default: {

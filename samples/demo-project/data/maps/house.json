@@ -57,6 +57,34 @@
             {
               "type": "message",
               "text": "A hand-drawn map of the Meadow. The bridge is circled twice."
+            },
+            {
+              "type": "loop",
+              "commands": [
+                {
+                  "type": "choice",
+                  "cancel": 0,
+                  "options": [
+                    {
+                      "label": "Step back",
+                      "commands": [
+                        {
+                          "type": "break"
+                        }
+                      ]
+                    },
+                    {
+                      "label": "Look closer",
+                      "commands": [
+                        {
+                          "type": "message",
+                          "text": "In one corner, in tiny letters: {color:yellow}{member:1} was here.{/color}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }

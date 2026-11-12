@@ -1,5 +1,5 @@
 import type { CharacterSheet } from './character.js';
-import { type Command, type Operand, walkCommands } from './command.js';
+import { type Command, type Operand, strayBreaks, walkCommands } from './command.js';
 import type { Condition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
@@ -222,6 +222,9 @@ export function checkCommonEventReferences(ctx: ReferenceContext): string[] {
     const where = `commonEvents "${common.id}"`;
     if (common.switch !== undefined) checkSwitch(where, common.switch);
     checkCommands(common.commands, where);
+    for (const at of strayBreaks(common.commands)) {
+      problems.push(`${where}.${at}: Break loop isn't inside a loop`);
+    }
   }
   problems.push(...commonEventCycles(ctx.database?.commonEvents ?? []));
   return problems;

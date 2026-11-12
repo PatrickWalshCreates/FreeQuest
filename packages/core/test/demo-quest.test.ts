@@ -239,7 +239,8 @@ describe('demo quest', () => {
     walkTo('left', 2, 2);
     walkTo('up', 2, 1);
     tap('confirm');
-    finish();
+    // The map's choice loops: look closer twice, then step back.
+    finish(1, 1, 0);
     // The chest in the corner gives a potion once, then remembers it was opened.
     const potions = world.party.count('item', 'potion');
     walkTo('left', 1, 1); // blocked by the chest: only turns
@@ -258,6 +259,8 @@ describe('demo quest', () => {
     expect(transcript).toEqual([
       'The hearth is cold.',
       'A hand-drawn map of the Meadow. The bridge is circled twice.',
+      'In one corner, in tiny letters: Hero was here.',
+      'In one corner, in tiny letters: Hero was here.',
       'You open the chest. Inside: a Potion!',
       'The chest is empty.',
       "Mira: Grandfather sent you to check the bridge? Then I'm coming too.",

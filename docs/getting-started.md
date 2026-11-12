@@ -117,6 +117,12 @@ again). The demo's hearth calls a "Rest" common event, and new Starter projects 
 Projects made before common events existed show **+ Common events** under Database: click it
 to start the list.
 
+**Loop** repeats the commands inside it until a **Break loop** among them, for a question
+asked until the player picks "Leave", or a countdown. A loop needs a **Wait**, a message or a
+choice in it, or a way out, or the game stops it. **Exit event** ends the event at once, even
+from inside a loop or a common event it called. The map on the wall in the demo's house is a
+loop: look closer as often as you like, then step back.
+
 **Text codes** put names, numbers, colours and icons into messages, speakers and choices. Type
 them in curly brackets:
 

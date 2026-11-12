@@ -181,6 +181,15 @@ Never the other way.
   messages) and stays visible under a following choice. Text is wrapped before revealing so words
   never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
   default is the system font (no bundled font asset). Not yet in the project format.
+- **Loops** (map v7, additive): `loop` (its `commands` repeat; a list path step `branch:
+'loop'`), `break`, `exitEvent`. Interpreter frames carry `loop` (restarts at its end; an
+  empty loop just ends) and `call` (a common event's frame): `break` truncates the stack to the
+  nearest loop but never past a call frame, so a break in a common event can't leave the
+  caller's loop (it does nothing there); `exitEvent` empties the stack, also from a common
+  event. A loop that never pauses hits the 10,000-commands guard, whose error now says so.
+  `strayBreaks` (schema) reports breaks outside loops in maps and common events. The editor
+  adds field-less commands (loop, break, exitEvent) without a dialog (`commandHasFields`).
+  Demo: the house's wall map loops "Look closer / Step back".
 - **Text codes** (no format change: they live in message/speaker/choice strings): grammar in
   `schema/text-codes.ts` (`parseTextCodes`: `{v:id}`, `{actor:id}`, `{member:n}`, `{gold}`,
   `{currency}`, `{item:id}`, `{equipment:id}`, `{color:name|#rrggbb}`…`{/color}` (nesting),
@@ -715,7 +724,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
   `commonEvents` database category),
   map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
-  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
+  facing, `callCommon`, `loop`/`break`/`exitEvent`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
@@ -888,8 +898,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      colours and icons, in FreeQuest's own `{…}` syntax (parsed in core, drawn as styled runs);
      the editor previews them and reports unknown codes~~ (done; the chest's message seen in the
      dev player, icon and yellow "Potion", matching the editor's preview)
-  4. Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
-     goto)
+  4. ~~Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
+     goto)~~ (done; the demo's wall map loops; tried in the editor and the game)
   5. Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
      runtime), plus hiding/showing an event until the map reloads
   6. Editor support for all of it: forms come from the schema, plus the flag picker, the common

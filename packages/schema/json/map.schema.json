@@ -893,6 +893,48 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Repeat these commands until a Break loop (or Exit event) inside them.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "loop"
+            },
+            "commands": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            }
+          },
+          "required": ["type", "commands"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Leave the loop this is in.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "break"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Stop the event here (also from inside a common event it called).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "exitEvent"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Run a common event’s commands, then carry on here.",
           "properties": {
             "type": {

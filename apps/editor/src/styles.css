@@ -1083,7 +1083,8 @@ button.small {
 
 .command-row.type-if,
 .command-row.type-choice,
-.command-row.type-battle {
+.command-row.type-battle,
+.command-row.type-loop {
   color: var(--accent);
 }
 

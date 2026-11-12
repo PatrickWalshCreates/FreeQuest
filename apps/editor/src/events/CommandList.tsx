@@ -6,6 +6,7 @@ import {
   type ListPath,
   type NameLookup,
   clipboard,
+  commandHasFields,
   defaultFor,
   describeCommand,
   flattenCommands,
@@ -159,7 +160,13 @@ export function CommandList({ commands, ctx, names, actions, extra }: Props) {
     setMenu(false);
     const schema = COMMAND_SCHEMAS.get(type);
     if (!schema) return;
-    setEditing({ mode: 'add', slot, command: defaultFor(schema, ctx.pick) as Command });
+    const command = defaultFor(schema, ctx.pick) as Command;
+    // Nothing to fill in (Loop, Break loop, Exit event): add it without a dialog.
+    if (!commandHasFields(type)) {
+      actions.insert(slot, [command], 'Add command');
+      return;
+    }
+    setEditing({ mode: 'add', slot, command });
   };
   const edit = () => current && setEditing({ mode: 'edit', slot, command: current });
   const remove = () => {

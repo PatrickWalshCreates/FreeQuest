@@ -138,7 +138,7 @@ function moveItem<T>(list: readonly T[], index: number, delta: number): T[] {
 // The command tree ----------------------------------------------------------
 
 /** The named command lists a block command holds. */
-export type Branch = 'then' | 'else' | 'onWin' | 'onEscape' | 'onLose' | 'option';
+export type Branch = 'then' | 'else' | 'onWin' | 'onEscape' | 'onLose' | 'option' | 'loop';
 
 /** One step down the tree: into a branch of the command at `index`. */
 export interface ListStep {
@@ -164,6 +164,8 @@ function childList(command: Command | undefined, step: ListStep): readonly Comma
       return command.type === 'battle' ? command[step.branch] : undefined;
     case 'option':
       return command.type === 'choice' ? command.options[step.option ?? 0]?.commands : undefined;
+    case 'loop':
+      return command.type === 'loop' ? command.commands : undefined;
   }
 }
 
@@ -186,6 +188,9 @@ function withChildList(command: Command, step: ListStep, list: Command[]): Comma
           i === (step.option ?? 0) ? { ...o, commands: list } : o,
         ),
       };
+    case 'loop':
+      if (command.type !== 'loop') break;
+      return { ...command, commands: list };
   }
   throw new Error(`a ${command.type} command has no ${step.branch} branch`);
 }
@@ -308,7 +313,11 @@ export function flattenCommands(
   };
   commands.forEach((command, index) => {
     rows.push({ kind: 'command', path, index, depth, command });
-    if (command.type === 'if') {
+    if (command.type === 'loop') {
+      rows.push(
+        ...flattenCommands(command.commands, [...path, { index, branch: 'loop' }], depth + 1),
+      );
+    } else if (command.type === 'if') {
       rows.push(...flattenCommands(command.then, [...path, { index, branch: 'then' }], depth + 1));
       if (command.else) branch(index, { branch: 'else' }, 'Else', command.else);
     } else if (command.type === 'choice') {
@@ -406,6 +415,12 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `Turn ${names.switchName(command.switch)} ${command.value ? 'on' : 'off'}`;
     case 'callCommon':
       return `Call ${names.common?.(command.common) ?? command.common}`;
+    case 'loop':
+      return 'Loop (repeats until Break loop)';
+    case 'break':
+      return 'Break loop';
+    case 'exitEvent':
+      return 'Exit event';
     case 'setFlag': {
       const whose = command.event
         ? `${names.event?.(command.event) ?? command.event}’s flag`
@@ -542,7 +557,7 @@ export const COMMAND_GROUPS: readonly {
   readonly types: readonly Command['type'][];
 }[] = [
   { label: 'Messages', types: ['message', 'choice', 'comment'] },
-  { label: 'Flow', types: ['if', 'wait', 'callCommon'] },
+  { label: 'Flow', types: ['if', 'loop', 'break', 'wait', 'callCommon', 'exitEvent'] },
   { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag'] },
   {
     label: 'Party',
@@ -559,6 +574,9 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   if: 'If…',
   wait: 'Wait',
   callCommon: 'Call common event',
+  loop: 'Loop',
+  break: 'Break loop',
+  exitEvent: 'Exit event',
   setSwitch: 'Set switch',
   setVariable: 'Set variable',
   setFlag: 'Set event flag',

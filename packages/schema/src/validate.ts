@@ -14,7 +14,7 @@ import {
   TroopsFile,
   CommonEventsFile,
 } from './database/index.js';
-import { walkCommands } from './command.js';
+import { strayBreaks, walkCommands } from './command.js';
 import { Manifest } from './manifest.js';
 import { GameMap } from './map.js';
 import { type FileKind, migrate } from './migrations.js';
@@ -108,7 +108,10 @@ export function checkMapShape(map: GameMap): string[] {
     if (event.x >= map.width || event.y >= map.height) {
       problems.push(`${where}: position (${event.x}, ${event.y}) is outside the map`);
     }
-    event.pages.forEach((page, p) =>
+    event.pages.forEach((page, p) => {
+      for (const at of strayBreaks(page.commands)) {
+        problems.push(`${where} pages[${p}].${at}: Break loop isn't inside a loop`);
+      }
       walkCommands(page.commands, (command, path) => {
         if (command.type === 'choice' && command.cancel !== undefined) {
           if (command.cancel >= command.options.length) {
@@ -139,8 +142,8 @@ export function checkMapShape(map: GameMap): string[] {
             );
           }
         }
-      }),
-    );
+      });
+    });
   });
   return problems;
 }

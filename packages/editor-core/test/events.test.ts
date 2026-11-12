@@ -10,6 +10,7 @@ import {
   classify,
   defaultFor,
   describeCommand,
+  commandHasFields,
   mapFlagNames,
   describeCondition,
   describeRoute,
@@ -325,5 +326,39 @@ describe('route descriptions', () => {
         wait: true,
       }),
     ).toBe('Move the player: ← (skip blocked, wait)');
+  });
+});
+
+describe('loops in the tree', () => {
+  it('shows a loop’s commands under it, and edits them by path', () => {
+    const commands: Command[] = [
+      { type: 'loop', commands: [{ type: 'wait', seconds: 1 }, { type: 'break' }] },
+      { type: 'exitEvent' },
+    ];
+    const rows = flattenCommands(commands).map((r) =>
+      r.kind === 'command' ? `${r.depth}:${describeCommand(r.command)}` : `${r.depth}:${r.kind}`,
+    );
+    expect(rows).toEqual([
+      '0:Loop (repeats until Break loop)',
+      '1:Wait 1 s',
+      '1:Break loop',
+      '1:end',
+      '0:Exit event',
+      '0:end',
+    ]);
+    const path = [{ index: 0, branch: 'loop' as const }];
+    expect(getList(commands, path)).toHaveLength(2);
+    const next = insertCommand(commands, path, 0, { type: 'comment', text: 'tick' });
+    expect(getList(next, path)[0]).toEqual({ type: 'comment', text: 'tick' });
+  });
+
+  it('adds commands with nothing to fill in without a dialog', () => {
+    expect(['loop', 'break', 'exitEvent'].map((t) => commandHasFields(t as never))).toEqual([
+      false,
+      false,
+      false,
+    ]);
+    expect(commandHasFields('wait')).toBe(true);
+    expect(commandHasFields('recoverAll')).toBe(true);
   });
 });
