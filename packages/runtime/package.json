@@ -1,6 +1,6 @@
 {
   "name": "@freequest/runtime",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "PixiJS player that loads and runs a FreeQuest project.",
   "license": "MIT",
   "type": "module",

@@ -1,7 +1,7 @@
-// The 0.1 formats are frozen: a project exactly as FreeQuest 0.1.0 wrote it
-// (packages/schema/test/fixtures/release-0.1) must open in every later
-// version with no problems. Its files must never change; change a format
-// with a migration instead.
+// Released formats are frozen: a project exactly as each release wrote it
+// (packages/schema/test/fixtures/release-<version>) must open in every later
+// version with no problems. Their files must never change; change a format
+// with a migration instead, and freeze the new release's folder here.
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
@@ -9,15 +9,13 @@ import { describe, expect, it } from 'vitest';
 import { openProject, planExport } from '../src/index.js';
 import { memoryCopy } from './helpers.js';
 
-const RELEASE_0_1 = join(
-  import.meta.dirname,
-  '..',
-  '..',
-  'schema',
-  'test',
-  'fixtures',
-  'release-0.1',
-);
+const FIXTURES = join(import.meta.dirname, '..', '..', 'schema', 'test', 'fixtures');
+
+/** Each frozen release, with the checksum of its folder when it was frozen. */
+const RELEASES = [
+  { version: '0.1', checksum: '7ba90859d40fc8cfbaa4ae8759636ae242def54283dc5edd6bd167fdb382ae76' },
+  { version: '0.2', checksum: 'e5408154b283e549b6b05b60919a9a2a3157dcdb7a5e6cd3183676ef9b5e5b65' },
+] as const;
 
 /** One checksum over every file's path and bytes. */
 async function checksum(root: string): Promise<string> {
@@ -34,23 +32,23 @@ async function checksum(root: string): Promise<string> {
   return hash.digest('hex');
 }
 
-describe('the frozen 0.1 project', () => {
+describe.each(RELEASES)('the frozen $version project', ({ version, checksum: frozen }) => {
+  const root = join(FIXTURES, `release-${version}`);
+
   it('opens with no problems', async () => {
-    const project = await openProject(await memoryCopy(RELEASE_0_1));
+    const project = await openProject(await memoryCopy(root));
     expect(project.problems).toEqual([]);
     expect([...project.maps.keys()].sort()).toEqual(['house', 'map001']);
     expect(Object.keys(project.database).length).toBeGreaterThan(5);
   });
 
   it('plans an export with only missing art to report (the fixture has no assets)', async () => {
-    const fs = await memoryCopy(RELEASE_0_1);
+    const fs = await memoryCopy(root);
     const plan = await planExport(await openProject(fs), fs);
     expect(plan.errors.every((p) => /assets\//.test(`${p.source} ${p.message}`))).toBe(true);
   });
 
   it('has not been edited', async () => {
-    expect(await checksum(RELEASE_0_1)).toBe(
-      '7ba90859d40fc8cfbaa4ae8759636ae242def54283dc5edd6bd167fdb382ae76',
-    );
+    expect(await checksum(root)).toBe(frozen);
   });
 });

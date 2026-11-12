@@ -58,7 +58,7 @@
           "commands": [
             {
               "type": "message",
-              "text": "Welcome to your new game!"
+              "text": "Welcome to your new game, {color:yellow}{member:1}{/color}!"
             },
             {
               "type": "message",

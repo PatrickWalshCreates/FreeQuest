@@ -727,11 +727,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- **0.1 formats are frozen**: `packages/schema/test/fixtures/release-0.1/` is the demo's data and
-  a save exactly as 0.1.0 wrote them (never edit; a checksum test fails, `.gitattributes` keeps
-  the bytes). `editor-core/test/release-formats.test.ts` opens it with no problems and
-  `core/test/release-formats.test.ts` loads the save. Change a format only with a migration; a
-  release that changes one adds its own `release-<v>/` folder.
+- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2) hold
+  the demo's data and a save exactly as that release wrote them (never edit; checksums in
+  `editor-core/test/release-formats.test.ts`, which opens each with no problems;
+  `.gitattributes` and `.prettierignore` keep the bytes). Core loads each save
+  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint). Change a
+  format only with a migration; a release that changes one adds its own folder, checksum and
+  save test.
 - Current versions: manifest 6 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
   `commonEvents` database category),

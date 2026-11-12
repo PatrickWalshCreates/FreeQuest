@@ -1,0 +1,39 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "rest",
+      "name": "Rest",
+      "trigger": "call",
+      "commands": [
+        {
+          "type": "fadeScreen",
+          "seconds": 0.6,
+          "to": "out",
+          "wait": true
+        },
+        {
+          "type": "playSound",
+          "path": "assets/audio/sfx-heal.wav"
+        },
+        {
+          "type": "recoverAll"
+        },
+        {
+          "type": "wait",
+          "seconds": 0.4
+        },
+        {
+          "type": "fadeScreen",
+          "seconds": 0.6,
+          "to": "in",
+          "wait": true
+        },
+        {
+          "type": "message",
+          "text": "Everyone is fully rested."
+        }
+      ]
+    }
+  ]
+}

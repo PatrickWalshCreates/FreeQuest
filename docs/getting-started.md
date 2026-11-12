@@ -98,6 +98,8 @@ event remember that something happened, and **Start battle** starts a fight. An 
 several **pages**: the last page whose conditions are all met is the one that's active, which is
 how an NPC says something new after you've helped them.
 
+### Remembering things: event flags
+
 **Event flags** are an event's own on/off notes, for things only that event needs to remember.
 A chest can **Set event flag** "opened" after giving its treasure, and a second page with the
 condition **flag "opened" is on** shows it open and empty. Every chest can use the same flag
@@ -106,6 +108,8 @@ lever opening a gate), pick it under **Another event** in the command. The demo'
 that works this way: its chest character shows the lid closed facing down and open facing up,
 and both pages tick **Keep this facing**, so the chest doesn't turn toward the player like a
 person would.
+
+### Sharing commands: common events
 
 **Common events** are command lists kept in one place and shared, found under **Database →
 Common events**. Make one for anything several events do the same way (an inn, a healer, a
@@ -119,11 +123,15 @@ Starter projects have one too.
 Projects made before common events existed show **+ Common events** under Database: click it
 to start the list.
 
+### Repeating and stopping: loops
+
 **Loop** repeats the commands inside it until a **Break loop** among them, for a question
 asked until the player picks "Leave", or a countdown. A loop needs a **Wait**, a message or a
 choice in it, or a way out, or the game stops it. **Exit event** ends the event at once, even
 from inside a loop or a common event it called. The map on the wall in the demo's house is a
 loop: look closer as often as you like, then step back.
+
+### Fades, tints, flashes and shakes
 
 **Screen effects** set the mood: **Fade screen** to black and back (the screen stays black
 until you fade it in), **Tint screen** for dusk or a cave (it lasts until the next tint, also in
@@ -131,6 +139,8 @@ saves; strength 0 clears it), **Flash screen** for a hit or a spell, and **Shake
 earthquake. Each can wait until it's done before the event goes on. **Hide or show event** makes
 an event vanish (a door that opens, a guard who leaves) until the map loads again. In the demo,
 the wolf's ambush shakes and flashes red, and resting fades to black and back.
+
+### Names, numbers and colours in messages: text codes
 
 **Text codes** put names, numbers, colours and icons into messages, speakers and choices. Type
 them in curly brackets:

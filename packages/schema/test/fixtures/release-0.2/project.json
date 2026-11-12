@@ -1,0 +1,91 @@
+{
+  "formatVersion": 6,
+  "id": "freequest-demo",
+  "name": "FreeQuest Demo",
+  "characters": [
+    {
+      "id": "hero",
+      "path": "data/characters/hero.json"
+    },
+    {
+      "id": "villager",
+      "path": "data/characters/villager.json"
+    },
+    {
+      "id": "mage",
+      "path": "data/characters/mage.json"
+    },
+    {
+      "id": "chest",
+      "path": "data/characters/chest.json"
+    }
+  ],
+  "database": {
+    "actors": "data/database/actors.json",
+    "classes": "data/database/classes.json",
+    "commonEvents": "data/database/commonEvents.json",
+    "enemies": "data/database/enemies.json",
+    "equipment": "data/database/equipment.json",
+    "items": "data/database/items.json",
+    "skills": "data/database/skills.json",
+    "states": "data/database/states.json",
+    "system": "data/database/system.json",
+    "troops": "data/database/troops.json"
+  },
+  "maps": [
+    {
+      "id": "map001",
+      "path": "data/maps/map001.json"
+    },
+    {
+      "id": "house",
+      "path": "data/maps/house.json"
+    }
+  ],
+  "player": {
+    "character": "hero",
+    "speed": 4
+  },
+  "screen": {
+    "height": 352,
+    "width": 480
+  },
+  "start": {
+    "direction": "down",
+    "gold": 50,
+    "map": "map001",
+    "party": ["hero"],
+    "x": 7,
+    "y": 7
+  },
+  "switches": [
+    {
+      "id": "accepted_request",
+      "name": "Accepted the elder's request"
+    },
+    {
+      "id": "rewarded",
+      "name": "Elder gave the bridge reward"
+    },
+    {
+      "id": "mira_joined",
+      "name": "Mira joined the party"
+    },
+    {
+      "id": "wolf_defeated",
+      "name": "Defeated the wolf at the bridge"
+    }
+  ],
+  "tilesets": [
+    {
+      "id": "overworld",
+      "path": "data/tilesets/overworld.json"
+    }
+  ],
+  "variables": [
+    {
+      "id": "bridge_visits",
+      "name": "Times the bridge was crossed"
+    }
+  ]
+}

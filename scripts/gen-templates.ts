@@ -110,7 +110,10 @@ const map: GameMap = {
           trigger: 'action',
           layer: 'same',
           commands: [
-            { type: 'message', text: 'Welcome to your new game!' },
+            {
+              type: 'message',
+              text: 'Welcome to your new game, {color:yellow}{member:1}{/color}!',
+            },
             {
               type: 'message',
               text: 'Open it in the FreeQuest editor to change this map, this sign, and everything else.',

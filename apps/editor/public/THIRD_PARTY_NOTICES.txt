@@ -1,4 +1,4 @@
-FreeQuest Editor 0.1.0
+FreeQuest Editor 0.2.0
 
 FreeQuest is free software under the MIT License:
 

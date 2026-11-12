@@ -1,0 +1,76 @@
+{
+  "formatVersion": 1,
+  "id": "overworld",
+  "name": "Overworld",
+  "columns": 4,
+  "image": "assets/tilesets/overworld.png",
+  "tileHeight": 32,
+  "tileWidth": 32,
+  "tiles": [
+    {
+      "name": "grass",
+      "passable": true
+    },
+    {
+      "name": "flowers",
+      "passable": true
+    },
+    {
+      "name": "dirt path",
+      "passable": true
+    },
+    {
+      "name": "sand",
+      "passable": true
+    },
+    {
+      "name": "shallow water",
+      "passable": false
+    },
+    {
+      "name": "deep water",
+      "passable": false
+    },
+    {
+      "name": "stone floor",
+      "passable": true
+    },
+    {
+      "name": "wood floor",
+      "passable": true
+    },
+    {
+      "name": "brick wall",
+      "passable": false
+    },
+    {
+      "name": "roof",
+      "passable": false
+    },
+    {
+      "name": "tree trunk",
+      "passable": false
+    },
+    {
+      "name": "tree canopy",
+      "above": true,
+      "passable": true
+    },
+    {
+      "name": "rock",
+      "passable": false
+    },
+    {
+      "name": "bush",
+      "passable": false
+    },
+    {
+      "name": "bridge",
+      "passable": true
+    },
+    {
+      "name": "signpost",
+      "passable": false
+    }
+  ]
+}

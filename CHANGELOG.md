@@ -4,6 +4,39 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## 0.2.0 (not released yet)
+
+Events for real games: events can remember things, share commands, repeat, talk with names and
+colours, and set the mood. Projects and saves from 0.1 open as before and are upgraded on save.
+
+### Events
+
+- **Event flags**: an event's own on/off notes, so a chest remembers it was opened without a
+  switch per chest. A page condition and a Set event flag command (also for another event on the
+  map). Kept in saves.
+- **Common events**: command lists kept in one place (Database → Common events) and shared with
+  Call common event, or run on their own (autorun or parallel) while a switch is on. Each shows
+  where it's called. Projects from 0.1 add the list with one click.
+- **Text codes** in messages, speakers and choices: variables, actor and party names, gold,
+  item names, colours and icons, e.g. `{member:1} found {color:yellow}{v:coins} {currency}{/color}!`.
+  The message dialog previews them and points out codes it doesn't understand.
+- **Loops**: Loop repeats its commands until a Break loop; Exit event stops an event at once.
+- **Screen effects**: fade to black and back, tint (kept in saves), flash and shake, each
+  optionally waited for; Hide or show event.
+- **Keep this facing** for event graphics, so chests and signs don't turn toward the player.
+
+### The demo and the Starter
+
+- The demo's house has a chest (a flag), a map on the wall you can look at again and again (a
+  loop), and a hearth that calls a shared Rest (a common event that fades to black and back).
+  The wolf's ambush shakes and flashes red; a few messages use colours and an icon.
+- New Starter projects have the Rest common event and a sign that greets the hero by name.
+
+### Formats
+
+- Project manifest 6 (common events), maps 7, saves 2 (flags and the screen tint). Older files
+  are read as before; the editor upgrades them on save.
+
 ## 0.1.0 (2026-11-11)
 
 The first public release: an editor, a game engine and exporters for classic 2D role-playing

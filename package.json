@@ -1,6 +1,6 @@
 {
   "name": "freequest-monorepo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "FreeQuest: a free, open-source 2D RPG engine and editor.",
   "license": "MIT",

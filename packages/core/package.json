@@ -1,6 +1,6 @@
 {
   "name": "@freequest/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pure FreeQuest game logic. No rendering, no DOM.",
   "license": "MIT",
   "type": "module",
