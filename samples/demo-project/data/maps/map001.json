@@ -196,7 +196,7 @@
                     },
                     {
                       "type": "message",
-                      "text": "Received 2 Potions and 100 G."
+                      "text": "Received {icon:0}{color:yellow}2 Potions{/color} and {color:yellow}100 {currency}{/color}."
                     }
                   ],
                   "else": [
@@ -259,7 +259,7 @@
                 },
                 {
                   "type": "message",
-                  "text": "A wolf leaps out from under the bridge!"
+                  "text": "A {color:red}wolf{/color} leaps out from under the bridge!"
                 },
                 {
                   "type": "battle",

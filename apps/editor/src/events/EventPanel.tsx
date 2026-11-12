@@ -30,7 +30,7 @@ import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList, listActions } from './CommandList.js';
 import { RouteSteps } from './RouteSteps.js';
-import { TransferTargetButton } from './TransferTargetButton.js';
+import { CommandExtras } from './CommandExtras.js';
 import { ValueDialog } from './ValueDialog.js';
 import { conditionProblem } from './validate.js';
 import { MOD } from '../keys.js';
@@ -601,11 +601,9 @@ function EventEditor(props: {
         ctx={ctx}
         names={names}
         actions={commands}
-        extra={(command, setCommand) =>
-          command.type === 'transfer' ? (
-            <TransferTargetButton doc={doc} command={command} onChange={setCommand} />
-          ) : null
-        }
+        extra={(command, setCommand) => (
+          <CommandExtras doc={doc} command={command} setCommand={setCommand} />
+        )}
       />
 
       {editingCondition && (

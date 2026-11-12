@@ -22,7 +22,7 @@ import { Dialog, Field } from '../Dialog.js';
 import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
-import { TransferTargetButton } from '../events/TransferTargetButton.js';
+import { CommandExtras } from '../events/CommandExtras.js';
 import type { Command } from '@freequest/schema';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
@@ -455,11 +455,9 @@ function CommonEventCommands(props: {
         ctx={ctx}
         names={names}
         actions={actions}
-        extra={(command, setCommand) =>
-          command.type === 'transfer' ? (
-            <TransferTargetButton doc={doc} command={command} onChange={setCommand} />
-          ) : null
-        }
+        extra={(command, setCommand) => (
+          <CommandExtras doc={doc} command={command} setCommand={setCommand} />
+        )}
       />
     </section>
   );

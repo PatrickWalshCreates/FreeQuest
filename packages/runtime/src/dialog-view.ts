@@ -1,5 +1,9 @@
-import { CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import type { TextRun } from '@freequest/core';
+import type { TextColorName } from '@freequest/schema';
+import { CanvasTextMetrics, Container, Graphics, type Sprite, Text, TextStyle } from 'pixi.js';
 import type { DialogController } from './dialog.js';
+import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
+import { type LinePiece, type RichLayout, layoutRuns, revealPiece } from './rich-text.js';
 
 /** Look of the message and choice windows. Swappable per game via `startGame({ ui })`. */
 export interface UiTheme {
@@ -17,6 +21,8 @@ export interface UiTheme {
   padding: number;
   /** Minimum text lines in the message box, so its size doesn't jump between messages. */
   minLines: number;
+  /** What `{color:…}` names in messages look like. */
+  textColors: Record<TextColorName, number>;
 }
 
 export const DEFAULT_UI_THEME: UiTheme = {
@@ -31,7 +37,24 @@ export const DEFAULT_UI_THEME: UiTheme = {
   margin: 8,
   padding: 10,
   minLines: 3,
+  textColors: {
+    white: 0xffffff,
+    gray: 0xa8a8b4,
+    red: 0xff6b6b,
+    orange: 0xffa94d,
+    yellow: 0xffd479,
+    green: 0x8ce99a,
+    blue: 0x74c0fc,
+    purple: 0xd0a2ff,
+  },
 };
+
+/** A `{color:…}` value as a colour: a theme name or #rrggbb (null = the text colour). */
+export function textColor(theme: UiTheme, color: string | null): number {
+  if (color === null) return theme.textColor;
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) return parseInt(color.slice(1), 16);
+  return theme.textColors[color as TextColorName] ?? theme.textColor;
+}
 
 export function drawWindow(g: Graphics, theme: UiTheme, w: number, h: number): void {
   g.clear()
@@ -47,7 +70,8 @@ export class DialogView {
   private readonly messageBox = new Container({ label: 'message' });
   private readonly messageFrame = new Graphics();
   private readonly speaker: Text;
-  private readonly body: Text;
+  /** The message's pieces of text and icons, laid out once per message. */
+  private readonly body = new Container({ label: 'body' });
   private readonly more = new Graphics();
 
   private readonly choiceBox = new Container({ label: 'choice' });
@@ -56,14 +80,21 @@ export class DialogView {
   private readonly options: Text[] = [];
 
   private readonly textStyle: TextStyle;
-  /** Wrapped text for the current message, cached by source text. */
-  private wrapped: { source: string; text: string; lines: number } | null = null;
+  /** One style per colour used, so pieces of a colour share it. */
+  private readonly styles = new Map<number, TextStyle>();
+  /** The current message's layout and the node drawing each piece. */
+  private laidOut: {
+    readonly runs: readonly TextRun[];
+    readonly layout: RichLayout;
+    readonly nodes: readonly { readonly piece: LinePiece; readonly node: Text | Sprite }[];
+  } | null = null;
   private choiceKey = '';
 
   constructor(
     private readonly screenWidth: number,
     private readonly screenHeight: number,
     private readonly theme: UiTheme = DEFAULT_UI_THEME,
+    private readonly icons: IconSheet = NO_ICONS,
   ) {
     this.textStyle = new TextStyle({
       fontFamily: theme.fontFamily,
@@ -77,7 +108,6 @@ export class DialogView {
     });
     this.speaker.style.fill = theme.speakerColor;
     this.speaker.style.fontWeight = 'bold';
-    this.body = new Text({ text: '', style: this.textStyle });
 
     this.messageBox.addChild(this.messageFrame, this.speaker, this.body, this.more);
     this.choiceBox.addChild(this.choiceFrame, this.cursor);
@@ -90,19 +120,62 @@ export class DialogView {
     return this.screenWidth - this.theme.margin * 2 - this.theme.padding * 2;
   }
 
-  /**
-   * Wrap once up front and reveal characters of the wrapped text, so words
-   * never jump to the next line halfway through the reveal.
-   */
-  private wrap(source: string): { text: string; lines: number } {
-    if (this.wrapped?.source !== source) {
-      const style = this.textStyle.clone();
-      style.wordWrap = true;
-      style.wordWrapWidth = this.innerWidth;
-      const lines = CanvasTextMetrics.measureText(source, style, undefined, true).lines;
-      this.wrapped = { source, text: lines.join('\n'), lines: lines.length };
+  private styleFor(color: number): TextStyle {
+    let style = this.styles.get(color);
+    if (!style) {
+      // Text objects share the style they're given: each colour gets its own copy.
+      style = this.textStyle.clone();
+      style.fill = color;
+      this.styles.set(color, style);
     }
-    return this.wrapped;
+    return style;
+  }
+
+  /**
+   * Lay the message out once, up front, and reveal it piece by piece, so
+   * words never jump to the next line halfway through the reveal.
+   */
+  private layOut(runs: readonly TextRun[]): RichLayout {
+    if (this.laidOut?.runs === runs) return this.laidOut.layout;
+    for (const child of this.body.removeChildren()) child.destroy();
+    const { theme, icons } = this;
+    const iconHeight = Math.min(icons.size, theme.lineHeight);
+    const layout = layoutRuns(runs, {
+      maxWidth: this.innerWidth,
+      measure: (text) => CanvasTextMetrics.measureText(text, this.textStyle).width,
+      iconWidth: icons.size > 0 ? iconHeight + 1 : 0,
+    });
+    const nodes: { piece: LinePiece; node: Text | Sprite }[] = [];
+    layout.lines.forEach((line, row) => {
+      const y = row * theme.lineHeight;
+      for (const piece of line) {
+        if (piece.kind === 'icon') {
+          const sprite = iconSprite(icons, piece.icon, theme.lineHeight);
+          if (!sprite) continue;
+          sprite.position.set(piece.x, y + Math.floor((theme.lineHeight - iconHeight) / 2));
+          nodes.push({ piece, node: sprite });
+          this.body.addChild(sprite);
+        } else {
+          const text = new Text({ text: '', style: this.styleFor(textColor(theme, piece.color)) });
+          text.position.set(piece.x, y);
+          nodes.push({ piece, node: text });
+          this.body.addChild(text);
+        }
+      }
+    });
+    this.laidOut = { runs, layout, nodes };
+    return layout;
+  }
+
+  /** Show as much of the laid-out message as `revealed` units allow. */
+  private reveal(revealed: number): void {
+    for (const { piece, node } of this.laidOut?.nodes ?? []) {
+      const shown = revealPiece(piece, revealed);
+      node.visible = shown !== null;
+      if (shown?.kind === 'text' && node instanceof Text && node.text !== shown.text) {
+        node.text = shown.text;
+      }
+    }
   }
 
   /** `time` (seconds) drives small animations such as the continue marker. */
@@ -113,9 +186,9 @@ export class DialogView {
 
     this.messageBox.visible = message !== null;
     if (message) {
-      const wrapped = this.wrap(message.text);
+      const layout = this.layOut(message.runs);
       const speakerLines = message.speaker ? 1 : 0;
-      const lines = Math.max(theme.minLines, wrapped.lines + speakerLines);
+      const lines = Math.max(theme.minLines, layout.lines.length + speakerLines);
       const w = this.screenWidth - theme.margin * 2;
       const h = lines * theme.lineHeight + theme.padding * 2;
       messageTop = this.screenHeight - theme.margin - h;
@@ -126,7 +199,7 @@ export class DialogView {
       this.speaker.text = message.speaker ?? '';
       this.speaker.position.set(theme.padding, theme.padding);
       this.body.position.set(theme.padding, theme.padding + speakerLines * theme.lineHeight);
-      this.body.text = revealWrapped(wrapped.text, message.revealed);
+      this.reveal(message.revealed);
 
       // Bobbing "more" marker once the text is fully shown and no choice is open.
       this.more.visible = message.complete && dialog.choice === null;
@@ -175,15 +248,4 @@ export class DialogView {
 /** A small right-pointing triangle with its left edge at `x`, centered on `y`. */
 function cursorArrow(x: number, y: number): number[] {
   return [x, y - 4, x + 5, y, x, y + 4];
-}
-
-/** First `count` characters of wrapped text, not counting the inserted line breaks. */
-function revealWrapped(wrapped: string, count: number): string {
-  let shown = 0;
-  let i = 0;
-  const limit = Math.floor(count);
-  for (; i < wrapped.length && shown < limit; i++) {
-    if (wrapped[i] !== '\n') shown++;
-  }
-  return wrapped.slice(0, i);
 }

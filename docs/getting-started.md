@@ -117,6 +117,25 @@ again). The demo's hearth calls a "Rest" common event, and new Starter projects 
 Projects made before common events existed show **+ Common events** under Database: click it
 to start the list.
 
+**Text codes** put names, numbers, colours and icons into messages, speakers and choices. Type
+them in curly brackets:
+
+| Code                   | Shows                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `{v:id}`               | a variable's value                                                                |
+| `{actor:id}`           | an actor's name                                                                   |
+| `{member:1}`           | the name of the party's first (second…) member                                    |
+| `{gold}`, `{currency}` | the party's gold, and the currency (e.g. G)                                       |
+| `{item:id}`            | an item's name (`{equipment:id}` for equipment)                                   |
+| `{color:red}…{/color}` | coloured text: white, gray, red, orange, yellow, green, blue, purple or `#rrggbb` |
+| `{icon:3}`             | an icon from the iconset                                                          |
+| `{{`                   | a `{` on its own                                                                  |
+
+So `{member:1} found {color:yellow}{v:coins} {currency}{/color}!` might show "Hero found 12 G!"
+with the amount in yellow. The message dialog previews the text as it will look (values only the
+game knows show in [brackets]) and points out codes it doesn't understand. Choices show names and
+values but not colours or icons.
+
 Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries
 copy and paste too, even into another project.
 

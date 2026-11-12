@@ -48,7 +48,7 @@ describe('Interpreter', () => {
       state,
     );
     it.update(DT);
-    expect(it.pending).toEqual({ type: 'message', speaker: 'Elder', text: 'Hello' });
+    expect(it.pending).toMatchObject({ type: 'message', speaker: 'Elder', text: 'Hello' });
     it.update(DT); // still waiting: updates do nothing
     expect(state.getSwitch('a')).toBe(false);
     it.continue();
@@ -61,7 +61,7 @@ describe('Interpreter', () => {
   it('reports a null speaker when none is given', () => {
     const it = new Interpreter([say('hi')], newState());
     it.update(DT);
-    expect(it.pending).toEqual({ type: 'message', speaker: null, text: 'hi' });
+    expect(it.pending).toMatchObject({ type: 'message', speaker: null, text: 'hi' });
   });
 
   it('runs the chosen option, then continues after the choice', () => {
@@ -194,7 +194,7 @@ describe('Interpreter', () => {
     it.update(DT);
     it.choose(0);
     it.update(DT);
-    expect(it.pending).toEqual({ type: 'message', speaker: null, text: 'inner' });
+    expect(it.pending).toMatchObject({ type: 'message', speaker: null, text: 'inner' });
     it.continue();
     it.update(DT);
     expect(state.getVariable('n')).toBe(111);

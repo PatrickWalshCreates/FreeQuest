@@ -135,7 +135,7 @@
             },
             {
               "type": "message",
-              "text": "Mira joined the party!"
+              "text": "{color:green}{actor:mira}{/color} joined the party!"
             }
           ]
         },
@@ -171,7 +171,7 @@
           "commands": [
             {
               "type": "message",
-              "text": "You open the chest. Inside: a Potion!"
+              "text": "You open the chest. Inside: a {icon:0}{color:yellow}{item:potion}{/color}!"
             },
             {
               "id": "potion",

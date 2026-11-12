@@ -2,7 +2,8 @@
 // where the choice cursor is, and how input answers the interpreter.
 // Deliberately free of PixiJS so it can be unit-tested in Node; `dialog-view.ts`
 // draws whatever state this holds.
-import type { InputState, InterpreterRequest } from '@freequest/core';
+import type { InputState, InterpreterRequest, TextRun } from '@freequest/core';
+import { runsLength } from './rich-text.js';
 
 /** The part of an Interpreter the dialog needs. */
 export interface DialogTarget {
@@ -14,8 +15,11 @@ export interface DialogTarget {
 
 export interface MessageState {
   readonly speaker: string | null;
+  /** The message as plain text (codes filled in). */
   readonly text: string;
-  /** Characters of `text` revealed so far (may be fractional). */
+  /** The same with colours and icons, for drawing. */
+  readonly runs: readonly TextRun[];
+  /** Reveal units shown so far: characters and icons (may be fractional). */
   readonly revealed: number;
   readonly complete: boolean;
 }
@@ -38,6 +42,8 @@ export class DialogController {
   private messageRequest: MessageRequest | null = null;
   private choiceRequest: ChoiceRequest | null = null;
   private revealed = 0;
+  /** Reveal units in the current message (characters and icons). */
+  private length = 0;
   private cursor = 0;
 
   constructor(options: DialogOptions = {}) {
@@ -51,8 +57,9 @@ export class DialogController {
     return {
       speaker: request.speaker,
       text: request.text,
-      revealed: Math.min(this.revealed, request.text.length),
-      complete: this.revealed >= request.text.length,
+      runs: request.runs,
+      revealed: Math.min(this.revealed, this.length),
+      complete: this.revealed >= this.length,
     };
   }
 
@@ -78,11 +85,12 @@ export class DialogController {
         this.messageRequest = request;
         this.choiceRequest = null;
         this.revealed = 0;
+        this.length = runsLength(request.runs);
         return; // a fresh message ignores input from the step it appeared in
       }
-      if (this.revealed < request.text.length) {
+      if (this.revealed < this.length) {
         this.revealed += dt * this.charsPerSecond;
-        if (input.justPressed('confirm')) this.revealed = request.text.length;
+        if (input.justPressed('confirm')) this.revealed = this.length;
         return;
       }
       // Keep the message showing until the next request arrives, so
@@ -96,7 +104,7 @@ export class DialogController {
         this.choiceRequest = request;
         this.cursor = 0;
         // The message that asked the question stays up, fully revealed.
-        if (this.messageRequest) this.revealed = this.messageRequest.text.length;
+        if (this.messageRequest) this.revealed = this.length;
         return;
       }
       const count = request.options.length;
@@ -119,6 +127,7 @@ export class DialogController {
     this.messageRequest = null;
     this.choiceRequest = null;
     this.revealed = 0;
+    this.length = 0;
     this.cursor = 0;
   }
 }

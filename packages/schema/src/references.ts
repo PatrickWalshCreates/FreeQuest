@@ -4,6 +4,7 @@ import type { Condition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
 import { EMPTY_TILE, type GameMap } from './map.js';
+import { parseTextCodes, textCodeReferences } from './text-codes.js';
 import type { Tileset } from './tileset.js';
 
 /** All data files of a project, keyed by id. */
@@ -83,11 +84,27 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
         else if (c.type === 'inParty') checkEntry(where, 'actor', c.actor);
       }
     },
+    /** Text codes in a message, speaker or choice label: their syntax and the ids they name. */
+    checkText(where: string, source: string) {
+      for (const problem of parseTextCodes(source).problems) problems.push(`${where}: ${problem}`);
+      const refs = textCodeReferences(source);
+      for (const id of refs.variables) checkVariable(where, id);
+      for (const id of refs.actors) checkEntry(where, 'actor', id);
+      for (const id of refs.items) checkEntry(where, 'item', id);
+      for (const id of refs.equipment) checkEntry(where, 'equipment', id);
+    },
     /** Every reference made by a command list (and the lists inside it). */
     checkCommands(commands: readonly Command[], where: string) {
       walkCommands(commands, (command, path) => {
         const at = `${where}.${path}`;
         switch (command.type) {
+          case 'message':
+            checks.checkText(at, command.text);
+            if (command.speaker !== undefined) checks.checkText(`${at} speaker`, command.speaker);
+            break;
+          case 'choice':
+            command.options.forEach((o, i) => checks.checkText(`${at}.options[${i}]`, o.label));
+            break;
           case 'if':
             checks.checkConditions(at, command.conditions);
             break;

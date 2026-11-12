@@ -2173,3 +2173,49 @@ h2.with-actions button {
   font-size: 14px;
   margin: 0 0 4px;
 }
+
+/* A message as the game shows it, under the message's text in its dialog. */
+.message-preview-block {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.message-preview {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 2px solid #e6dcc3;
+  font:
+    14px/18px system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  white-space: pre-wrap;
+  min-height: 54px;
+}
+
+.message-preview .speaker {
+  font-weight: bold;
+}
+
+.message-preview .icon-image {
+  display: inline-block;
+  vertical-align: -3px;
+  margin: 0 1px;
+}
+
+.text-code-help summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.text-code-help table {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.text-code-help td {
+  padding: 1px 8px 1px 0;
+  vertical-align: top;
+}

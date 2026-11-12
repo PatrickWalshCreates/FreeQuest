@@ -39,8 +39,11 @@ export interface FormContext {
   label?(field: string): string | undefined;
   /** Starting values for new objects (e.g. the first switch for a new condition). */
   pick: DefaultPicker;
-  /** A problem with a field's current value to show under it (e.g. a formula that won't parse). */
-  check?(field: string, value: unknown): string | null;
+  /**
+   * A problem with a field's current value to show under it (e.g. a formula
+   * that won't parse). `parent` is the object holding the field.
+   */
+  check?(field: string, value: unknown, parent?: Readonly<Record<string, unknown>>): string | null;
   /** A custom control for a field (e.g. a route's steps), or undefined for the generated one. */
   render?(field: string, value: unknown, onChange: (value: unknown) => void): ReactNode | undefined;
 }
@@ -164,7 +167,7 @@ export function ObjectFields(props: {
             </div>
           );
         }
-        const problem = ctx.check?.(field.name, value[field.name]) ?? null;
+        const problem = ctx.check?.(field.name, value[field.name], value) ?? null;
         const custom = ctx.render?.(field.name, value[field.name], (next) => set(field.name, next));
         if (custom !== undefined) {
           return (

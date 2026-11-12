@@ -98,7 +98,7 @@ describe('World.changeMap', () => {
     tick();
 
     expect(world.map.id).toBe('inside');
-    expect(world.interpreter?.pending).toEqual({
+    expect(world.interpreter?.pending).toMatchObject({
       type: 'message',
       speaker: null,
       text: 'It is dark in here.',

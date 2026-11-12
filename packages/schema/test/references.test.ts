@@ -361,6 +361,27 @@ describe('checkCommonEventReferences', () => {
     ]);
   });
 
+  it('checks text codes in messages, speakers and choices', () => {
+    const problems = checkCommonEventReferences(
+      ctx([
+        {
+          id: 'talk',
+          name: 'Talk',
+          trigger: 'call',
+          commands: [
+            { type: 'message', speaker: '{actor:ghost}', text: 'You have {v:count} and {v:nope}' },
+            { type: 'choice', options: [{ label: '{oops}', commands: [] }] },
+          ],
+        },
+      ]),
+    );
+    expect(problems).toEqual([
+      'commonEvents "talk".commands[0]: undeclared variable "nope"',
+      'commonEvents "talk".commands[0] speaker: unknown actor "ghost"',
+      'commonEvents "talk".commands[1].options[0]: unknown code {oops}',
+    ]);
+  });
+
   it('reports common events that end up calling themselves, once per loop', () => {
     const problems = checkCommonEventReferences(
       ctx([

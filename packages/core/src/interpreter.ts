@@ -8,6 +8,7 @@ import {
   toEventContext,
 } from './game-state.js';
 import type { Party } from './party.js';
+import { type TextRun, expandPlainText, expandText, plainText } from './text.js';
 
 /**
  * Something the interpreter needs from outside core before it can continue.
@@ -15,7 +16,11 @@ import type { Party } from './party.js';
  * answers with `continue()` or `choose()`/`cancel()`.
  */
 export type InterpreterRequest =
-  | { type: 'message'; speaker: string | null; text: string }
+  /**
+   * `text` is the message with its codes expanded, as plain text; `runs` is
+   * the same with colours and icons, for drawing.
+   */
+  | { type: 'message'; speaker: string | null; text: string; runs: readonly TextRun[] }
   | { type: 'choice'; options: readonly string[]; cancel: number | null }
   | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
   | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean }
@@ -198,13 +203,22 @@ export class Interpreter {
   private execute(command: Command): void {
     switch (command.type) {
       case 'message':
-        this.request = { type: 'message', speaker: command.speaker ?? null, text: command.text };
+        {
+          const runs = expandText(command.text, this.context);
+          this.request = {
+            type: 'message',
+            speaker:
+              command.speaker === undefined ? null : expandPlainText(command.speaker, this.context),
+            text: plainText(runs),
+            runs,
+          };
+        }
         break;
       case 'choice':
         this.choiceCommand = command;
         this.request = {
           type: 'choice',
-          options: command.options.map((o) => o.label),
+          options: command.options.map((o) => expandPlainText(o.label, this.context)),
           cancel: command.cancel ?? null,
         };
         break;

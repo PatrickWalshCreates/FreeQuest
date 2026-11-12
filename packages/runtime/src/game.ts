@@ -162,7 +162,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   let dialog = new DialogController();
   const theme = { ...DEFAULT_UI_THEME, ...options.ui };
-  const dialogView = new DialogView(width, height, theme);
+  const dialogView = new DialogView(width, height, theme, icons);
   app.stage.addChild(dialogView.container);
   const transfer = new TransferController(async (mapId) => {
     const target = await project.loadMap(mapId);

@@ -39,7 +39,7 @@ export class Party {
     equipment: new Map(),
   };
 
-  constructor(private readonly db: DatabaseIndex) {}
+  constructor(readonly db: DatabaseIndex) {}
 
   /** A new-game party from the manifest's starting party and gold. */
   static start(db: DatabaseIndex, start: { party: readonly string[]; gold: number }): Party {

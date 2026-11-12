@@ -181,6 +181,20 @@ Never the other way.
   messages) and stays visible under a following choice. Text is wrapped before revealing so words
   never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
   default is the system font (no bundled font asset). Not yet in the project format.
+- **Text codes** (no format change: they live in message/speaker/choice strings): grammar in
+  `schema/text-codes.ts` (`parseTextCodes`: `{v:id}`, `{actor:id}`, `{member:n}`, `{gold}`,
+  `{currency}`, `{item:id}`, `{equipment:id}`, `{color:name|#rrggbb}`…`{/color}` (nesting),
+  `{icon:n}`, `{{`; problems are readable, bad codes are dropped). `checkCommands` checks them
+  (`checkText`) and the ids they name. Core `expandText` → `TextRun[]` (text + colour, icons)
+  when the request is made, so values are current; message requests carry plain `text` and
+  `runs`, speakers and choice labels are plain text. Runtime `rich-text.ts` (PixiJS-free,
+  tested with a fake `measure`): `layoutRuns` wraps across colours/icons (a word stays whole),
+  `runsLength` / `revealPiece` reveal by units (chars, icons; line breaks don't count, wrapped
+  spaces do). `DialogView` draws one Text per same-colour piece (a style per colour) and icon
+  sprites; `UiTheme.textColors` names the colours (`textColor()`). Editor: `previewText` /
+  `textProblems` (editor-core) back `CommandExtras` (message preview + code help, shared by
+  event pages and common events) and live checks on `text`/`speaker`/`label` (not comments:
+  `FormContext.check` now gets the parent).
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -868,9 +882,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      and optional autorun/parallel triggers gated by a switch; an editor list beside the database~~
      (done; a database category, so lists, copy/paste and exports come free. Tried in the editor
      and rested at the demo's hearth in the dev player)
-  3. Text codes in messages and choices: variables, actor and party names, gold, item names,
+  3. ~~Text codes in messages and choices: variables, actor and party names, gold, item names,
      colours and icons, in FreeQuest's own `{…}` syntax (parsed in core, drawn as styled runs);
-     the editor previews them and reports unknown codes
+     the editor previews them and reports unknown codes~~ (done; the preview's text and colours
+     checked in the editor. The game's drawing still to be seen: the browser pane was hidden,
+     so images never decoded and the player couldn't start)
   4. Control flow: `loop` with `break`, and `exitEvent` (commands stay a tree: no labels or
      goto)
   5. Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by

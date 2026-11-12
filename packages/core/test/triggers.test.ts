@@ -87,7 +87,11 @@ describe('action trigger', () => {
     const { world, tap } = setup([event('npc', 2, 3)], 'down');
     tap('confirm');
     expect(world.interpreterEvent?.id).toBe('npc');
-    expect(world.interpreter?.pending).toEqual({ type: 'message', speaker: null, text: 'hi' });
+    expect(world.interpreter?.pending).toMatchObject({
+      type: 'message',
+      speaker: null,
+      text: 'hi',
+    });
     expect(world.events[0]?.direction).toBe('up');
   });
 

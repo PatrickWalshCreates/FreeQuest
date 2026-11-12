@@ -1,6 +1,6 @@
 // What the project offers to forms: the dropdown choices for fields that
 // refer to maps, switches, items…, and display names for command rows.
-import type { NameLookup, OpenedProject } from '@freequest/editor-core';
+import { type NameLookup, type OpenedProject, textProblems } from '@freequest/editor-core';
 import { ATTACK_ELEMENT, ID_PATTERN, SOUND_KEYS, checkFormula } from '@freequest/schema';
 
 const ID_RE = new RegExp(ID_PATTERN);
@@ -50,6 +50,9 @@ const LABELS: Record<string, string> = {
   switch: 'Switch',
   event: 'Another event (none: this one)',
 };
+
+/** Fields whose text may hold `{…}` codes (messages, speakers, choice labels). */
+const TEXT_FIELDS = new Set(['text', 'speaker', 'label']);
 
 /** How a common event's triggers read in its form. */
 const COMMON_TRIGGERS: Record<string, string> = {
@@ -176,9 +179,14 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
     multiline: (field) => field === 'text' || field === 'description',
     choiceLabel: (field, value) => (field === 'trigger' ? COMMON_TRIGGERS[value] : undefined),
     suggest: (field) => (field === 'flag' ? (lists.flags ?? []) : []),
-    check: (field, value) => {
+    check: (field, value, parent) => {
       if (field === 'formula' && typeof value === 'string' && value !== '') {
         return checkFormula(value, variables);
+      }
+      // Comments are notes for authors: their text is never shown, so codes don't matter.
+      if (TEXT_FIELDS.has(field) && typeof value === 'string' && parent?.['type'] !== 'comment') {
+        const problems = textProblems(value, project);
+        return problems.length > 0 ? problems.join(' · ') : null;
       }
       if (field === 'flag' && typeof value === 'string' && !ID_RE.test(value)) {
         return 'Use lowercase letters, digits, "-" and "_" (e.g. opened)';
