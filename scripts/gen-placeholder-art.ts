@@ -306,6 +306,79 @@ function drawChest(): void {
   c.save(join(ROOT, 'assets', 'characters', 'chest.png'));
 }
 
+/** A map pinned to the wall: parchment with paths, water and the bridge circled. */
+function drawWallMap(): void {
+  const c = new Canvas(T * 3, T * 4);
+  const paper = hex('#e8d9b0');
+  const edge = hex('#b89a62');
+  const ink = hex('#6b4a2a');
+  const water = hex('#5b8fc7');
+  const red = hex('#c0392b');
+  for (let row = 0; row < 4; row++)
+    for (let frame = 0; frame < 3; frame++) {
+      const ox = frame * T;
+      const oy = row * T;
+      c.rect(ox + 5, oy + 7, 22, 17, edge);
+      c.rect(ox + 6, oy + 8, 20, 15, paper);
+      c.rect(ox + 8, oy + 15, 12, 1, ink); // the path
+      c.rect(ox + 13, oy + 11, 1, 5, ink);
+      c.rect(ox + 21, oy + 9, 3, 13, water); // the river
+      c.rect(ox + 20, oy + 15, 5, 1, ink); // the bridge
+      for (const [dx, dy] of [
+        [18, 13],
+        [19, 12],
+        [20, 12],
+        [21, 12],
+        [22, 12],
+        [23, 13],
+        [18, 17],
+        [19, 18],
+        [20, 18],
+        [21, 18],
+        [22, 18],
+        [23, 17],
+        [17, 15],
+        [24, 15],
+      ] as const)
+        c.set(ox + dx, oy + dy, red); // circled (twice, roughly)
+      c.rect(ox + 15, oy + 5, 2, 3, hex('#8a8a8a')); // the pin
+    }
+  c.save(join(ROOT, 'assets', 'characters', 'wall-map.png'));
+}
+
+/**
+ * A stone fireplace: the "down" row is cold (grey logs), the "up" row lit
+ * (flames), so a page picks one with its graphic's facing.
+ */
+function drawHearth(): void {
+  const c = new Canvas(T * 3, T * 4);
+  const stone = hex('#7d7a78');
+  const dark = hex('#4a4746');
+  const mortar = hex('#9c9896');
+  ROWS.forEach((dir, row) => {
+    for (let frame = 0; frame < 3; frame++) {
+      const ox = frame * T;
+      const oy = row * T;
+      c.rect(ox + 3, oy + 4, 26, 26, stone); // the surround
+      c.rect(ox + 3, oy + 4, 26, 3, mortar); // the mantel
+      for (const y of [12, 20]) c.rect(ox + 3, oy + y, 26, 1, mortar);
+      c.rect(ox + 8, oy + 12, 16, 18, dark); // the opening
+      c.rect(ox + 10, oy + 26, 12, 2, hex('#6b4423')); // logs
+      c.rect(ox + 12, oy + 24, 8, 2, hex('#7a5230'));
+      if (dir === 'up') {
+        c.rect(ox + 11, oy + 18, 10, 6, hex('#e25822')); // flames
+        c.rect(ox + 13, oy + 15, 6, 5, hex('#f4a531'));
+        c.rect(ox + 15, oy + 13, 2, 4, hex('#ffe066'));
+        c.rect(ox + 12, oy + 21, 2, 2, hex('#ffe066'));
+        c.rect(ox + 18, oy + 20, 2, 2, hex('#ffe066'));
+      } else {
+        c.rect(ox + 12, oy + 23, 8, 1, hex('#5f5f5f')); // ash
+      }
+    }
+  });
+  c.save(join(ROOT, 'assets', 'characters', 'hearth.png'));
+}
+
 /** Filled ellipse centered on (cx, cy). */
 function ellipse(c: Canvas, cx: number, cy: number, rx: number, ry: number, color: RGBA): void {
   for (let y = -ry; y <= ry; y++) {
@@ -823,5 +896,7 @@ function drawIconset(): void {
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
 drawChest();
+drawWallMap();
+drawHearth();
 drawEnemies();
 drawIconset();

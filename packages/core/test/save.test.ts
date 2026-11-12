@@ -72,7 +72,8 @@ describe('saving and loading', () => {
     expect(restored.party.member('mira')?.equipment.get('head')).toBe('straw-hat');
     expect(restored.party.member('mira')?.hasState('poison')).toBe(true);
     // Event pages reflect the restored switches straight away.
-    expect(restored.events.find((e) => e.id === 'hearth')?.pageIndex).toBe(0);
+    // The request is accepted, so the hearth shows its lit page.
+    expect(restored.events.find((e) => e.id === 'hearth')?.pageIndex).toBe(1);
   });
 
   it('drops switches and variables the project no longer declares', () => {

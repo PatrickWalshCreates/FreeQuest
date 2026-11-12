@@ -49,7 +49,14 @@ describe('openProject', () => {
     expect([...project.maps.keys()]).toEqual(['map001', 'house']);
     expect(project.maps.get('house')?.data?.id).toBe('house');
     expect([...project.tilesets.keys()]).toEqual(['overworld']);
-    expect([...project.characters.keys()]).toEqual(['hero', 'villager', 'mage', 'chest']);
+    expect([...project.characters.keys()]).toEqual([
+      'hero',
+      'villager',
+      'mage',
+      'chest',
+      'wall-map',
+      'hearth',
+    ]);
     expect(Object.keys(project.database).sort()).toEqual([
       'actors',
       'classes',

@@ -18,6 +18,14 @@
     {
       "id": "chest",
       "path": "data/characters/chest.json"
+    },
+    {
+      "id": "wall-map",
+      "path": "data/characters/wall-map.json"
+    },
+    {
+      "id": "hearth",
+      "path": "data/characters/hearth.json"
     }
   ],
   "database": {

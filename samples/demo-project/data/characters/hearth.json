@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "id": "hearth",
+  "name": "Hearth",
+  "frameHeight": 32,
+  "frameWidth": 32,
+  "frames": 3,
+  "idleFrame": 1,
+  "image": "assets/characters/hearth.png",
+  "rows": ["down", "left", "right", "up"],
+  "walkCycle": [1]
+}

@@ -51,6 +51,11 @@
       "pages": [
         {
           "conditions": [],
+          "graphic": {
+            "character": "wall-map",
+            "direction": "down",
+            "fixed": true
+          },
           "layer": "same",
           "trigger": "action",
           "commands": [
@@ -98,34 +103,43 @@
       "pages": [
         {
           "conditions": [],
+          "graphic": {
+            "character": "hearth",
+            "direction": "down",
+            "fixed": true
+          },
           "layer": "same",
           "trigger": "action",
           "commands": [
             {
-              "type": "if",
-              "conditions": [
-                {
-                  "type": "switch",
-                  "switch": "accepted_request",
-                  "value": true
-                }
-              ],
-              "then": [
-                {
-                  "type": "message",
-                  "text": "The fire crackles. You rest a while by the warmth."
-                },
-                {
-                  "type": "callCommon",
-                  "common": "rest"
-                }
-              ],
-              "else": [
-                {
-                  "type": "message",
-                  "text": "The hearth is cold."
-                }
-              ]
+              "type": "message",
+              "text": "The hearth is cold."
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "type": "switch",
+              "switch": "accepted_request",
+              "value": true
+            }
+          ],
+          "graphic": {
+            "character": "hearth",
+            "direction": "up",
+            "fixed": true
+          },
+          "layer": "same",
+          "trigger": "action",
+          "commands": [
+            {
+              "type": "message",
+              "text": "The fire crackles. You rest a while by the warmth."
+            },
+            {
+              "type": "callCommon",
+              "common": "rest"
             }
           ]
         }

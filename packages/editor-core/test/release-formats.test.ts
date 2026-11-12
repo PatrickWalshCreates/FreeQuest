@@ -14,7 +14,7 @@ const FIXTURES = join(import.meta.dirname, '..', '..', 'schema', 'test', 'fixtur
 /** Each frozen release, with the checksum of its folder when it was frozen. */
 const RELEASES = [
   { version: '0.1', checksum: '7ba90859d40fc8cfbaa4ae8759636ae242def54283dc5edd6bd167fdb382ae76' },
-  { version: '0.2', checksum: 'e5408154b283e549b6b05b60919a9a2a3157dcdb7a5e6cd3183676ef9b5e5b65' },
+  { version: '0.2', checksum: '9ab903a363b1fc9bdf923a64c37e6777954efeda1e680315ca2b0596779c14f1' },
 ] as const;
 
 /** One checksum over every file's path and bytes. */

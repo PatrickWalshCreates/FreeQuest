@@ -393,7 +393,7 @@ describe('loops in the tree', () => {
 describe('common event usages and project flags', () => {
   it('lists the events and common events that call a common event', async () => {
     const project = await openProject(await memoryCopy(DEMO));
-    expect(commonEventUsages(project, 'rest')).toEqual(["Elder's house › Hearth (page 1)"]);
+    expect(commonEventUsages(project, 'rest')).toEqual(["Elder's house › Hearth (page 2)"]);
     expect(commonEventUsages(project, 'nobody')).toEqual([]);
     expect(projectFlagNames(project)).toEqual(['opened']);
   });

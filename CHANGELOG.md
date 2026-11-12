@@ -31,6 +31,13 @@ colours, and set the mood. Projects and saves from 0.1 open as before and are up
   loop), and a hearth that calls a shared Rest (a common event that fades to black and back).
   The wolf's ambush shakes and flashes red; a few messages use colours and an icon.
 - New Starter projects have the Rest common event and a sign that greets the hero by name.
+- The house's map on the wall and its fireplace can now be seen (they were invisible); the
+  fireplace is cold until you've agreed to help the elder, then lit.
+
+### Fixes
+
+- Sound and music now play in the desktop editor's playtests (the app's security settings
+  stopped it loading them; browser mode and exported games weren't affected).
 
 ### Formats
 

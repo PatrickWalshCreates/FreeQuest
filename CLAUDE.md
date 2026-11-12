@@ -137,7 +137,11 @@ Never the other way.
   (`characters/chest.png`, closed = facing down, open = facing up). A page graphic's optional
   `fixed` (also v7; "Keep this facing" in the panel) stops the turn toward the player on talk,
   and a fixed new page's facing applies even to the running event, so a chest shows its open
-  lid right away.
+  lid right away. The house's wall map and hearth are character sheets too (`wall-map.png`,
+  `hearth.png`: cold = down, lit = up), so no demo event is invisible by accident.
+- **Desktop CSPs** (`schema/test/app-csp.test.ts`): the editor's must allow `blob:` in
+  `connect-src` (playtest sounds are fetched from TauriFs blob URLs; without it the game is
+  silently mute), the player's must allow the asset protocol.
 - **Common events** (manifest v6, database category `commonEvents`, file
   `data/database/commonEvents.json`; entry: name, `trigger` call/autorun/parallel, optional
   gate `switch`, `commands`): `callCommon` pushes the entry's commands as a frame on the
