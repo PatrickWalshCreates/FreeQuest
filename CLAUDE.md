@@ -915,8 +915,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   5. ~~Screen effects: fade out/in, tint, flash and shake (requests or timed state in core, drawn by
      runtime), plus hiding/showing an event until the map reloads~~ (done; save v2 keeps the
      tint and fade; tried in the editor and the dev player)
-  6. Editor support for all of it: forms come from the schema, plus the flag picker, the common
-     event list and the text-code preview
+  6. ~~Editor support for all of it: forms come from the schema, plus the flag picker, the common
+     event list and the text-code preview~~ (done; most came with each step. Added: where each
+     common event is called (`commonEventUsages`, also in the delete warning), project-wide
+     flag suggestions in common events (`projectFlagNames`), readable category names in lists,
+     the flag condition's name. Walked through in the editor: a new common event, a flag
+     condition, bad codes in a choice, a 0.1 project gaining common events and saving, the
+     guide, a playtest, and a web export)
   7. Demo, Starter, guides (every system), the quest test, and a 0.2.0 release through the
      checklist
   - Formats: map 7 (flags, new commands), manifest 6 (common events), save 2 (flags); each with a

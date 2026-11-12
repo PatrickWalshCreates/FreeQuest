@@ -4,8 +4,11 @@ import {
   type ProjectDocument,
   type ProjectFile,
   addEntry,
+  DATABASE_LABELS,
   clipboard,
+  commonEventUsages,
   duplicateEntry,
+  projectFlagNames,
   entrySchema,
   idProblem,
   moveEntry,
@@ -58,7 +61,8 @@ export function DatabaseEditor({ doc, file }: Props) {
   const project = doc.project;
   const ctx = useMemo(
     () => ({
-      ...projectFormContext(project, lists),
+      // Flags in a common event belong to the calling event: offer every name maps use.
+      ...projectFormContext(project, { ...lists, flags: projectFlagNames(project) }),
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
         field === 'icon' ? (
           <IconField
@@ -140,6 +144,8 @@ function EntriesEditor(props: {
   };
   const entry = data.entries.find((e) => e.id === selected) ?? null;
   const singular = SINGULAR[kind];
+  /** How the category reads in sentences: "common events", "items". */
+  const plural = DATABASE_LABELS[kind].toLowerCase();
   const needle = filter.trim().toLowerCase();
   const shown = needle
     ? data.entries.filter((e) => `${e.name} ${e.id}`.toLowerCase().includes(needle))
@@ -173,8 +179,13 @@ function EntriesEditor(props: {
 
   const remove = async () => {
     if (!entry) return;
+    const callers = kind === 'commonEvents' ? commonEventUsages(doc.project, entry.id) : [];
+    const used =
+      callers.length > 0
+        ? ` It's called by ${callers.length === 1 ? callers[0] : `${callers.length} events: ${callers.join(', ')}`}, which will show a problem until you change it.`
+        : ' Anything that uses it will show a problem until you change it.';
     const ok = await confirmAction(
-      `Delete the ${singular} "${entry.name}"? Anything that uses it will show a problem until you change it. You can undo this.`,
+      `Delete the ${singular} "${entry.name}"?${used} You can undo this.`,
       { title: `Delete ${singular}`, okLabel: 'Delete' },
     );
     if (!ok) return;
@@ -190,9 +201,9 @@ function EntriesEditor(props: {
         <div className="db-list-tools">
           <input
             type="search"
-            placeholder={`Search ${kind}`}
+            placeholder={`Search ${plural}`}
             value={filter}
-            aria-label={`Search ${kind}`}
+            aria-label={`Search ${plural}`}
             onChange={(e) => setFilter(e.target.value)}
           />
           <button className="primary small" onClick={() => setCreating(true)}>
@@ -200,7 +211,7 @@ function EntriesEditor(props: {
           </button>
         </div>
         <ul
-          aria-label={kind}
+          aria-label={DATABASE_LABELS[kind]}
           onKeyDown={(event) => {
             if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
             const key = event.key.toLowerCase();
@@ -230,7 +241,7 @@ function EntriesEditor(props: {
           ))}
           {shown.length === 0 && (
             <li className="hint">
-              {data.entries.length === 0 ? `No ${kind} yet.` : 'No matches.'}
+              {data.entries.length === 0 ? `No ${plural} yet.` : 'No matches.'}
             </li>
           )}
         </ul>
@@ -310,6 +321,14 @@ function EntriesEditor(props: {
                 </p>
               </div>
             </div>
+            {kind === 'commonEvents' && (
+              <CalledBy
+                project={doc.project}
+                id={entry.id}
+                trigger={(entry as { trigger?: string }).trigger ?? 'call'}
+                gate={(entry as { switch?: string }).switch}
+              />
+            )}
             <Problems messages={problemsFor(entry.id)} />
             <ObjectFields
               key={entry.id}
@@ -464,4 +483,25 @@ function CommonEventCommands(props: {
       />
     </section>
   );
+}
+
+/** Which events call a common event (or that none do yet). */
+function CalledBy(props: {
+  readonly project: ProjectDocument['project'];
+  readonly id: string;
+  readonly trigger: string;
+  readonly gate: string | undefined;
+}) {
+  const usages = commonEventUsages(props.project, props.id);
+  const when = props.gate
+    ? `while switch “${props.project.manifest.data.switches.find((s) => s.id === props.gate)?.name || props.gate}” is on`
+    : 'all the time (no switch set)';
+  const own = props.trigger === 'call' ? null : `Runs on its own (${props.trigger}) ${when}`;
+  const called =
+    usages.length > 0
+      ? `Called by ${usages.join(', ')}`
+      : own
+        ? null
+        : 'Not called by any event yet: add Call common event to one';
+  return <p className="hint called-by">{[own, called].filter(Boolean).join('. ')}.</p>;
 }

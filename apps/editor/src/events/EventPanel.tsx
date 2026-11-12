@@ -186,12 +186,14 @@ const LAYERS: readonly { value: EventLayer; label: string }[] = [
   { value: 'above', label: 'Above characters' },
 ];
 
-const CONDITION_NAMES: Record<string, string> = {
+// Typed by condition kind, so a new kind can't be left out.
+const CONDITION_NAMES: Record<Condition['type'], string> = {
   switch: 'Switch',
   variable: 'Variable',
   gold: 'Gold',
   hasItem: 'Has item',
   inParty: 'In party',
+  flag: 'Event flag (this event’s own)',
 };
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
@@ -616,7 +618,7 @@ function EventEditor(props: {
           initial={editingCondition.value}
           ctx={ctx}
           validate={conditionProblem}
-          variantName={(label) => CONDITION_NAMES[label] ?? label}
+          variantName={(label) => CONDITION_NAMES[label as Condition['type']] ?? label}
           okLabel={editingCondition.index === null ? 'Add' : 'Save'}
           onClose={() => setEditingCondition(null)}
           onOk={(condition) => {

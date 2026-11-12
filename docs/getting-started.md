@@ -113,7 +113,9 @@ cutscene that plays from different places), and use **Call common event** in eac
 commands run there, then the event carries on. A common event can also start on its own:
 **Autorun** runs it when nothing else is running, and **Parallel** runs it alongside play, both
 while its **Switch** is on (an autorun one must turn that switch off, or it runs again and
-again). The demo's hearth calls a "Rest" common event, and new Starter projects have one too.
+again). Each common event says which events call it (or that it runs on its own), and deleting one
+warns which events will need changing. The demo's hearth calls a "Rest" common event, and new
+Starter projects have one too.
 Projects made before common events existed show **+ Common events** under Database: click it
 to start the list.
 

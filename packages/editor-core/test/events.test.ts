@@ -10,6 +10,9 @@ import {
   classify,
   defaultFor,
   describeCommand,
+  openProject,
+  projectFlagNames,
+  commonEventUsages,
   commandHasFields,
   mapFlagNames,
   describeCondition,
@@ -33,6 +36,7 @@ import {
   variantIndex,
   variantLabel,
 } from '../src/index.js';
+import { DEMO, memoryCopy } from './helpers.js';
 
 const blank = (): GameMap => newMapData('m', { name: 'M', width: 5, height: 5, tileset: 't' });
 
@@ -383,5 +387,14 @@ describe('loops in the tree', () => {
     ]);
     expect(commandHasFields('wait')).toBe(true);
     expect(commandHasFields('recoverAll')).toBe(true);
+  });
+});
+
+describe('common event usages and project flags', () => {
+  it('lists the events and common events that call a common event', async () => {
+    const project = await openProject(await memoryCopy(DEMO));
+    expect(commonEventUsages(project, 'rest')).toEqual(["Elder's house › Hearth (page 1)"]);
+    expect(commonEventUsages(project, 'nobody')).toEqual([]);
+    expect(projectFlagNames(project)).toEqual(['opened']);
   });
 });
