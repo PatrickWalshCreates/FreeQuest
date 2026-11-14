@@ -1225,8 +1225,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   8. ~~Guides (`docs/importing-mz.md`, in the Help window and on the website), README, CHANGELOG,
      and a 0.4.0 release through the checklist~~ (done; the user imported both sample games in
      the downloaded desktop app; that check added the report's summary by kind and title music
-     that starts at once. Published 2026-11-14, the site shows 0.4.0. The first self-update,
-     0.3.0 → 0.4.0, is for the user to try on their installed 0.3.0)
+     that starts at once. Published 2026-11-14, the site shows 0.4.0. The first real self-update,
+     0.3.0 → 0.4.0, worked on the user's Mac)
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.
