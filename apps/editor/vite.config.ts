@@ -14,7 +14,9 @@ export default defineConfig({
       projects: fileURLToPath(new URL('../../projects', import.meta.url)),
       exports: fileURLToPath(new URL('../../exports', import.meta.url)),
       // RPG Maker MZ projects to import in browser mode (git-ignored; FREEQUEST_MZ_DIR points elsewhere).
-      mz: process.env['FREEQUEST_MZ_DIR'] ?? fileURLToPath(new URL('../../mz-projects', import.meta.url)),
+      mz:
+        process.env['FREEQUEST_MZ_DIR'] ??
+        fileURLToPath(new URL('../../mz-projects', import.meta.url)),
       // The built desktop players (read to export Windows and Linux games in browser mode).
       players: fileURLToPath(new URL('../player-desktop/dist', import.meta.url)),
     }),

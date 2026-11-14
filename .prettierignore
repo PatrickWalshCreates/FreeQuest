@@ -17,3 +17,4 @@ site-dist/
 packages/schema/test/fixtures/release-*/
 # Hand-written MZ-format fixtures keep MZ's own layout (and byte-order marks).
 packages/importer/test/fixtures/
+mz-projects/

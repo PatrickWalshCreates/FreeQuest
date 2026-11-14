@@ -12,6 +12,8 @@ export default tseslint.config(
       // Exports made by the editor in browser mode: built player code.
       'exports/**',
       'projects/**',
+      // RPG Maker MZ projects to try the importer on (git-ignored; never ours to lint).
+      'mz-projects/**',
       'site-dist/**',
       '**/src-tauri/target/**',
       '**/src-tauri/gen/**',
