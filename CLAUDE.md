@@ -1218,7 +1218,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   setting an event's location, labels and jumps, branches on things FreeQuest can't test
   (buttons, actors' states, scripts…), "through" in routes, renaming actors, balloons,
   changing states, scrolling the map, background sounds, battle music changes, diagonal moves
-  and jumps in routes, a choice's own cancel branch. The list is settled when M13 is done.
+  and jumps in routes, a choice's own cancel branch. From playing one (the user): a title
+  screen picture (FreeQuest's title has none), and a hidden or see-through player (MZ's
+  "start transparent" option and Transparency command; an intro on a blank map showed the
+  player over black). The list is settled when M13 is done.
 - **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones
