@@ -38,6 +38,8 @@ export interface MzSystem {
   readonly start: { readonly map: number; readonly x: number; readonly y: number };
   /** Actor numbers of the starting party. */
   readonly party: readonly number[];
+  /** Side-view battles (enemy images in img/sv_enemies). */
+  readonly sideView: boolean;
 }
 
 export interface MzMapInfo {
@@ -136,6 +138,7 @@ function readSystem(raw: Readonly<Record<string, unknown>>): MzSystem {
       x: Math.max(0, asInt(raw['startX'])),
       y: Math.max(0, asInt(raw['startY'])),
     },
+    sideView: raw['optSideView'] === true,
     party: asArray(raw['partyMembers'])
       .map((v) => asInt(v))
       .filter((n) => n > 0),

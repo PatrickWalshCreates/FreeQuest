@@ -19,6 +19,32 @@ const sheet = (name: string, tilesW: number, tilesH: number, b: number) => {
   mkdirSync(join(root, 'img', 'tilesets'), { recursive: true });
   writeFileSync(join(root, 'img', 'tilesets', name + '.png'), PNG.sync.write(png));
 };
+// Characters: an 8-character sheet (12 × 8 frames of 48 px) and a "$" sheet of one (3 × 4).
+const frames = (
+  name: string,
+  folder: string,
+  cols: number,
+  rows: number,
+  size: number,
+  b: number,
+) => {
+  const png = new PNG({ width: cols * size, height: rows * size });
+  for (let y = 0; y < png.height; y++)
+    for (let x = 0; x < png.width; x++) {
+      const i = (y * png.width + x) * 4;
+      png.data[i] = Math.floor(x / size) * 16;
+      png.data[i + 1] = Math.floor(y / size) * 16;
+      png.data[i + 2] = b;
+      png.data[i + 3] = 255;
+    }
+  mkdirSync(join(root, 'img', folder), { recursive: true });
+  writeFileSync(join(root, 'img', folder, name + '.png'), PNG.sync.write(png));
+};
+frames('Lamplighters', 'characters', 12, 8, 48, 10);
+frames('$Tamsin', 'characters', 3, 4, 48, 11);
+frames('Lamplighters_face', 'faces', 4, 2, 144, 12);
+frames('Moth', 'enemies', 1, 1, 64, 13);
+frames('IconSet', 'system', 16, 2, 32, 14);
 sheet('Hollow_A1', 2, 3, 1);
 sheet('Hollow_A2', 2, 3, 2);
 sheet('Hollow_B', 5, 1, 5);

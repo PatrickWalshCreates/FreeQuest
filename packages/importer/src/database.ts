@@ -34,8 +34,14 @@ export interface DatabaseContext extends TraitContext {
   readonly types: SystemTypes;
   readonly variables: NumberedIds;
   readonly report: ImportReport;
-  /** The character every actor uses until characters are imported. */
+  /** Actor number → its character's id (null: none, the placeholder is used). */
+  readonly actorCharacter: (n: number) => string | null;
+  /** Enemy number → its battle image (null: none). */
+  readonly enemyImage: (n: number) => string | null;
+  /** The character for actors without one (the template's). */
   readonly placeholderCharacter: string;
+  /** Called when something uses the placeholder character. */
+  readonly usedPlaceholder: () => void;
 }
 
 export interface ImportedDatabase {
@@ -73,21 +79,15 @@ export function importDatabase(ctx: DatabaseContext): ImportedDatabase {
   ];
   const classes = [...db.classes].map((c) => importClass(c.id, c.name, c.entry, ctx));
   const actors = [...db.actors].map((a) =>
-    importActor(a.id, a.name, a.entry, equipment, classes, ctx),
+    importActor(a.n, a.id, a.name, a.entry, equipment, classes, ctx),
   );
-  const enemies = [...db.enemies].map((e) => importEnemy(e.id, e.name, e.entry, ctx));
+  const enemies = [...db.enemies].map((e) => importEnemy(e.n, e.id, e.name, e.entry, ctx));
   const troops = [...db.troops].flatMap((t) => importTroop(t.id, t.name, t.entry, ctx));
 
   if (classes.length > 0) {
     ctx.report.changed(
       'Classes',
       'FreeQuest works out the experience for each level with a simpler curve; every class got one from its base value. Check how fast characters level up.',
-    );
-  }
-  if (actors.length > 0) {
-    ctx.report.note(
-      'Actors',
-      `Every actor uses a placeholder character until characters are imported.`,
     );
   }
   // MZ's first two skills are the normal attack and guard.
@@ -417,6 +417,7 @@ export function levelCurve(values: readonly unknown[]): LevelCurve {
 }
 
 function importActor(
+  n: number,
   id: string,
   name: string,
   a: JsonRecord,
@@ -467,7 +468,7 @@ function importActor(
     name,
     ...(profile ? { description: profile } : {}),
     class: classId,
-    character: ctx.placeholderCharacter,
+    character: actorCharacter(n, where, ctx),
     level,
     maxLevel,
     equipment: start,
@@ -477,8 +478,29 @@ function importActor(
 
 // --- Enemies and troops -----------------------------------------------------
 
-function importEnemy(id: string, name: string, e: JsonRecord, ctx: DatabaseContext): EnemyEntry {
+function actorCharacter(n: number, where: string, ctx: DatabaseContext): string {
+  const character = ctx.actorCharacter(n);
+  if (character) return character;
+  ctx.report.changed(where, 'It has no character picture, so it uses the Starter’s hero.');
+  ctx.usedPlaceholder();
+  return ctx.placeholderCharacter;
+}
+
+function importEnemy(
+  n: number,
+  id: string,
+  name: string,
+  e: JsonRecord,
+  ctx: DatabaseContext,
+): EnemyEntry {
   const where = `Enemies › ${name}`;
+  const image = ctx.enemyImage(n);
+  if (image && asInt(e['battlerHue']) !== 0) {
+    ctx.report.changed(
+      where,
+      'Its picture was recoloured (hue); FreeQuest shows the original colours.',
+    );
+  }
   const params = asArray(e['params']);
   const stats = Object.fromEntries(
     PARAM_STATS.map((stat, i) => [stat, Math.max(stat === 'maxHp' ? 1 : 0, asInt(params[i]))]),
@@ -524,6 +546,7 @@ function importEnemy(id: string, name: string, e: JsonRecord, ctx: DatabaseConte
     id,
     name,
     stats,
+    ...(image ? { image } : {}),
     exp: Math.max(0, asInt(e['exp'])),
     gold: Math.max(0, asInt(e['gold'])),
     drops,

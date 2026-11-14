@@ -14,3 +14,4 @@ export * from './import-maps.js';
 export * from './maps.js';
 export * from './tiles.js';
 export * from './tilesets.js';
+export * from './graphics.js';

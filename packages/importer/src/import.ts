@@ -21,7 +21,9 @@ import {
 } from '@freequest/schema';
 import { entriesFile, importDatabase, systemData } from './database.js';
 import type { ImageCodec } from './image.js';
+import { GraphicsImporter } from './graphics.js';
 import { importMaps } from './import-maps.js';
+import { asInt, asString } from './json.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
@@ -80,13 +82,47 @@ export async function importMzProject(
 
   // The database, written over the template's.
   const db = await readMzDatabase(source);
+
+  // Pictures: actors' characters and enemies' images, made as they're needed.
+  const graphics = new GraphicsImporter(source, options.images, report, mz.system.sideView);
+  const actorCharacters = new Map<number, string>();
+  for (const actor of db.actors) {
+    const character = await graphics.character(
+      asString(actor.entry['characterName']),
+      asInt(actor.entry['characterIndex']),
+      `Actors › ${actor.name}`,
+    );
+    if (character) actorCharacters.set(actor.n, character);
+  }
+  const enemyImages = new Map<number, string>();
+  for (const enemy of db.enemies) {
+    const image = await graphics.enemy(
+      asString(enemy.entry['battlerName']),
+      `Enemies › ${enemy.name}`,
+    );
+    if (image) enemyImages.set(enemy.n, image);
+  }
+  let placeholderUsed = false;
   const imported = importDatabase({
     db,
     types,
     variables,
     report,
+    actorCharacter: (n) => actorCharacters.get(n) ?? null,
+    enemyImage: (n) => enemyImages.get(n) ?? null,
     placeholderCharacter: manifest.player.character,
+    usedPlaceholder: () => {
+      placeholderUsed = true;
+    },
   });
+  // MZ's player looks like the party's first member.
+  const party = mz.system.party.flatMap((n) => db.actors.id(n) ?? []);
+  const firstActor = imported.actors[0];
+  if (party.length === 0 && firstActor) party.push(firstActor.id);
+  const leader = imported.actors.find((a) => a.id === party[0]);
+  const playerCharacter = leader?.character ?? manifest.player.character;
+  if (!leader) placeholderUsed = true;
+  const pictures = await graphics.finish();
   const databasePaths = { ...DEFAULT_DATABASE_PATHS, ...manifest.database };
   const templateSystem = (await readTemplate(databasePaths.system)) as unknown as SystemData;
   const written = new Map<string, unknown>([
@@ -99,7 +135,17 @@ export async function importMzProject(
     [databasePaths.enemies, entriesFile(imported.enemies)],
     [databasePaths.troops, entriesFile(imported.troops)],
     [databasePaths.commonEvents, entriesFile([])],
-    [databasePaths.system, systemData(types, imported, templateSystem)],
+    [
+      databasePaths.system,
+      systemData(types, imported, {
+        ...(templateSystem.audio ? { audio: templateSystem.audio } : {}),
+        ...(pictures.iconset
+          ? { iconset: pictures.iconset }
+          : templateSystem.iconset
+            ? { iconset: templateSystem.iconset }
+            : {}),
+      }),
+    ],
   ]);
   // Maps, and a tileset for each MZ tileset they use.
   const maps = await importMaps(source, mz, db, report, options.images);
@@ -110,6 +156,14 @@ export async function importMzProject(
       f.startsWith('assets/tilesets/'));
   for (const map of maps.maps) written.set(map.path, map.data);
   for (const tileset of maps.tilesets) written.set(tileset.path, tileset.data);
+  for (const character of pictures.characters) written.set(character.path, character.data);
+  // The template's characters stay only if something still uses its hero.
+  const templateCharacter = (f: string) =>
+    !placeholderUsed &&
+    (manifest.characters.some((c) => c.path === f) || f.startsWith('assets/characters/'));
+  // The template's icons go when the project has its own.
+  const templateIcons = (f: string) =>
+    pictures.iconset !== null && f === templateSystem.iconset?.image;
   if (maps.maps.length === 0) {
     // The template's maps stay, without their events (which use the template's database).
     for (const ref of manifest.maps)
@@ -125,9 +179,16 @@ export async function importMzProject(
   );
 
   const files = options.template.files.filter(
-    (f) => f !== TEMPLATE_INFO_FILE && f !== MANIFEST_PATH && !written.has(f) && !replaced(f),
+    (f) =>
+      f !== TEMPLATE_INFO_FILE &&
+      f !== MANIFEST_PATH &&
+      !written.has(f) &&
+      !replaced(f) &&
+      !templateCharacter(f) &&
+      !templateIcons(f),
   );
-  const total = files.length + written.size + maps.images.length + 2;
+  const images = [...maps.images, ...pictures.files];
+  const total = files.length + written.size + images.length + 2;
   let done = 0;
   for (const path of files) {
     await target.writeBytes(path, await options.template.read(path));
@@ -137,15 +198,12 @@ export async function importMzProject(
     await target.writeText(path, stableStringify(data));
     options.onProgress?.(++done, total);
   }
-  for (const image of maps.images) {
+  for (const image of images) {
     await target.writeBytes(image.path, image.bytes);
     options.onProgress?.(++done, total);
   }
   await target.writeText(IMPORT_REPORT_FILE, report.toMarkdown(`Importing “${name}”`));
 
-  const party = mz.system.party.flatMap((n) => db.actors.id(n) ?? []);
-  const firstActor = imported.actors[0];
-  if (party.length === 0 && firstActor) party.push(firstActor.id);
   await target.writeText(
     MANIFEST_PATH,
     stableStringify({
@@ -154,6 +212,11 @@ export async function importMzProject(
       id,
       screen: mz.system.screen,
       database: databasePaths,
+      player: { ...manifest.player, character: playerCharacter },
+      characters: [
+        ...(placeholderUsed ? manifest.characters : []),
+        ...pictures.characters.map((c) => ({ id: c.data.id, path: c.path })),
+      ],
       start: { ...(maps.start ?? manifest.start), party, gold: 0 },
       ...(maps.maps.length > 0
         ? {

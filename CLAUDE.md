@@ -858,6 +858,16 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   reported. PNGs go through an injected `ImageCodec` (`RgbaImage`, `copyArea`): the CLI's
   `png-codec.ts` (pngjs), later a canvas in the editor. When maps import, the template's maps,
   tilesets and tileset images are left out.
+- **Pictures** (`graphics.ts`, `GraphicsImporter`): made on first use, so only used pictures
+  come across. `character(name, index)`: a sheet is 4 × 2 characters of 3 × 4 frames, or one
+  when the name has "$"; each becomes `assets/characters/<id>.png` + a sheet (rows down, left,
+  right, up; idle 1; walk 0 1 2 1). `face(name, index)`: MZ's 4 × 2 grid laid out as one row
+  (`assets/faces/<id>.png`), keeping face numbers (for messages, step 5). `enemy(name)`:
+  copied from img/sv_enemies or img/enemies (side-view games first look in sv_enemies);
+  hue changes are reported. The iconset (`img/system/IconSet.png`, 32 px, 16 columns) replaces
+  the template's. Actors without a picture use the template's hero, which is copied only then;
+  the player is the party leader's character. A picture with a `.png_` beside it is reported
+  as encrypted (a deployed game, not the project).
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
   byte-order marks) are written by hand; `test/make-fixture.ts` writes tiny-mz's tileset, map
   and synthetic sheets (each quarter tile coloured by its position, so tests can check pieces).
@@ -1162,9 +1172,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   3. ~~Tilesets and maps: bake the autotile shapes maps use into one generated tileset per MZ
      tileset, passability and "above" from MZ's flags, layers, encounters, the start~~ (done;
      both sample games convert every map with no problems; the user checks how they look)
-  4. Characters and faces: cut MZ's character sheets (several characters per image, or one) into
-     FreeQuest character sheets, and face sheets into rows of faces; the player, actors and
-     event graphics point at them. Enemy images, the iconset (`system.json` `iconset`).
+  4. ~~Characters and faces: each used MZ character cut into its own FreeQuest sheet, face
+     sheets laid out in a row, enemy images, the iconset; the player looks like the party
+     leader~~ (done; both sample games' actors and enemies have their pictures)
   5. Events: pages (conditions, trigger, priority → layer, movement, graphic), self switches →
      event flags, common events, and every command FreeQuest has (messages with faces and text
      codes, choices, branches, switches, variables, gold, items, party, transfers, battles,

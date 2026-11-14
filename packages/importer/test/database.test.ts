@@ -20,7 +20,16 @@ async function imported() {
   const db = await readMzDatabase(fs);
   const types = new SystemTypes(mz.system);
   const variables = new NumberedIds(mz.system.variables, 'variable', new Set());
-  const result = importDatabase({ db, types, variables, report, placeholderCharacter: 'hero' });
+  const result = importDatabase({
+    db,
+    types,
+    variables,
+    report,
+    placeholderCharacter: 'hero',
+    actorCharacter: () => null,
+    enemyImage: () => null,
+    usedPlaceholder: () => undefined,
+  });
   const where = (name: string) =>
     report.items.filter((i) => i.where.endsWith(`› ${name}`)).map((i) => i.message);
   const find = <T extends { id: string }>(list: readonly T[], id: string): T => {
