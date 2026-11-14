@@ -33,8 +33,13 @@ where it was. Project formats are unchanged from 0.3, so 0.3 projects open as th
   plugins are never run.
 - The `freequest` command does the same: `freequest import mz <folder> --out <new folder>`.
 
+- The report opens with a **summary by kind**, most common first ("Show animation: 80 times in
+  71 places"), so it's clear what a game needs most.
+
 ### Also
 
+- **Title music plays at once** where sound is already allowed (pressing Play in the editor, the
+  desktop apps), instead of waiting for the first key.
 - PNG pictures are read and written by FreeQuest itself, so imports are exact to the pixel.
 
 ## 0.3.0 (2026-11-14)

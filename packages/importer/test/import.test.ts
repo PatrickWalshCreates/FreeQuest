@@ -190,7 +190,7 @@ describe('importing a project', () => {
 });
 
 describe('the report', () => {
-  it('groups items and keeps names from turning into formatting', () => {
+  it('opens with a summary by kind, then groups items, keeping names from turning into formatting', () => {
     const report = new ImportReport();
     expect(report.toMarkdown('Import')).toContain('Everything was imported.');
     report.note('Project', 'A note');
@@ -198,6 +198,12 @@ describe('the report', () => {
     expect(report.toMarkdown('Import')).toBe(
       [
         '# Import',
+        '',
+        '## Summary',
+        '',
+        'What needs work, by kind, most common first:',
+        '',
+        '- **Script call left as a comment** (not imported): 1 place',
         '',
         '## Not imported (1)',
         '',
@@ -208,6 +214,31 @@ describe('the report', () => {
         '- **Project**: A note',
         '',
       ].join('\n'),
+    );
+  });
+
+  it('adds up topics across places, and messages that differ only by numbers', () => {
+    const report = new ImportReport();
+    report.missing('A', 'x', [
+      { name: 'Show animation', count: 3 },
+      { name: 'Script', count: 1 },
+    ]);
+    report.missing('B', 'y', [{ name: 'Show animation', count: 2 }]);
+    report.changed('C', '3 tiles are one-way');
+    report.changed('D', '12 tiles are one-way');
+    expect(report.summary()).toEqual([
+      { level: 'missing', name: 'Show animation', count: 5, places: 2 },
+      { level: 'changed', name: '3 tiles are one-way', count: 2, places: 2 },
+      { level: 'missing', name: 'Script', count: 1, places: 1 },
+    ]);
+    expect(report.toMarkdown('R')).toContain(
+      '- **Show animation** (not imported): 5 times in 2 places',
+    );
+    // Familiar messages get a short name.
+    report.missing('E', 'It cost TP; FreeQuest has no TP, so it costs nothing extra.');
+    report.missing('F', "audio/se/Bell.ogg is missing, so it's silent.");
+    expect(report.summary().map((l) => l.name)).toEqual(
+      expect.arrayContaining(['TP costs', 'Missing sound files']),
     );
   });
 });

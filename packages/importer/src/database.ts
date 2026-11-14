@@ -207,6 +207,7 @@ function usableEffects(entry: JsonRecord, where: string, ctx: DatabaseContext): 
       ctx.report.changed(
         where,
         `Its formula \`${source.trim()}\` couldn't be translated (${translated.reason}); it uses ${formula} for now.`,
+        [{ name: 'Damage formulas to rewrite', count: 1 }],
       );
     }
     const pool = type === 2 || type === 4 || type === 6 ? 'mp' : 'hp';
@@ -271,7 +272,11 @@ function usableEffects(entry: JsonRecord, where: string, ctx: DatabaseContext): 
     }
   }
   if (left.size > 0)
-    ctx.report.missing(where, `Effects FreeQuest doesn't have: ${[...left].join(', ')}.`);
+    ctx.report.missing(
+      where,
+      `Effects FreeQuest doesn't have: ${[...left].join(', ')}.`,
+      [...left].map((name) => ({ name: `Effect: ${name}`, count: 1 })),
+    );
   const repeats = asInt(entry['repeats'], 1);
   if (repeats > 1) ctx.report.missing(where, `It hit ${repeats} times; FreeQuest hits once.`);
   return effects;

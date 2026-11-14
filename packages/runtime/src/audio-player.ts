@@ -10,9 +10,10 @@ interface Playing {
 
 /**
  * Plays music (crossfaded, looping or once) and sound effects with the Web
- * Audio API. Browsers only allow audio after a user gesture, so nothing
- * plays until `unlock()` is called from a key press; the music asked for
- * before then starts at that point. Missing or broken files are logged once
+ * Audio API. Browsers only allow audio after a user gesture: `unlock()` is
+ * tried when the game starts (it plays at once where sound is already
+ * allowed) and again on every key press, which resumes a context the browser
+ * held back; the music asked for before then starts at that point. Missing or broken files are logged once
  * and then ignored, so a bad path never stops the game.
  */
 export class AudioPlayer {

@@ -241,6 +241,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   // Audio ------------------------------------------------------------------
   const audio = new AudioPlayer((path) => project.assetUrl(path));
   const unlockAudio = () => audio.unlock();
+  // Try at once: where sound is already allowed (a click on Play in the editor,
+  // the desktop apps) the title music starts now; elsewhere the first key does it.
+  audio.unlock();
   window.addEventListener('keydown', unlockAudio);
   const sfx = (key: SoundKey | null) => {
     const path = key && db.system.audio?.sounds?.[key];

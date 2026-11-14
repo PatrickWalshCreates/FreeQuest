@@ -28,7 +28,7 @@ import type { GraphicsImporter } from './graphics.js';
 import type { NumberedIds } from './ids.js';
 import { asArray, asInt, asRecord, asString, isRecord, type JsonRecord } from './json.js';
 import type { MzDatabase } from './mz-lists.js';
-import type { ImportReport } from './report.js';
+import type { ImportReport, ReportTopic } from './report.js';
 import { convertText } from './text.js';
 import type { TileDrawer } from './tilesets.js';
 
@@ -62,7 +62,8 @@ export interface ListScope {
 /** What a command list left out, gathered to report once. */
 class Leftovers {
   readonly commands = new Map<string, number>();
-  readonly text = new Set<string>();
+  readonly text = new Map<string, number>();
+  readonly routeSteps = new Map<string, number>();
   readonly notes = new Set<string>();
   redo = 0;
 
@@ -70,21 +71,46 @@ class Leftovers {
     this.commands.set(name, (this.commands.get(name) ?? 0) + 1);
   }
 
+  static count(map: Map<string, number>, name: string): void {
+    map.set(name, (map.get(name) ?? 0) + 1);
+  }
+
+  static topics(map: ReadonlyMap<string, number>, prefix = ''): ReportTopic[] {
+    return [...map].map(([name, count]) => ({ name: `${prefix}${name}`, count }));
+  }
+
   reportTo(report: ImportReport, where: string): void {
     if (this.commands.size > 0) {
       const list = [...this.commands]
         .map(([name, n]) => (n > 1 ? `${name} ×${n}` : name))
         .join(', ');
-      report.missing(where, `Commands FreeQuest doesn't have, kept as comments: ${list}.`);
+      report.missing(
+        where,
+        `Commands FreeQuest doesn't have, kept as comments: ${list}.`,
+        Leftovers.topics(this.commands),
+      );
     }
     if (this.redo > 0) {
       report.changed(
         where,
         `${this.redo} ${this.redo === 1 ? 'branch tests' : 'branches test'} something FreeQuest can't; ${this.redo === 1 ? 'it now tests' : 'they now test'} the switch “Imported: condition to redo”, which is never on.`,
+        [{ name: 'Branches on something FreeQuest can’t test', count: this.redo }],
       );
     }
-    if (this.text.size > 0)
-      report.changed(where, `Text codes left out: ${[...this.text].join(', ')}.`);
+    if (this.text.size > 0) {
+      report.changed(
+        where,
+        `Text codes left out: ${[...this.text.keys()].join(', ')}.`,
+        Leftovers.topics(this.text, 'Message code: '),
+      );
+    }
+    if (this.routeSteps.size > 0) {
+      report.changed(
+        where,
+        `Move route steps FreeQuest doesn't have were left out: ${[...this.routeSteps.keys()].join(', ')}.`,
+        Leftovers.topics(this.routeSteps, 'Move route step: '),
+      );
+    }
     for (const note of this.notes) report.changed(where, note);
   }
 }
@@ -106,7 +132,7 @@ const PAUSES: Readonly<Record<number, number>> = { 1: 2, 2: 1, 3: 0.5, 4: 0.25, 
 /** Readable names of MZ commands FreeQuest doesn't have (our own wording). */
 const COMMAND_NAMES: Readonly<Record<number, string>> = {
   117: 'Common event',
-  122: 'Control variables',
+  122: 'Control variables (random, game data or script)',
   125: 'Change gold',
   126: 'Change items',
   127: 'Change weapons',
@@ -223,7 +249,7 @@ class Converter {
       actor: (n) => this.ctx.db.actors.id(n),
       color: (n) => this.ctx.textColor(n),
     });
-    for (const d of converted.dropped) this.left.text.add(d);
+    for (const d of converted.dropped) Leftovers.count(this.left.text, d);
     return converted.text;
   }
 
@@ -540,7 +566,6 @@ class Converter {
   /** MZ move route commands as route steps; ones FreeQuest lacks are noted. */
   routeSteps(list: unknown): MoveStep[] {
     const steps: MoveStep[] = [];
-    const missing = new Set<string>();
     const MOVES: Readonly<Record<number, RouteDirection>> = {
       1: 'down',
       2: 'left',
@@ -574,12 +599,7 @@ class Converter {
         const seconds = frames(asInt(params[0]));
         if (seconds > 0) steps.push({ type: 'wait', seconds: Math.min(60, seconds) });
       } else if (code === 29) steps.push({ type: 'speed', speed: moveSpeed(asInt(params[0], 4)) });
-      else missing.add(ROUTE_NAMES[code] ?? `route command ${code}`);
-    }
-    if (missing.size > 0) {
-      this.left.notes.add(
-        `Move route steps FreeQuest doesn't have were left out: ${[...missing].join(', ')}.`,
-      );
+      else Leftovers.count(this.left.routeSteps, ROUTE_NAMES[code] ?? `route command ${code}`);
     }
     return steps;
   }

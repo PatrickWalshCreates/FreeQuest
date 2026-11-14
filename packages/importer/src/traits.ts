@@ -180,7 +180,11 @@ export function traitModifiers(
     );
   }
   if (left.size > 0) {
-    ctx.report.missing(where, `Traits FreeQuest doesn't have: ${[...left].join(', ')}.`);
+    ctx.report.missing(
+      where,
+      `Traits FreeQuest doesn't have: ${[...left].join(', ')}.`,
+      [...left].map((name) => ({ name: `Trait: ${name}`, count: 1 })),
+    );
   }
   return { modifiers, skills };
 }

@@ -121,7 +121,7 @@ describe('importing pictures', () => {
     // Not in sv_enemies, but in enemies: still found.
     expect(await graphics.enemy('Moth', 'B')).toBe('assets/enemies/moth.png');
     expect(await new GraphicsImporter(source, codec, report).enemy('Ghost', 'C')).toBeNull();
-    expect(report.items).toEqual([
+    expect(report.items).toMatchObject([
       {
         level: 'missing',
         where: 'C',

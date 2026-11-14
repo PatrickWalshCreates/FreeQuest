@@ -351,7 +351,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   `music`, `playMusic`/`playSound` commands. Core decides _what_ plays: `World.music` (event
   override until the next map change, else the map's) and `World.drainSounds()`. Runtime decides
   _when_: `musicFor(scene, …)` and `uiSoundFor(input, menu)` (DOM-free, tested), and `AudioPlayer`
-  (Web Audio) crossfades music, starts on the first key press (browser autoplay rules), and ignores
+  (Web Audio) crossfades music, starts at once where sound is allowed (`unlock()` at game start) or on the first key press (browser autoplay rules), and ignores
   missing files after a warning. A demo test checks every referenced image/audio file exists.
 - **Testing in the browser pane**: when the pane is hidden, requestAnimationFrame doesn't fire, so
   drive the game with `freequest.app.ticker.update(t)` from the console instead of real-time waits.
@@ -828,7 +828,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   assigned up front in number order so ids don't depend on use order; `declarations` lists
   named ones plus unnamed ones something used. Switches and variables share one id space;
   `SystemTypes` turns MZ's type lists into system.json lists (weapon and armor types share
-  one). `ImportReport`: `missing` / `changed` / `note`, each with where in the MZ project.
+  one). `ImportReport`: `missing` / `changed` / `note`, each with where in the MZ project and its
+  `topics` (what it's about, with a count: a command's uses, a trait…); `summary()` adds them
+  up by kind across places (messages without topics count as their own kind, numbers aside)
+  and `toMarkdown` opens with the 20 most common.
 - **Database** (`database.ts`, `mz-lists.ts`, `traits.ts`, `formula.ts`): `MzList` reads a
   numbered list (unnamed entries are unused slots and skipped; weapons and armors share
   equipment ids). Traits → modifiers: MZ gives battlers their base hit/evasion/critical as
@@ -1241,7 +1244,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   and jumps in routes, a choice's own cancel branch. From playing one (the user): a title
   screen picture (FreeQuest's title has none), and a hidden or see-through player (MZ's
   "start transparent" option and Transparency command; an intro on a blank map showed the
-  player over black). The list is settled when M13 is done.
+  player over black). From playing the other (0.4.0's check): the player's look following the
+  party leader and "Change actor images" (an intro's silhouette hero never changes back),
+  pictures (that game draws its message boxes with them), animations, "change image" in
+  routes. The list is settled when M13 is done.
 - **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones
