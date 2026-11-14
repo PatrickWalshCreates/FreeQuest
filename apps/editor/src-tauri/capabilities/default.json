@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The editor window: open and confirm dialogs, closing with an unsaved-changes check, and read/write inside folders the user picked, and opening web links in the browser.",
+  "description": "The editor window: open and confirm dialogs, closing with an unsaved-changes check, and read/write inside folders the user picked, and opening web links in the browser, and installing editor updates (then restarting).",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -25,6 +25,8 @@
       ]
     },
     "core:path:default",
-    "opener:default"
+    "opener:default",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

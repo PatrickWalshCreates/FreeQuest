@@ -28,6 +28,11 @@ FreeQuest isn't signed by a registered developer yet, so each system asks once:
   `chmod +x FreeQuest-Editor-*.AppImage`) and open it; or install the `.deb`
   (`sudo apt install ./FreeQuest-Editor-*.deb`).
 
+**Updates**: from version 0.3.0, the editor checks for a newer version each time it starts. When
+one is out, a panel in the corner offers **Install and restart** (save your project first),
+**What's new**, **Later** or **Skip this version**. **Help → About** has **Check for updates**.
+Your projects keep working: a newer editor opens them and upgrades their files when you save.
+
 > Prefer to build it yourself, or help make FreeQuest? See
 > [CONTRIBUTING.md](https://github.com/PatrickWalshCreates/FreeQuest/blob/main/CONTRIBUTING.md):
 > `pnpm editor` runs the editor in your browser straight from the source code.

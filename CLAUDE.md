@@ -533,7 +533,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   starting values too (`NUMBER_DEFAULTS`: success rate 1, rating 5…). Typing in an entry is one
   undo step until the field loses focus. Problems whose message starts with `<kind> "<id>"`
   show on that entry.
-- **Rust stays minimal**: `src-tauri` only registers the dialog, fs, persisted-scope and opener plugins; permissions in
+- **Rust stays minimal**: `src-tauri` only registers the dialog, fs, persisted-scope, opener, updater and process plugins; permissions in
   `capabilities/default.json`. Release CSP is strict; `devCsp` is off so Vite's dev scripts run.
 - **Testing**: editor-core in Vitest; the UI in the browser pane via `pnpm editor` (same code as
   the desktop app minus `TauriFs`). The app icon is generated (`pnpm --filter @freequest/editor
@@ -776,6 +776,26 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   Preview: launch config `site` (`vite preview --outDir site-dist --port 5180`).
 - Shortcut labels in the editor come from `apps/editor/src/keys.ts` (`MOD`: ⌘ on a Mac, `Ctrl+`
   elsewhere); every shortcut accepts both. The guides write Ctrl with a "⌘ on a Mac" note.
+- **Editor updates** (M12; desktop only): Tauri's updater and process plugins. Each release's
+  `latest.json` (endpoint `UPDATE_MANIFEST_URL`, the latest published release, never a draft)
+  names each system's file and its signature, made with our own minisign key: the public key is
+  `plugins.updater.pubkey` in the editor's `tauri.conf.json` (a test keeps it and the endpoint in
+  step), the private key is the `TAURI_SIGNING_PRIVATE_KEY` repository secret (no password; the
+  maintainer keeps the key file backed up outside the repo, `~/.tauri/freequest-updater.key`).
+  Update files: the Mac app as `.app.tar.gz` (made by `stage-app.mjs` after ad-hoc signing,
+  `COPYFILE_DISABLE=1`), the Windows setup .exe (passive install), the AppImage and the .deb
+  (`linux-x86_64-deb`, tried first by .deb installs). The release workflow signs them with
+  `tauri signer sign` (not `createUpdaterArtifacts`, so local builds need no key; a tag fails
+  without the secret) and `scripts/update-manifest.ts` writes `latest.json` with the version's
+  CHANGELOG section as notes. editor-core `updates.ts` (tested): `compareVersions` (a `-test.1`
+  suffix comes before the release), `shouldOfferUpdate` (skipped versions in localStorage
+  `SKIPPED_UPDATE_KEY`), `changelogSection`, `updateManifest`, `UPDATE_FILES`. App:
+  `updater.ts` (one store: check at start quietly, or from About with every outcome shown;
+  install → relaunch), `UpdateBanner.tsx` (corner panel; asks before losing unsaved changes;
+  What's new opens the release page) and `UpdateCheck` in About. A test build can point at a
+  local manifest: `tauri-mac-build.mjs` passes extra arguments to `tauri build`, e.g.
+  `--config '{"plugins":{"updater":{"endpoints":["http://localhost:5199/latest.json"],
+"dangerousInsecureTransportProtocol":true}}}'`.
 - `docs/release-checklist.md`: the by-hand checks for a release (dialogs, restarts, Gatekeeper,
   playing the demo).
 - Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`
@@ -1036,10 +1056,14 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      cells, map v8), drawn beside the text in the game and the editor's preview; the demo's Elder
      and Mira get faces~~ (done; a sheet is one row of square faces as tall as the image, so it
      needs no settings. Picked in the editor and seen in a playtest)
-  7. An updater in the editor: Tauri's updater plugin checks the latest GitHub release at start
+  7. ~~An updater in the editor: Tauri's updater plugin checks the latest GitHub release at start
      and offers to download and install it (signed with our own update key, a GitHub Actions
      secret; the release workflow publishes the update manifest). In 0.3.0 so that 0.3.0 users
-     get 0.4.0. Check the Mac first-open prompt after a self-update (no Developer ID yet)
+     get 0.4.0. Check the Mac first-open prompt after a self-update (no Developer ID yet)~~
+     (done; tried on this Mac with a test build pointed at a local manifest: a signed fake
+     update was offered, the user clicked Install, the app was replaced (signature valid) and
+     reopened with no Gatekeeper prompt, since the updater's download isn't quarantined. The
+     release workflow's signing and latest.json run for the first time at 0.3.0)
   8. Demo, Starter, guides, the quest test, a "What's new" page on the website (from
      CHANGELOG.md), and a 0.3.0 release through the checklist (with the by-hand check on a
      downloaded desktop build, the site showing the new version, and an update from 0.3.0 to a

@@ -58,6 +58,8 @@ const args = [
   '--bundles',
   'app',
   ...(only ? ['--target', only] : universal ? ['--target', 'universal-apple-darwin'] : []),
+  // Anything else goes to `tauri build`, e.g. --config for a test build.
+  ...process.argv.slice(2),
 ];
 const result = spawnSync('pnpm', args, { stdio: 'inherit', env });
 process.exit(result.status ?? 1);

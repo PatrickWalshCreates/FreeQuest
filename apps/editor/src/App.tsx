@@ -1,10 +1,12 @@
 import { ProjectDocument, type ProjectFs, openProject } from '@freequest/editor-core';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { ErrorBoundary } from './ErrorScreen.js';
 import { ProjectView } from './ProjectView.js';
 import { StartScreen } from './StartScreen.js';
 import { confirmDiscard, projectLocation } from './platform.js';
 import { rememberProject } from './recent.js';
+import { UpdateBanner } from './UpdateBanner.js';
+import { updates } from './updater.js';
 
 type AppState =
   | {
@@ -18,7 +20,23 @@ type AppState =
 
 export function App() {
   const [state, setState] = useState<AppState>({ screen: 'start', error: null });
+  // A newer editor? Checked once per start (desktop only; quiet when offline).
+  useEffect(() => void updates.check(false), []);
+  return (
+    <>
+      <Screen state={state} setState={setState} />
+      <UpdateBanner hasUnsavedChanges={() => state.screen === 'project' && state.doc.dirty} />
+    </>
+  );
+}
 
+function Screen({
+  state,
+  setState,
+}: {
+  readonly state: AppState;
+  readonly setState: (state: AppState) => void;
+}): ReactNode {
   /** Open the project `pick` resolves to; `recent` is its location when picked from the list. */
   const open = async (pick: Promise<ProjectFs | null>, recent?: string) => {
     try {

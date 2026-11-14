@@ -6,6 +6,12 @@ name: Release
 # macOS, Windows and Linux. On a version tag (v0.1.0…) the editors go on a
 # draft GitHub Release to check and publish by hand; started by hand ("Run
 # workflow") they're kept as the run's artifacts, to try a build.
+#
+# Editor updates: each editor's update file (the Mac app as .app.tar.gz, the
+# Windows installer, the AppImage and .deb) is signed with FreeQuest's update
+# key, the TAURI_SIGNING_PRIVATE_KEY repository secret, and the release gets
+# latest.json, which installed editors read to find the update. The public
+# half of the key is in apps/editor/src-tauri/tauri.conf.json.
 on:
   push:
     tags: ['v*']
@@ -63,6 +69,9 @@ jobs:
     name: Editor (${{ matrix.label }})
     needs: player
     runs-on: ${{ matrix.runner }}
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
     strategy:
       fail-fast: false
       matrix:
@@ -82,6 +91,12 @@ jobs:
             runner: ubuntu-22.04
             system: linux
     steps:
+      # A release without signed updates would leave every installed editor behind.
+      - name: Check the update key
+        if: startsWith(github.ref, 'refs/tags/v') && env.TAURI_SIGNING_PRIVATE_KEY == ''
+        run: |
+          echo "The TAURI_SIGNING_PRIVATE_KEY secret is missing: releases need it to sign updates."
+          exit 1
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -126,12 +141,22 @@ jobs:
           mkdir -p downloads
           bundle=apps/editor/src-tauri/target/release/bundle
           case "${{ matrix.system }}" in
-            macos) mv apps/editor/dist-app/macos/*.dmg downloads/ ;;
+            macos) mv apps/editor/dist-app/macos/*.dmg apps/editor/dist-app/macos/*.app.tar.gz downloads/ ;;
             windows) mv $bundle/nsis/*-setup.exe "downloads/FreeQuest-Editor-$version-Windows-setup.exe" ;;
             linux)
               mv $bundle/appimage/*.AppImage "downloads/FreeQuest-Editor-$version-Linux-x86_64.AppImage"
               mv $bundle/deb/*.deb "downloads/FreeQuest-Editor-$version-Linux-amd64.deb" ;;
           esac
+          ls -l downloads
+      # <file>.sig beside each update file. Skipped without the key (a fork, a test run).
+      - name: Sign the updates
+        if: env.TAURI_SIGNING_PRIVATE_KEY != ''
+        shell: bash
+        run: |
+          for f in downloads/*.app.tar.gz downloads/*-setup.exe downloads/*.AppImage downloads/*.deb; do
+            [ -e "$f" ] || continue
+            pnpm --filter @freequest/editor exec tauri signer sign "$PWD/$f"
+          done
           ls -l downloads
       - uses: actions/upload-artifact@v4
         with:
@@ -146,11 +171,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v4
         with:
           pattern: editor-*
           path: downloads
           merge-multiple: true
+      # The update manifest installed editors read (latest/download/latest.json, once published).
+      - run: pnpm exec tsx scripts/update-manifest.ts downloads
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ github.token }}

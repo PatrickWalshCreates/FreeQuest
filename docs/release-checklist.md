@@ -7,6 +7,9 @@ this on the release build, ideally on a Mac user account that has never run Free
 ## Before building
 
 - [ ] `pnpm check` passes, and CI is green for the release commit.
+- [ ] The `TAURI_SIGNING_PRIVATE_KEY` repository secret is set (the release fails without it).
+      Its key file is backed up outside the repo: lose it and installed editors can never be
+      updated again (a new key needs a manual download).
 - [ ] `pnpm version:set <version>` and a `CHANGELOG.md` entry for it.
 - [ ] `pnpm gen:notices` re-run if dependencies changed (no diff otherwise).
 - [ ] `pnpm gen:art`, `pnpm gen:audio` and `pnpm gen:templates` leave no diff.
@@ -41,6 +44,10 @@ this on the release build, ideally on a Mac user account that has never run Free
 ## After publishing
 
 - [ ] Download the release files from where players will get them and open them once more.
+- [ ] The release has `latest.json` and a `.sig` beside each update file. An editor of the
+      previous version offers the update at start; **Install and restart** brings it up as the
+      new version (on a Mac, check whether it asks to be opened again), and a project still
+      opens.
 - [ ] Repository public, then Settings → Pages → Source: GitHub Actions; the Website workflow
       ran (it starts on publishing the release; rerun it by hand if Pages wasn't on yet).
 - [ ] The website shows the new version (its download buttons name it: until the site updates,

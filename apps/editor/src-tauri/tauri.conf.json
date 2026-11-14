@@ -38,5 +38,16 @@
     "resources": {
       "players/": "players/"
     }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIwOUE2NkZEMzA0N0Q4RjUKUldUMTJFY3cvV2FhSUNxRFVzMmtOd0xmeHBzUW1VZ1YzaGVCQWNUL3MzL1ZoUXpWQ3dwUU9LakcK",
+      "endpoints": [
+        "https://github.com/PatrickWalshCreates/FreeQuest/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

@@ -3,6 +3,8 @@
 // `pnpm gen:notices`).
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
+import { UpdateCheck } from './UpdateBanner.js';
+import { IN_DESKTOP_APP } from './platform.js';
 
 /** The About page: version, licence and the third-party notices. */
 export function AboutPanel() {
@@ -29,6 +31,7 @@ export function AboutPanel() {
       <p>
         <strong>FreeQuest Editor {FREEQUEST_VERSION}</strong>
       </p>
+      {IN_DESKTOP_APP && <UpdateCheck />}
       <p>
         A free, open-source editor and engine for classic 2D role-playing games. It's an independent
         project, not affiliated with any other RPG maker.

@@ -1,6 +1,6 @@
 // Copies the built editor app to dist-app/ and signs it ad-hoc, so macOS
 // accepts the whole bundle (with the player app inside it) as one piece,
-// then packs it into a disk image (.dmg) to download.
+// then packs it into a disk image (.dmg) to download and an archive for updates.
 // Without a Developer ID it's still an "unidentified developer" app: open it
 // with right-click > Open the first time.
 import { execFileSync } from 'node:child_process';
@@ -55,5 +55,14 @@ if (process.platform === 'darwin') {
   );
   rmSync(root, { recursive: true, force: true });
   console.log(`Disk image: ${dmg}`);
+  // The same signed app as an archive, for editor updates (the release workflow signs it with
+  // the update key). COPYFILE_DISABLE keeps macOS's "._" metadata files out of it.
+  const archive = join(out, `FreeQuest-Editor-${version}-${kind}.app.tar.gz`);
+  rmSync(archive, { force: true });
+  execFileSync('/usr/bin/tar', ['-czf', archive, '-C', out, APP], {
+    stdio: 'inherit',
+    env: { ...process.env, COPYFILE_DISABLE: '1' },
+  });
+  console.log(`Update archive: ${archive}`);
 }
 console.log(`FreeQuest Editor is at ${staged}`);
