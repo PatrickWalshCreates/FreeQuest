@@ -1,0 +1,25 @@
+{
+  "name": "@freequest/importer",
+  "version": "0.3.0",
+  "description": "Imports RPG Maker MZ projects into FreeQuest projects. No UI, no Node APIs.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@freequest/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@freequest/editor-core": "workspace:*",
+    "@freequest/schema": "workspace:*"
+  }
+}

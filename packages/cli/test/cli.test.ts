@@ -231,3 +231,45 @@ describe('usage', () => {
     expect((await cli(['check', '--bogus'])).code).toBe(2);
   });
 });
+
+describe('freequest import mz', () => {
+  const TINY = join(import.meta.dirname, '..', '..', 'importer', 'test', 'fixtures', 'tiny-mz');
+
+  it('makes a new project from an MZ project, which then checks clean', async () => {
+    const out = join(temp(), 'Lantern Hollow');
+    const result = await cli(['import', 'mz', TINY, '--out', out]);
+    expect(result).toMatchObject({ code: 0, err: '' });
+    expect(result.out).toMatch(/Imported Lantern Hollow into .*game id "lantern-hollow"/);
+    expect(result.out).toContain('IMPORT-REPORT.md');
+    expect(existsSync(join(out, 'IMPORT-REPORT.md'))).toBe(true);
+    expect((await openProject(new NodeFs(out))).problems).toEqual([]);
+    expect((await cli(['check', out])).code).toBe(0);
+  });
+
+  it('takes a name, and refuses busy folders, folders inside the MZ project and non-projects', async () => {
+    const named = join(temp(), 'named');
+    expect(
+      (await cli(['import', 'mz', TINY, '--out', named, '--name', 'Second Hollow'])).out,
+    ).toMatch(/game id "second-hollow"/);
+    const busy = temp();
+    writeFileSync(join(busy, 'keep.txt'), 'mine');
+    expect(await cli(['import', 'mz', TINY, '--out', busy])).toMatchObject({
+      code: 2,
+      err: expect.stringMatching(/isn't empty/),
+    });
+    expect(readFileSync(join(busy, 'keep.txt'), 'utf8')).toBe('mine');
+    expect(await cli(['import', 'mz', TINY, '--out', join(TINY, 'out')])).toMatchObject({
+      code: 2,
+      err: expect.stringMatching(/outside the MZ project/),
+    });
+    expect(existsSync(join(TINY, 'out'))).toBe(false);
+    expect(await cli(['import', 'mz', DEMO, '--out', join(temp(), 'x')])).toMatchObject({
+      code: 1,
+      err: expect.stringMatching(/isn't an RPG Maker MZ project/),
+    });
+    expect(await cli(['import', 'mv', TINY, '--out', join(temp(), 'y')])).toMatchObject({
+      code: 2,
+      err: expect.stringMatching(/Unknown import kind "mv"/),
+    });
+  });
+});

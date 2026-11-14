@@ -290,6 +290,9 @@ importers:
       '@freequest/editor-core':
         specifier: workspace:*
         version: link:../editor-core
+      '@freequest/importer':
+        specifier: workspace:*
+        version: link:../importer
       '@freequest/player':
         specifier: workspace:*
         version: link:../player
@@ -312,6 +315,15 @@ importers:
       typebox:
         specifier: 1.4.6
         version: 1.4.6
+
+  packages/importer:
+    dependencies:
+      '@freequest/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
+      '@freequest/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/player:
     dependencies:

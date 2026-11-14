@@ -27,6 +27,7 @@ import {
   openProject,
   planExport,
 } from '@freequest/editor-core';
+import { IMPORT_REPORT_FILE, MzProjectError, importMzProject } from '@freequest/importer';
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { NodeFs } from './node-fs.js';
 
@@ -42,6 +43,8 @@ export interface Io {
   readonly desktopShells?: Partial<Record<DesktopTarget, string>>;
   /** Runs codesign (tests replace it). */
   readonly sign?: SignRunner;
+  /** The Starter template new imports build on (default: the repo's templates/starter). */
+  readonly starterDir?: string;
   /** Overrides process.platform (tests). */
   readonly platform?: string;
 }
@@ -52,7 +55,7 @@ export const VERSION = FREEQUEST_VERSION;
 /** Marks a folder as a FreeQuest export, so `--clean` only ever deletes exports. */
 export { EXPORT_MARKER };
 
-const HELP = `freequest ${VERSION}: check and export FreeQuest projects
+const HELP = `freequest ${VERSION}: check, export and import FreeQuest projects
 
 Usage:
   freequest check [project]               Report every problem in a project
@@ -62,6 +65,9 @@ Usage:
                                           Export a macOS app (signed ad-hoc on a Mac)
   freequest export windows|linux [project] --out <folder> [--clean] [--shell <folder>]
                                           Export a Windows or Linux game (a folder to zip)
+  freequest import mz <mz-project> --out <folder> [--name <game name>]
+                                          Make a new FreeQuest project from an RPG Maker MZ
+                                          project (the MZ folder is only read)
 
 [project] is the folder containing project.json (default: the current folder).
 --clean replaces a previous export in the output folder; other folders must be empty.
@@ -86,6 +92,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         out: { type: 'string', short: 'o' },
         clean: { type: 'boolean' },
         shell: { type: 'string' },
+        name: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
         version: { type: 'boolean', short: 'v' },
       },
@@ -133,6 +140,15 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
             : 'Missing export target (web, mac, windows or linux)',
         );
       }
+      case 'import': {
+        const [kind, ...more] = rest;
+        if (kind !== 'mz') {
+          throw new UsageError(
+            kind ? `Unknown import kind "${kind}" (supported: mz)` : 'Missing import kind (mz)',
+          );
+        }
+        return await importCommand(more, values.out, values.name, io);
+      }
       default:
         throw new UsageError(`Unknown command "${command}"`);
     }
@@ -142,7 +158,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
       io.err('Run "freequest --help" for usage.');
       return 2;
     }
-    if (error instanceof ProjectOpenError) {
+    if (error instanceof ProjectOpenError || error instanceof MzProjectError) {
       io.err(error.message);
       return 1;
     }
@@ -208,11 +224,13 @@ async function player(io: Io): Promise<PlayerFiles> {
 }
 
 /** Make sure `out` can receive an export: empty or missing, or a previous export with --clean. */
+/** Whether folder `a` is `b` or inside it. */
+function inside(a: string, b: string): boolean {
+  const rel = relative(b, a);
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+}
+
 async function prepareOut(out: string, project: string, clean: boolean): Promise<NodeFs> {
-  const inside = (a: string, b: string) => {
-    const rel = relative(b, a);
-    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
-  };
   if (inside(out, project) || inside(project, out)) {
     throw new UsageError('The output folder must be outside the project folder.');
   }
@@ -375,5 +393,46 @@ async function exportDesktopCommand(
       ? `Zip the "${written.folder}" folder to share; players unzip it and run ${written.program}.`
       : `Share the "${written.folder}" folder as a .tar.gz (keeps ${written.program} runnable); it needs WebKitGTK 4.1.`,
   );
+  return 0;
+}
+
+/** The Starter template in the repo (relative to this file, src/ or dist/ alike). */
+const STARTER_DIR = fileURLToPath(new URL('../../../templates/starter', import.meta.url));
+
+async function importCommand(
+  args: readonly string[],
+  out: string | undefined,
+  name: string | undefined,
+  io: Io,
+): Promise<number> {
+  if (args.length !== 1) throw new UsageError('Expected one RPG Maker MZ project folder');
+  if (!out) throw new UsageError('Missing --out <folder>');
+  const sourceDir = resolve(io.cwd, args[0] ?? '.');
+  const outDir = resolve(io.cwd, out);
+  if (inside(outDir, sourceDir) || inside(sourceDir, outDir)) {
+    throw new UsageError('The output folder must be outside the MZ project folder.');
+  }
+  const target = new NodeFs(outDir);
+  if (existsSync(outDir) && (await target.list('')).length > 0) {
+    throw new UsageError(`${outDir} isn't empty. Choose an empty folder for the new project.`);
+  }
+  const starter = new NodeFs(io.starterDir ?? STARTER_DIR);
+  const result = await importMzProject(new NodeFs(sourceDir), target, {
+    template: {
+      files: (await starter.list('')).filter((f) => !f.split('/').some((p) => p.startsWith('.'))),
+      read: (path) => starter.readBytes(path),
+    },
+    ...(name === undefined ? {} : { name }),
+  });
+  const { report } = result;
+  io.out(`Imported ${result.name} into ${outDir} (game id "${result.id}").`);
+  const missing = report.count('missing');
+  const changed = report.count('changed');
+  if (missing + changed > 0) {
+    io.out(
+      `${count(missing, 'thing')} not imported, ${changed} imported differently: see ${join(outDir, IMPORT_REPORT_FILE)}.`,
+    );
+  }
+  io.out('Open the folder in the FreeQuest editor to carry on.');
   return 0;
 }

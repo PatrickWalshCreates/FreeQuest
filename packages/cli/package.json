@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@freequest/editor-core": "workspace:*",
+    "@freequest/importer": "workspace:*",
     "@freequest/player": "workspace:*",
     "@freequest/schema": "workspace:*"
   }

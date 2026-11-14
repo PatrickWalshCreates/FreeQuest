@@ -1,0 +1,17 @@
+{
+  "advanced": { "screenWidth": 640, "screenHeight": 480 },
+  "armorTypes": ["", "Light Armor", "", "Shield"],
+  "currencyUnit": "Coins",
+  "elements": ["", "Physical", "Fire", "", "Ice"],
+  "equipTypes": ["", "Weapon", "Shield", "Head", "Body", "Accessory"],
+  "gameTitle": "Lantern Hollow",
+  "partyMembers": [1, 2],
+  "skillTypes": ["", "Spells", "Arts"],
+  "startMapId": 1,
+  "startX": 5,
+  "startY": 6,
+  "switches": ["", "Met the keeper", "", "Gate open", "門", "Gate open"],
+  "tileSize": 48,
+  "variables": ["", "Lanterns lit", "", "Met the keeper"],
+  "weaponTypes": ["", "Sword", "Shield", "Bow"]
+}
