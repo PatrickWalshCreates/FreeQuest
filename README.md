@@ -4,13 +4,14 @@ FreeQuest is a free, open-source (MIT) toolkit for making classic 2D role-playin
 alternative to RPG Maker MZ, created by Patrick Walsh. It is a clean-room implementation: no RPG
 Maker code, assets or UI are used.
 
-> **Status: 0.3, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
+> **Status: 0.4, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
 > characters, assets) and exports games for the web, Windows, macOS and Linux. Games have tile maps, NPCs who
 > wander, chase or follow routes, events (messages, choices, switches, variables, branches, map
 > transfers, background events), shops, a full RPG database with a safe formula language and
 > icons, turn-based battles with enemies that pick moves by situation, an in-game menu, save
 > slots, an options screen (volume, keys), and music and sound. File formats may still change
-> (older projects are upgraded automatically).
+> (older projects are upgraded automatically). Coming from RPG Maker MZ? The editor imports
+> MZ projects: see [Importing from RPG Maker MZ](docs/importing-mz.md).
 
 **New here?** Download the editor and play the demo on the
 [website](https://patrickwalshcreates.github.io/FreeQuest/), then follow
@@ -24,6 +25,8 @@ Maker code, assets or UI are used.
 | [`@freequest/core`](packages/core)               | Engine logic (movement, collision, game loop), no rendering |
 | [`@freequest/runtime`](packages/runtime)         | PixiJS player that runs a project in the browser            |
 | [`@freequest/editor-core`](packages/editor-core) | Editor logic (opening, editing, saving projects), no UI     |
+| [`@freequest/importer`](packages/importer)       | Imports RPG Maker MZ projects (reads MZ's JSON), no UI      |
+| [`@freequest/cli`](packages/cli)                 | The `freequest` command: check, export, import              |
 | [`apps/player-web`](apps/player-web)             | Minimal web app that plays the demo project                 |
 | [`apps/editor`](apps/editor)                     | The editor (desktop app, also runs in a browser for dev)    |
 | [`samples/demo-project`](samples/demo-project)   | A tiny sample game                                          |

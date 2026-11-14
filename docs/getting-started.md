@@ -61,6 +61,9 @@ Click **New project…** on the start screen.
 
 The project opens. Next time, it's listed under **Recent** on the start screen.
 
+Already have a game in RPG Maker MZ? **Import an RPG Maker MZ project…** on the start screen
+makes a FreeQuest project from it: see [Importing from RPG Maker MZ](importing-mz.md).
+
 ### Find your way around
 
 - The **sidebar** lists everything in the project: settings, assets, maps, tilesets, characters

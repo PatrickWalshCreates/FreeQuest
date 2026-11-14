@@ -1,0 +1,89 @@
+# Importing from RPG Maker MZ
+
+Already making a game in RPG Maker MZ? FreeQuest can turn your MZ project into a FreeQuest
+project: its maps, database, events, characters, faces, music and sounds. Your MZ project isn't
+changed: the import only reads it and writes a new project folder.
+
+FreeQuest is its own engine, not a copy of MZ, so not everything has a match yet. Nothing is
+dropped silently: whatever can't come across stays where it was as a comment saying what it
+was, and every item is listed in a report.
+
+RPG Maker is a trademark of its owners. FreeQuest isn't connected with them; it reads MZ's
+project files so you can bring your own work across.
+
+## What you need
+
+- **Your MZ project folder**: the one with `game.rmmzproject` in it, as MZ's editor saves it.
+  A game deployed for players (with encrypted pictures, files ending in `.png_`) won't import
+  its pictures; use the project folder instead.
+- The FreeQuest editor, **0.4 or later**.
+
+## Importing in the editor
+
+1. On the start screen, choose **Import an RPG Maker MZ project…**.
+2. **Choose…** the MZ project folder. FreeQuest reads the game's title and suggests it as the
+   name.
+3. Check the **game name** and **game id** (the id keeps the game's saves apart from other
+   games; see Getting started), and **Choose…** where the new project goes. It's made in a new
+   folder named after the game.
+4. **Import**. A big project takes a few seconds.
+5. The list that comes up is the import report (it's also saved in the project as
+   `IMPORT-REPORT.md`). **Open the project** to carry on.
+
+From the command line, the same import is:
+
+```
+freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
+```
+
+## What comes across
+
+- **Settings**: the title, screen size, starting map and position, the starting party.
+- **Switches and variables**, with their names. Ids come from the names (`Met the elder` becomes
+  `met-the-elder`); unnamed ones that something uses become `switch-12` and so on.
+- **The database**: actors, classes (stats per level), skills, items, weapons and armor (as
+  equipment), states, enemies (with their actions and when they use them) and troops. Traits
+  become FreeQuest's modifiers. Damage formulas are translated when they use the usual pieces
+  (`a.atk * 4 - b.def * 2`, `Math.floor`, `v[3]`…).
+- **Maps and tilesets**: every map, with its layers, walls and water. Autotiles become ordinary
+  tiles, so each MZ tileset becomes one FreeQuest tileset holding the tiles its maps use. Where
+  you can walk works as in MZ (bridges over water, treetops drawn over the player).
+- **Characters, faces, enemy pictures and icons**, cut out of MZ's sheets as FreeQuest needs
+  them. The player looks like the first party member.
+- **Events and common events**: pages with their conditions, picture, trigger, priority and
+  movement; messages with faces, names and colours; choices, branches, loops; switches,
+  variables and self switches (which become FreeQuest's event flags); gold, items, the party;
+  transfers, battles with their win/escape/lose branches, shops, move routes, screen effects,
+  waits, music and sounds.
+- **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
+  each map's music. Only `.ogg` files are copied (FreeQuest doesn't play `.m4a`).
+
+## What doesn't (yet)
+
+The report names each one and where it was. The usual ones:
+
+- **Scripts and plugins**: FreeQuest never runs JavaScript, so script calls, plugin commands
+  and plugins stay as comments.
+- **Commands FreeQuest doesn't have**: pictures, battle animations and balloons, weather, moving
+  an event to a spot, labels and jumps, changing an actor's name, states or HP from an event,
+  background sounds, and more. They stay as comments saying "From MZ, not imported".
+- **Branches on things FreeQuest can't test** (a script, a button, an actor's state…) keep both
+  sides, but test the switch **Imported: condition to redo**, which is never on: the "else"
+  side runs until you change the condition.
+- **Battle features**: TP, buffs and debuffs, counterattacks, extra attacks, and troops' battle
+  events. Experience curves are FreeQuest's own shape, set from each class's base value.
+- **Map details**: water is still (its first frame), wall shadows and regions aren't used, and
+  tiles you can pass from some sides only become walkable from every side.
+- **Pauses in messages** (`\.`, `\|`, `\!`) and font size changes are left out.
+
+Many of these are coming: the next version of FreeQuest adds what MZ games use most.
+
+## After importing
+
+1. Read the report. Most items are things to redo by hand or to wait for.
+2. **Play** the game from the start and walk through it: a conversation that reads oddly or a
+   door that goes nowhere is usually something in the report.
+3. In events, search for comments starting **From MZ** and for the switch **Imported: condition
+   to redo** (its **Used by** list in Project settings shows every place).
+4. MZ projects keep maps you may not use any more; delete them in the editor if you like.
+5. Save, and carry on making the game in FreeQuest.

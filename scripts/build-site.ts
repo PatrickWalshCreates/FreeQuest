@@ -30,6 +30,11 @@ const version = (
 const GUIDES = [
   { file: 'getting-started.md', page: 'guide/getting-started.html', title: 'Getting started' },
   { file: 'exporting.md', page: 'guide/exporting.html', title: 'Exporting and sharing a game' },
+  {
+    file: 'importing-mz.md',
+    page: 'guide/importing-mz.html',
+    title: 'Importing from RPG Maker MZ',
+  },
 ];
 
 /** The editor downloads: the release workflow names its files like this. */
@@ -235,6 +240,10 @@ const FEATURES: [string, string][] = [
   [
     'Play as you go',
     'Press Play at any moment, unsaved changes included, or start from any spot on the map.',
+  ],
+  [
+    'Coming from RPG Maker MZ?',
+    'Import your MZ project: maps, database, events, characters, music. What can’t come across is listed, never lost.',
   ],
   [
     'Share it anywhere',

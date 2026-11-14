@@ -32,6 +32,9 @@ this on the release build, ideally on a Mac user account that has never run Free
       result in the corner (before publishing: "Couldn't check"; after: "newest version").
 - [ ] A project from the previous release opens with the "older FreeQuest" notice; **Upgrade and
       save now** leaves its old files in `backups/` and the project opens clean afterwards.
+- [ ] **Import an RPG Maker MZ project…**: choose an MZ project folder and a place for the new
+      project in the system dialogs; the report comes up, **Open the project** opens it with no
+      problems, and **Play** runs it with its own music and pictures.
 - [ ] **Export → macOS app** to a new folder: the app is made, opens with right-click → Open, the
       game plays, and saving then reopening the game keeps the save.
 - [ ] **Export → Web** to a new folder: upload or serve it (`vite preview --outDir <folder>`) and

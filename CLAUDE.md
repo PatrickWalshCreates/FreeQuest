@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.3.0 released (2026-11-14), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.3.0 released (2026-11-14), 0.4.0 in its release check; early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1219,9 +1219,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      name the game, choose where it goes, progress, the report, open it)~~ (done; tried in
      browser mode on a sample game: the same files as the CLI's, pixel for pixel, and it opens
      with no problems. The desktop app is for the release's by-hand check)
-  8. Guides (an "Importing from RPG Maker MZ" page: what comes across, what doesn't, what to
-     check), demo/test updates, and a 0.4.0 release through the checklist, the first one
-     installed by the updater from 0.3.0.
+  8. Guides (`docs/importing-mz.md`, in the Help window and on the website), README, CHANGELOG,
+     and a 0.4.0 release through the checklist, the first one installed by the updater from
+     0.3.0 (in progress: 0.4.0 tagged and drafted; the user's by-hand check, including the
+     import in the desktop app and the update from 0.3.0, comes before publishing)
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.

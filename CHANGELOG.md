@@ -4,6 +4,39 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## 0.4.0 (2026-11-14)
+
+Bring your RPG Maker MZ game across: the editor imports an MZ project into a new FreeQuest
+project, with its maps, database, events, characters, faces, music and sounds. Your MZ project
+isn't changed, and anything FreeQuest can't do yet is listed in a report and kept as a comment
+where it was. Project formats are unchanged from 0.3, so 0.3 projects open as they are.
+
+### Importing from RPG Maker MZ
+
+- **Import an RPG Maker MZ project…** on the start screen: choose the MZ project folder, name
+  the game and choose where it goes. The report comes up when it's done and is saved in the
+  project as `IMPORT-REPORT.md`. The [guide](docs/importing-mz.md) says what comes across and
+  what to check.
+- **Maps and tilesets**: every map with its layers; MZ's autotiles (water, paths, walls, roofs)
+  become ordinary tiles, and walking works as in MZ (bridges over water, treetops over the
+  player).
+- **The database**: actors, classes, skills, items, weapons and armor, states, enemies and
+  troops; traits become modifiers, and damage formulas are translated when they use the usual
+  pieces.
+- **Events**: pages, conditions, pictures, triggers and movement; messages with faces, names
+  and colours; choices, branches, loops, switches, variables and self switches; transfers,
+  battles, shops, move routes, screen effects, music and sounds; common events.
+- **Pictures and sound**: characters, faces, enemy pictures, icons, the title, battle, victory
+  and game-over music, system sounds and map music.
+- **What doesn't come across yet** stays as a comment (“From MZ, not imported: …”); branches
+  on things FreeQuest can't test use the switch “Imported: condition to redo”. Scripts and
+  plugins are never run.
+- The `freequest` command does the same: `freequest import mz <folder> --out <new folder>`.
+
+### Also
+
+- PNG pictures are read and written by FreeQuest itself, so imports are exact to the pixel.
+
 ## 0.3.0 (2026-11-14)
 
 Editor comfort: paint with whole blocks of tiles, see where everything is used, rename ids and
