@@ -5,8 +5,10 @@ import {
   type ProjectFile,
   addEntry,
   DATABASE_LABELS,
+  type RefKind,
   clipboard,
   commonEventUsages,
+  usagesOf,
   duplicateEntry,
   projectFlagNames,
   entrySchema,
@@ -179,10 +181,10 @@ function EntriesEditor(props: {
 
   const remove = async () => {
     if (!entry) return;
-    const callers = kind === 'commonEvents' ? commonEventUsages(doc.project, entry.id) : [];
+    const callers = usagesOf(doc.project, ENTRY_REF_KINDS[kind], entry.id);
     const used =
       callers.length > 0
-        ? ` It's called by ${callers.length === 1 ? callers[0] : `${callers.length} events: ${callers.join(', ')}`}, which will show a problem until you change it.`
+        ? ` It's used by ${callers.length === 1 ? callers[0] : `${callers.length} places: ${callers.join(', ')}`}, which will show a problem until you change it.`
         : ' Anything that uses it will show a problem until you change it.';
     const ok = await confirmAction(
       `Delete the ${singular} "${entry.name}"?${used} You can undo this.`,
@@ -321,13 +323,15 @@ function EntriesEditor(props: {
                 </p>
               </div>
             </div>
-            {kind === 'commonEvents' && (
+            {kind === 'commonEvents' ? (
               <CalledBy
                 project={doc.project}
                 id={entry.id}
                 trigger={(entry as { trigger?: string }).trigger ?? 'call'}
                 gate={(entry as { switch?: string }).switch}
               />
+            ) : (
+              <UsedBy project={doc.project} kind={ENTRY_REF_KINDS[kind]} id={entry.id} />
             )}
             <Problems messages={problemsFor(entry.id)} />
             <ObjectFields
@@ -482,6 +486,33 @@ function CommonEventCommands(props: {
         )}
       />
     </section>
+  );
+}
+
+/** The kind of reference each database category's entries are. */
+const ENTRY_REF_KINDS: Record<EntryKind, RefKind> = {
+  actors: 'actor',
+  classes: 'class',
+  skills: 'skill',
+  items: 'item',
+  equipment: 'equipment',
+  states: 'state',
+  enemies: 'enemy',
+  troops: 'troop',
+  commonEvents: 'commonEvent',
+};
+
+/** Where a database entry is used (or that nothing uses it yet). */
+function UsedBy(props: {
+  readonly project: ProjectDocument['project'];
+  readonly kind: RefKind;
+  readonly id: string;
+}) {
+  const usages = usagesOf(props.project, props.kind, props.id);
+  return (
+    <p className="hint called-by">
+      {usages.length === 0 ? 'Not used anywhere yet.' : `Used by ${usages.join(', ')}.`}
+    </p>
   );
 }
 

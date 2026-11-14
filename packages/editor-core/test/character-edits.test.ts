@@ -88,9 +88,9 @@ describe('character files', () => {
   it('lists everything that shows a character', async () => {
     const doc = await demo();
     expect(characterUsages(doc.project, 'hero')).toEqual(
-      expect.arrayContaining(['the player', 'actor Hero']),
+      expect.arrayContaining(['Project settings', 'Actors › Hero']),
     );
-    expect(characterUsages(doc.project, 'villager').some((u) => u.includes('event'))).toBe(true);
+    expect(characterUsages(doc.project, 'villager').some((u) => u.includes('(page'))).toBe(true);
   });
 
   it('creates a sheet from an image in one undo step', async () => {
@@ -115,7 +115,7 @@ describe('character files', () => {
 
   it('deletes only unused characters', async () => {
     const doc = await demo();
-    expect(() => deleteCharacter(doc, 'hero')).toThrow(/the player/);
+    expect(() => deleteCharacter(doc, 'hero')).toThrow(/Still used by Project settings/);
     const id = createCharacter(doc, sample);
     deleteCharacter(doc, id);
     expect(doc.project.characters.has(id)).toBe(false);

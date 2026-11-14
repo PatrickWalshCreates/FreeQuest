@@ -419,6 +419,20 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   reads. `cancel()` (Escape) undoes the stroke's own step only. Pointer roles in `MapCanvas`:
   left = tool, right or Alt = pick, middle or Space+drag = scroll. Keys B/R/F/E/I pick tools,
   W toggles the walkable overlay, which is `core`'s `CollisionMap` (tiles only, not events).
+- **Reference index** (`editor-core/usages.ts`, tested; M12): `projectReferences(project)` walks
+  every file's data and records each id (and asset path) it refers to: `kind` (`RefKind`), `id`
+  (events as "<map>/<event>"), `file`, `path` into the data, a readable `where` ("Meadow ›
+  House door (page 1)", "Actors › Hero", "Project settings"), and `inText` for text codes /
+  `isKey` for equipment-slot keys. Which field holds what is decided by field name (`refKind`:
+  the forms' dropdown rule; `id` only beside `kind` item/equipment; `target`/`event` scoped to
+  the map; asset fields; `party`/`enemies` arrays), so new fields with familiar names are
+  covered. Manifest declarations and entries' own ids aren't uses. `referencesTo` /
+  `usagesOf` answer "where is X used"; `mapUsages`, `tilesetUsages`, `characterUsages` and
+  `commonEventUsages` are thin wrappers. UI: "Used by" on every database entry and map, delete
+  warnings name the places. **Switches and variables** now have an editor
+  (`SwitchesAndVariables.tsx` in Project settings; `game-state-edits.ts`: add with an id from
+  the name, unique across both lists; rename the display name; delete) — before M12 there was
+  no way to declare one in the editor.
 - **Stamps** (`editor-core/stamps.ts`, tested; M12): the brush is always a `Stamp` (width,
   height, one tile grid for the active layer or one per map layer). `tileStamp` (one tile),
   `paletteStamp` (a block dragged in `TilePalette`; cells past the last tile are skipped),
@@ -957,10 +971,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      one), with a preview under the pointer; one undo step each~~ (done; a copied area becomes
      the brush. Tried in browser mode: a 2 × 2 palette block placed with one click, an area
      copied and painted elsewhere, undone and redone)
-  2. Where things are used: one reference index in editor-core (every id a project refers to:
+  2. ~~Where things are used: one reference index in editor-core (every id a project refers to:
      switches, variables, maps, events, tilesets, characters, database entries, common events,
      assets) with the place of each use, replacing the separate `*Usages` helpers; a "Used by"
-     list on switches, variables, entries and maps, and the delete warnings from it
+     list on switches, variables, entries and maps, and the delete warnings from it~~ (done;
+     found on the way that switches and variables couldn't be created in the editor at all:
+     Project settings now has them. Tried in browser mode)
   3. Rename ids safely: Rename… for switches, variables, maps, events, tilesets, characters and
      database entries, rewriting every reference the index knows in one undo step (and the start
      map/position, the party); ids stay ids, so saves keep working through an id map kept in the
@@ -972,8 +988,14 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   6. Face portraits in messages: an optional face per message (a face sheet image cut into
      cells, map v8), drawn beside the text in the game and the editor's preview; the demo's Elder
      and Mira get faces
-  7. Demo, Starter, guides, the quest test, and a 0.3.0 release through the checklist (with the
-     by-hand check on a downloaded desktop build, and the site showing the new version)
+  7. An updater in the editor: Tauri's updater plugin checks the latest GitHub release at start
+     and offers to download and install it (signed with our own update key, a GitHub Actions
+     secret; the release workflow publishes the update manifest). In 0.3.0 so that 0.3.0 users
+     get 0.4.0. Check the Mac first-open prompt after a self-update (no Developer ID yet)
+  8. Demo, Starter, guides, the quest test, a "What's new" page on the website (from
+     CHANGELOG.md), and a 0.3.0 release through the checklist (with the by-hand check on a
+     downloaded desktop build, the site showing the new version, and an update from 0.3.0 to a
+     test build tried by hand)
   - Formats: map 8 (message faces); others unchanged unless step 3 needs an id map. Each with a
     migration; the 0.1 and 0.2 frozen projects and saves must keep opening.
   - Not in M12: the plugin API, an MZ project importer, Developer ID / Windows signing, a Linux

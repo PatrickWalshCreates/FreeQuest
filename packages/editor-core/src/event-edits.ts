@@ -14,6 +14,7 @@ import { walkCommands } from '@freequest/schema';
 import type { EditOptions, ProjectDocument } from './document.js';
 import type { OpenedProject } from './open-project.js';
 import { inBounds } from './map-edits.js';
+import { usagesOf } from './usages.js';
 
 // Events ------------------------------------------------------------------
 
@@ -581,32 +582,9 @@ export function projectFlagNames(project: OpenedProject): string[] {
   return [...names].sort();
 }
 
-/**
- * Where a common event is called: "Map › Event (page n)" for map events and
- * "common event Name" for other common events, in project order.
- */
+/** Where a common event is called: map event pages and other common events. */
 export function commonEventUsages(project: OpenedProject, id: string): string[] {
-  const usages: string[] = [];
-  const calls = (commands: readonly Command[]) => {
-    let found = false;
-    walkCommands(commands, (command) => {
-      if (command.type === 'callCommon' && command.common === id) found = true;
-    });
-    return found;
-  };
-  for (const [mapId, file] of project.maps) {
-    for (const event of file.data?.events ?? []) {
-      event.pages.forEach((page, i) => {
-        if (calls(page.commands)) {
-          usages.push(`${file.data?.name || mapId} › ${event.name} (page ${i + 1})`);
-        }
-      });
-    }
-  }
-  for (const common of project.database.commonEvents?.data?.entries ?? []) {
-    if (common.id !== id && calls(common.commands)) usages.push(`common event ${common.name}`);
-  }
-  return usages;
+  return usagesOf(project, 'commonEvent', id);
 }
 
 /** Command types in the order (and groups) the "add command" menu offers them. */

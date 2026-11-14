@@ -8,10 +8,10 @@ import {
   type Manifest,
   type MapEvent,
   mapCommands,
-  walkCommands,
 } from '@freequest/schema';
 import type { ProjectDocument } from './document.js';
 import { MANIFEST_PATH, type OpenedProject } from './open-project.js';
+import { referencesTo } from './usages.js';
 
 /** Where new map files go. */
 export const MAP_DIR = 'data/maps';
@@ -116,22 +116,16 @@ function mapData(project: OpenedProject, id: string): GameMap {
   return data;
 }
 
-/** Where other maps' events transfer the player to map `id`, for a warning before deleting it. */
+/** Where a map is used by other maps and the rest of the project (its own transfers don't count). */
 export function mapUsages(project: OpenedProject, id: string): string[] {
-  const usages: string[] = [];
-  for (const [mapId, file] of project.maps) {
-    if (mapId === id || !file.data) continue;
-    for (const event of file.data.events) {
-      event.pages.forEach((page, i) => {
-        walkCommands(page.commands, (command) => {
-          if (command.type === 'transfer' && command.map === id) {
-            usages.push(`${file.data?.name ?? mapId} › ${event.name} (page ${i + 1})`);
-          }
-        });
-      });
-    }
-  }
-  return usages;
+  const own = project.maps.get(id)?.path;
+  return [
+    ...new Set(
+      referencesTo(project, 'map', id)
+        .filter((r) => r.file !== own)
+        .map((r) => r.where),
+    ),
+  ];
 }
 
 /**

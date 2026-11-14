@@ -1,4 +1,4 @@
-import type { ProjectDocument } from '@freequest/editor-core';
+import { type ProjectDocument, mapUsages } from '@freequest/editor-core';
 import type { Encounters, GameMap } from '@freequest/schema';
 import { useState } from 'react';
 import { Field } from '../Dialog.js';
@@ -27,8 +27,21 @@ export function MapSettings({ doc, path, map }: Props) {
 
   const musicOptions = [...new Set([...audio, ...(map.music ? [map.music] : [])])].sort();
 
+  const usedBy = mapUsages(doc.project, map.id);
+  const isStart = doc.project.manifest.data.start.map === map.id;
+
   return (
     <div className="settings">
+      <p className="hint called-by">
+        {[
+          isStart ? 'The game starts here' : null,
+          usedBy.length > 0
+            ? `Doors and other uses: ${usedBy.filter((u) => u !== 'Project settings').join(', ')}`
+            : null,
+        ]
+          .filter((part) => part && !part.endsWith(': '))
+          .join('. ') || 'Nothing leads here yet: add a Transfer player to another map.'}
+      </p>
       <Field label="Tileset">
         <select
           value={map.tileset}

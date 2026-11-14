@@ -2232,3 +2232,48 @@ h2.with-actions button {
   height: 26px;
   padding: 0 2px;
 }
+
+/* Project settings: switches and variables. */
+.game-state {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+  max-width: 640px;
+}
+
+.game-state-list h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.game-state-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 6px;
+}
+
+.game-state-list .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Name, id, uses, delete: the same columns on every row. */
+.game-state-list li > .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11em 6.5em auto;
+}
+
+.game-state-list li > .row code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-state-list .used-by {
+  margin: 4px 0 6px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  gap: 2px;
+}

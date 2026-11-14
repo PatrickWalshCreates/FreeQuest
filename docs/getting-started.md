@@ -101,6 +101,11 @@ the right.
 Play, walk up to them and press Enter.
 
 Events can do much more: **Show choices** asks a question with a branch for each answer,
+Switches (on/off flags) and variables (numbers) are shared by the whole game: add them under
+**Project settings → Switches** and **Variables**, where each one also shows what uses it. Items,
+enemies and every other database entry show the same "Used by" list, and deleting anything that's
+still used says where.
+
 **If…** checks switches, variables, items or party members, **Set switch** lets an
 event remember that something happened, and **Start battle** starts a fight. An event can have
 several **pages**: the last page whose conditions are all met is the one that's active, which is

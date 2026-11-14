@@ -32,6 +32,7 @@ import { useAssetPaths } from './assets/use-assets.js';
 import { CharacterEditor } from './character/CharacterEditor.js';
 import { NewCharacterDialog } from './character/NewCharacterDialog.js';
 import { DatabaseEditor } from './database/DatabaseEditor.js';
+import { SwitchesAndVariables } from './SwitchesAndVariables.js';
 import { DevCrash } from './ErrorScreen.js';
 import { HelpDialog } from './HelpDialog.js';
 import { ExportDialog } from './ExportDialog.js';
@@ -448,6 +449,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           {current.data && 'name' in current.data && <NameField doc={doc} file={current} />}
           {current.kind === 'manifest' && <GameIdField doc={doc} />}
           <Summary file={current} />
+          {current.kind === 'manifest' && current.data && <SwitchesAndVariables doc={doc} />}
           {!current.data && <p className="error">This file could not be loaded.</p>}
         </main>
       )}

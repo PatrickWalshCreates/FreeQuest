@@ -9,6 +9,7 @@ import {
 } from '@freequest/schema';
 import type { ProjectDocument } from './document.js';
 import { MANIFEST_PATH, type OpenedProject } from './open-project.js';
+import { usagesOf } from './usages.js';
 
 export const CHARACTER_DIR = 'data/characters';
 
@@ -120,19 +121,7 @@ export function moveRow(sheet: CharacterSheet, index: number, delta: -1 | 1): Ch
 
 /** Everything that shows a character: the player, actors and event pages. */
 export function characterUsages(project: OpenedProject, id: string): string[] {
-  const uses: string[] = [];
-  if (project.manifest.data.player.character === id) uses.push('the player');
-  for (const actor of project.database.actors?.data?.entries ?? []) {
-    if (actor.character === id) uses.push(`actor ${actor.name}`);
-  }
-  for (const map of project.maps.values()) {
-    for (const event of map.data?.events ?? []) {
-      if (event.pages.some((p) => p.graphic?.character === id)) {
-        uses.push(`map ${map.data?.name ?? map.id}, event ${event.name}`);
-      }
-    }
-  }
-  return uses;
+  return usagesOf(project, 'character', id);
 }
 
 export interface NewCharacterOptions {

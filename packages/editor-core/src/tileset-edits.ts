@@ -5,6 +5,7 @@
 import { TILESET_FORMAT_VERSION, type Tile, type Tileset, idFromName } from '@freequest/schema';
 import type { ProjectDocument } from './document.js';
 import { MANIFEST_PATH, type OpenedProject } from './open-project.js';
+import { usagesOf } from './usages.js';
 
 export const TILESET_DIR = 'data/tilesets';
 
@@ -105,11 +106,9 @@ export function setTileName(tileset: Tileset, index: number, name: string): Tile
   });
 }
 
-/** Maps drawn with a tileset (for warnings and to refuse deleting it). */
+/** The maps that use a tileset. */
 export function tilesetUsages(project: OpenedProject, id: string): string[] {
-  return [...project.maps.values()]
-    .filter((m) => m.data?.tileset === id)
-    .map((m) => m.data?.name || m.id);
+  return usagesOf(project, 'tileset', id);
 }
 
 export interface NewTilesetOptions {
