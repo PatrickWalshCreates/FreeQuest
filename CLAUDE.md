@@ -1230,25 +1230,53 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.
-- **M14 (next, not started)** What MZ games need. Importing the user's MZ sample games (M13) listed what
-  FreeQuest lacks; this milestone adds the most used of them to the engine (and teaches the
-  importer to bring them across), ordered by how often real games use them. Candidates so far:
-  battle events in troops, TP, buffs and debuffs, items and skills that call common events,
-  counterattacks and magic evasion/reflection, MP regeneration and cost rates, extra attacks and
-  attack states, party abilities, dual wield, sealed skill types and equipment, target rate,
-  enemies that appear partway through a battle. From the sample games' events (most used
-  first): battle animations, "change image" in move routes, pauses in messages (\\. and
-  \\!), variables set to random numbers or game data, pictures (show/move/erase), scripts,
-  setting an event's location, labels and jumps, branches on things FreeQuest can't test
-  (buttons, actors' states, scripts…), "through" in routes, renaming actors, balloons,
-  changing states, scrolling the map, background sounds, battle music changes, diagonal moves
-  and jumps in routes, a choice's own cancel branch. From playing one (the user): a title
-  screen picture (FreeQuest's title has none), and a hidden or see-through player (MZ's
-  "start transparent" option and Transparency command; an intro on a blank map showed the
-  player over black). From playing the other (0.4.0's check): the player's look following the
-  party leader and "Change actor images" (an intro's silhouette hero never changes back),
-  pictures (that game draws its message boxes with them), animations, "change image" in
-  routes. The list is settled when M13 is done.
+- **M14 (in progress)** What MZ games need, released as 0.5.0. Importing the user's two MZ
+  sample games (M13) measured what FreeQuest lacks; this milestone adds what real games use
+  most, in that order, each as a FreeQuest feature of its own (editor, runtime, tests, guide)
+  that the importer then brings across. Behaviour may match MZ's; the design, names and code
+  are ours (clean-room). Measured uses in the samples (Wolf's Gang / Winds Rhapsody) are in
+  brackets. Steps:
+  1. Message pacing: text codes for a pause (`{wait:0.25}`), waiting for a key mid-message
+     (`{key}`) and instant text, in the reveal (runtime `rich-text.ts`) and the editor's
+     preview and help; the importer turns MZ's \\. \\| \\! \\> \\< into them [348 / 85].
+     Text codes live in strings, so no format change (older players drop unknown codes).
+  2. Who the player looks like: the player is drawn as the party leader's character (the
+     manifest's `player.character` stays the fallback for an empty party), a `changeActor`
+     command (character, face, name), and hiding the player (MZ's transparency and "start
+     transparent"). Actors' changed looks and names go in saves (save v3). Importer: Change
+     actor images, Change name, Transparency, the start option [an intro's silhouette hero; 25
+     renames]. Map v9.
+  3. Move routes: change the character (`image` step), walk through things, keep facing,
+     walking/stepping animation on/off, jump, diagonal moves, step backward, play a sound,
+     set a switch [~350 steps in all; 164 image changes]. Same map v9.
+  4. Event commands and tests: variables from a random range or game data (gold, steps, play
+     time, positions, party size, item counts, actor stats), moving an event to a spot
+     (`placeEvent`), more branch tests (a key held, an actor's state, level or HP, a
+     character's facing), game over / back to title / open the save screen / allow saving and
+     the menu, battle and victory music changes, scrolling the map, background sounds (a
+     second looping channel, maps too). Fewer "condition to redo" branches [78 + 43 + 34…].
+     Labels and jumps stay out (commands are a tree, by design since M11); the importer
+     keeps reporting them.
+  5. Pictures: numbered pictures over the map (show with origin, position, scale, opacity;
+     move over time; erase), kept across maps and in saves; core state like `ScreenEffects`,
+     drawn by runtime between the map and the dialog [153 / 3; one game's message boxes].
+  6. Animations and balloons: FreeQuest's own animation format (a database category: a sprite
+     sheet, frames, timing, sounds), played on events, the player and in battle (skills and
+     items get an optional animation), and balloon icons over characters. MZ's animations are
+     Effekseer effects that can't be converted: the importer makes a named placeholder per
+     MZ animation for the author to fill in [135 / 28 + 13 balloons].
+  7. Battles: TP (gained from damage and actions, skill costs), buffs and debuffs, skills that
+     hit several times, items and skills that run a common event, and troop battle events
+     (pages on turns, HP and switches, with their own commands) [22 TP skills; 34 troops with
+     events; 16 common-event items].
+  8. A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
+     the 0.5 formats frozen, and a 0.5.0 release through the checklist.
+  - Formats: map 9, database 5, save 3 (and system.json), each with a migration; 0.1–0.3
+    frozen projects and saves keep opening (0.4 changed no format).
+  - Not in M14: labels and jumps, scripts and plugins (never JavaScript; the plugin API is
+    its own milestone), weather, vehicles, movies, side-view battlers, map regions, wall
+    shadows, the MZ traits not listed above (counterattack, magic reflection, party
+    abilities…: next, if the samples' use holds up in other games).
 - **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones
