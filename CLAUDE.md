@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.3.0 released (2026-11-14), 0.4.0 in its release check; early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.4.0 released (2026-11-14), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1185,7 +1185,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     migration; the 0.1 and 0.2 frozen projects and saves must keep opening.
   - Not in M12: the plugin API, an MZ project importer (M13), Developer ID / Windows signing, a
     Linux test on a real machine (can happen any time).
-- **M13 (in progress)** Import an RPG Maker MZ project, released as 0.4.0. The easiest way for
+- **M13 (done)** Import an RPG Maker MZ project, released as 0.4.0. The easiest way for
   MZ users to switch is to bring the game they already have. The importer reads the user's own
   MZ project folder and writes a new FreeQuest project beside it; the MZ folder is never
   changed. Nothing that can't be imported is silently lost: it becomes a `comment` command (with
@@ -1222,14 +1222,15 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      name the game, choose where it goes, progress, the report, open it)~~ (done; tried in
      browser mode on a sample game: the same files as the CLI's, pixel for pixel, and it opens
      with no problems. The desktop app is for the release's by-hand check)
-  8. Guides (`docs/importing-mz.md`, in the Help window and on the website), README, CHANGELOG,
-     and a 0.4.0 release through the checklist, the first one installed by the updater from
-     0.3.0 (in progress: 0.4.0 tagged and drafted; the user's by-hand check, including the
-     import in the desktop app and the update from 0.3.0, comes before publishing)
+  8. ~~Guides (`docs/importing-mz.md`, in the Help window and on the website), README, CHANGELOG,
+     and a 0.4.0 release through the checklist~~ (done; the user imported both sample games in
+     the downloaded desktop app; that check added the report's summary by kind and title music
+     that starts at once. Published 2026-11-14, the site shows 0.4.0. The first self-update,
+     0.3.0 → 0.4.0, is for the user to try on their installed 0.3.0)
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.
-- **M14 (next)** What MZ games need. Importing the user's MZ sample games (M13) listed what
+- **M14 (next, not started)** What MZ games need. Importing the user's MZ sample games (M13) listed what
   FreeQuest lacks; this milestone adds the most used of them to the engine (and teaches the
   importer to bring them across), ordered by how often real games use them. Candidates so far:
   battle events in troops, TP, buffs and debuffs, items and skills that call common events,
