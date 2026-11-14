@@ -940,6 +940,32 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     migration and 0.1's frozen project and save still opening.
   - Not in M11 (M12 candidates, "editor comfort"): renaming ids/assets with reference updates,
     multi-tile stamps, chunked rendering for big maps, message faces/portraits.
+- **M12 (planned)** Editor comfort, released as 0.3.0. M11 made the event language strong
+  enough for real games; the friction is now in building them. Steps:
+  1. Multi-tile stamps: drag a block in the palette (a tree, a house) and paint it as one stamp
+     with pencil, rectangle and fill; copy, cut and paste a rectangle of a map (all layers, or
+     one), with a preview under the pointer; one undo step each
+  2. Where things are used: one reference index in editor-core (every id a project refers to:
+     switches, variables, maps, events, tilesets, characters, database entries, common events,
+     assets) with the place of each use, replacing the separate `*Usages` helpers; a "Used by"
+     list on switches, variables, entries and maps, and the delete warnings from it
+  3. Rename ids safely: Rename… for switches, variables, maps, events, tilesets, characters and
+     database entries, rewriting every reference the index knows in one undo step (and the start
+     map/position, the party); ids stay ids, so saves keep working through an id map kept in the
+     manifest only if a rename would break them (decide in the step)
+  4. Rename and move assets: the Assets panel renames a file or moves it to another folder and
+     updates every path that uses it (one step, the file moved on save)
+  5. Bigger maps: draw maps in chunks (render textures per block of tiles, rebuilt when a chunk
+     changes) in the game and the editor, then lift the 256 × 256 cap; measured before and after
+  6. Face portraits in messages: an optional face per message (a face sheet image cut into
+     cells, map v8), drawn beside the text in the game and the editor's preview; the demo's Elder
+     and Mira get faces
+  7. Demo, Starter, guides, the quest test, and a 0.3.0 release through the checklist (with the
+     by-hand check on a downloaded desktop build, and the site showing the new version)
+  - Formats: map 8 (message faces); others unchanged unless step 3 needs an id map. Each with a
+    migration; the 0.1 and 0.2 frozen projects and saves must keep opening.
+  - Not in M12: the plugin API, an MZ project importer, Developer ID / Windows signing, a Linux
+    test on a real machine (can happen any time).
 - **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
   multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
   clean-room), the plugin API.
