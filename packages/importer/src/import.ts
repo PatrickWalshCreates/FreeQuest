@@ -27,7 +27,8 @@ import { GraphicsImporter } from './graphics.js';
 import { importMaps } from './import-maps.js';
 import { AudioImporter } from './audio.js';
 import { type EventsContext, convertCommonEvents, convertMapEvents } from './events.js';
-import { asArray, asInt, asString, isRecord } from './json.js';
+import { asArray, asInt, asRecord, asString, isRecord } from './json.js';
+import { systemAudio } from './system-audio.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
@@ -140,12 +141,13 @@ export async function importMzProject(
     new Set(),
   );
   const extraSwitches: FlagDeclaration[] = [];
+  const audio = new AudioImporter(source, report);
   let redo: string | null = null;
   const mapById = new Map(maps.maps.map((m) => [m.mzId, m.data]));
   const events: EventsContext = {
     report,
     graphics,
-    audio: new AudioImporter(source, report),
+    audio,
     db,
     switches,
     variables,
@@ -173,9 +175,19 @@ export async function importMzProject(
       },
       events,
     );
-    map.data = { ...map.data, events: mapEvents };
+    // Map music (MZ's "autoplay" music; its background sounds FreeQuest doesn't have).
+    const bgm = asString(asRecord(map.raw['bgm'])['name']).trim();
+    const music = map.raw['autoplayBgm'] === true ? await audio.sound('bgm', bgm, map.where) : null;
+    if (map.raw['autoplayBgs'] === true && asString(asRecord(map.raw['bgs'])['name']).trim()) {
+      report.missing(
+        map.where,
+        'Its background sound (BGS) isn’t played; FreeQuest maps have music only.',
+      );
+    }
+    map.data = { ...map.data, events: mapEvents, ...(music ? { music } : {}) };
   }
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
+  const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
   const pictures = await graphics.finish();
 
   const written = new Map<string, unknown>([
@@ -191,7 +203,7 @@ export async function importMzProject(
     [
       databasePaths.system,
       systemData(types, imported, {
-        ...(templateSystem.audio ? { audio: templateSystem.audio } : {}),
+        ...(Object.keys(sounds).length > 0 ? { audio: sounds } : {}),
         ...(pictures.iconset
           ? { iconset: pictures.iconset }
           : templateSystem.iconset
@@ -212,6 +224,8 @@ export async function importMzProject(
   const templateCharacter = (f: string) =>
     !placeholderUsed &&
     (manifest.characters.some((c) => c.path === f) || f.startsWith('assets/characters/'));
+  // The game's own music and sounds replace the template's.
+  const templateAudio = (f: string) => f.startsWith('assets/audio/');
   // The template's icons go when the project has its own.
   const templateIcons = (f: string) =>
     pictures.iconset !== null && f === templateSystem.iconset?.image;
@@ -232,9 +246,10 @@ export async function importMzProject(
       !written.has(f) &&
       !replaced(f) &&
       !templateCharacter(f) &&
-      !templateIcons(f),
+      !templateIcons(f) &&
+      !templateAudio(f),
   );
-  const images = [...maps.images, ...pictures.files, ...events.audio.files];
+  const images = [...maps.images, ...pictures.files, ...audio.files];
   const total = files.length + written.size + images.length + 2;
   let done = 0;
   for (const path of files) {

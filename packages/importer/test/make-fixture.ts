@@ -93,8 +93,10 @@ set(1, 2, 5, 3); // a region
 writeFileSync(
   join(root, 'data', 'Map001.json'),
   JSON.stringify({
-    autoplayBgm: false,
-    bgm: { name: '', pan: 0, pitch: 100, volume: 90 },
+    autoplayBgm: true,
+    autoplayBgs: true,
+    bgs: { name: 'Wind', pan: 0, pitch: 100, volume: 90 },
+    bgm: { name: 'Hollow', pan: 0, pitch: 100, volume: 90 },
     displayName: 'The Hollow',
     encounterList: [
       { regionSet: [3], troopId: 1, weight: 10 },
@@ -296,3 +298,9 @@ writeFileSync(
 }
 mkdirSync(join(root, 'audio', 'se'), { recursive: true });
 writeFileSync(join(root, 'audio', 'se', 'Chime.ogg'), 'OggS fake sound for tests');
+mkdirSync(join(root, 'audio', 'bgm'), { recursive: true });
+mkdirSync(join(root, 'audio', 'me'), { recursive: true });
+writeFileSync(join(root, 'audio', 'se', 'Cursor.ogg'), 'OggS cursor');
+writeFileSync(join(root, 'audio', 'bgm', 'Hollow.ogg'), 'OggS hollow');
+writeFileSync(join(root, 'audio', 'bgm', 'Title.ogg'), 'OggS title');
+writeFileSync(join(root, 'audio', 'me', 'Victory.m4a'), 'not ogg');

@@ -884,6 +884,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   target). Music and sounds the events use are copied (`AudioImporter`, .ogg preferred).
   `test/events.test.ts` plays the fixture's keeper in core's `World` (importer's only
   dependency on core, a dev dependency).
+- **Audio** (`audio.ts`, `system-audio.ts`): only `.ogg` is copied (FreeQuest doesn't play
+  `.m4a`; a sound that exists only as .m4a is reported with what to do). Map music when MZ
+  autoplays it (background sounds are reported). System: title/battle music, victory and
+  game-over jingles, and MZ's system sounds 0, 1, 2, 3, 5, 7, 10, 16 as cursor, confirm,
+  cancel, buzzer, save, battleStart, damage (enemy damage), heal. The template's audio is
+  never copied.
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
   byte-order marks) are written by hand; `test/make-fixture.ts` writes tiny-mz's tileset, map
   and synthetic sheets (each quarter tile coloured by its position, so tests can check pieces).
@@ -1194,9 +1200,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   5. ~~Events: pages, self switches → flags, common events, every command FreeQuest has;
      the rest as comments + report; a quest test~~ (done; both sample games import every event
      with no project problems; the fixture's keeper plays through in core's World)
-  6. Audio and the rest: copy only the audio the data uses (MZ's .ogg; .m4a when that's all
-     there is), system sounds and music, the start position, party and gold; the report
-     written into the new project as `IMPORT-REPORT.md`.
+  6. ~~Audio and the rest: map music, the game's title/battle/victory/game-over music and
+     system sounds, the start, party and gold, `IMPORT-REPORT.md`~~ (done; both sample games
+     have their own music and sounds; the template's audio is never copied)
   7. The editor: "Import an RPG Maker MZ project…" on the start screen (pick the MZ folder, then
      where the new project goes, a progress bar, then the report), and opening the result.
      Tried by hand on a project the user owns: the editor, a playtest and an export.

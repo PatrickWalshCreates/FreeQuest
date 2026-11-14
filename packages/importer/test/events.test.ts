@@ -327,3 +327,35 @@ describe('an imported game', () => {
     expect(world.state.getFlag('hollow', 'keeper', 'a')).toBe(true);
   });
 });
+
+describe('music and sounds', () => {
+  it('bring the game’s own music, sounds and map music, and leave the template’s out', async () => {
+    const { target, map, result } = await imported();
+    expect(map.music).toBe('assets/audio/bgm/hollow.ogg');
+    const system = JSON.parse(await target.readText('data/database/system.json')) as {
+      audio: unknown;
+    };
+    expect(system.audio).toEqual({
+      titleMusic: 'assets/audio/bgm/title.ogg',
+      sounds: { cursor: 'assets/audio/se/cursor.ogg', confirm: 'assets/audio/se/cursor.ogg' },
+    });
+    expect([...target.binaries.keys()].filter((p) => p.startsWith('assets/audio/')).sort()).toEqual(
+      [
+        'assets/audio/bgm/hollow.ogg',
+        'assets/audio/bgm/title.ogg',
+        'assets/audio/se/chime.ogg',
+        'assets/audio/se/cursor.ogg',
+      ],
+    );
+    const where = (w: string) =>
+      result.report.items.filter((i) => i.where === w).map((i) => i.message);
+    expect(where('System sounds')).toEqual([
+      "audio/bgm/Fight.ogg is missing, so it's silent.",
+      "audio/me/Victory.ogg is missing; there's only an .m4a, which FreeQuest doesn't play. Convert it to .ogg and add it in the editor's Assets.",
+    ]);
+    expect(where('Maps › Hollow')).toContain(
+      'Its background sound (BGS) isn’t played; FreeQuest maps have music only.',
+    );
+    expect((await openProject(target)).problems).toEqual([]);
+  });
+});
