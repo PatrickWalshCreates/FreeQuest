@@ -1082,11 +1082,58 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      with 0.3.1)
   - Formats: map 8 (message faces); others unchanged unless step 3 needs an id map. Each with a
     migration; the 0.1 and 0.2 frozen projects and saves must keep opening.
-  - Not in M12: the plugin API, an MZ project importer, Developer ID / Windows signing, a Linux
-    test on a real machine (can happen any time).
-- **Later**: candidates, in no fixed order: the deferred items above (id renaming in the editor,
-  multi-tile stamps…), an RPG Maker MZ project importer (reads user's own projects; still
-  clean-room), the plugin API.
+  - Not in M12: the plugin API, an MZ project importer (M13), Developer ID / Windows signing, a
+    Linux test on a real machine (can happen any time).
+- **M13 (in progress)** Import an RPG Maker MZ project, released as 0.4.0. The easiest way for
+  MZ users to switch is to bring the game they already have. The importer reads the user's own
+  MZ project folder and writes a new FreeQuest project beside it; the MZ folder is never
+  changed. Nothing that can't be imported is silently lost: it becomes a `comment` command (with
+  what it was) where it stood, and every such item goes in an import report.
+  - **Clean-room for the importer**: it reads MZ's data format (plain JSON) for
+    interoperability, which is all it may know of MZ. Test fixtures are small projects written
+    by hand in that shape, never files from a real MZ project, RPG Maker's sample games or its
+    bundled art/audio (RTP). Our code keeps its own names and structure; only the JSON field
+    names it reads are MZ's. Images and sounds are copied from the user's project into the user's
+    new project on their machine, never into this repo. By-hand tests use a project the user
+    owns, and nothing from it is committed or pasted into prompts.
+  - Steps:
+  1. Groundwork: a `packages/importer` package (pure, like editor-core: `ProjectFs` in and out,
+     an injected `ImageCodec` for decoding/encoding PNGs: pngjs in Node and tests, a canvas in
+     the editor). Read an MZ folder leniently (only the fields we use, typed, with readable
+     problems), an `ImportReport`, ids from names (`slugify`, unique, `switch-12` when unnamed),
+     and a first output: manifest, system types, switches and variables. CLI
+     `freequest import mz <folder> --out <dir>`.
+  2. Database: actors, classes (per-level stat tables → level curves with only the points
+     needed), skills, items, weapons + armors → equipment, states, enemies, troops (members;
+     troop battle events go in the report), traits → modifiers, effects. Damage formulas are
+     JavaScript in MZ: translate the common subset into FreeQuest formulas (`a.atk` →
+     `a.attack`…), keep anything else as a report item with a plain fallback.
+  3. Tilesets and maps: MZ tilesets are several sheets plus autotiles drawn from pieces; bake
+     every autotile shape a map actually uses into one generated tileset image per MZ tileset
+     (still frame of animated ones), with passability and "above" from MZ's flags (per-direction
+     passability becomes one boolean, reported where it matters). Map layers, size, music,
+     encounters, display name; MZ's shadow and region layers are reported, not drawn.
+  4. Characters and faces: cut MZ's character sheets (several characters per image, or one) into
+     FreeQuest character sheets, and face sheets into rows of faces; the player, actors and
+     event graphics point at them. Enemy images, the iconset (`system.json` `iconset`).
+  5. Events: pages (conditions, trigger, priority → layer, movement, graphic), self switches →
+     event flags, common events, and every command FreeQuest has (messages with faces and text
+     codes, choices, branches, switches, variables, gold, items, party, transfers, battles,
+     shops, move routes, screen effects, loops, sounds, music). Unsupported commands, script
+     calls and plugin commands → comments + report. A quest test on a hand-made fixture.
+  6. Audio and the rest: copy only the audio the data uses (MZ's .ogg; .m4a when that's all
+     there is), system sounds and music, the start position, party and gold; the report
+     written into the new project as `IMPORT-REPORT.md`.
+  7. The editor: "Import an RPG Maker MZ project…" on the start screen (pick the MZ folder, then
+     where the new project goes, a progress bar, then the report), and opening the result.
+     Tried by hand on a project the user owns: the editor, a playtest and an export.
+  8. Guides (an "Importing from RPG Maker MZ" page: what comes across, what doesn't, what to
+     check), demo/test updates, and a 0.4.0 release through the checklist, the first one
+     installed by the updater from 0.3.0.
+  - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
+    backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
+    back to MZ.
+- **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones
 
