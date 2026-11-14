@@ -868,6 +868,22 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   the template's. Actors without a picture use the template's hero, which is copied only then;
   the player is the party leader's character. A picture with a `.png_` beside it is reported
   as encrypted (a deployed game, not the project).
+- **Events** (`command-tree.ts`, `events.ts`, `text.ts`, `audio.ts`): `commandTree` reads MZ's
+  flat, indented list back into a tree (continuation lines like text and shop goods stay with
+  their command; choice options, else and battle outcomes are marker commands at the block's
+  level; damaged lists are skipped past). `convertList` converts a tree; anything FreeQuest
+  lacks becomes `comment` "From MZ, not imported: <name>" (our own command names), and each
+  list reports what it left out in one line per kind. A branch testing something FreeQuest
+  can't (scripts, buttons…) keeps both branches, tested on the switch "Imported: condition to
+  redo" (declared only when used, never on), so the else side runs. Self switches are event
+  flags `a`–`d`. Text: `\\V \\N \\P \\G \\I \\C` → `{v} {actor} {member} {currency} {icon}
+{color}`, colours read from the project's window skin (`textColors`), `{` escaped; the
+  rest are dropped and reported. MZ speeds 1–6 → 2^(n−2) tiles/s, frequencies → pauses; tints
+  are approximated (`tint`). Events drawn as a tile get a one-frame character of that tile
+  (`tileCharacter`). Events are converted after every map exists (transfers check their
+  target). Music and sounds the events use are copied (`AudioImporter`, .ogg preferred).
+  `test/events.test.ts` plays the fixture's keeper in core's `World` (importer's only
+  dependency on core, a dev dependency).
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
   byte-order marks) are written by hand; `test/make-fixture.ts` writes tiny-mz's tileset, map
   and synthetic sheets (each quarter tile coloured by its position, so tests can check pieces).
@@ -1175,11 +1191,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   4. ~~Characters and faces: each used MZ character cut into its own FreeQuest sheet, face
      sheets laid out in a row, enemy images, the iconset; the player looks like the party
      leader~~ (done; both sample games' actors and enemies have their pictures)
-  5. Events: pages (conditions, trigger, priority → layer, movement, graphic), self switches →
-     event flags, common events, and every command FreeQuest has (messages with faces and text
-     codes, choices, branches, switches, variables, gold, items, party, transfers, battles,
-     shops, move routes, screen effects, loops, sounds, music). Unsupported commands, script
-     calls and plugin commands → comments + report. A quest test on a hand-made fixture.
+  5. ~~Events: pages, self switches → flags, common events, every command FreeQuest has;
+     the rest as comments + report; a quest test~~ (done; both sample games import every event
+     with no project problems; the fixture's keeper plays through in core's World)
   6. Audio and the rest: copy only the audio the data uses (MZ's .ogg; .m4a when that's all
      there is), system sounds and music, the start position, party and gold; the report
      written into the new project as `IMPORT-REPORT.md`.
@@ -1198,8 +1212,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   battle events in troops, TP, buffs and debuffs, items and skills that call common events,
   counterattacks and magic evasion/reflection, MP regeneration and cost rates, extra attacks and
   attack states, party abilities, dual wield, sealed skill types and equipment, target rate,
-  enemies that appear partway through a battle. Steps 3–6 of M13 will add to the list (map and
-  event features); the list is settled when M13 is done.
+  enemies that appear partway through a battle. From the sample games' events (most used
+  first): battle animations, "change image" in move routes, pauses in messages (\\. and
+  \\!), variables set to random numbers or game data, pictures (show/move/erase), scripts,
+  setting an event's location, labels and jumps, branches on things FreeQuest can't test
+  (buttons, actors' states, scripts…), "through" in routes, renaming actors, balloons,
+  changing states, scrolling the map, background sounds, battle music changes, diagonal moves
+  and jumps in routes, a choice's own cancel branch. The list is settled when M13 is done.
 - **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones

@@ -106,6 +106,193 @@ writeFileSync(
     tilesetId: 1,
     width: w,
     data,
-    events: [null],
+    events: [null, keeper(), gate()],
   }),
 );
+
+// Events: commands are MZ's flat list with indents.
+function cmd(code: number, indent: number, parameters: unknown[] = []) {
+  return { code, indent, parameters };
+}
+function page(overrides: Record<string, unknown>) {
+  return {
+    conditions: {
+      actorId: 1,
+      actorValid: false,
+      itemId: 1,
+      itemValid: false,
+      selfSwitchCh: 'A',
+      selfSwitchValid: false,
+      switch1Id: 1,
+      switch1Valid: false,
+      switch2Id: 1,
+      switch2Valid: false,
+      variableId: 1,
+      variableValid: false,
+      variableValue: 0,
+    },
+    directionFix: false,
+    image: { characterIndex: 0, characterName: '', direction: 2, pattern: 1, tileId: 0 },
+    list: [cmd(0, 0)],
+    moveFrequency: 3,
+    moveRoute: { list: [{ code: 0, parameters: [] }], repeat: true, skippable: false, wait: false },
+    moveSpeed: 3,
+    moveType: 0,
+    priorityType: 1,
+    stepAnime: false,
+    through: false,
+    trigger: 0,
+    walkAnime: true,
+    ...overrides,
+  };
+}
+function keeper() {
+  const list = [
+    cmd(101, 0, ['Lamplighters_face', 2, 0, 2, 'Keeper']),
+    cmd(401, 0, ['Hello \\N[1]! You lit \\V[1] lanterns.']),
+    cmd(401, 0, ['\\C[2]Careful\\C[0] \\.out there {friend}.']),
+    cmd(102, 0, [['Yes', 'No'], 1, 0, 2, 0]),
+    cmd(402, 0, [0, 'Yes']),
+    cmd(121, 1, [1, 1, 0]),
+    cmd(123, 1, ['A', 0]),
+    cmd(0, 1),
+    cmd(402, 0, [1, 'No']),
+    cmd(0, 1),
+    cmd(404, 0),
+    cmd(111, 0, [0, 1, 0]),
+    cmd(125, 1, [0, 0, 50]),
+    cmd(0, 1),
+    cmd(411, 0),
+    cmd(355, 1, ['console.log(1)']),
+    cmd(0, 1),
+    cmd(412, 0),
+    cmd(111, 0, [12, 'true']),
+    cmd(230, 1, [60]),
+    cmd(0, 1),
+    cmd(412, 0),
+    cmd(112, 0),
+    cmd(122, 1, [1, 1, 1, 0, 2]),
+    cmd(113, 1),
+    cmd(0, 1),
+    cmd(413, 0),
+    cmd(201, 0, [0, 1, 3, 2, 8, 0]),
+    cmd(301, 0, [0, 2, true, false]),
+    cmd(601, 0),
+    cmd(101, 1, ['', 0, 0, 2, '']),
+    cmd(401, 1, ['Well fought.']),
+    cmd(0, 1),
+    cmd(602, 0),
+    cmd(0, 1),
+    cmd(604, 0),
+    cmd(302, 0, [0, 1, 1, 30, false]),
+    cmd(605, 0, [1, 1, 0, 0]),
+    cmd(250, 0, [{ name: 'Chime', pan: 0, pitch: 100, volume: 90 }]),
+    cmd(213, 0, [-1, 1, false]),
+    cmd(117, 0, [1]),
+    cmd(0, 0),
+  ];
+  return {
+    id: 1,
+    name: 'Keeper',
+    note: '',
+    x: 1,
+    y: 2,
+    pages: [
+      page({
+        image: {
+          characterIndex: 1,
+          characterName: 'Lamplighters',
+          direction: 4,
+          pattern: 1,
+          tileId: 0,
+        },
+        list,
+      }),
+      page({
+        conditions: {
+          ...(page({}).conditions as object),
+          selfSwitchValid: true,
+          selfSwitchCh: 'A',
+        },
+        image: { characterIndex: 0, characterName: '', direction: 2, pattern: 0, tileId: 3 },
+        list: [
+          cmd(205, 0, [
+            0,
+            {
+              list: [
+                { code: 4, parameters: [] },
+                { code: 14, parameters: [0, 0] },
+                { code: 15, parameters: [30] },
+                { code: 0, parameters: [] },
+              ],
+              repeat: false,
+              skippable: true,
+              wait: true,
+            },
+          ]),
+          cmd(505, 0, [{ code: 4, parameters: [] }]),
+          cmd(214, 0),
+          cmd(0, 0),
+        ],
+      }),
+    ],
+  };
+}
+function gate() {
+  return {
+    id: 2,
+    name: 'Gate',
+    note: '',
+    x: 3,
+    y: 1,
+    pages: [
+      page({
+        image: { characterIndex: 0, characterName: '$Tamsin', direction: 8, pattern: 1, tileId: 0 },
+        moveType: 1,
+        moveSpeed: 4,
+        moveFrequency: 3,
+        priorityType: 0,
+        trigger: 1,
+        directionFix: true,
+      }),
+    ],
+  };
+}
+writeFileSync(
+  join(root, 'data', 'CommonEvents.json'),
+  JSON.stringify([
+    null,
+    {
+      id: 1,
+      list: [cmd(121, 0, [3, 3, 0]), cmd(0, 0)],
+      name: 'Open gate',
+      switchId: 1,
+      trigger: 0,
+    },
+    { id: 2, list: [cmd(0, 0)], name: '', switchId: 1, trigger: 0 },
+    {
+      id: 3,
+      list: [cmd(223, 0, [[-68, -68, 0, 68], 60, true]), cmd(0, 0)],
+      name: 'Night',
+      switchId: 3,
+      trigger: 2,
+    },
+  ]),
+);
+// A window skin: only the text colour squares matter (colour 2 is red here).
+{
+  const png = new PNG({ width: 192, height: 192 });
+  png.data.fill(0);
+  for (let y = 0; y < 12; y++)
+    for (let x = 0; x < 12; x++) {
+      const i = ((144 + y) * 192 + 96 + 2 * 12 + x) * 4;
+      png.data[i] = 0xff;
+      png.data[i + 1] = 0x30;
+      png.data[i + 2] = 0x30;
+      png.data[i + 3] = 255;
+    }
+  mkdirSync(join(root, 'img', 'system'), { recursive: true });
+  writeFileSync(join(root, 'img', 'system', 'Window.png'), PNG.sync.write(png));
+}
+mkdirSync(join(root, 'audio', 'se'), { recursive: true });
+writeFileSync(join(root, 'audio', 'se', 'Chime.ogg'), 'OggS fake sound for tests');

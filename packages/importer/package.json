@@ -21,5 +21,8 @@
   "dependencies": {
     "@freequest/editor-core": "workspace:*",
     "@freequest/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@freequest/core": "workspace:*"
   }
 }

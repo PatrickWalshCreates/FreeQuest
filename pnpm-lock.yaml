@@ -331,6 +331,10 @@ importers:
       '@freequest/schema':
         specifier: workspace:*
         version: link:../schema
+    devDependencies:
+      '@freequest/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/player:
     dependencies:

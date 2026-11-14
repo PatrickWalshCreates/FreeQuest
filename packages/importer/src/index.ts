@@ -15,3 +15,7 @@ export * from './maps.js';
 export * from './tiles.js';
 export * from './tilesets.js';
 export * from './graphics.js';
+export * from './audio.js';
+export * from './command-tree.js';
+export * from './events.js';
+export * from './text.js';

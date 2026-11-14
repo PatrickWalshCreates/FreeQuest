@@ -162,6 +162,7 @@ describe('importing a project', () => {
       { id: 'gate-open', name: 'Gate open' },
       { id: 'switch-4', name: '門' },
       { id: 'gate-open-2', name: 'Gate open' },
+      { id: 'imported-condition-to-redo', name: 'Imported: condition to redo' },
     ]);
     expect(manifest.variables).toEqual([
       { id: 'lanterns-lit', name: 'Lanterns lit' },

@@ -96,7 +96,6 @@ describe('importing maps', () => {
       width: 4,
       height: 3,
       tileset: 'hollow',
-      events: [],
     });
     expect(map.layers.map((l) => l.name)).toEqual(['ground', 'upper']);
     const grid = [0, 1, 2].map((y) =>

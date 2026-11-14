@@ -28,7 +28,12 @@ describe('importing pictures', () => {
     const { target, project } = await run();
     expect(project.problems).toEqual([]);
     const manifest = project.manifest.data;
-    expect(manifest.characters.map((c) => c.id)).toEqual(['lamplighters-6', 'tamsin']);
+    expect(manifest.characters.map((c) => c.id)).toEqual([
+      'lamplighters-6',
+      'tamsin',
+      'lamplighters-2',
+      'hollow-tile-3',
+    ]);
     expect(manifest.player.character).toBe('lamplighters-6');
     const sheet = JSON.parse(
       await target.readText('data/characters/lamplighters-6.json'),

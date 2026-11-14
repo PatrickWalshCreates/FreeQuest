@@ -10,6 +10,8 @@ import { FileNotFoundError, type ProjectFs, uniqueId } from '@freequest/editor-c
 import { CHARACTER_FORMAT_VERSION, type CharacterSheet, idFromName } from '@freequest/schema';
 import { type ImageCodec, type RgbaImage, blankImage, copyArea } from './image.js';
 import type { ImportReport } from './report.js';
+import { FALLBACK_TEXT_COLORS } from './text.js';
+import type { TileDrawer } from './tilesets.js';
 
 /** MZ's icon size; its icon sheet is 16 icons wide. */
 export const MZ_ICON_SIZE = 32;
@@ -118,6 +120,42 @@ export class GraphicsImporter {
     return id;
   }
 
+  /** An event shown as a map tile: a one-frame character of that tile (made once per tile). */
+  async tileCharacter(drawer: TileDrawer, tileId: number): Promise<string> {
+    const key = `tile#${drawer.mz.n}#${tileId}`;
+    const known = this.#characters.get(key);
+    if (known) return known;
+    const size = drawer.tileSize;
+    const frame = blankImage(size, size);
+    await drawer.draw(tileId, frame, 0, 0);
+    const block = blankImage(size, size * 4);
+    for (let row = 0; row < 4; row++) copyArea(frame, 0, 0, size, size, block, 0, row * size);
+    const id = uniqueId(
+      `${idFromName(drawer.mz.name, 'tileset')}-tile-${tileId}`,
+      this.#characterIds,
+    );
+    this.#characterIds.add(id);
+    const image = `assets/characters/${id}.png`;
+    this.#out.files.push({ path: image, bytes: await this.codec.encode(block) });
+    this.#out.characters.push({
+      path: `data/characters/${id}.json`,
+      data: {
+        formatVersion: CHARACTER_FORMAT_VERSION,
+        id,
+        name: `${drawer.mz.name} tile ${tileId}`,
+        image,
+        frameWidth: size,
+        frameHeight: size,
+        frames: 1,
+        rows: ['down', 'left', 'right', 'up'],
+        idleFrame: 0,
+        walkCycle: [0],
+      },
+    });
+    this.#characters.set(key, id);
+    return id;
+  }
+
   /** A message face: the face sheet made from MZ's `name` and the face's number on it. */
   async face(
     name: string,
@@ -182,6 +220,29 @@ export class GraphicsImporter {
     } catch {
       return `${path} is missing.`;
     }
+  }
+
+  /**
+   * MZ text colours (\C[n]) as #rrggbb, read from the window skin's colour
+   * squares (8 × 4 of 12 px, from (96, 144)); our own palette without one.
+   */
+  async textColors(): Promise<(n: number) => string> {
+    let skin: RgbaImage | null = null;
+    try {
+      skin = await this.codec.decode(await this.fs.readBytes('img/system/Window.png'));
+    } catch {
+      skin = null;
+    }
+    return (n) => {
+      const fallback = FALLBACK_TEXT_COLORS[n % FALLBACK_TEXT_COLORS.length] ?? '#ffffff';
+      if (!skin) return fallback;
+      const x = 96 + (n % 8) * 12 + 6;
+      const y = 144 + Math.floor(n / 8) * 12 + 6;
+      if (x >= skin.width || y >= skin.height) return fallback;
+      const i = (y * skin.width + x) * 4;
+      const hex = (v: number | undefined) => (v ?? 0).toString(16).padStart(2, '0');
+      return `#${hex(skin.data[i])}${hex(skin.data[i + 1])}${hex(skin.data[i + 2])}`;
+    };
   }
 
   /** Everything made, plus the icon sheet when the project has one. */

@@ -46,6 +46,78 @@ export function readMzTilesets(raw: unknown): Map<number, MzTileset> {
   return tilesets;
 }
 
+/**
+ * Draws MZ tiles of one tileset: loads its sheets on first use (missing ones
+ * are reported once and leave their tiles blank).
+ */
+export class TileDrawer {
+  readonly #sheets = new Map<SheetName, RgbaImage | null>();
+  /** Whether a drawn tile animates in MZ (only its first frame is drawn). */
+  animated = false;
+
+  constructor(
+    readonly mz: MzTileset,
+    readonly tileSize: number,
+    private readonly fs: ProjectFs,
+    private readonly codec: ImageCodec,
+    private readonly report: ImportReport,
+  ) {}
+
+  async #sheet(name: SheetName): Promise<RgbaImage | null> {
+    if (this.#sheets.has(name)) return this.#sheets.get(name) ?? null;
+    const where = `Tilesets › ${this.mz.name}`;
+    const file = this.mz.sheets[name];
+    let decoded: RgbaImage | null = null;
+    if (file === '') {
+      this.report.missing(
+        where,
+        `Its maps use ${name} tiles, but it has no ${name} image; they're left blank.`,
+      );
+    } else {
+      const path = `img/tilesets/${file}.png`;
+      try {
+        decoded = await this.codec.decode(await this.fs.readBytes(path));
+      } catch (error) {
+        this.report.missing(
+          where,
+          error instanceof FileNotFoundError
+            ? `${path} is missing, so its ${name} tiles are left blank.`
+            : `${path} couldn't be read as a PNG, so its ${name} tiles are left blank.`,
+        );
+      }
+    }
+    this.#sheets.set(name, decoded);
+    return decoded;
+  }
+
+  /** Draw MZ tile `mzId` into `image` with its top left at (x, y). */
+  async draw(mzId: number, image: RgbaImage, x: number, y: number): Promise<void> {
+    const size = this.tileSize;
+    const quarter = size / 2;
+    const source = tileSource(mzId);
+    if (!source) return;
+    const src = await this.#sheet(source.sheet);
+    if (!src) return;
+    if (source.kind === 'tile') {
+      copyArea(src, source.col * size, source.row * size, size, size, image, x, y);
+      return;
+    }
+    this.animated ||= source.animated;
+    for (const p of source.pieces) {
+      copyArea(
+        src,
+        p.sx * quarter,
+        p.sy * quarter,
+        quarter,
+        quarter,
+        image,
+        x + p.dx * quarter,
+        y + p.dy * quarter,
+      );
+    }
+  }
+}
+
 interface Variant {
   readonly mzId: number;
   readonly passable: boolean;
@@ -60,8 +132,12 @@ export class TilesetBaker {
   constructor(
     readonly mz: MzTileset,
     readonly id: string,
-    readonly tileSize: number,
+    readonly drawer: TileDrawer,
   ) {}
+
+  get tileSize(): number {
+    return this.drawer.tileSize;
+  }
 
   flag(mzId: number): number {
     return this.mz.flags[mzId] ?? 0;
@@ -94,79 +170,30 @@ export class TilesetBaker {
 
   /** Draw every used tile and describe the tileset. */
   async bake(
-    fs: ProjectFs,
     codec: ImageCodec,
     report: ImportReport,
   ): Promise<{ tileset: Tileset; image: Uint8Array }> {
     const size = this.tileSize;
-    const quarter = size / 2;
     const count = Math.max(1, this.#variants.length);
     const columns = Math.min(count, Math.max(8, Math.ceil(Math.sqrt(count))));
     const image = blankImage(columns * size, Math.ceil(count / columns) * size);
-    const sheets = new Map<SheetName, RgbaImage | null>();
-    const where = `Tilesets › ${this.mz.name}`;
-    let animated = false;
-
-    const sheet = async (name: SheetName): Promise<RgbaImage | null> => {
-      if (sheets.has(name)) return sheets.get(name) ?? null;
-      const file = this.mz.sheets[name];
-      let decoded: RgbaImage | null = null;
-      if (file === '') {
-        report.missing(
-          where,
-          `Its maps use ${name} tiles, but it has no ${name} image; they're left blank.`,
-        );
-      } else {
-        const path = `img/tilesets/${file}.png`;
-        try {
-          decoded = await codec.decode(await fs.readBytes(path));
-        } catch (error) {
-          report.missing(
-            where,
-            error instanceof FileNotFoundError
-              ? `${path} is missing, so its ${name} tiles are left blank.`
-              : `${path} couldn't be read as a PNG, so its ${name} tiles are left blank.`,
-          );
-        }
-      }
-      sheets.set(name, decoded);
-      return decoded;
-    };
-
     const tiles: Tileset['tiles'] = [];
     for (const [i, variant] of this.#variants.entries()) {
-      const tx = (i % columns) * size;
-      const ty = Math.floor(i / columns) * size;
-      const source = tileSource(variant.mzId);
-      if (source) {
-        const src = await sheet(source.sheet);
-        if (src && source.kind === 'tile') {
-          copyArea(src, source.col * size, source.row * size, size, size, image, tx, ty);
-        } else if (src && source.kind === 'pieces') {
-          animated ||= source.animated;
-          for (const p of source.pieces) {
-            copyArea(
-              src,
-              p.sx * quarter,
-              p.sy * quarter,
-              quarter,
-              quarter,
-              image,
-              tx + p.dx * quarter,
-              ty + p.dy * quarter,
-            );
-          }
-        }
-      }
+      await this.drawer.draw(
+        variant.mzId,
+        image,
+        (i % columns) * size,
+        Math.floor(i / columns) * size,
+      );
       tiles.push({ passable: variant.passable, ...(variant.above ? { above: true } : {}) });
     }
     if (tiles.length === 0) tiles.push({ passable: false });
-    if (animated)
+    if (this.drawer.animated) {
       report.changed(
-        where,
+        `Tilesets › ${this.mz.name}`,
         'Its water moved; FreeQuest tiles are still, so water shows its first frame.',
       );
-
+    }
     return {
       tileset: {
         formatVersion: TILESET_FORMAT_VERSION,

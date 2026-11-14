@@ -11,11 +11,13 @@ import {
   decodeUtf8,
   newProjectProblem,
   suggestGameId,
+  uniqueId,
 } from '@freequest/editor-core';
 import {
   DATABASE_KINDS,
   type DatabaseKind,
   type Manifest,
+  type FlagDeclaration,
   type SystemData,
   stableStringify,
 } from '@freequest/schema';
@@ -23,11 +25,13 @@ import { entriesFile, importDatabase, systemData } from './database.js';
 import type { ImageCodec } from './image.js';
 import { GraphicsImporter } from './graphics.js';
 import { importMaps } from './import-maps.js';
-import { asInt, asString } from './json.js';
+import { AudioImporter } from './audio.js';
+import { type EventsContext, convertCommonEvents, convertMapEvents } from './events.js';
+import { asArray, asInt, asString, isRecord } from './json.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
-import { readMzProject } from './mz-project.js';
+import { readMzJson, readMzProject } from './mz-project.js';
 import { ImportReport } from './report.js';
 
 /** The report's file in the new project. */
@@ -122,9 +126,58 @@ export async function importMzProject(
   const leader = imported.actors.find((a) => a.id === party[0]);
   const playerCharacter = leader?.character ?? manifest.player.character;
   if (!leader) placeholderUsed = true;
-  const pictures = await graphics.finish();
   const databasePaths = { ...DEFAULT_DATABASE_PATHS, ...manifest.database };
   const templateSystem = (await readTemplate(databasePaths.system)) as unknown as SystemData;
+
+  // Maps, and a tileset for each MZ tileset they use.
+  const maps = await importMaps(source, mz, db, report, options.images);
+
+  // Events, once every map exists (transfers need their targets).
+  const commonRaw = await readMzJson(source, 'data/CommonEvents.json');
+  const commonIds = new NumberedIds(
+    asArray(commonRaw).map((e, n) => (n > 0 && isRecord(e) ? asString(e['name']).trim() : '')),
+    'common',
+    new Set(),
+  );
+  const extraSwitches: FlagDeclaration[] = [];
+  let redo: string | null = null;
+  const mapById = new Map(maps.maps.map((m) => [m.mzId, m.data]));
+  const events: EventsContext = {
+    report,
+    graphics,
+    audio: new AudioImporter(source, report),
+    db,
+    switches,
+    variables,
+    map: (n) => mapById.get(n)?.id ?? null,
+    mapSize: (mapId) => maps.maps.find((m) => m.data.id === mapId)?.data ?? null,
+    common: (n) => (hasCommonEvent(commonRaw, n) ? commonIds.id(n) : null),
+    textColor: await graphics.textColors(),
+    redoSwitch: () => {
+      if (!redo) {
+        redo = uniqueId('imported-condition-to-redo', gameStateIds);
+        gameStateIds.add(redo);
+        extraSwitches.push({ id: redo, name: 'Imported: condition to redo' });
+      }
+      return redo;
+    },
+  };
+  for (const map of maps.maps) {
+    const mapEvents = await convertMapEvents(
+      {
+        raw: map.raw,
+        mapWhere: map.where,
+        drawer: map.drawer,
+        width: map.data.width,
+        height: map.data.height,
+      },
+      events,
+    );
+    map.data = { ...map.data, events: mapEvents };
+  }
+  const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
+  const pictures = await graphics.finish();
+
   const written = new Map<string, unknown>([
     [databasePaths.actors, entriesFile(imported.actors)],
     [databasePaths.classes, entriesFile(imported.classes)],
@@ -134,7 +187,7 @@ export async function importMzProject(
     [databasePaths.states, entriesFile(imported.states)],
     [databasePaths.enemies, entriesFile(imported.enemies)],
     [databasePaths.troops, entriesFile(imported.troops)],
-    [databasePaths.commonEvents, entriesFile([])],
+    [databasePaths.commonEvents, entriesFile(commonEvents)],
     [
       databasePaths.system,
       systemData(types, imported, {
@@ -147,8 +200,6 @@ export async function importMzProject(
       }),
     ],
   ]);
-  // Maps, and a tileset for each MZ tileset they use.
-  const maps = await importMaps(source, mz, db, report, options.images);
   const replaced = (f: string) =>
     maps.maps.length > 0 &&
     (manifest.maps.some((m) => m.path === f) ||
@@ -173,10 +224,6 @@ export async function importMzProject(
       'The project has no maps that could be imported; the Starter’s map is there instead.',
     );
   }
-  report.missing(
-    'Events',
-    'Not imported yet: this version of the importer brings the settings, switches, variables, database and maps. Map events come next.',
-  );
 
   const files = options.template.files.filter(
     (f) =>
@@ -187,7 +234,7 @@ export async function importMzProject(
       !templateCharacter(f) &&
       !templateIcons(f),
   );
-  const images = [...maps.images, ...pictures.files];
+  const images = [...maps.images, ...pictures.files, ...events.audio.files];
   const total = files.length + written.size + images.length + 2;
   let done = 0;
   for (const path of files) {
@@ -224,7 +271,7 @@ export async function importMzProject(
             tilesets: maps.tilesets.map((t) => ({ id: t.data.id, path: t.path })),
           }
         : {}),
-      switches: switches.declarations('Switch'),
+      switches: [...switches.declarations('Switch'), ...extraSwitches],
       variables: variables.declarations('Variable'),
     }),
   );
@@ -236,3 +283,13 @@ export async function importMzProject(
 const DEFAULT_DATABASE_PATHS: Record<DatabaseKind, string> = Object.fromEntries(
   DATABASE_KINDS.map((kind) => [kind, `data/database/${kind}.json`]),
 ) as Record<DatabaseKind, string>;
+
+/** Whether common event `n` is there (named, or with commands). */
+function hasCommonEvent(raw: unknown, n: number): boolean {
+  const entry = asArray(raw)[n];
+  return (
+    n > 0 &&
+    isRecord(entry) &&
+    (asString(entry['name']).trim() !== '' || asArray(entry['list']).length > 1)
+  );
+}

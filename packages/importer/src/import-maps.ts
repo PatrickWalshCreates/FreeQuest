@@ -3,15 +3,23 @@ import type { ProjectFs } from '@freequest/editor-core';
 import type { GameMap, Manifest, Tileset } from '@freequest/schema';
 import { NumberedIds } from './ids.js';
 import type { ImageCodec } from './image.js';
-import { isRecord } from './json.js';
+import { asInt, isRecord, type JsonRecord } from './json.js';
 import { convertMap, displayName, mapWhere } from './maps.js';
 import type { MzDatabase } from './mz-lists.js';
 import { type MzProject, readMzJson } from './mz-project.js';
 import type { ImportReport } from './report.js';
-import { TilesetBaker, readMzTilesets } from './tilesets.js';
+import { TileDrawer, TilesetBaker, readMzTilesets } from './tilesets.js';
 
 export interface ImportedMaps {
-  readonly maps: { readonly path: string; readonly data: GameMap }[];
+  readonly maps: {
+    readonly path: string;
+    data: GameMap;
+    /** MZ's map, for its events. */
+    readonly raw: JsonRecord;
+    readonly where: string;
+    readonly drawer: TileDrawer;
+    readonly mzId: number;
+  }[];
   readonly tilesets: { readonly path: string; readonly data: Tileset }[];
   readonly images: { readonly path: string; readonly bytes: Uint8Array }[];
   /** The player's start, when the start map was imported. */
@@ -50,7 +58,8 @@ export async function importMaps(
     if (known) return known;
     const tileset = tilesets.get(n);
     if (!tileset) return null;
-    const made = new TilesetBaker(tileset, tilesetIds.id(n), mz.system.tileSize);
+    const drawer = new TileDrawer(tileset, mz.system.tileSize, fs, codec, report);
+    const made = new TilesetBaker(tileset, tilesetIds.id(n), drawer);
     bakers.set(n, made);
     return made;
   };
@@ -66,7 +75,17 @@ export async function importMaps(
     if (displayName(raw)) named++;
     const id = mapIds.id(info.id);
     const map = convertMap(raw, info, id, { report, troops: db.troops, baker });
-    if (map) maps.push({ path: `data/maps/${id}.json`, data: map });
+    const drawer = bakers.get(asInt(raw['tilesetId']))?.drawer;
+    if (map && drawer) {
+      maps.push({
+        path: `data/maps/${id}.json`,
+        data: map,
+        raw,
+        where: mapWhere(info),
+        drawer,
+        mzId: info.id,
+      });
+    }
   }
   if (named > 0) {
     report.note(
@@ -78,7 +97,7 @@ export async function importMaps(
   const baked: ImportedMaps['tilesets'] = [];
   const images: ImportedMaps['images'] = [];
   for (const b of [...bakers.values()].sort((x, y) => x.mz.n - y.mz.n)) {
-    const { tileset, image } = await b.bake(fs, codec, report);
+    const { tileset, image } = await b.bake(codec, report);
     baked.push({ path: `data/tilesets/${tileset.id}.json`, data: tileset });
     images.push({ path: tileset.image, bytes: image });
   }
