@@ -13,6 +13,7 @@ import {
 import type { Manifest } from '@freequest/schema';
 import { useState } from 'react';
 import { confirmAction } from './platform.js';
+import { RenameIdButton } from './RenameIdButton.js';
 
 const WORDS: Record<GameStateKind, { one: string; many: string; what: string }> = {
   switches: {
@@ -90,7 +91,14 @@ function List({ doc, kind }: { readonly doc: ProjectDocument; readonly kind: Gam
                     )
                   }
                 />
-                <code className="muted">{d.id}</code>
+                <RenameIdButton
+                  doc={doc}
+                  kind={refKind}
+                  id={d.id}
+                  what={words.one}
+                  label={d.id}
+                  className="small id-button"
+                />
                 <button
                   className="small"
                   aria-expanded={open === d.id}

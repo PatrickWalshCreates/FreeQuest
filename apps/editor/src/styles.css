@@ -2277,3 +2277,12 @@ h2.with-actions button {
   font-size: 12px;
   gap: 2px;
 }
+
+/* An id shown as a button that renames it. */
+.id-button {
+  font-family: var(--mono, ui-monospace, 'SF Mono', Menlo, monospace);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}

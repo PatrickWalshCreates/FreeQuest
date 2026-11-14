@@ -30,6 +30,7 @@ import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList, listActions } from './CommandList.js';
 import { RouteSteps } from './RouteSteps.js';
+import { RenameIdButton } from '../RenameIdButton.js';
 import { ColorField } from '../forms/ColorField.js';
 import { CommandExtras } from './CommandExtras.js';
 import { ValueDialog } from './ValueDialog.js';
@@ -52,7 +53,6 @@ const MOVEMENTS: readonly { value: EventMovement['type'] | ''; label: string }[]
 ];
 
 /** A map's id from its file path (data/maps/<id>.json). */
-const mapIdOf = (path: string) => path.replace(/^.*\//, '').replace(/\.json$/, '');
 
 /** A new route: pace one tile right and back. */
 const DEFAULT_ROUTE: MoveStep[] = [
@@ -300,7 +300,8 @@ function EventEditor(props: {
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
   const { audio } = useProjectLists(doc);
   const project = doc.project;
-  const mapData = project.maps.get(mapIdOf(path))?.data;
+  // The map's data from its file (its id may differ from the file name after a rename).
+  const mapData = doc.file(path)?.data as GameMap | undefined;
   const mapEvents = useMemo(
     () => (mapData?.events ?? []).map((e) => ({ id: e.id, name: e.name })),
     [mapData],
@@ -367,7 +368,16 @@ function EventEditor(props: {
       </div>
       <p className="hint">
         Id <code>{event.id}</code> at {event.x}, {event.y}. When several pages’ conditions hold, the
-        last one is used.
+        last one is used.{' '}
+        {mapData && (
+          <RenameIdButton
+            doc={doc}
+            kind="event"
+            id={`${mapData.id}/${event.id}`}
+            what="event"
+            onRenamed={(id) => onSelect(id)}
+          />
+        )}
       </p>
 
       <div className="page-tabs" role="tablist" aria-label="Pages">

@@ -19,6 +19,7 @@ import { useProjectLists } from '../forms/use-project-lists.js';
 import { confirmAction } from '../platform.js';
 import { type ImageInfo, useImage } from '../tileset/image-size.js';
 import { useElementSize } from '../use-element-size.js';
+import { RenameIdButton } from '../RenameIdButton.js';
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -322,6 +323,10 @@ function FrameSettings(props: {
   return (
     <section>
       <h2>Image and frames</h2>
+      <p className="hint">
+        Character id <code>{sheet.id}</code>{' '}
+        <RenameIdButton doc={doc} kind="character" id={sheet.id} what="character" />
+      </p>
       <label className="field">
         <span>Image</span>
         <select

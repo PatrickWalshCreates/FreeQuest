@@ -3,6 +3,7 @@ import type { Encounters, GameMap } from '@freequest/schema';
 import { useState } from 'react';
 import { Field } from '../Dialog.js';
 import { ResizeDialog } from './ResizeDialog.js';
+import { RenameIdButton } from '../RenameIdButton.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 
 interface Props {
@@ -41,6 +42,9 @@ export function MapSettings({ doc, path, map }: Props) {
         ]
           .filter((part) => part && !part.endsWith(': '))
           .join('. ') || 'Nothing leads here yet: add a Transfer player to another map.'}
+      </p>
+      <p className="hint">
+        Map id <code>{map.id}</code> <RenameIdButton doc={doc} kind="map" id={map.id} what="map" />
       </p>
       <Field label="Tileset">
         <select

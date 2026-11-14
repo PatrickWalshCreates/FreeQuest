@@ -9,6 +9,7 @@ import {
   emptyDatabase,
 } from '@freequest/schema';
 import { ScreenEffects } from './screen.js';
+import { translateSave } from './save-renames.js';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
 import { DIRECTIONS, DIRECTION_DELTA, type Direction } from './direction.js';
@@ -261,7 +262,9 @@ export class World {
   }
 
   /** Rebuild a game from a save file. Throws if the save doesn't fit the project. */
-  static fromSave(save: SaveFile, options: RestoreOptions): World {
+  static fromSave(original: SaveFile, options: RestoreOptions): World {
+    // Translate ids renamed since the save was made (harmless if already done).
+    const save = translateSave(original, options.manifest, options.database);
     if (options.map.id !== save.map) {
       throw new Error(`save is on map "${save.map}" but map "${options.map.id}" was given`);
     }

@@ -6,6 +6,7 @@ import {
   addEntry,
   DATABASE_LABELS,
   type RefKind,
+  type RenameKind,
   clipboard,
   commonEventUsages,
   usagesOf,
@@ -34,6 +35,7 @@ import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
 import { IconField, IconImage, useIconset } from './IconField.js';
 import { ColorField } from '../forms/ColorField.js';
+import { RenameIdButton } from '../RenameIdButton.js';
 import { MOD } from '../keys.js';
 
 const subscribeClipboard = (listener: () => void) => clipboard.subscribe(listener);
@@ -318,8 +320,14 @@ function EntriesEditor(props: {
               <div>
                 <h1>{entry.name}</h1>
                 <p className="hint">
-                  {singular} id <code>{entry.id}</code> (used by events and other entries; fixed
-                  once created)
+                  {singular} id <code>{entry.id}</code> (what events and other entries refer to){' '}
+                  <RenameIdButton
+                    doc={doc}
+                    kind={ENTRY_REF_KINDS[kind]}
+                    id={entry.id}
+                    what={singular}
+                    onRenamed={setSelected}
+                  />
                 </p>
               </div>
             </div>
@@ -421,8 +429,8 @@ function NewEntryDialog(props: {
           <input value={id} spellCheck={false} onChange={(e) => setCustomId(e.target.value)} />
         </Field>
         <p className="hint">
-          Events and other entries refer to it by id, so it can’t be changed later. Every other
-          field can.
+          Events and other entries refer to it by id. You can change it later with Rename id…, which
+          updates everything that uses it.
         </p>
         {problem && name !== '' && <p className="error">{problem}</p>}
         <div className="actions">
@@ -490,7 +498,7 @@ function CommonEventCommands(props: {
 }
 
 /** The kind of reference each database category's entries are. */
-const ENTRY_REF_KINDS: Record<EntryKind, RefKind> = {
+const ENTRY_REF_KINDS: Record<EntryKind, RenameKind> = {
   actors: 'actor',
   classes: 'class',
   skills: 'skill',

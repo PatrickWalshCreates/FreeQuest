@@ -73,6 +73,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     },
     // v6: the common events database category. Additive.
     { from: 5, migrate: (d) => d },
+    // v7: the rename record for saves. Additive.
+    { from: 6, migrate: (d) => d },
   ],
   tileset: [],
   map: [

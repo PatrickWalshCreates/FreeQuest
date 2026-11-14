@@ -9,7 +9,7 @@ import {
   RelativePath,
 } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 6;
+export const MANIFEST_FORMAT_VERSION = 7;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -25,6 +25,24 @@ export const DATABASE_KINDS = [
   'commonEvents',
 ] as const;
 export type DatabaseKind = (typeof DATABASE_KINDS)[number];
+
+/**
+ * Kinds of id that save files store, so renaming one is recorded in the
+ * manifest's `renames` and translated when an older save loads.
+ */
+export const SAVE_RENAME_KINDS = [
+  'map',
+  'switch',
+  'variable',
+  'actor',
+  'item',
+  'equipment',
+  'skill',
+  'state',
+  'equipmentSlot',
+  'event',
+] as const;
+export type SaveRenameKind = (typeof SAVE_RENAME_KINDS)[number];
 
 /** Declares a switch or variable so it can be referenced by id and named in editors. */
 export const FlagDeclaration = Type.Object(
@@ -80,6 +98,26 @@ export const Manifest = Type.Object(
     characters: Type.Array(FileRef),
     switches: Type.Array(FlagDeclaration, { description: 'Named on/off flags.' }),
     variables: Type.Array(FlagDeclaration, { description: 'Named integer values.' }),
+    renames: Type.Optional(
+      Type.Partial(
+        Type.Object(
+          Object.fromEntries(
+            SAVE_RENAME_KINDS.map((k) => [k, Type.Record(Type.String(), Type.String())]),
+          ) as Record<
+            SaveRenameKind,
+            ReturnType<
+              typeof Type.Record<ReturnType<typeof Type.String>, ReturnType<typeof Type.String>>
+            >
+          >,
+          { additionalProperties: false },
+        ),
+        {
+          description:
+            'Ids renamed in the editor, old → new per kind (events "map/event"), so saves made before still load (v7).',
+          additionalProperties: false,
+        },
+      ),
+    ),
     database: Type.Optional(
       Type.Partial(
         Type.Object(

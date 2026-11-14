@@ -21,3 +21,4 @@ export * from './world.js';
 export type * from './plugin.js';
 export * from './text.js';
 export * from './screen.js';
+export * from './save-renames.js';

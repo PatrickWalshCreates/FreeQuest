@@ -102,7 +102,11 @@ Play, walk up to them and press Enter.
 
 Events can do much more: **Show choices** asks a question with a branch for each answer,
 Switches (on/off flags) and variables (numbers) are shared by the whole game: add them under
-**Project settings → Switches** and **Variables**, where each one also shows what uses it. Items,
+**Project settings → Switches** and **Variables**, where each one also shows what uses it.
+Everything is referred to by its **id** (made from its name when you create it). To change one,
+use **Rename id…** (on a switch or variable click its id; maps, events and database entries have
+the button by their id): every door, condition, command and message that refers to it changes
+too, in one step you can undo, and players' saves made before keep working. Items,
 enemies and every other database entry show the same "Used by" list, and deleting anything that's
 still used says where.
 

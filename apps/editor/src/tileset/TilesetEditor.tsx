@@ -18,6 +18,7 @@ import { useProjectLists } from '../forms/use-project-lists.js';
 import { confirmAction } from '../platform.js';
 import { useElementSize } from '../use-element-size.js';
 import { type ImageInfo, useImage } from './image-size.js';
+import { RenameIdButton } from '../RenameIdButton.js';
 
 type Mode = 'passage' | 'above' | 'select';
 
@@ -304,6 +305,10 @@ function GridSettings({
   return (
     <section>
       <h2>Image and grid</h2>
+      <p className="hint">
+        Tileset id <code>{tileset.id}</code>{' '}
+        <RenameIdButton doc={doc} kind="tileset" id={tileset.id} what="tileset" />
+      </p>
       <label className="field">
         <span>Image</span>
         <select

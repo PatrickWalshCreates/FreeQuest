@@ -433,6 +433,18 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   (`SwitchesAndVariables.tsx` in Project settings; `game-state-edits.ts`: add with an id from
   the name, unique across both lists; rename the display name; delete) — before M12 there was
   no way to declare one in the editor.
+- **Renaming ids** (`editor-core/rename.ts`, tested; M12): `renameId(doc, kind, oldId, newId)`
+  rewrites every reference the index records (values by `path`, text codes inside strings,
+  equipment-slot keys) and the declaration (manifest lists, a map/tileset/character file's `id`
+  via `tx.update(…, { id })`, database entries, system type lists, map events), as one undo
+  step; `renameProblem` refuses bad or taken ids (switches and variables share one id space).
+  Documents now track a file's id per change (`Change.id` / `idBefore`), so renaming a map's id
+  and undoing it keep the file's checks right. Save-stored kinds (`SAVE_RENAME_KINDS`) go into
+  manifest v7 `renames` (old → new per kind, chains collapse via `recordRename`); core's
+  `translateSave` maps a save's ids through it on load (the runtime before loading the save's
+  map, `World.fromSave` again), keeping ids that exist now. Editor: `RenameIdButton` beside ids
+  (switch/variable rows show the id as the button). Map views use the map's own id, never the
+  file name (they differ after a rename).
 - **Stamps** (`editor-core/stamps.ts`, tested; M12): the brush is always a `Stamp` (width,
   height, one tile grid for the active layer or one per map layer). `tileStamp` (one tile),
   `paletteStamp` (a block dragged in `TilePalette`; cells past the last tile are skipped),
@@ -765,9 +777,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
-- Current versions: manifest 6 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+- Current versions: manifest 7 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
-  `commonEvents` database category),
+  `commonEvents` database category; v7: `renames`, the rename record for saves),
   map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
@@ -977,10 +989,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      list on switches, variables, entries and maps, and the delete warnings from it~~ (done;
      found on the way that switches and variables couldn't be created in the editor at all:
      Project settings now has them. Tried in browser mode)
-  3. Rename ids safely: Rename… for switches, variables, maps, events, tilesets, characters and
+  3. ~~Rename ids safely: Rename… for switches, variables, maps, events, tilesets, characters and
      database entries, rewriting every reference the index knows in one undo step (and the start
      map/position, the party); ids stay ids, so saves keep working through an id map kept in the
-     manifest only if a rename would break them (decide in the step)
+     manifest only if a rename would break them (decide in the step)~~ (done; renames would break
+     saves, so manifest v7 keeps a rename record and loading translates. Tried in browser mode:
+     the house map and chest event renamed, a playtest walked through the door. Every editor
+     with an id has the button; system type lists rename in editor-core only, no button yet)
   4. Rename and move assets: the Assets panel renames a file or moves it to another folder and
      updates every path that uses it (one step, the file moved on save)
   5. Bigger maps: draw maps in chunks (render textures per block of tiles, rebuilt when a chunk

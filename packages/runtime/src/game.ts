@@ -4,6 +4,7 @@ import {
   type Direction,
   FixedTimestep,
   World,
+  translateSave,
   computeCamera,
 } from '@freequest/core';
 import type { SaveFile, ShopGood, SoundKey, Tileset } from '@freequest/schema';
@@ -383,9 +384,11 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   /** Load a save: fetch its map and tileset first, then rebuild the world from it. */
-  const loadGame = async (save: SaveFile) => {
+  const loadGame = async (loaded: SaveFile) => {
     mode = 'loading';
     try {
+      // Ids renamed in the editor since the save was made are translated first.
+      const save = translateSave(loaded, manifest, db);
       const savedMap = await project.loadMap(save.map);
       const savedTileset = getOrThrow(project.tilesets, savedMap.tileset, 'tileset');
       readyTiles.set(savedTileset.id, await loadTiles(savedTileset));

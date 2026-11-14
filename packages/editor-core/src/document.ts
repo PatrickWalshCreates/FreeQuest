@@ -22,7 +22,9 @@ const ABSENT = Symbol('absent');
 
 interface Change {
   readonly kind: DataFileKind;
+  /** The file's id after the change (a rename changes it) and before. */
   readonly id: string;
+  readonly idBefore: string;
   /** File data, or ABSENT for a file that didn't exist yet. */
   readonly before: unknown;
   /** File data, or ABSENT for a deleted file. */
@@ -40,6 +42,8 @@ export interface Transaction {
     path: string,
     kind: K,
     change: (data: FileData<K>) => FileData<K>,
+    /** The file's new id, when the change renames it (a map's, tileset's or character's). */
+    options?: { readonly id?: string },
   ): void;
   /** Add a new file (written on the next save). */
   create<K extends DataFileKind>(path: string, kind: K, id: string, data: FileData<K>): void;
@@ -176,13 +180,14 @@ export class ProjectDocument {
       changes.set(path, {
         kind,
         id,
+        idBefore: existing ? existing.idBefore : (file?.id ?? id),
         before: existing ? existing.before : file ? file.data : ABSENT,
         after,
       });
     };
     const tx: Transaction = {
       file: current,
-      update: (path, kind, change) => {
+      update: (path, kind, change, options) => {
         const file = current(path);
         if (!file) throw new Error(`"${path}" is not part of this project`);
         if (file.kind !== kind) throw new Error(`"${path}" is a ${file.kind} file, not ${kind}`);
@@ -190,7 +195,9 @@ export class ProjectDocument {
           throw new Error(`"${path}" could not be loaded, so it can't be edited`);
         const before = file.data as FileData<typeof kind>;
         const after = change(before);
-        if (after !== before) record(path, kind, file.id, after);
+        if (after !== before || (options?.id && options.id !== file.id)) {
+          record(path, kind, options?.id ?? file.id, after);
+        }
       },
       create: (path, kind, id, data) => {
         const normalized = normalizeProjectPath(path);
@@ -204,7 +211,9 @@ export class ProjectDocument {
       },
     };
     build(tx);
-    for (const [path, change] of changes) if (change.before === change.after) changes.delete(path);
+    for (const [path, change] of changes) {
+      if (change.before === change.after && change.id === change.idBefore) changes.delete(path);
+    }
     if (changes.size === 0) return false;
     this.commit(label, changes, options.coalesce ?? null);
     return true;
@@ -237,7 +246,7 @@ export class ProjectDocument {
     const entry = this.undoStack.pop();
     if (!entry) return null;
     this.coalescing = null;
-    for (const [path, change] of entry.changes) this.setData(path, change, change.before);
+    for (const [path, change] of entry.changes) this.apply(path, change, 'before');
     this.redoStack.push(entry);
     this.changed();
     return entry.label;
@@ -247,7 +256,7 @@ export class ProjectDocument {
     const entry = this.redoStack.pop();
     if (!entry) return null;
     this.coalescing = null;
-    for (const [path, change] of entry.changes) this.setData(path, change, change.after);
+    for (const [path, change] of entry.changes) this.apply(path, change, 'after');
     this.undoStack.push(entry);
     this.changed();
     return entry.label;
@@ -331,14 +340,17 @@ export class ProjectDocument {
     if (coalesce !== null && top && this.coalescing === coalesce && top.coalesce === coalesce) {
       for (const [path, change] of changes) {
         const existing = top.changes.get(path);
-        if (existing) existing.after = change.after;
-        else top.changes.set(path, change);
+        if (existing) {
+          existing.after = change.after;
+          // A coalesced step keeps its first "before" and takes the latest id.
+          (existing as { id: string }).id = change.id;
+        } else top.changes.set(path, change);
       }
       // Typing a name and then deleting back to the original is no step at all:
       // drop it and restore the original objects, so the file is clean again.
       if ([...top.changes.values()].every((c) => deepEqual(c.before, c.after))) {
         this.undoStack.pop();
-        for (const [path, change] of top.changes) this.setData(path, change, change.before);
+        for (const [path, change] of top.changes) this.apply(path, change, 'before');
         this.coalescing = null;
         this.redoStack = [];
         this.changed();
@@ -350,12 +362,21 @@ export class ProjectDocument {
     }
     this.coalescing = coalesce;
     this.redoStack = [];
-    for (const [path, change] of changes) this.setData(path, change, change.after);
+    for (const [path, change] of changes) this.apply(path, change, 'after');
     this.changed();
   }
 
   /** Put a file in the given state (ABSENT deletes it), rechecking its own problems. */
-  private setData(path: string, meta: Pick<Change, 'kind' | 'id'>, data: unknown): void {
+  /** Put a change's file as it was before (undo) or after (do, redo). */
+  private apply(path: string, change: Change, which: 'before' | 'after'): void {
+    this.setData(
+      path,
+      { kind: change.kind, id: which === 'before' ? change.idBefore : change.id },
+      which === 'before' ? change.before : change.after,
+    );
+  }
+
+  private setData(path: string, meta: { kind: DataFileKind; id: string }, data: unknown): void {
     if (data === ABSENT) {
       this.files.delete(path);
       return;
