@@ -83,7 +83,8 @@ side, and Rectangle and Fill repeat it as a pattern. To reuse part of a map, cho
 for just the current layer), so the pencil places copies wherever you click. Ctrl+X cuts the
 area instead, and Delete clears it. Press **W** to see where the player can
 walk: blocked cells are tinted. Scroll to move around; hold Ctrl and scroll (or pinch on a
-trackpad), or press `=` and `-`, to zoom.
+trackpad), or press `=` and `-`, to zoom. Maps can be up to 512 × 512 tiles; zoomed far out, the
+map shows as a small picture of its tiles' colours, and you can still paint on it.
 
 Press **▶ Play** at any time to try the game with your unsaved changes. **Stop** (or Ctrl+.) comes
 back.

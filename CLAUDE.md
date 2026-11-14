@@ -390,7 +390,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   `mapUsages` lists transfers into it for the warning), `resizeMap`/`applyResize` with a 9-way
   anchor: new ground repeats edge tiles, events that fall off are reported, and when content
   moves every transfer into the map (any map, via schema's `mapCommands`) and the start position
-  move with it. Maps are capped at `MAX_MAP_SIZE` (256) while each cell is a sprite.
+  move with it. Maps are capped at `MAX_MAP_SIZE` (512 since M12; see Chunks).
 - **Saving** writes only dirty files via `stableStringify`, data files before `project.json`, then
   deletes removed files (so the manifest never lists a missing file), one
   save at a time (an idle save snapshots immediately; edits made during a save stay dirty). Files
@@ -463,6 +463,15 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   the press (`patternStamp`), the eraser stays one cell. Empty cells in a one-layer stamp are
   skipped, in a copied area they clear (a paste matches the copy). Previews are the stamp's
   cells (`placeStamp`), every layer together; the renderer's `setSelection` outlines areas.
+- **Chunks** (core `chunks.ts`, tested; M12): maps are drawn in 16 × 16-tile chunks
+  (`CHUNK_SIZE`, `chunksInView` with a margin, `chunkTiles`), built only near the view and
+  freed past a wider keep margin, so a map costs what the screen shows. Runtime `MapView.update`
+  (called from `game.ts`'s render with the camera) does it for the game; the editor's
+  `MapRenderer.ensureChunks` (after view changes and resizes) redraws only changed rows of built
+  chunks. Below `OVERVIEW_TILE_PX` (6) screen pixels per tile the editor shows the overview
+  instead: one pixel per cell (editor-core `overview.ts`: `averageTileColors`,
+  `overviewPixels`, blended through visible layers), redrawn after edits; the grid hides there.
+  Zoom goes down to 1/32 (`zoomLabel`). `builtChunks` on both for tests and the console.
 - Browser-pane note: the pane's page is 1024×768 but screenshots are 800×600, so convert
   screenshot coordinates (×1.28) before reasoning about map cells; synthetic `PointerEvent`s
   work for gestures the click tools can't do (e.g. Escape mid-drag).
@@ -1007,8 +1016,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   4. ~~Rename and move assets: the Assets panel renames a file or moves it to another folder and
      updates every path that uses it (one step, the file moved on save)~~ (done; tried in browser
      mode on a copy of the demo: renamed, saved, the old file gone and the project clean)
-  5. Bigger maps: draw maps in chunks (render textures per block of tiles, rebuilt when a chunk
-     changes) in the game and the editor, then lift the 256 × 256 cap; measured before and after
+  5. ~~Bigger maps: draw maps in chunks in the game and the editor, then lift the 256 × 256
+     cap; measured before and after~~ (done; chunks of sprites built near the view rather than
+     render textures, which was enough: a 512 × 512 map shows in under 10 ms with ~3.7k sprites,
+     was ~370 ms and 314k. Cap now 512. Tried in browser mode: painting a new map, the overview
+     updating, the demo walking)
   6. Face portraits in messages: an optional face per message (a face sheet image cut into
      cells, map v8), drawn beside the text in the game and the editor's preview; the demo's Elder
      and Mira get faces
@@ -1032,5 +1044,6 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
 
 - Text renders at the internal resolution and is pixel-upscaled; fine for now, revisit (bitmap font
   or high-res UI layer) if legibility suffers at small sizes.
-- Each tile is its own Sprite; fine for small maps, revisit (chunked render textures) for large ones.
+- Tiles are still one Sprite each, but only in chunks near the view; chunk render textures are the
+  next step if a screen of tiles ever gets slow.
 - Passability is a single boolean per tile; per-direction passability would be a format migration.

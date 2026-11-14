@@ -449,6 +449,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     });
     const screen = world.screen;
     scene.position.set(-Math.round(camera.x) + screen.shakeX, -Math.round(camera.y));
+    // Only the chunks around the camera are built (and freed again when it moves away).
+    shown?.view.update({ x: camera.x, y: camera.y, width, height });
     drawScreenEffects(screenEffects, screen, width, height);
   };
 

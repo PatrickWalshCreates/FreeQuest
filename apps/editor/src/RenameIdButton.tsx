@@ -9,6 +9,7 @@ import {
   renameProblem,
 } from '@freequest/editor-core';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog, Field } from './Dialog.js';
 
 export function RenameIdButton(props: {
@@ -35,7 +36,9 @@ export function RenameIdButton(props: {
       >
         {props.label ?? 'Rename id…'}
       </button>
-      {open && <RenameDialog {...props} onClose={() => setOpen(false)} />}
+      {/* The button sits inside paragraphs and forms, where a dialog can't go: render it at the top. */}
+      {open &&
+        createPortal(<RenameDialog {...props} onClose={() => setOpen(false)} />, document.body)}
     </>
   );
 }
@@ -60,6 +63,8 @@ function RenameDialog(props: {
         className="form"
         onSubmit={(e) => {
           e.preventDefault();
+          // React passes a portal's events to its parents: keep this submit from reaching a form.
+          e.stopPropagation();
           if (problem) return;
           renameId(doc, kind, id, value);
           props.onRenamed?.(value);

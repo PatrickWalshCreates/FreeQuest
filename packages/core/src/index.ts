@@ -22,3 +22,4 @@ export type * from './plugin.js';
 export * from './text.js';
 export * from './screen.js';
 export * from './save-renames.js';
+export * from './chunks.js';

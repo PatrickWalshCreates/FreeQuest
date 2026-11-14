@@ -17,7 +17,8 @@ import { referencesTo } from './usages.js';
 export const MAP_DIR = 'data/maps';
 
 /** Largest width or height the editor offers (maps are one sprite per cell for now). */
-export const MAX_MAP_SIZE = 256;
+/** Maps are drawn in chunks near the view (M12), so this is about memory for the data, not drawing. */
+export const MAX_MAP_SIZE = 512;
 
 export class MapOperationError extends Error {
   override name = 'MapOperationError';

@@ -3,6 +3,7 @@ import {
   SCROLL_MARGIN,
   type ViewportBounds,
   ZOOM_LEVELS,
+  zoomLabel,
   clampViewport,
   fitViewport,
   panBy,
@@ -22,6 +23,16 @@ describe('viewport', () => {
     expect(stepZoom(1.2, -1)).toBe(1);
     expect(stepZoom(ZOOM_LEVELS[0], -1)).toBe(ZOOM_LEVELS[0]);
     expect(stepZoom(8, 1)).toBe(8);
+    expect(stepZoom(0.25, -1)).toBe(0.125);
+  });
+
+  it('labels zooms for the menu', () => {
+    expect([1 / 32, 1 / 8, 0.25, 1.5].map(zoomLabel)).toEqual(['3%', '12.5%', '25%', '150%']);
+  });
+
+  it('fits a 512 × 512 map of 32 px tiles by zooming far out', () => {
+    const big = { mapWidth: 512 * 32, mapHeight: 512 * 32, viewWidth: 800, viewHeight: 600 };
+    expect(fitViewport(big).zoom).toBe(1 / 32);
   });
 
   it('fits the whole map, centered', () => {

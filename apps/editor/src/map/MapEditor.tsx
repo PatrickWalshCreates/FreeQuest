@@ -14,6 +14,7 @@ import {
   type Viewport,
   type ViewportBounds,
   ZOOM_LEVELS,
+  zoomLabel,
   clampViewport,
   fitViewport,
   panBy,
@@ -396,12 +397,10 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
             value={ZOOM_LEVELS.includes(zoom as never) ? zoom : ''}
             onChange={(event) => zoomTo(Number(event.target.value))}
           >
-            {!ZOOM_LEVELS.includes(zoom as never) && (
-              <option value="">{Math.round(zoom * 100)}%</option>
-            )}
+            {!ZOOM_LEVELS.includes(zoom as never) && <option value="">{zoomLabel(zoom)}</option>}
             {ZOOM_LEVELS.map((z) => (
               <option key={z} value={z}>
-                {z * 100}%
+                {zoomLabel(z)}
               </option>
             ))}
           </select>

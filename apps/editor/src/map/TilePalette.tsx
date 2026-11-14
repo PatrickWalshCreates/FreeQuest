@@ -1,6 +1,6 @@
 import { type Cell, type Stamp, paletteStamp } from '@freequest/editor-core';
 import type { Tileset } from '@freequest/schema';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 /** A block of the palette (columns and rows of the tileset image), corners in any order. */
 export interface PaletteBlock {
@@ -30,8 +30,14 @@ export function describeTile(tileset: Tileset, index: number): string {
 /** The tileset image as a grid of tiles to pick from: click a tile, or drag out a block. */
 export function TilePalette({ tileset, imageUrl, selected, onSelect, width }: Props) {
   const [hovered, setHovered] = useState<Cell | null>(null);
-  /** The block being dragged out (press to here), until release. */
-  const [dragging, setDragging] = useState<PaletteBlock | null>(null);
+  /** The block being dragged out (press to here), until release. A ref too, so a release
+   *  that comes before React has drawn the press still finds it. */
+  const [dragging, setDraggingState] = useState<PaletteBlock | null>(null);
+  const drag = useRef<PaletteBlock | null>(null);
+  const setDragging = (block: PaletteBlock | null) => {
+    drag.current = block;
+    setDraggingState(block);
+  };
   const { tileWidth: tw, tileHeight: th, columns } = tileset;
   const rows = Math.ceil(tileset.tiles.length / columns);
   // Whole-number scaling keeps pixel art crisp.
@@ -76,11 +82,12 @@ export function TilePalette({ tileset, imageUrl, selected, onSelect, width }: Pr
         onPointerMove={(event) => {
           const c = cellAt(event);
           setHovered(c);
-          if (c && dragging) setDragging({ a: dragging.a, b: c });
+          if (c && drag.current) setDragging({ a: drag.current.a, b: c });
         }}
         onPointerUp={() => {
-          if (!dragging) return;
-          onSelect(paletteStamp(tileset, dragging.a, dragging.b), dragging);
+          const block = drag.current;
+          if (!block) return;
+          onSelect(paletteStamp(tileset, block.a, block.b), block);
           setDragging(null);
         }}
         onPointerLeave={() => setHovered(null)}

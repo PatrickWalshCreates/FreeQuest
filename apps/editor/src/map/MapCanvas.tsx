@@ -174,6 +174,15 @@ export function MapCanvas(props: Props) {
   };
   const [panning, setPanning] = useState(false);
 
+  /** Finish the press in progress (released, or its release was lost). */
+  const endPress = () => {
+    const p = press.current;
+    if (!p) return;
+    press.current = null;
+    if (p.mode === 'pan') setPanning(false);
+    else props.onToolUp();
+  };
+
   return (
     <div
       ref={host}
@@ -182,7 +191,11 @@ export function MapCanvas(props: Props) {
         .join(' ')}
       onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
-        if (press.current) return;
+        // A second button on the same pointer belongs to the press in progress. A press from
+        // another pointer means the last one's release was lost (it happens: a release outside
+        // the window, a synthetic event): end that one rather than ignoring every press after.
+        if (press.current?.id === event.pointerId) return;
+        if (press.current) endPress();
         event.currentTarget.focus();
         try {
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -211,11 +224,10 @@ export function MapCanvas(props: Props) {
         props.onPointerMove(point(event));
       }}
       onPointerUp={(event) => {
-        const p = press.current;
-        if (p?.id !== event.pointerId) return;
-        press.current = null;
-        if (p.mode === 'pan') setPanning(false);
-        else props.onToolUp();
+        if (press.current?.id === event.pointerId) endPress();
+      }}
+      onLostPointerCapture={(event) => {
+        if (press.current?.id === event.pointerId) endPress();
       }}
       onPointerCancel={() => {
         if (press.current?.mode === 'tool') props.onToolCancel();
