@@ -93,7 +93,7 @@ describe('freequest check', () => {
   it('reports a clean project', async () => {
     const result = await cli(['check']);
     expect(result.code).toBe(0);
-    expect(result.out).toBe('FreeQuest Demo: no problems (2 maps, 46 files to export).');
+    expect(result.out).toBe('FreeQuest Demo: no problems (2 maps, 48 files to export).');
   });
 
   it('lists problems and fails', async () => {
@@ -118,7 +118,7 @@ describe('freequest export web', () => {
     const result = await cli(['export', 'web', '--out', out]);
     expect(result.code).toBe(0);
     expect(result.out).toMatch(
-      /^Exported FreeQuest Demo for the web to .*\(46 game files, \d+\.\d MB\)\./,
+      /^Exported FreeQuest Demo for the web to .*\(48 game files, \d+\.\d MB\)\./,
     );
     expect(existsSync(join(out, 'index.html'))).toBe(true);
     expect(existsSync(join(out, 'player/main.js'))).toBe(true);

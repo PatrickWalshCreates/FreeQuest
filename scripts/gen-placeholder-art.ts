@@ -893,6 +893,148 @@ function drawIconset(): void {
   sheet.save(join(ROOT, 'assets', 'system', 'iconset.png'));
 }
 
+// Message faces: one row of 48 × 48 portraits per person (calm, then glad).
+const F = 48;
+interface FacePalette {
+  readonly skin: string;
+  readonly shade: string;
+  readonly hair: string;
+  readonly clothes: string;
+  readonly backdrop: string;
+  readonly style: 'elder' | 'mira';
+}
+
+const FACES: Record<string, FacePalette> = {
+  elder: {
+    skin: '#e0b088',
+    shade: '#c08e68',
+    hair: '#e4e4e8',
+    clothes: '#5e8c3a',
+    backdrop: '#33452e',
+    style: 'elder',
+  },
+  mira: {
+    skin: '#f2d0b0',
+    shade: '#d6ad8c',
+    hair: '#7a3fa0',
+    clothes: '#8a2f4f',
+    backdrop: '#3a2b4a',
+    style: 'mira',
+  },
+};
+
+function drawFace(p: FacePalette, glad: boolean): Canvas {
+  const c = new Canvas(F, F);
+  const skin = hex(p.skin);
+  const shade = hex(p.shade);
+  const hair = hex(p.hair);
+  const dark = hex('#1e1a24');
+  const clothes = hex(p.clothes);
+  // Shoulders and neck.
+  ellipse(c, 24, 50, 19, 10, clothes);
+  c.rect(20, 34, 9, 8, shade);
+  // Hair behind the head (Mira's falls to the shoulders).
+  if (p.style === 'mira') {
+    ellipse(c, 24, 22, 15, 15, hair);
+    c.rect(9, 22, 6, 20, hair);
+    c.rect(33, 22, 6, 20, hair);
+  }
+  // Head, with a shaded jaw.
+  ellipse(c, 24, 23, 11, 13, skin);
+  for (let x = 15; x <= 33; x++) if (c.get(x, 34)[3] > 0) c.set(x, 34, shade);
+  // Ears.
+  c.rect(12, 22, 2, 5, shade);
+  c.rect(35, 22, 2, 5, shade);
+  if (p.style === 'mira') {
+    // Fringe across the forehead, parted to one side.
+    ellipse(c, 24, 13, 12, 6, hair);
+    triangle(
+      c,
+      [
+        [13, 13],
+        [21, 13],
+        [14, 21],
+      ],
+      hair,
+    );
+    triangle(
+      c,
+      [
+        [24, 13],
+        [35, 13],
+        [34, 20],
+      ],
+      hair,
+    );
+  } else {
+    // Bald crown with white tufts over the ears, bushy brows and a beard.
+    c.rect(11, 17, 4, 8, hair);
+    c.rect(34, 17, 4, 8, hair);
+    ellipse(c, 24, 33, 9, 6, hair);
+    c.rect(20, 29, 9, 2, hair); // moustache
+  }
+  // Eyes: open when calm, happy arcs when glad.
+  for (const ex of [19, 28]) {
+    if (glad) {
+      line(c, ex - 1, 23, ex, 22, dark);
+      line(c, ex + 1, 22, ex + 2, 23, dark);
+    } else {
+      c.rect(ex, 21, 2, 3, dark);
+      c.set(ex, 21, hex('#ffffff'));
+    }
+    // Brows: heavy and white for the elder.
+    c.rect(ex - 1, 18, 4, p.style === 'elder' ? 2 : 1, p.style === 'elder' ? hair : dark);
+  }
+  // Mouth (the elder's is in his beard).
+  const my = p.style === 'elder' ? 32 : 30;
+  if (glad) {
+    line(c, 21, my, 22, my + 1, dark);
+    c.rect(23, my + 1, 3, 1, dark);
+    line(c, 26, my + 1, 27, my, dark);
+  } else {
+    c.rect(22, my, 5, 1, p.style === 'elder' ? shade : dark);
+  }
+  // Cheeks.
+  if (glad) {
+    c.rect(16, 26, 2, 1, hex('#e88a8a'));
+    c.rect(31, 26, 2, 1, hex('#e88a8a'));
+  }
+  // A dark outline, then a rounded backdrop behind everything.
+  const outlined = new Canvas(F, F);
+  outlined.blit(c, 0, 0);
+  for (let y = 0; y < F; y++)
+    for (let x = 0; x < F; x++) {
+      if (c.get(x, y)[3] > 0) continue;
+      const near = [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1],
+      ].some(([nx = 0, ny = 0]) => nx >= 0 && ny >= 0 && nx < F && ny < F && c.get(nx, ny)[3] > 0);
+      if (near) outlined.set(x, y, dark);
+    }
+  const face = new Canvas(F, F);
+  const back = hex(p.backdrop);
+  for (let y = 0; y < F; y++)
+    for (let x = 0; x < F; x++) {
+      // Rounded corners: skip pixels outside a 4px radius.
+      const cx = x < 4 ? 4 - x : x > F - 5 ? x - (F - 5) : 0;
+      const cy = y < 4 ? 4 - y : y > F - 5 ? y - (F - 5) : 0;
+      if (cx * cx + cy * cy <= 16) face.set(x, y, back);
+    }
+  face.blit(outlined, 0, 0);
+  return face;
+}
+
+function drawFaces(): void {
+  for (const [file, palette] of Object.entries(FACES)) {
+    const sheet = new Canvas(F * 2, F);
+    sheet.blit(drawFace(palette, false), 0, 0);
+    sheet.blit(drawFace(palette, true), F, 0);
+    sheet.save(join(ROOT, 'assets', 'faces', `${file}.png`));
+  }
+}
+
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
 drawChest();
@@ -900,3 +1042,4 @@ drawWallMap();
 drawHearth();
 drawEnemies();
 drawIconset();
+drawFaces();

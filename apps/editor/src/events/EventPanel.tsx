@@ -24,7 +24,9 @@ import type {
   EventTrigger,
   GameMap,
   MapEvent,
+  MessageFace,
 } from '@freequest/schema';
+import { FaceField } from './FaceField.js';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
@@ -298,7 +300,7 @@ function EventEditor(props: {
   const [pageIndex, setPageIndex] = useState(0);
   const page = event.pages[Math.min(pageIndex, event.pages.length - 1)] ?? event.pages[0];
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
-  const { audio } = useProjectLists(doc);
+  const { audio, images = [] } = useProjectLists(doc);
   const project = doc.project;
   // The map's data from its file (its id may differ from the file name after a rename).
   const mapData = doc.file(path)?.data as GameMap | undefined;
@@ -309,15 +311,22 @@ function EventEditor(props: {
   const flags = useMemo(() => (mapData ? mapFlagNames(mapData) : []), [mapData]);
   const ctx = useMemo(
     () => ({
-      ...projectFormContext(project, { audio, events: mapEvents, flags }),
+      ...projectFormContext(project, { audio, images, events: mapEvents, flags }),
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
-        field === 'steps' ? (
+        field === 'face' ? (
+          <FaceField
+            doc={doc}
+            images={images}
+            value={value as MessageFace | undefined}
+            onChange={onChange}
+          />
+        ) : field === 'steps' ? (
           <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
         ) : field === 'color' ? (
           <ColorField value={value} onChange={onChange} />
         ) : undefined,
     }),
-    [project, audio, mapEvents, flags],
+    [doc, project, audio, images, mapEvents, flags],
   );
   const names = useMemo(() => projectNames(project, mapEvents), [project, mapEvents]);
 

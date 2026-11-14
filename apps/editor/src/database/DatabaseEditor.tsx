@@ -29,7 +29,8 @@ import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
 import { CommandExtras } from '../events/CommandExtras.js';
-import type { Command } from '@freequest/schema';
+import type { Command, MessageFace } from '@freequest/schema';
+import { FaceField } from '../events/FaceField.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
@@ -68,7 +69,14 @@ export function DatabaseEditor({ doc, file }: Props) {
       // Flags in a common event belong to the calling event: offer every name maps use.
       ...projectFormContext(project, { ...lists, flags: projectFlagNames(project) }),
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
-        field === 'icon' ? (
+        field === 'face' ? (
+          <FaceField
+            doc={doc}
+            images={lists.images ?? []}
+            value={value as MessageFace | undefined}
+            onChange={onChange}
+          />
+        ) : field === 'icon' ? (
           <IconField
             doc={doc}
             value={typeof value === 'number' ? value : undefined}

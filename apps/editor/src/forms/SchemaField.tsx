@@ -138,6 +138,22 @@ export function ObjectFields(props: {
             </label>
           );
         }
+        const problem = ctx.check?.(field.name, value[field.name], value) ?? null;
+        // A field the context draws itself (an icon grid, a face picker) owns its whole value.
+        const custom = ctx.render?.(field.name, value[field.name], (next) => set(field.name, next));
+        if (custom !== undefined) {
+          return (
+            <Labeled
+              key={field.name}
+              label={labelFor(ctx, field.name)}
+              hint={field.schema.description}
+              inline={false}
+              problem={problem}
+            >
+              {() => custom}
+            </Labeled>
+          );
+        }
         // An optional group of fields (e.g. the iconset): on/off, filled with defaults when on.
         if (!field.required && shape.kind === 'object') {
           const present = value[field.name] !== undefined;
@@ -165,21 +181,6 @@ export function ObjectFields(props: {
                 />
               )}
             </div>
-          );
-        }
-        const problem = ctx.check?.(field.name, value[field.name], value) ?? null;
-        const custom = ctx.render?.(field.name, value[field.name], (next) => set(field.name, next));
-        if (custom !== undefined) {
-          return (
-            <Labeled
-              key={field.name}
-              label={labelFor(ctx, field.name)}
-              hint={field.schema.description}
-              inline={false}
-              problem={problem}
-            >
-              {() => custom}
-            </Labeled>
           );
         }
         return (

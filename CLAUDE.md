@@ -220,6 +220,17 @@ Never the other way.
   `textProblems` (editor-core) back `CommandExtras` (message preview + code help, shared by
   event pages and common events) and live checks on `text`/`speaker`/`label` (not comments:
   `FormContext.check` now gets the parent).
+- **Message faces** (map v8): a message's optional `face` `{ image, index }`. A face sheet is
+  one row of square faces as tall as the image (schema `faceSheetLayout`, shared by the game
+  and the editor), so it needs no settings anywhere. Message requests carry `face` (null when
+  none). Runtime `faces.ts` (`createFaceSheets`) loads and slices sheets on first use; the game
+  preloads common events' faces at start and each map's when it appears (`faceImages`), and a
+  message whose sheet hasn't loaded yet shows without it. `DialogView` draws the face at its own
+  size left of the speaker and text, and the box grows to fit it. `assetReferences` and the
+  reference index include face images. Editor: `events/FaceField.tsx` (a sheet dropdown, faces
+  from `assets/faces/` first, and the faces to click; `FormContext.render` hooks now come before
+  optional groups), the message preview draws the face. Art: `gen-placeholder-art.ts` draws
+  `assets/faces/elder.png` and `mira.png` (calm, glad).
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -797,9 +808,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
 - Current versions: manifest 7 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
   `commonEvents` database category; v7: `renames`, the rename record for saves),
-  map 7 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  map 8 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
-  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves, and optional `screen`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
@@ -1021,9 +1032,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      render textures, which was enough: a 512 × 512 map shows in under 10 ms with ~3.7k sprites,
      was ~370 ms and 314k. Cap now 512. Tried in browser mode: painting a new map, the overview
      updating, the demo walking)
-  6. Face portraits in messages: an optional face per message (a face sheet image cut into
+  6. ~~Face portraits in messages: an optional face per message (a face sheet image cut into
      cells, map v8), drawn beside the text in the game and the editor's preview; the demo's Elder
-     and Mira get faces
+     and Mira get faces~~ (done; a sheet is one row of square faces as tall as the image, so it
+     needs no settings. Picked in the editor and seen in a playtest)
   7. An updater in the editor: Tauri's updater plugin checks the latest GitHub release at start
      and offers to download and install it (signed with our own update key, a GitHub Actions
      secret; the release workflow publishes the update manifest). In 0.3.0 so that 0.3.0 users

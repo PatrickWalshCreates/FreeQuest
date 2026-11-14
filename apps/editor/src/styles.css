@@ -2195,6 +2195,47 @@ h2.with-actions button {
   min-height: 54px;
 }
 
+.message-preview:has(.face-image) {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.face-image {
+  display: inline-block;
+  flex: none;
+  image-rendering: pixelated;
+}
+
+.face-field {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.face-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.face-cell {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  background: none;
+  border-color: transparent;
+}
+
+.face-cell:hover {
+  background: var(--panel-raised);
+}
+
+.face-cell.selected {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+
 .message-preview .speaker {
   font-weight: bold;
 }

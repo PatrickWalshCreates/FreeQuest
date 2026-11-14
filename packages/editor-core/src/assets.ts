@@ -18,6 +18,7 @@ export const ASSET_FOLDERS: readonly {
   { path: 'assets/tilesets', label: 'Tilesets', type: 'image' },
   { path: 'assets/characters', label: 'Characters', type: 'image' },
   { path: 'assets/enemies', label: 'Enemies', type: 'image' },
+  { path: 'assets/faces', label: 'Faces', type: 'image' },
   { path: 'assets/images', label: 'Other images', type: 'image' },
   { path: 'assets/audio', label: 'Audio', type: 'audio' },
 ];

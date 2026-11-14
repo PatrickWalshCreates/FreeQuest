@@ -159,6 +159,14 @@ earthquake. Each can wait until it's done before the event goes on. **Hide or sh
 an event vanish (a door that opens, a guard who leaves) until the map loads again. In the demo,
 the wolf's ambush shakes and flashes red, and resting fades to black and back.
 
+### Faces beside messages
+
+A message can show a **face** next to its text. Import a face sheet into the **Faces** folder in
+Assets: a row of square faces side by side, as tall as the picture (four 48 × 48 faces make a
+192 × 48 image, e.g. calm, happy, sad and angry). In the message dialog, pick the sheet under
+**Face** and click the face you want; the preview shows it. In the demo, the Elder and Mira
+smile when they're pleased.
+
 ### Names, numbers and colours in messages: text codes
 
 **Text codes** put names, numbers, colours and icons into messages, speakers and choices. Type

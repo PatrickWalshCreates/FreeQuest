@@ -11,6 +11,7 @@ export * from './character-view.js';
 export * from './event-views.js';
 export * from './dialog.js';
 export * from './dialog-view.js';
+export * from './faces.js';
 export * from './transfer.js';
 export * from './debug-text.js';
 export * from './debug-panel.js';

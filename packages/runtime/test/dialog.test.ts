@@ -45,6 +45,19 @@ describe('DialogController messages', () => {
     expect(dialog.isOpen).toBe(false);
   });
 
+  it('shows a message’s face, and none for messages without one', () => {
+    const face = { image: 'assets/faces/elder.png', index: 2 };
+    const { dialog, tick, tap } = setup(
+      [{ type: 'message', face, text: 'Hello.' }, say('Bye.')],
+      Infinity,
+    );
+    tick(2);
+    expect(dialog.message?.face).toEqual(face);
+    tap('confirm');
+    tick();
+    expect(dialog.message).toMatchObject({ text: 'Bye.', face: null });
+  });
+
   it('first confirm finishes the reveal, second continues', () => {
     const { dialog, interpreter, tick, tap } = setup([say('A long line of text')]);
     tick();

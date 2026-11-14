@@ -12,6 +12,22 @@
               "type": "string",
               "const": "message"
             },
+            "face": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "A face beside the text: a face sheet is one row of square faces (its height is their size), and index picks one, from 0 on the left.",
+              "properties": {
+                "image": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "index": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": ["image", "index"]
+            },
             "speaker": {
               "type": "string"
             },
@@ -1110,7 +1126,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 7
+      "const": 8
     },
     "id": {
       "type": "string",

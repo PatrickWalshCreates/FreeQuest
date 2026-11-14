@@ -3,6 +3,7 @@
 // Deliberately free of PixiJS so it can be unit-tested in Node; `dialog-view.ts`
 // draws whatever state this holds.
 import type { InputState, InterpreterRequest, TextRun } from '@freequest/core';
+import type { MessageFace } from '@freequest/schema';
 import { runsLength } from './rich-text.js';
 
 /** The part of an Interpreter the dialog needs. */
@@ -15,6 +16,8 @@ export interface DialogTarget {
 
 export interface MessageState {
   readonly speaker: string | null;
+  /** A face beside the text, or null. */
+  readonly face: MessageFace | null;
   /** The message as plain text (codes filled in). */
   readonly text: string;
   /** The same with colours and icons, for drawing. */
@@ -56,6 +59,7 @@ export class DialogController {
     if (!request) return null;
     return {
       speaker: request.speaker,
+      face: request.face,
       text: request.text,
       runs: request.runs,
       revealed: Math.min(this.revealed, this.length),

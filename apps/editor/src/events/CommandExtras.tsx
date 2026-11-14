@@ -2,7 +2,8 @@
 // alike: a map picker for transfers, a preview of messages and choices.
 import { type PreviewRun, type ProjectDocument, previewText } from '@freequest/editor-core';
 import { DEFAULT_UI_THEME, textColor } from '@freequest/runtime';
-import { type Command, TEXT_CODE_HELP } from '@freequest/schema';
+import { type Command, type MessageFace, TEXT_CODE_HELP } from '@freequest/schema';
+import { FaceImage, useFaceSheet } from './FaceField.js';
 import { IconImage, useIconset } from '../database/IconField.js';
 import { TransferTargetButton } from './TransferTargetButton.js';
 
@@ -16,7 +17,9 @@ export function CommandExtras(props: {
     return <TransferTargetButton doc={doc} command={command} onChange={setCommand} />;
   }
   if (command.type === 'message') {
-    return <MessagePreview doc={doc} speaker={command.speaker} text={command.text} />;
+    return (
+      <MessagePreview doc={doc} speaker={command.speaker} face={command.face} text={command.text} />
+    );
   }
   if (command.type === 'choice') {
     return <TextCodeHelp />;
@@ -30,8 +33,10 @@ const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 function MessagePreview(props: {
   readonly doc: ProjectDocument;
   readonly speaker: string | undefined;
+  readonly face: MessageFace | undefined;
   readonly text: string;
 }) {
+  const sheet = useFaceSheet(props.doc, props.face?.image ?? null);
   const { doc } = props;
   const project = doc.project;
   const loaded = useIconset(doc);
@@ -50,13 +55,18 @@ function MessagePreview(props: {
         className="message-preview"
         style={{ background: hex(theme.windowColor), color: hex(theme.textColor) }}
       >
-        {speaker && (
-          <div className="speaker" style={{ color: hex(theme.speakerColor) }}>
-            {speaker}
-          </div>
+        {props.face && sheet.status === 'ready' && props.face.index < sheet.count && (
+          <FaceImage image={sheet.image} index={props.face.index} />
         )}
-        <div className="body">
-          {runs.length === 0 ? <span className="muted">(empty)</span> : runs.map(drawRun)}
+        <div className="message-preview-text">
+          {speaker && (
+            <div className="speaker" style={{ color: hex(theme.speakerColor) }}>
+              {speaker}
+            </div>
+          )}
+          <div className="body">
+            {runs.length === 0 ? <span className="muted">(empty)</span> : runs.map(drawRun)}
+          </div>
         </div>
       </div>
       <TextCodeHelp />

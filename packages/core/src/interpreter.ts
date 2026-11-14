@@ -1,4 +1,11 @@
-import type { Command, CommandOf, Direction, Operand, ShopGood } from '@freequest/schema';
+import type {
+  Command,
+  CommandOf,
+  Direction,
+  MessageFace,
+  Operand,
+  ShopGood,
+} from '@freequest/schema';
 import {
   type EventContext,
   type GameState,
@@ -20,7 +27,14 @@ export type InterpreterRequest =
    * `text` is the message with its codes expanded, as plain text; `runs` is
    * the same with colours and icons, for drawing.
    */
-  | { type: 'message'; speaker: string | null; text: string; runs: readonly TextRun[] }
+  | {
+      type: 'message';
+      speaker: string | null;
+      /** A face to show beside the text, or null. */
+      face: MessageFace | null;
+      text: string;
+      runs: readonly TextRun[];
+    }
   | { type: 'choice'; options: readonly string[]; cancel: number | null }
   | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
   | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean }
@@ -229,6 +243,7 @@ export class Interpreter {
             type: 'message',
             speaker:
               command.speaker === undefined ? null : expandPlainText(command.speaker, this.context),
+            face: command.face ?? null,
             text: plainText(runs),
             runs,
           };

@@ -41,6 +41,10 @@ describe('assetReferences', () => {
       expect.arrayContaining(['system sound heal', 'common event Rest']),
     );
     expect(refs.get('assets/enemies/wolf.png')?.usedBy).toEqual(['enemy Wolf']);
+    expect(refs.get('assets/faces/mira.png')).toEqual({
+      kind: 'image',
+      usedBy: [expect.stringMatching(/^map Elder's house, event /)],
+    });
   });
 });
 

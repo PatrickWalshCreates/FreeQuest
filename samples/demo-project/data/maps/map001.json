@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "id": "map001",
   "name": "Meadow",
   "encounters": {
@@ -102,6 +102,10 @@
           "commands": [
             {
               "type": "message",
+              "face": {
+                "image": "assets/faces/elder.png",
+                "index": 1
+              },
               "speaker": "Elder",
               "text": "Ah, a traveler! Would you check on the old bridge to the east?"
             },
@@ -119,6 +123,10 @@
                     },
                     {
                       "type": "message",
+                      "face": {
+                        "image": "assets/faces/elder.png",
+                        "index": 1
+                      },
                       "speaker": "Elder",
                       "text": "Thank you. Follow the path east."
                     }
@@ -129,6 +137,10 @@
                   "commands": [
                     {
                       "type": "message",
+                      "face": {
+                        "image": "assets/faces/elder.png",
+                        "index": 0
+                      },
                       "speaker": "Elder",
                       "text": "Come back if you change your mind."
                     }
@@ -176,6 +188,10 @@
                   "then": [
                     {
                       "type": "message",
+                      "face": {
+                        "image": "assets/faces/elder.png",
+                        "index": 1
+                      },
                       "speaker": "Elder",
                       "text": "You saw the bridge? Good, it still stands. Take these for your trouble."
                     },
@@ -202,6 +218,10 @@
                   "else": [
                     {
                       "type": "message",
+                      "face": {
+                        "image": "assets/faces/elder.png",
+                        "index": 1
+                      },
                       "speaker": "Elder",
                       "text": "Safe travels, friend."
                     }
@@ -211,6 +231,10 @@
               "else": [
                 {
                   "type": "message",
+                  "face": {
+                    "image": "assets/faces/elder.png",
+                    "index": 0
+                  },
                   "speaker": "Elder",
                   "text": "The bridge is east along the path."
                 }

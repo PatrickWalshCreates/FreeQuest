@@ -61,6 +61,7 @@ describe('text codes', () => {
     expect(it.pending).toEqual({
       type: 'message',
       speaker: 'Mira',
+      face: null,
       text: 'I have 2.',
       runs: [
         { kind: 'text', text: 'I have ', color: null },

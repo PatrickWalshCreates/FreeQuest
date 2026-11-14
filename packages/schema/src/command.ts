@@ -57,6 +57,19 @@ export const Command = Type.Cyclic(
         {
           type: Type.Literal('message'),
           speaker: Type.Optional(Type.String()),
+          face: Type.Optional(
+            Type.Object(
+              {
+                image: Type.String({ minLength: 1 }),
+                index: Type.Integer({ minimum: 0 }),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  'A face beside the text: a face sheet is one row of square faces (its height is their size), and index picks one, from 0 on the left.',
+              },
+            ),
+          ),
           text: Type.String(),
         },
         { additionalProperties: false, description: 'Show a message box and wait for confirm.' },
@@ -359,6 +372,33 @@ export function walkCommands(
       }
     }
   });
+}
+
+/** A message's face: an image of square faces in one row, and which one. */
+export interface MessageFace {
+  readonly image: string;
+  readonly index: number;
+}
+
+/**
+ * How a face sheet of `width` × `height` pixels divides: square faces as tall
+ * as the image, side by side. `count` is 0 for an image narrower than it is
+ * tall (or empty).
+ */
+export function faceSheetLayout(width: number, height: number): { size: number; count: number } {
+  const size = Math.floor(height);
+  return { size, count: size > 0 ? Math.floor(width / size) : 0 };
+}
+
+/** Every face image the messages in these command lists show (each once, in order of use). */
+export function faceImages(lists: readonly (readonly Command[])[]): string[] {
+  const found = new Set<string>();
+  for (const list of lists) {
+    walkCommands(list, (command) => {
+      if (command.type === 'message' && command.face) found.add(command.face.image);
+    });
+  }
+  return [...found];
 }
 
 /**

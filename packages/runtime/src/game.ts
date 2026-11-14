@@ -7,7 +7,13 @@ import {
   translateSave,
   computeCamera,
 } from '@freequest/core';
-import type { SaveFile, ShopGood, SoundKey, Tileset } from '@freequest/schema';
+import {
+  type SaveFile,
+  type ShopGood,
+  type SoundKey,
+  type Tileset,
+  faceImages,
+} from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
 import { BattleView } from './battle-view.js';
@@ -23,6 +29,7 @@ import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
 import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
 import { EventViews, depthFor } from './event-views.js';
+import { createFaceSheets } from './faces.js';
 import { loadIconSheet } from './icons.js';
 import { OptionsController } from './options-controller.js';
 import { OptionsView } from './options-view.js';
@@ -103,6 +110,10 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     project.assetUrl(path),
   );
 
+  // Faces load in the background: common events' now, each map's when it appears.
+  const faces = createFaceSheets((path) => project.assetUrl(path));
+  faces.preload(faceImages((project.database.commonEvents ?? []).map((c) => c.commands)));
+
   const db = new DatabaseIndex(project.database);
   const position = start && {
     x: start.x,
@@ -152,6 +163,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     }
     const tiles = getOrThrow(readyTiles, world.tileset.id, 'tileset');
     const view = createMapView(world.map, world.tileset, tiles);
+    faces.preload(faceImages(world.map.events.flatMap((e) => e.pages.map((p) => p.commands))));
     scene.addChildAt(view.below, 0);
     scene.addChild(view.above);
     shown = {
@@ -166,7 +178,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   let dialog = new DialogController();
   const theme = { ...DEFAULT_UI_THEME, ...options.ui };
-  const dialogView = new DialogView(width, height, theme, icons);
+  const dialogView = new DialogView(width, height, theme, icons, faces);
   app.stage.addChild(dialogView.container);
   const transfer = new TransferController(async (mapId) => {
     const target = await project.loadMap(mapId);

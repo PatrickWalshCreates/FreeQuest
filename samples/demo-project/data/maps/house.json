@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "id": "house",
   "name": "Elder's house",
   "height": 7,
@@ -162,6 +162,10 @@
           "commands": [
             {
               "type": "message",
+              "face": {
+                "image": "assets/faces/mira.png",
+                "index": 1
+              },
               "speaker": "Mira",
               "text": "Grandfather sent you to check the bridge? Then I'm coming too."
             },

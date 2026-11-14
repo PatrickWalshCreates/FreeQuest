@@ -41,6 +41,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
           const at = `${where}, event ${event.name} (page ${i + 1})`;
           if (command.type === 'playMusic') add(command.path, 'audio', at);
           if (command.type === 'playSound') add(command.path, 'audio', at);
+          if (command.type === 'message') add(command.face?.image, 'image', at);
         }),
       );
     }
@@ -63,6 +64,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
       const at = `common event ${common.name}`;
       if (command.type === 'playMusic') add(command.path, 'audio', at);
       if (command.type === 'playSound') add(command.path, 'audio', at);
+      if (command.type === 'message') add(command.face?.image, 'image', at);
     });
   }
   return new Map([...found].sort(([a], [b]) => a.localeCompare(b)));

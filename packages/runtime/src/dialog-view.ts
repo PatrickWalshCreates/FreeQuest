@@ -1,7 +1,8 @@
 import type { TextRun } from '@freequest/core';
 import type { TextColorName } from '@freequest/schema';
-import { CanvasTextMetrics, Container, Graphics, type Sprite, Text, TextStyle } from 'pixi.js';
+import { CanvasTextMetrics, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import type { DialogController } from './dialog.js';
+import { type FaceSheets, NO_FACES } from './faces.js';
 import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 import { type LinePiece, type RichLayout, layoutRuns, revealPiece } from './rich-text.js';
 
@@ -70,6 +71,8 @@ export class DialogView {
   private readonly messageBox = new Container({ label: 'message' });
   private readonly messageFrame = new Graphics();
   private readonly speaker: Text;
+  /** The message's face, at the left of the box. */
+  private readonly face = new Sprite();
   /** The message's pieces of text and icons, laid out once per message. */
   private readonly body = new Container({ label: 'body' });
   private readonly more = new Graphics();
@@ -85,6 +88,7 @@ export class DialogView {
   /** The current message's layout and the node drawing each piece. */
   private laidOut: {
     readonly runs: readonly TextRun[];
+    readonly maxWidth: number;
     readonly layout: RichLayout;
     readonly nodes: readonly { readonly piece: LinePiece; readonly node: Text | Sprite }[];
   } | null = null;
@@ -95,6 +99,7 @@ export class DialogView {
     private readonly screenHeight: number,
     private readonly theme: UiTheme = DEFAULT_UI_THEME,
     private readonly icons: IconSheet = NO_ICONS,
+    private readonly faces: FaceSheets = NO_FACES,
   ) {
     this.textStyle = new TextStyle({
       fontFamily: theme.fontFamily,
@@ -109,15 +114,16 @@ export class DialogView {
     this.speaker.style.fill = theme.speakerColor;
     this.speaker.style.fontWeight = 'bold';
 
-    this.messageBox.addChild(this.messageFrame, this.speaker, this.body, this.more);
+    this.messageBox.addChild(this.messageFrame, this.face, this.speaker, this.body, this.more);
     this.choiceBox.addChild(this.choiceFrame, this.cursor);
     this.container.addChild(this.messageBox, this.choiceBox);
     this.messageBox.visible = false;
     this.choiceBox.visible = false;
   }
 
-  private get innerWidth(): number {
-    return this.screenWidth - this.theme.margin * 2 - this.theme.padding * 2;
+  /** Room for text in the message box, beside `faceSpace` pixels of face. */
+  private innerWidth(faceSpace: number): number {
+    return this.screenWidth - this.theme.margin * 2 - this.theme.padding * 2 - faceSpace;
   }
 
   private styleFor(color: number): TextStyle {
@@ -135,13 +141,15 @@ export class DialogView {
    * Lay the message out once, up front, and reveal it piece by piece, so
    * words never jump to the next line halfway through the reveal.
    */
-  private layOut(runs: readonly TextRun[]): RichLayout {
-    if (this.laidOut?.runs === runs) return this.laidOut.layout;
+  private layOut(runs: readonly TextRun[], maxWidth: number): RichLayout {
+    if (this.laidOut?.runs === runs && this.laidOut.maxWidth === maxWidth) {
+      return this.laidOut.layout;
+    }
     for (const child of this.body.removeChildren()) child.destroy();
     const { theme, icons } = this;
     const iconHeight = Math.min(icons.size, theme.lineHeight);
     const layout = layoutRuns(runs, {
-      maxWidth: this.innerWidth,
+      maxWidth,
       measure: (text) => CanvasTextMetrics.measureText(text, this.textStyle).width,
       iconWidth: icons.size > 0 ? iconHeight + 1 : 0,
     });
@@ -163,7 +171,7 @@ export class DialogView {
         }
       }
     });
-    this.laidOut = { runs, layout, nodes };
+    this.laidOut = { runs, maxWidth, layout, nodes };
     return layout;
   }
 
@@ -186,19 +194,35 @@ export class DialogView {
 
     this.messageBox.visible = message !== null;
     if (message) {
-      const layout = this.layOut(message.runs);
+      // The face at its own size (crisp pixels), the text beside it; the box grows to fit it.
+      const face = message.face ? this.faces.face(message.face) : null;
+      const faceSpace = face ? face.width + theme.padding : 0;
+      const layout = this.layOut(message.runs, this.innerWidth(faceSpace));
       const speakerLines = message.speaker ? 1 : 0;
-      const lines = Math.max(theme.minLines, layout.lines.length + speakerLines);
+      const lines = Math.max(
+        theme.minLines,
+        layout.lines.length + speakerLines,
+        face ? Math.ceil(face.height / theme.lineHeight) : 0,
+      );
       const w = this.screenWidth - theme.margin * 2;
       const h = lines * theme.lineHeight + theme.padding * 2;
       messageTop = this.screenHeight - theme.margin - h;
       this.messageBox.position.set(theme.margin, messageTop);
       drawWindow(this.messageFrame, theme, w, h);
 
+      this.face.visible = face !== null;
+      if (face) {
+        if (this.face.texture !== face) this.face.texture = face;
+        this.face.position.set(
+          theme.padding,
+          theme.padding + Math.floor((lines * theme.lineHeight - face.height) / 2),
+        );
+      }
+      const left = theme.padding + faceSpace;
       this.speaker.visible = speakerLines > 0;
       this.speaker.text = message.speaker ?? '';
-      this.speaker.position.set(theme.padding, theme.padding);
-      this.body.position.set(theme.padding, theme.padding + speakerLines * theme.lineHeight);
+      this.speaker.position.set(left, theme.padding);
+      this.body.position.set(left, theme.padding + speakerLines * theme.lineHeight);
       this.reveal(message.revealed);
 
       // Bobbing "more" marker once the text is fully shown and no choice is open.

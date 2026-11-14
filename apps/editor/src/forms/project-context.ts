@@ -19,6 +19,7 @@ const options = (list: readonly Named[]): RefOption[] =>
 
 /** Field labels that read better than the generated ones. */
 const LABELS: Record<string, string> = {
+  face: 'Face',
   id: 'Item',
   skipBlocked: 'Skip blocked steps',
   wait: 'Wait until done',
