@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.2.0 released (2026-11-11), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.3.0 released (2026-11-14), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1034,7 +1034,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     migration and 0.1's frozen project and save still opening.
   - Not in M11 (M12 candidates, "editor comfort"): renaming ids/assets with reference updates,
     multi-tile stamps, chunked rendering for big maps, message faces/portraits.
-- **M12 (in progress)** Editor comfort, released as 0.3.0. M11 made the event language strong
+- **M12 (done)** Editor comfort, released as 0.3.0. M11 made the event language strong
   enough for real games; the friction is now in building them. Steps:
   1. ~~Multi-tile stamps: drag a block in the palette (a tree, a house) and paint it as one stamp
      with pencil, rectangle and fill; copy, cut and paste a rectangle of a map (all layers, or
@@ -1074,10 +1074,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      update was offered, the user clicked Install, the app was replaced (signature valid) and
      reopened with no Gatekeeper prompt, since the updater's download isn't quarantined. The
      release workflow's signing and latest.json run for the first time at 0.3.0)
-  8. Demo, Starter, guides, the quest test, a "What's new" page on the website (from
-     CHANGELOG.md), and a 0.3.0 release through the checklist (with the by-hand check on a
-     downloaded desktop build, the site showing the new version, and an update from 0.3.0 to a
-     test build tried by hand)
+  8. ~~Demo, Starter, guides, the quest test, a "What's new" page on the website (from
+     CHANGELOG.md), and a 0.3.0 release through the checklist~~ (done; the user's by-hand check
+     asked for Check for Updates in the menus, credits (Patrick Walsh) and safe upgrades of
+     older projects with backups: added, the draft rebuilt and checked again, published
+     2026-11-14. The site and `latest.json` show 0.3.0. A real update from 0.3.0 is first tried
+     with 0.3.1)
   - Formats: map 8 (message faces); others unchanged unless step 3 needs an id map. Each with a
     migration; the 0.1 and 0.2 frozen projects and saves must keep opening.
   - Not in M12: the plugin API, an MZ project importer, Developer ID / Windows signing, a Linux
