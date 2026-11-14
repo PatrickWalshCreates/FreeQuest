@@ -20,6 +20,8 @@ import {
   stableStringify,
 } from '@freequest/schema';
 import { entriesFile, importDatabase, systemData } from './database.js';
+import type { ImageCodec } from './image.js';
+import { importMaps } from './import-maps.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
@@ -36,6 +38,8 @@ export interface ImportOptions {
   readonly name?: string;
   /** The new game's id (default: from the name). */
   readonly id?: string;
+  /** Decodes the MZ project's PNGs and encodes the generated ones. */
+  readonly images: ImageCodec;
   readonly onProgress?: (done: number, total: number) => void;
 }
 
@@ -97,22 +101,33 @@ export async function importMzProject(
     [databasePaths.commonEvents, entriesFile([])],
     [databasePaths.system, systemData(types, imported, templateSystem)],
   ]);
-  // Until maps are imported, the template's maps stay, without their events
-  // (which use the template's database).
-  for (const ref of manifest.maps) {
-    const map = await readTemplate(ref.path);
-    written.set(ref.path, { ...map, events: [] });
+  // Maps, and a tileset for each MZ tileset they use.
+  const maps = await importMaps(source, mz, db, report, options.images);
+  const replaced = (f: string) =>
+    maps.maps.length > 0 &&
+    (manifest.maps.some((m) => m.path === f) ||
+      manifest.tilesets.some((t) => t.path === f) ||
+      f.startsWith('assets/tilesets/'));
+  for (const map of maps.maps) written.set(map.path, map.data);
+  for (const tileset of maps.tilesets) written.set(tileset.path, tileset.data);
+  if (maps.maps.length === 0) {
+    // The template's maps stay, without their events (which use the template's database).
+    for (const ref of manifest.maps)
+      written.set(ref.path, { ...(await readTemplate(ref.path)), events: [] });
+    report.missing(
+      'Maps',
+      'The project has no maps that could be imported; the Starter’s map is there instead.',
+    );
   }
-
   report.missing(
-    'Maps and events',
-    'Not imported yet: this version of the importer brings the project settings, switches, variables and the database. The maps are the Starter template’s.',
+    'Events',
+    'Not imported yet: this version of the importer brings the settings, switches, variables, database and maps. Map events come next.',
   );
 
   const files = options.template.files.filter(
-    (f) => f !== TEMPLATE_INFO_FILE && f !== MANIFEST_PATH && !written.has(f),
+    (f) => f !== TEMPLATE_INFO_FILE && f !== MANIFEST_PATH && !written.has(f) && !replaced(f),
   );
-  const total = files.length + written.size + 2;
+  const total = files.length + written.size + maps.images.length + 2;
   let done = 0;
   for (const path of files) {
     await target.writeBytes(path, await options.template.read(path));
@@ -120,6 +135,10 @@ export async function importMzProject(
   }
   for (const [path, data] of written) {
     await target.writeText(path, stableStringify(data));
+    options.onProgress?.(++done, total);
+  }
+  for (const image of maps.images) {
+    await target.writeBytes(image.path, image.bytes);
     options.onProgress?.(++done, total);
   }
   await target.writeText(IMPORT_REPORT_FILE, report.toMarkdown(`Importing “${name}”`));
@@ -135,7 +154,13 @@ export async function importMzProject(
       id,
       screen: mz.system.screen,
       database: databasePaths,
-      start: { ...manifest.start, party, gold: 0 },
+      start: { ...(maps.start ?? manifest.start), party, gold: 0 },
+      ...(maps.maps.length > 0
+        ? {
+            maps: maps.maps.map((m) => ({ id: m.data.id, path: m.path })),
+            tilesets: maps.tilesets.map((t) => ({ id: t.data.id, path: t.path })),
+          }
+        : {}),
       switches: switches.declarations('Switch'),
       variables: variables.declarations('Variable'),
     }),

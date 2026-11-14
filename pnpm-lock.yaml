@@ -299,6 +299,13 @@ importers:
       '@freequest/schema':
         specifier: workspace:*
         version: link:../schema
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
+    devDependencies:
+      '@types/pngjs':
+        specifier: ^6.0.5
+        version: 6.0.5
 
   packages/core:
     dependencies:

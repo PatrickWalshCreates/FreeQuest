@@ -11,7 +11,7 @@ import {
   readMzProject,
   translateFormula,
 } from '../src/index.js';
-import { TINY, memoryCopy, starter } from './helpers.js';
+import { TINY, codec, memoryCopy, starter } from './helpers.js';
 
 async function imported() {
   const fs = await memoryCopy(TINY);
@@ -309,7 +309,10 @@ describe('importing the database', () => {
 describe('an imported project’s database', () => {
   it('opens with no problems, with the party and the type lists it uses', async () => {
     const target = new MemoryFs();
-    await importMzProject(await memoryCopy(TINY), target, { template: await starter() });
+    await importMzProject(await memoryCopy(TINY), target, {
+      template: await starter(),
+      images: codec,
+    });
     const project = await openProject(target);
     expect(project.problems).toEqual([]);
     expect(project.manifest.data.start).toMatchObject({ party: ['wren', 'tamsin'], gold: 0 });
@@ -324,8 +327,6 @@ describe('an imported project’s database', () => {
       entries: unknown[];
     };
     expect(actors.entries).toHaveLength(2);
-    // The template's map stays for now, without its events.
-    const map = JSON.parse(await target.readText('data/maps/map001.json')) as { events: unknown[] };
-    expect(map.events).toEqual([]);
+    expect(target.files.has('data/maps/map001.json')).toBe(false);
   });
 });

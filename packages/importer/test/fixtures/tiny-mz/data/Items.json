@@ -1,6 +1,57 @@
 [
-null,
-{"id":1,"consumable":true,"damage":{"critical":false,"elementId":0,"formula":"0","type":0,"variance":20},"description":"Heals a little.","effects":[{"code":11,"dataId":0,"value1":0.1,"value2":50},{"code":22,"dataId":3,"value1":1,"value2":0}],"hitType":0,"iconIndex":176,"itypeId":1,"name":"Lamp oil","occasion":0,"price":40,"repeats":1,"scope":7,"speed":0,"successRate":100},
-{"id":2,"consumable":false,"damage":{"critical":false,"elementId":0,"formula":"0","type":0,"variance":20},"description":"","effects":[],"hitType":0,"iconIndex":0,"itypeId":2,"name":"Gate key","occasion":3,"price":0,"repeats":1,"scope":0,"speed":0,"successRate":100},
-{"id":3,"consumable":true,"damage":{"critical":false,"elementId":0,"formula":"0","type":0,"variance":20},"description":"","effects":[{"code":44,"dataId":1,"value1":0,"value2":0}],"hitType":0,"iconIndex":0,"itypeId":3,"name":"Odd stone","occasion":0,"price":5,"repeats":1,"scope":11,"speed":0,"successRate":100}
+  null,
+  {
+    "id": 1,
+    "consumable": true,
+    "damage": { "critical": false, "elementId": 0, "formula": "0", "type": 0, "variance": 20 },
+    "description": "Heals a little.",
+    "effects": [
+      { "code": 11, "dataId": 0, "value1": 0.1, "value2": 50 },
+      { "code": 22, "dataId": 3, "value1": 1, "value2": 0 }
+    ],
+    "hitType": 0,
+    "iconIndex": 176,
+    "itypeId": 1,
+    "name": "Lamp oil",
+    "occasion": 0,
+    "price": 40,
+    "repeats": 1,
+    "scope": 7,
+    "speed": 0,
+    "successRate": 100
+  },
+  {
+    "id": 2,
+    "consumable": false,
+    "damage": { "critical": false, "elementId": 0, "formula": "0", "type": 0, "variance": 20 },
+    "description": "",
+    "effects": [],
+    "hitType": 0,
+    "iconIndex": 0,
+    "itypeId": 2,
+    "name": "Gate key",
+    "occasion": 3,
+    "price": 0,
+    "repeats": 1,
+    "scope": 0,
+    "speed": 0,
+    "successRate": 100
+  },
+  {
+    "id": 3,
+    "consumable": true,
+    "damage": { "critical": false, "elementId": 0, "formula": "0", "type": 0, "variance": 20 },
+    "description": "",
+    "effects": [{ "code": 44, "dataId": 1, "value1": 0, "value2": 0 }],
+    "hitType": 0,
+    "iconIndex": 0,
+    "itypeId": 3,
+    "name": "Odd stone",
+    "occasion": 0,
+    "price": 5,
+    "repeats": 1,
+    "scope": 11,
+    "speed": 0,
+    "successRate": 100
+  }
 ]

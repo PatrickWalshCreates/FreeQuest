@@ -9,3 +9,8 @@ export * from './database.js';
 export * from './formula.js';
 export * from './mz-lists.js';
 export * from './traits.js';
+export * from './image.js';
+export * from './import-maps.js';
+export * from './maps.js';
+export * from './tiles.js';
+export * from './tilesets.js';

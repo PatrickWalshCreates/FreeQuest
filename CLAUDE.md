@@ -843,8 +843,24 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   reported once. Starting equipment goes in each item's own slot (repeats are skipped). Until
   maps are imported (step 3) the template's maps stay with their events removed, since those
   used the template's database.
+- **Maps and tilesets** (`tiles.ts`, `tilesets.ts`, `maps.ts`, `import-maps.ts`, `image.ts`):
+  `tileSource(id)` says where an MZ tile number is drawn from: B–E and A5 are grids, A1–A4
+  autotiles are four quarter pieces chosen by `floorJoins` / `wallJoins` (the shape tables,
+  worked out from the sample maps' numbers: which neighbours each shape joins) and our own
+  piece geometry (floor blocks 2 × 3 tiles with inside corners top right, walls 2 × 2,
+  waterfalls 2 × 1 per frame; A1 block origins in `A1_BLOCKS`; animated water uses frame 0,
+  reported). `TilesetBaker` collects each used (tile, walkable, above) variant and draws them
+  into `assets/tilesets/<id>.png` (about square, so no huge textures). Passage: MZ decides a
+  cell by its topmost non-star tile, FreeQuest needs every colliding tile walkable, so each
+  tile is baked with the flag that gives MZ's answer (a bridge's water is a walkable copy).
+  One-way tiles become walkable (reported, except A4 wall tops, which MZ blocks only at
+  edges beside walls). Shadows, regions, counters, damage floors and map display names are
+  reported. PNGs go through an injected `ImageCodec` (`RgbaImage`, `copyArea`): the CLI's
+  `png-codec.ts` (pngjs), later a canvas in the editor. When maps import, the template's maps,
+  tilesets and tileset images are left out.
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
-  byte-order marks) are written by hand.
+  byte-order marks) are written by hand; `test/make-fixture.ts` writes tiny-mz's tileset, map
+  and synthetic sheets (each quarter tile coloured by its position, so tests can check pieces).
 - **Trying real MZ projects** (the user's own, or the MZ sample games they provided): unzip them
   outside the repo (the session scratchpad), run the importer on them with a script that prints
   only masked, aggregate results (report items with names, text and formulas replaced by "…",
@@ -1143,11 +1159,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   2. ~~Database: actors, classes, skills, items, weapons + armors → equipment, states, enemies,
      troops; traits → modifiers; JavaScript damage formulas translated where they can be~~
      (done; tried on the user's two MZ sample games: both import with no project problems)
-  3. Tilesets and maps: MZ tilesets are several sheets plus autotiles drawn from pieces; bake
-     every autotile shape a map actually uses into one generated tileset image per MZ tileset
-     (still frame of animated ones), with passability and "above" from MZ's flags (per-direction
-     passability becomes one boolean, reported where it matters). Map layers, size, music,
-     encounters, display name; MZ's shadow and region layers are reported, not drawn.
+  3. ~~Tilesets and maps: bake the autotile shapes maps use into one generated tileset per MZ
+     tileset, passability and "above" from MZ's flags, layers, encounters, the start~~ (done;
+     both sample games convert every map with no problems; the user checks how they look)
   4. Characters and faces: cut MZ's character sheets (several characters per image, or one) into
      FreeQuest character sheets, and face sheets into rows of faces; the player, actors and
      event graphics point at them. Enemy images, the iconset (`system.json` `iconset`).
@@ -1168,6 +1182,14 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.
+- **M14 (next)** What MZ games need. Importing the user's MZ sample games (M13) listed what
+  FreeQuest lacks; this milestone adds the most used of them to the engine (and teaches the
+  importer to bring them across), ordered by how often real games use them. Candidates so far:
+  battle events in troops, TP, buffs and debuffs, items and skills that call common events,
+  counterattacks and magic evasion/reflection, MP regeneration and cost rates, extra attacks and
+  attack states, party abilities, dual wield, sealed skill types and equipment, target rate,
+  enemies that appear partway through a battle. Steps 3–6 of M13 will add to the list (map and
+  event features); the list is settled when M13 is done.
 - **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
 
 ## Known gaps / notes for next milestones

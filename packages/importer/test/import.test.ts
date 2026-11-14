@@ -9,7 +9,7 @@ import {
   importMzProject,
   readMzProject,
 } from '../src/index.js';
-import { TINY, memoryCopy, starter } from './helpers.js';
+import { TINY, codec, memoryCopy, starter } from './helpers.js';
 
 describe('reading an MZ project', () => {
   it('reads the settings and the map list in the editor’s order', async () => {
@@ -143,6 +143,7 @@ describe('importing a project', () => {
     const progress: number[] = [];
     const result = await importMzProject(source, target, {
       template: await starter(),
+      images: codec,
       onProgress: (done, total) => progress.push(done / total),
     });
     expect(result).toMatchObject({ name: 'Lantern Hollow', id: 'lantern-hollow' });
@@ -175,13 +176,14 @@ describe('importing a project', () => {
     const source = await memoryCopy(TINY);
     const result = await importMzProject(source, new MemoryFs(), {
       template: await starter(),
+      images: codec,
       name: 'Hollow Again',
     });
     expect(result.id).toBe('hollow-again');
     const busy = new MemoryFs({ 'notes.txt': 'mine' });
-    await expect(importMzProject(source, busy, { template: await starter() })).rejects.toThrow(
-      /empty folder/,
-    );
+    await expect(
+      importMzProject(source, busy, { template: await starter(), images: codec }),
+    ).rejects.toThrow(/empty folder/);
     expect([...busy.files.keys()]).toEqual(['notes.txt']);
   });
 });

@@ -1,6 +1,30 @@
 [
-null,
-{"id":1,"members":[{"enemyId":1,"x":300,"y":400,"hidden":false},{"enemyId":1,"x":500,"y":400,"hidden":true}],"name":"Moth*2","pages":[{"conditions":{},"list":[{"code":101,"indent":0,"parameters":["",0,0,2,""]},{"code":0,"indent":0,"parameters":[]}],"span":0}]},
-{"id":2,"members":[{"enemyId":2,"x":300,"y":400,"hidden":false}],"name":"Shade","pages":[{"conditions":{},"list":[{"code":0,"indent":0,"parameters":[]}],"span":0}]},
-{"id":3,"members":[],"name":"Empty","pages":[]}
+  null,
+  {
+    "id": 1,
+    "members": [
+      { "enemyId": 1, "x": 300, "y": 400, "hidden": false },
+      { "enemyId": 1, "x": 500, "y": 400, "hidden": true }
+    ],
+    "name": "Moth*2",
+    "pages": [
+      {
+        "conditions": {},
+        "list": [
+          { "code": 101, "indent": 0, "parameters": ["", 0, 0, 2, ""] },
+          { "code": 0, "indent": 0, "parameters": [] }
+        ],
+        "span": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "members": [{ "enemyId": 2, "x": 300, "y": 400, "hidden": false }],
+    "name": "Shade",
+    "pages": [
+      { "conditions": {}, "list": [{ "code": 0, "indent": 0, "parameters": [] }], "span": 0 }
+    ]
+  },
+  { "id": 3, "members": [], "name": "Empty", "pages": [] }
 ]

@@ -1,5 +1,37 @@
 [
-null,
-{"id":1,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[1,2,0,1,1],"faceIndex":0,"faceName":"","traits":[],"initialLevel":2,"maxLevel":50,"name":"Wren","nickname":"","note":"","profile":"Keeps the lamps lit."},
-{"id":2,"battlerName":"","characterIndex":0,"characterName":"","classId":7,"equips":[2,0,0,0,0],"faceIndex":0,"faceName":"","traits":[{"code":43,"dataId":4,"value":1}],"initialLevel":1,"maxLevel":99,"name":"Tamsin","nickname":"","note":"","profile":""}
+  null,
+  {
+    "id": 1,
+    "battlerName": "",
+    "characterIndex": 0,
+    "characterName": "",
+    "classId": 1,
+    "equips": [1, 2, 0, 1, 1],
+    "faceIndex": 0,
+    "faceName": "",
+    "traits": [],
+    "initialLevel": 2,
+    "maxLevel": 50,
+    "name": "Wren",
+    "nickname": "",
+    "note": "",
+    "profile": "Keeps the lamps lit."
+  },
+  {
+    "id": 2,
+    "battlerName": "",
+    "characterIndex": 0,
+    "characterName": "",
+    "classId": 7,
+    "equips": [2, 0, 0, 0, 0],
+    "faceIndex": 0,
+    "faceName": "",
+    "traits": [{ "code": 43, "dataId": 4, "value": 1 }],
+    "initialLevel": 1,
+    "maxLevel": 99,
+    "name": "Tamsin",
+    "nickname": "",
+    "note": "",
+    "profile": ""
+  }
 ]

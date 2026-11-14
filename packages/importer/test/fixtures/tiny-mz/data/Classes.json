@@ -1,4 +1,32 @@
 [
-null,
-{"id":1,"expParams":[30,20,30,30],"traits":[{"code":22,"dataId":0,"value":0.95},{"code":22,"dataId":1,"value":0.05},{"code":22,"dataId":2,"value":0.04},{"code":51,"dataId":1,"value":1},{"code":52,"dataId":1,"value":1},{"code":43,"dataId":2,"value":1},{"code":23,"dataId":0,"value":1}],"learnings":[{"level":3,"note":"","skillId":3},{"level":5,"note":"","skillId":99}],"name":"Lamplighter","note":"","params":[[0,100,110,120,130,140],[0,10,12,14,16,18],[0,10,12,13,15,20],[0,10,10,10,10,10],[0,8,9,10,11,12],[0,8,8,8,8,8],[0,9,10,11,12,13],[0,5,5,5,5,5]]}
+  null,
+  {
+    "id": 1,
+    "expParams": [30, 20, 30, 30],
+    "traits": [
+      { "code": 22, "dataId": 0, "value": 0.95 },
+      { "code": 22, "dataId": 1, "value": 0.05 },
+      { "code": 22, "dataId": 2, "value": 0.04 },
+      { "code": 51, "dataId": 1, "value": 1 },
+      { "code": 52, "dataId": 1, "value": 1 },
+      { "code": 43, "dataId": 2, "value": 1 },
+      { "code": 23, "dataId": 0, "value": 1 }
+    ],
+    "learnings": [
+      { "level": 3, "note": "", "skillId": 3 },
+      { "level": 5, "note": "", "skillId": 99 }
+    ],
+    "name": "Lamplighter",
+    "note": "",
+    "params": [
+      [0, 100, 110, 120, 130, 140],
+      [0, 10, 12, 14, 16, 18],
+      [0, 10, 12, 13, 15, 20],
+      [0, 10, 10, 10, 10, 10],
+      [0, 8, 9, 10, 11, 12],
+      [0, 8, 8, 8, 8, 8],
+      [0, 9, 10, 11, 12, 13],
+      [0, 5, 5, 5, 5, 5]
+    ]
+  }
 ]

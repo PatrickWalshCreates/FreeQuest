@@ -30,6 +30,7 @@ import {
 import { IMPORT_REPORT_FILE, MzProjectError, importMzProject } from '@freequest/importer';
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { NodeFs } from './node-fs.js';
+import { pngCodec } from './png-codec.js';
 
 export interface Io {
   out(line: string): void;
@@ -422,6 +423,7 @@ async function importCommand(
       files: (await starter.list('')).filter((f) => !f.split('/').some((p) => p.startsWith('.'))),
       read: (path) => starter.readBytes(path),
     },
+    images: pngCodec,
     ...(name === undefined ? {} : { name }),
   });
   const { report } = result;

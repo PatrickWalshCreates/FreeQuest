@@ -25,6 +25,10 @@
     "@freequest/editor-core": "workspace:*",
     "@freequest/importer": "workspace:*",
     "@freequest/player": "workspace:*",
-    "@freequest/schema": "workspace:*"
+    "@freequest/schema": "workspace:*",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/pngjs": "^6.0.5"
   }
 }
