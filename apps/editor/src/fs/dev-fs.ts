@@ -8,8 +8,8 @@ import {
 
 const BASE = '/__freequest';
 
-/** Folders the dev server offers: sample projects, and where browser-mode exports go. */
-export type DevArea = 'samples' | 'projects' | 'exports' | 'players';
+/** Folders the dev server offers: sample projects, where browser-mode exports go, MZ projects to import. */
+export type DevArea = 'samples' | 'projects' | 'exports' | 'players' | 'mz';
 
 export class DevServerFs implements ProjectFs {
   readonly label: string;
@@ -78,4 +78,11 @@ export async function listDevProjects(): Promise<{ area: DevArea; name: string }
   const response = await fetch(`${BASE}/projects`);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return (await response.json()) as { area: DevArea; name: string }[];
+}
+
+/** RPG Maker MZ projects the dev server offers to import (in mz-projects/). */
+export async function listMzProjects(): Promise<string[]> {
+  const response = await fetch(`${BASE}/mz-projects`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return (await response.json()) as string[];
 }

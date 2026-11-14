@@ -890,6 +890,18 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   game-over jingles, and MZ's system sounds 0, 1, 2, 3, 5, 7, 10, 16 as cursor, confirm,
   cancel, buzzer, save, battleStart, damage (enemy damage), heal. The template's audio is
   never copied.
+- **PNGs** (`png.ts`): the importer's own lossless codec (`decodePng` reads every standard
+  kind: grey, RGB, palette, alpha, 1–16 bits, Adam7; `encodePng` writes 8-bit RGBA with a
+  per-row filter), with zlib passed in (`pngCodec({ inflate, deflate })`): Node's zlib in the
+  CLI, the browser's `CompressionStream('deflate')` in the editor (a canvas round trip would
+  change soft edges). So the editor's and the CLI's imports are identical. Tested against
+  pngjs (a dev dependency now, only for that).
+- **In the editor** (`ImportMzDialog.tsx`, start screen "Import an RPG Maker MZ project…"):
+  desktop picks the MZ folder (`pickMzFolder`) and a parent for the new project; browser mode
+  lists `mz-projects/` (git-ignored; the dev server's `mz` area, `/__freequest/mz-projects`,
+  or `FREEQUEST_MZ_DIR`). It reads the title first to suggest the name, imports on top of the
+  bundled Starter, then shows the report (rendered with the Help window's Markdown) and opens
+  the project.
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
   byte-order marks) are written by hand; `test/make-fixture.ts` writes tiny-mz's tileset, map
   and synthetic sheets (each quarter tile coloured by its position, so tests can check pieces).
@@ -1203,9 +1215,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   6. ~~Audio and the rest: map music, the game's title/battle/victory/game-over music and
      system sounds, the start, party and gold, `IMPORT-REPORT.md`~~ (done; both sample games
      have their own music and sounds; the template's audio is never copied)
-  7. The editor: "Import an RPG Maker MZ project…" on the start screen (pick the MZ folder, then
-     where the new project goes, a progress bar, then the report), and opening the result.
-     Tried by hand on a project the user owns: the editor, a playtest and an export.
+  7. ~~The editor: "Import an RPG Maker MZ project…" on the start screen (pick the MZ folder,
+     name the game, choose where it goes, progress, the report, open it)~~ (done; tried in
+     browser mode on a sample game: the same files as the CLI's, pixel for pixel, and it opens
+     with no problems. The desktop app is for the release's by-hand check)
   8. Guides (an "Importing from RPG Maker MZ" page: what comes across, what doesn't, what to
      check), demo/test updates, and a 0.4.0 release through the checklist, the first one
      installed by the updater from 0.3.0.

@@ -17,6 +17,7 @@
   "dependencies": {
     "@freequest/core": "workspace:*",
     "@freequest/editor-core": "workspace:*",
+    "@freequest/importer": "workspace:*",
     "@freequest/runtime": "workspace:*",
     "@freequest/schema": "workspace:*",
     "@tauri-apps/api": "^2.12.4",

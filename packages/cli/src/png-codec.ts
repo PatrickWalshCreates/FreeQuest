@@ -1,15 +1,12 @@
-// PNG decoding and encoding for the importer, through pngjs (Node only).
-import type { ImageCodec } from '@freequest/importer';
-import { PNG } from 'pngjs';
+// PNG decoding and encoding for the importer: its own codec, with Node's zlib.
+import { promisify } from 'node:util';
+import { deflate, inflate } from 'node:zlib';
+import { type ImageCodec, pngCodec as makeCodec } from '@freequest/importer';
 
-export const pngCodec: ImageCodec = {
-  async decode(bytes) {
-    const png = PNG.sync.read(Buffer.from(bytes));
-    return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
-  },
-  async encode(image) {
-    const png = new PNG({ width: image.width, height: image.height });
-    png.data = Buffer.from(image.data);
-    return new Uint8Array(PNG.sync.write(png));
-  },
-};
+const inflateAsync = promisify(inflate);
+const deflateAsync = promisify(deflate);
+
+export const pngCodec: ImageCodec = makeCodec({
+  inflate: async (data) => new Uint8Array(await inflateAsync(data)),
+  deflate: async (data) => new Uint8Array(await deflateAsync(data, { level: 9 })),
+});

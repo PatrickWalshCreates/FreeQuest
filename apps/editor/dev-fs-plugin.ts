@@ -3,6 +3,7 @@
 // "projects" (made with New project in browser mode) and "exports" (where
 // browser-mode exports go). Only active in `vite dev`.
 //   GET    /__freequest/projects                       → [{ area, name }, ...]
+//   GET    /__freequest/mz-projects                    → [name, ...] (MZ projects to import)
 //   GET    /__freequest/<area>/fs/<folder>/<path>      → file contents
 //   PUT    /__freequest/<area>/fs/<folder>/<path>      → write the request body
 //   DELETE /__freequest/<area>/fs/<folder>/<path>      → delete the file
@@ -61,6 +62,21 @@ export function devFsPlugin(areas: Readonly<Record<string, string>>): Plugin {
       server.middlewares.use('/__freequest', (request, response) => {
         void (async () => {
           const url = new URL(request.url ?? '/', 'http://localhost');
+          if (url.pathname === '/mz-projects' && request.method === 'GET') {
+            // Every folder in the mz area holding an MZ project's data/System.json.
+            const root = roots.get('mz');
+            const names: string[] = [];
+            if (root && existsSync(root)) {
+              for (const e of await readdir(root, { withFileTypes: true })) {
+                if (e.isDirectory() && existsSync(resolve(root, e.name, 'data', 'System.json'))) {
+                  names.push(e.name);
+                }
+              }
+            }
+            response.setHeader('Content-Type', 'application/json');
+            response.end(JSON.stringify(names.sort()));
+            return;
+          }
           if (url.pathname === '/projects' && request.method === 'GET') {
             // Every folder holding a project.json, in the samples and projects areas.
             const projects: { area: string; name: string }[] = [];

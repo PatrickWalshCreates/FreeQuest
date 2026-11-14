@@ -25,3 +25,6 @@ apps/editor/src-tauri/players/
 
 # The website, built by pnpm build:site
 site-dist/
+
+# RPG Maker MZ projects to try the importer on in browser mode (never committed).
+mz-projects/

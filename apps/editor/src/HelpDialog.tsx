@@ -110,7 +110,7 @@ export function HelpDialog({ page: initial = 'getting-started', onClose }: Props
   );
 }
 
-function renderInline(nodes: readonly Inline[], follow: (href: string) => void): ReactNode {
+export function renderInline(nodes: readonly Inline[], follow: (href: string) => void): ReactNode {
   return nodes.map((node, i) => {
     switch (node.type) {
       case 'text':
@@ -139,7 +139,7 @@ function renderInline(nodes: readonly Inline[], follow: (href: string) => void):
   });
 }
 
-function renderBlock(block: Block, key: number, follow: (href: string) => void): ReactNode {
+export function renderBlock(block: Block, key: number, follow: (href: string) => void): ReactNode {
   switch (block.type) {
     case 'heading': {
       const Tag = `h${Math.min(block.level + 1, 6)}` as 'h2';

@@ -2,6 +2,7 @@ import type { ProjectFs, RecentProject } from '@freequest/editor-core';
 import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useEffect, useState } from 'react';
 import { type HelpPage, HelpDialog } from './HelpDialog.js';
+import { ImportMzDialog } from './ImportMzDialog.js';
 import { NewProjectDialog } from './NewProjectDialog.js';
 import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
 import { forgetProject, loadRecent } from './recent.js';
@@ -17,6 +18,7 @@ interface Props {
 
 export function StartScreen({ error, failed, onOpen }: Props) {
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [help, setHelp] = useState<HelpPage | null>(null);
   const [recent, setRecent] = useState(loadRecent);
   const forget = (location: string) => {
@@ -55,6 +57,7 @@ export function StartScreen({ error, failed, onOpen }: Props) {
           ) : (
             <DevProjects onOpen={onOpen} />
           )}
+          <button onClick={() => setImporting(true)}>Import an RPG Maker MZ project…</button>
         </div>
         {error && <pre className="error">{error}</pre>}
         {failed && recent.some((p) => p.location === failed) && (
@@ -82,6 +85,15 @@ export function StartScreen({ error, failed, onOpen }: Props) {
         )}
       </div>
       {help && <HelpDialog page={help} onClose={() => setHelp(null)} />}
+      {importing && (
+        <ImportMzDialog
+          onClose={() => setImporting(false)}
+          onImported={(fs) => {
+            setImporting(false);
+            onOpen(Promise.resolve(fs));
+          }}
+        />
+      )}
       {creating && (
         <NewProjectDialog
           onClose={() => setCreating(false)}

@@ -2376,3 +2376,12 @@ h2.with-actions button {
   gap: 6px;
   margin-top: 4px;
 }
+
+/* The import report after an MZ import: the report's Markdown, scrolling. */
+.import-report {
+  max-height: 45vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 12px;
+}

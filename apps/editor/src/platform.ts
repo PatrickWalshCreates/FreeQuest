@@ -253,3 +253,25 @@ export async function openExternal(url: string): Promise<void> {
     window.open(url, '_blank', 'noopener');
   }
 }
+
+/** An RPG Maker MZ project to import: a folder picked on the desktop, or one in mz-projects/ (browser). */
+export async function pickMzFolder(): Promise<{ fs: ProjectFs; label: string } | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const picked = await open({
+    directory: true,
+    recursive: true,
+    title: 'Choose the RPG Maker MZ project folder (the one with game.rmmzproject)',
+  });
+  if (typeof picked !== 'string') return null;
+  const { TauriFs } = await import('./fs/tauri-fs.js');
+  return { fs: new TauriFs(picked), label: picked };
+}
+
+/** The MZ projects in mz-projects/ (browser mode). */
+export async function devMzProjects(): Promise<{ fs: ProjectFs; label: string }[]> {
+  const { DevServerFs, listMzProjects } = await import('./fs/dev-fs.js');
+  return (await listMzProjects()).map((name) => ({
+    fs: new DevServerFs(name, 'mz'),
+    label: `mz-projects/${name}`,
+  }));
+}
