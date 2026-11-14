@@ -112,7 +112,7 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
 function rewrite(
   data: unknown,
   refs: readonly Reference[],
-  kind: RenameKind,
+  kind: RefKind,
   oldValue: string,
   newValue: string,
 ): unknown {
@@ -121,7 +121,7 @@ function rewrite(
     if (ref.isKey) {
       out = setAt(out, ref.path.slice(0, -1), (obj) => renameKey(obj, oldValue, newValue));
     } else if (ref.inText) {
-      const code = TEXT_CODES[kind];
+      const code = kind === 'asset' ? undefined : TEXT_CODES[kind];
       if (!code) continue;
       const pattern = new RegExp(`\\{(\\s*${code}\\s*:\\s*)${escapeRe(oldValue)}(\\s*)\\}`, 'g');
       out = setAt(out, ref.path, (text) =>
@@ -243,4 +243,28 @@ function renameDeclaration(
   const list = SYSTEM_LISTS[kind];
   const system = project.database.system;
   if (list && system) tx.update(system.path, 'system', (s) => ({ ...s, [list]: swap(s[list]) }));
+}
+
+/**
+ * Rename or move an asset file and every reference to it. The file is
+ * copied now (the old one stays until the next save, see
+ * `AssetLibrary.settle`); the references change as one undo step. Returns
+ * how many references changed.
+ */
+export async function moveAsset(doc: ProjectDocument, from: string, to: string): Promise<number> {
+  const refs = projectReferences(doc.project).filter((r) => r.kind === 'asset' && r.id === from);
+  await doc.assets.copy(from, to);
+  const byFile = new Map<string, Reference[]>();
+  for (const ref of refs) byFile.set(ref.file, [...(byFile.get(ref.file) ?? []), ref]);
+  const name = (p: string) => p.slice(p.lastIndexOf('/') + 1);
+  const label =
+    name(from) === name(to) ? `Move ${name(from)}` : `Rename ${name(from)} to ${name(to)}`;
+  doc.edit(label, (tx) => {
+    for (const [path, fileRefs] of byFile) {
+      const file = tx.file(path);
+      if (!file?.data) continue;
+      tx.update(path, file.kind, (data) => rewrite(data, fileRefs, 'asset', from, to) as never);
+    }
+  });
+  return refs.length;
 }

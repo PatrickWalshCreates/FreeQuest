@@ -332,6 +332,8 @@ export class ProjectDocument {
     } finally {
       if (written.length > 0 || removed.length > 0) this.changed();
     }
+    // Assets renamed or moved since the last save: drop the copies nothing uses now.
+    await this.assets.settle(this.project);
     return { written, removed };
   }
 

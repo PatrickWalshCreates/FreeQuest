@@ -211,8 +211,9 @@ Add a door back the same way. If the arrival cell isn't walkable, the picker war
 
 Click **Assets** in the sidebar, then **Import…**, or drop files onto the panel. Images can be
 PNG, WebP or JPEG; sounds can be WAV, OGG or MP3. Files are copied into the project, so the
-originals stay where they were. The panel shows where each file is used, and lets you delete
-unused ones.
+originals stay where they were. The panel shows where each file is used, lets you delete unused
+ones, and **Rename or move…** gives a file a new name or folder: everything that uses it follows,
+and the old file is removed when you save (until then, Undo puts everything back).
 
 - **Tilesets**: an image of square tiles in a grid (32 × 32 pixels each is usual). Click **+**
   next to **Tilesets**, pick the image and the tile size. Then mark tiles that block the player

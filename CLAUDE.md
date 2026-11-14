@@ -445,6 +445,14 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   map, `World.fromSave` again), keeping ids that exist now. Editor: `RenameIdButton` beside ids
   (switch/variable rows show the id as the button). Map views use the map's own id, never the
   file name (they differ after a rename).
+- **Renaming and moving assets** (`moveAsset` in `editor-core/rename.ts`, `AssetLibrary.copy`
+  / `settle`, `assetMoveProblem`; tested; M12): the file is copied to its new path at once and
+  every reference (the index's `asset` kind) is rewritten as one undo step; after each save
+  `settle` deletes the old copy once nothing uses it (or the new one, if the move was undone),
+  so a reference never points at a missing file. New paths stay under assets/, keep the
+  extension, use a safe name, never clash (ignoring capitals), and a capitals-only rename is
+  refused (on case-insensitive disks it would delete the file). A test keeps the index's asset
+  fields in step with the export's `assetReferences`. UI: Assets panel → Rename or move….
 - **Stamps** (`editor-core/stamps.ts`, tested; M12): the brush is always a `Stamp` (width,
   height, one tile grid for the active layer or one per map layer). `tileStamp` (one tile),
   `paletteStamp` (a block dragged in `TilePalette`; cells past the last tile are skipped),
@@ -996,8 +1004,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      saves, so manifest v7 keeps a rename record and loading translates. Tried in browser mode:
      the house map and chest event renamed, a playtest walked through the door. Every editor
      with an id has the button; system type lists rename in editor-core only, no button yet)
-  4. Rename and move assets: the Assets panel renames a file or moves it to another folder and
-     updates every path that uses it (one step, the file moved on save)
+  4. ~~Rename and move assets: the Assets panel renames a file or moves it to another folder and
+     updates every path that uses it (one step, the file moved on save)~~ (done; tried in browser
+     mode on a copy of the demo: renamed, saved, the old file gone and the project clean)
   5. Bigger maps: draw maps in chunks (render textures per block of tiles, rebuilt when a chunk
      changes) in the game and the editor, then lift the 256 × 256 cap; measured before and after
   6. Face portraits in messages: an optional face per message (a face sheet image cut into

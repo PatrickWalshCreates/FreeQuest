@@ -1,5 +1,6 @@
 // The Assets panel: every image and sound in the project, where each is
-// used, importing new files (picked or dropped) and deleting unused ones.
+// used, importing new files (picked or dropped), renaming or moving them
+// (references follow) and deleting unused ones.
 // Logic lives in editor-core (assets.ts); this only draws and forwards.
 import {
   ASSET_FOLDERS,
@@ -7,10 +8,13 @@ import {
   IMPORT_EXTENSIONS,
   type ImportFile,
   type ProjectDocument,
+  assetMoveProblem,
   describeAssets,
   importFolderFor,
+  moveAsset,
   pngSize,
 } from '@freequest/editor-core';
+import { Dialog, Field } from '../Dialog.js';
 import { useMemo, useRef, useState } from 'react';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
@@ -243,6 +247,15 @@ export function AssetsPanel({ doc }: Props) {
               doc={doc}
               entry={current}
               onDelete={() => void remove(current)}
+              onMoved={(path, uses) => {
+                setSelected(path);
+                setNotice({
+                  kind: 'info',
+                  lines: [
+                    `${current.path} is now ${path}${uses > 0 ? ` (${plural(uses, 'reference')} updated)` : ''}. The old file is removed when you save.`,
+                  ],
+                });
+              }}
             />
           ) : (
             <p className="muted">Select a file to preview it and see where it's used.</p>
@@ -257,11 +270,14 @@ function AssetDetail({
   doc,
   entry,
   onDelete,
+  onMoved,
 }: {
   readonly doc: ProjectDocument;
   readonly entry: AssetEntry;
   readonly onDelete: () => void;
+  readonly onMoved: (path: string, uses: number) => void;
 }) {
+  const [moving, setMoving] = useState(false);
   const info = useLoaded(entry.path, async () => {
     if (entry.missing) return null;
     const [url, bytes] = await Promise.all([
@@ -311,6 +327,25 @@ function AssetDetail({
       )}
       {!entry.missing && (
         <button
+          onClick={() => setMoving(true)}
+          title="Rename the file or move it to another folder; everything that uses it follows"
+        >
+          Rename or move…
+        </button>
+      )}{' '}
+      {moving && (
+        <MoveDialog
+          doc={doc}
+          entry={entry}
+          onClose={() => setMoving(false)}
+          onMoved={(path, uses) => {
+            setMoving(false);
+            onMoved(path, uses);
+          }}
+        />
+      )}
+      {!entry.missing && (
+        <button
           className="danger"
           disabled={used}
           title={used ? 'Still used: change what uses it first' : 'Delete the file from the folder'}
@@ -320,5 +355,82 @@ function AssetDetail({
         </button>
       )}
     </>
+  );
+}
+
+/** Pick a new name and folder for an asset (same type of file, under assets/). */
+function MoveDialog(props: {
+  readonly doc: ProjectDocument;
+  readonly entry: AssetEntry;
+  readonly onClose: () => void;
+  readonly onMoved: (path: string, uses: number) => void;
+}) {
+  const { doc, entry } = props;
+  const [name, setName] = useState(fileName(entry.path));
+  const [folder, setFolder] = useState(folderOf(entry.path));
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Folders for this kind of file, plus wherever it is now.
+  const folders = [
+    ...new Set([
+      folderOf(entry.path),
+      ...ASSET_FOLDERS.filter((f) => f.type === entry.type).map((f) => f.path),
+    ]),
+  ];
+  const target = `${folder}/${name}`;
+  const problem = assetMoveProblem(doc.assets.listed, entry.path, target);
+  return (
+    <Dialog title={`Rename or move ${fileName(entry.path)}`} onClose={props.onClose}>
+      <form
+        className="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (problem || busy) return;
+          setBusy(true);
+          moveAsset(doc, entry.path, target).then(
+            (uses) => props.onMoved(target, uses),
+            (err: unknown) => {
+              setBusy(false);
+              setError(err instanceof Error ? err.message : String(err));
+            },
+          );
+        }}
+      >
+        <Field label="Name">
+          <input
+            value={name}
+            autoFocus
+            spellCheck={false}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Field label="Folder">
+          <select value={folder} onChange={(e) => setFolder(e.target.value)}>
+            {folders.map((f) => (
+              <option key={f} value={f}>
+                {folderLabel(f)} ({f})
+              </option>
+            ))}
+          </select>
+        </Field>
+        <p className="hint">
+          {entry.usedBy.length === 0
+            ? 'Nothing uses it yet.'
+            : `${plural(entry.usedBy.length, 'place')} that ${entry.usedBy.length === 1 ? 'uses' : 'use'} it will point at the new file.`}{' '}
+          The old file is removed when you save; until then you can undo.
+        </p>
+        {(error ?? (target !== entry.path ? problem : null)) && (
+          <p className="error">{error ?? problem}</p>
+        )}
+        <div className="actions">
+          <button type="button" onClick={props.onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="primary" disabled={problem !== null || busy}>
+            {folder === folderOf(entry.path) ? 'Rename' : 'Move'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

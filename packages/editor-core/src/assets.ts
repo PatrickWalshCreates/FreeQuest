@@ -167,6 +167,8 @@ export function describeAssets(
  */
 export class AssetLibrary {
   private paths: readonly string[] | null = null;
+  /** Renames and moves since the last save: both files exist until a save settles them. */
+  private readonly moves: { readonly from: string; readonly to: string }[] = [];
   private loading: Promise<readonly string[]> | null = null;
   private readonly listeners = new Set<() => void>();
   /** Bumped whenever the list changes. */
@@ -235,6 +237,39 @@ export class AssetLibrary {
     return { imported, rejected };
   }
 
+  /**
+   * Copy an asset to a new path (a rename or a move), keeping the old file
+   * until the next save (`settle`), so references never point at a missing
+   * file even if the rename is undone. `moveAsset` also rewrites references.
+   */
+  async copy(from: string, to: string): Promise<void> {
+    const paths = await this.list();
+    const problem = assetMoveProblem(paths, from, to);
+    if (problem) throw new Error(problem);
+    await this.fs.writeBytes(to, await this.fs.readBytes(from));
+    this.moves.push({ from, to });
+    this.changed([...paths, to].sort());
+  }
+
+  /**
+   * After a save: delete each moved file's old copy once nothing refers to
+   * it (or the new one, if the move was undone before saving).
+   */
+  async settle(project: OpenedProject): Promise<void> {
+    if (this.moves.length === 0) return;
+    const used = assetReferences(project);
+    const gone = new Set<string>();
+    for (const { from, to } of this.moves.splice(0)) {
+      for (const path of used.has(to) ? [from] : used.has(from) ? [to] : []) {
+        if (!used.has(path) && !gone.has(path)) {
+          await this.fs.remove(path);
+          gone.add(path);
+        }
+      }
+    }
+    if (gone.size > 0) this.changed((await this.list()).filter((p) => !gone.has(p)));
+  }
+
   /** Delete an unused asset file. Refuses while the project still uses it. */
   async remove(project: OpenedProject, path: string): Promise<void> {
     const uses = assetReferences(project).get(path);
@@ -245,6 +280,39 @@ export class AssetLibrary {
     const paths = await this.list();
     this.changed(paths.filter((p) => p !== path));
   }
+}
+
+/**
+ * Why an asset can't be renamed or moved from `from` to `to`, or null. The
+ * new path must stay under assets/, keep its file type, use a safe name and
+ * not replace another file.
+ */
+export function assetMoveProblem(
+  paths: readonly string[],
+  from: string,
+  to: string,
+): string | null {
+  if (!paths.includes(from)) return `${from} isn't in the project's assets`;
+  let target: string;
+  try {
+    target = normalizeProjectPath(to);
+  } catch {
+    return 'That isn’t a valid path';
+  }
+  if (target === from) return 'That’s its name already';
+  // Most Mac and Windows disks ignore capitals: wolf.png and Wolf.png are one file there, so
+  // copying one onto the other and deleting the "old" one would lose it.
+  if (target.toLowerCase() === from.toLowerCase()) {
+    return 'Only the capitals differ: choose a name that differs in letters too';
+  }
+  if (!target.startsWith(`${ASSETS_DIR}/`)) return `Assets stay under ${ASSETS_DIR}/`;
+  const name = target.slice(target.lastIndexOf('/') + 1);
+  const ext = (p: string) => p.slice(p.lastIndexOf('.')).toLowerCase();
+  if (ext(name) !== ext(from)) return `Keep the ${ext(from)} ending (it's that kind of file)`;
+  if (safeAssetName(name) !== name) return 'Use letters, digits, "-", "_" and "." in the name';
+  if (paths.some((p) => p.toLowerCase() === target.toLowerCase()))
+    return `${target} already exists`;
+  return null;
 }
 
 /**
