@@ -23,3 +23,4 @@ export * from './clipboard.js';
 export * from './markdown.js';
 export * from './desktop-export.js';
 export * from './text-preview.js';
+export * from './stamps.js';

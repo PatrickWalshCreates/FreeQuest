@@ -2,7 +2,16 @@
 // one press-drag-release into a single undo step.
 import { EMPTY_TILE, type GameMap } from '@freequest/schema';
 import type { ProjectDocument } from './document.js';
-import { type TileCell, inBounds, setTiles, tileAt } from './map-edits.js';
+import { type TileCell, inBounds, tileAt } from './map-edits.js';
+import {
+  type LayerEdit,
+  type Stamp,
+  applyEdits,
+  blockOrigin,
+  placeStamp,
+  patternStamp,
+  tileStamp,
+} from './stamps.js';
 
 export type TileTool = 'pencil' | 'rectangle' | 'fill' | 'eraser' | 'eyedropper';
 
@@ -85,23 +94,28 @@ export interface StrokeOptions {
   readonly path: string;
   readonly layer: number;
   readonly tool: TileTool;
-  /** The palette's tile (ignored by the eraser and eyedropper). */
-  readonly tile: number;
+  /** What to paint: one tile, a block from the palette or a copied area (ignored by the eraser and eyedropper). */
+  readonly stamp: Stamp;
 }
 
 let strokeCount = 0;
 
 /**
- * One press-drag-release of a tool. Pencil and eraser paint as the pointer
- * moves (filling gaps between pointer events); rectangle previews until
- * release; fill and eyedropper act once on press. Everything one stroke
- * changes is one undo step.
+ * One press-drag-release of a tool. The pencil places the whole stamp at the
+ * press and, while dragging, more copies on a grid of stamp-sized blocks (so a
+ * fence or wall tiles seamlessly); the eraser clears cells as the pointer
+ * moves (filling gaps between pointer events); rectangle and fill paint the
+ * stamp as a pattern anchored at the press (the rectangle previews until
+ * release); the eyedropper only reads. Everything one stroke changes is one
+ * undo step.
  */
 export class TileStroke {
   private readonly key = `stroke:${++strokeCount}`;
   private readonly start: Cell;
   private last: Cell;
   private finished = false;
+  /** Blocks the pencil has placed this stroke ("x,y" of their top-left cell). */
+  private readonly placed = new Set<string>();
   /** Whether this stroke has changed the map (and so has an undo step). */
   private changed = false;
   /** For the eyedropper: the tile under the press (EMPTY_TILE for an empty cell). */
@@ -117,10 +131,33 @@ export class TileStroke {
     if (tool === 'eyedropper') {
       this.picked = tileAt(this.map, layer, cell.x, cell.y);
     } else if (tool === 'fill') {
-      this.paint(floodCells(this.map, layer, cell));
-    } else if (tool !== 'rectangle') {
-      this.paint([cell]);
+      this.apply(
+        patternStamp(this.stamp, this.map, cell, floodCells(this.map, layer, cell), layer),
+      );
+    } else if (tool === 'pencil') {
+      this.placeAt(cell);
+    } else if (tool === 'eraser') {
+      this.erase([cell]);
     }
+  }
+
+  /** The eraser always clears single cells of the active layer. */
+  private get stamp(): Stamp {
+    return this.options.tool === 'eraser' ? tileStamp(EMPTY_TILE) : this.options.stamp;
+  }
+
+  /** Place a copy of the stamp on the block containing `cell` (once per block per stroke). */
+  private placeAt(cell: Cell): void {
+    const origin = blockOrigin(this.stamp, this.start, cell);
+    const key = `${origin.x},${origin.y}`;
+    if (this.placed.has(key)) return;
+    this.placed.add(key);
+    this.apply(placeStamp(this.stamp, this.map, origin, this.options.layer));
+  }
+
+  private erase(cells: readonly Cell[]): void {
+    const tile = EMPTY_TILE;
+    this.apply([{ layer: this.options.layer, cells: cells.map(({ x, y }) => ({ x, y, tile })) }]);
   }
 
   private get map(): GameMap {
@@ -129,41 +166,43 @@ export class TileStroke {
     return data as GameMap;
   }
 
-  private get tile(): number {
-    return this.options.tool === 'eraser' ? EMPTY_TILE : this.options.tile;
-  }
-
-  private paint(cells: readonly Cell[]): void {
-    const { doc, path, layer, tool } = this.options;
-    const tile = this.tile;
-    const edits: TileCell[] = cells.map(({ x, y }) => ({ x, y, tile }));
-    const changed = doc.update(path, 'map', TOOL_LABELS[tool], (m) => setTiles(m, layer, edits), {
+  private apply(edits: readonly LayerEdit[]): void {
+    const { doc, path, tool } = this.options;
+    const changed = doc.update(path, 'map', TOOL_LABELS[tool], (m) => applyEdits(m, edits), {
       coalesce: this.key,
     });
     this.changed ||= changed;
   }
 
-  /** Cells to show as a preview of what release will paint (rectangle only). */
+  /** Cells to show as a preview of what release will paint (rectangle only), every layer's together. */
   get preview(): readonly TileCell[] {
     if (this.options.tool !== 'rectangle' || this.finished) return [];
-    const tile = this.tile;
-    return rectCells(this.start, this.last)
-      .filter(({ x, y }) => inBounds(this.map, x, y))
-      .map(({ x, y }) => ({ x, y, tile }));
+    return patternStamp(
+      this.stamp,
+      this.map,
+      this.start,
+      rectCells(this.start, this.last),
+      this.options.layer,
+    ).flatMap((edit) => edit.cells);
   }
 
   /** The pointer moved to `cell` (may be outside the map; those cells are skipped). */
   moveTo(cell: Cell): void {
     if (this.finished || (cell.x === this.last.x && cell.y === this.last.y)) return;
     const { tool } = this.options;
-    if (tool === 'pencil' || tool === 'eraser') this.paint(lineCells(this.last, cell).slice(1));
+    const line = lineCells(this.last, cell).slice(1);
+    if (tool === 'eraser') this.erase(line);
+    else if (tool === 'pencil') for (const c of line) this.placeAt(c);
     this.last = cell;
   }
 
   /** Release: commit a rectangle and close the undo step. */
   finish(): void {
     if (this.finished) return;
-    if (this.options.tool === 'rectangle') this.paint(rectCells(this.start, this.last));
+    if (this.options.tool === 'rectangle') {
+      const cells = rectCells(this.start, this.last);
+      this.apply(patternStamp(this.stamp, this.map, this.start, cells, this.options.layer));
+    }
     this.finished = true;
     this.options.doc.endCoalescing();
   }

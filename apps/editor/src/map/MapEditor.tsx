@@ -4,6 +4,12 @@ import {
   type ProjectFile,
   type TileCell,
   TileStroke,
+  type Stamp,
+  areaOnMap,
+  clearArea,
+  copyArea,
+  placeStamp,
+  tileStamp,
   type TileTool,
   type Viewport,
   type ViewportBounds,
@@ -29,7 +35,7 @@ import { useMemo, useRef, useState } from 'react';
 import { type CanvasPoint, MapCanvas } from './MapCanvas.js';
 import { EventPanel, pasteEventAt } from '../events/EventPanel.js';
 import { MapSettings } from './MapSettings.js';
-import { TilePalette, describeTile } from './TilePalette.js';
+import { type PaletteBlock, TilePalette, describeTile } from './TilePalette.js';
 import { identityKey, loadCharacter, loadTileTextures, useLoaded } from './graphics.js';
 import type { RenderOptions } from './map-renderer.js';
 import { MOD } from '../keys.js';
@@ -43,8 +49,8 @@ interface Props {
 
 const PALETTE_WIDTH = 256;
 
-/** The painting tools, plus the event tool (select, move and add events). */
-type EditorTool = TileTool | 'event';
+/** The painting tools, the area tool (select, copy and cut blocks of the map) and the event tool. */
+type EditorTool = TileTool | 'select' | 'event';
 
 const TOOLS: readonly { id: EditorTool; label: string; key: string; hint: string }[] = [
   { id: 'pencil', label: 'Pencil', key: 'b', hint: 'Paint tiles by clicking or dragging' },
@@ -52,6 +58,12 @@ const TOOLS: readonly { id: EditorTool; label: string; key: string; hint: string
   { id: 'fill', label: 'Fill', key: 'f', hint: 'Fill the connected area of the same tile' },
   { id: 'eraser', label: 'Eraser', key: 'e', hint: 'Clear tiles on this layer' },
   { id: 'eyedropper', label: 'Pick', key: 'i', hint: 'Pick a tile from the map (or right-click)' },
+  {
+    id: 'select',
+    label: 'Select',
+    key: 'm',
+    hint: `Drag out an area, then ${MOD}C copies it as the brush (Shift: this layer only), ${MOD}X cuts it, Delete clears it`,
+  },
   {
     id: 'event',
     label: 'Events',
@@ -93,7 +105,19 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
   const [showGrid, setShowGrid] = useState(true);
   const [showEvents, setShowEvents] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
-  const [selectedTile, setSelectedTile] = useState(0);
+  /** What the painting tools paint: a tile, a block from the palette or a copied area. */
+  const [brushStamp, setBrushStamp] = useState<Stamp>(() => tileStamp(0));
+  /** Where the brush came from in the palette (null for a copied area). */
+  const [paletteBlock, setPaletteBlock] = useState<PaletteBlock | null>({
+    a: { x: 0, y: 0 },
+    b: { x: 0, y: 0 },
+  });
+  /** The Select tool's area (corners), and its drag in progress. */
+  const [area, setArea] = useState<{
+    a: { x: number; y: number };
+    b: { x: number; y: number };
+  } | null>(null);
+  const areaDrag = useRef(false);
   const [tool, setTool] = useState<EditorTool>('pencil');
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   /** The event being dragged, with the coalesce key that makes the drag one undo step. */
@@ -167,10 +191,14 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
   };
   const pick = (cell: { x: number; y: number }) => {
     const picked = new TileStroke(
-      { doc, path: file.path, layer: activeLayer, tool: 'eyedropper', tile: selectedTile },
+      { doc, path: file.path, layer: activeLayer, tool: 'eyedropper', stamp: brushStamp },
       cell,
     ).picked;
-    if (picked !== null && picked !== EMPTY_TILE) setSelectedTile(picked);
+    if (picked !== null && picked !== EMPTY_TILE && tileset) {
+      setBrushStamp(tileStamp(picked));
+      const at = { x: picked % tileset.columns, y: Math.floor(picked / tileset.columns) };
+      setPaletteBlock({ a: at, b: at });
+    }
   };
   const toolDown = (at: CanvasPoint, how: { readonly pick: boolean }) => {
     const cell = cellAt(at);
@@ -186,13 +214,18 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
       eventDown(cell);
       return;
     }
+    if (tool === 'select') {
+      areaDrag.current = true;
+      setArea({ a: cell, b: cell });
+      return;
+    }
     if (how.pick || tool === 'eyedropper') {
       pick(cell);
       if (tool === 'eyedropper') setTool('pencil');
       return;
     }
     stroke.current = new TileStroke(
-      { doc, path: file.path, layer: activeLayer, tool: tool as TileTool, tile: selectedTile },
+      { doc, path: file.path, layer: activeLayer, tool: tool as TileTool, stamp: brushStamp },
       cell,
     );
     setPreview(stroke.current.preview);
@@ -229,6 +262,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
     });
   };
   const toolUp = () => {
+    areaDrag.current = false;
     if (eventDrag.current) {
       eventDrag.current = null;
       doc.endCoalescing();
@@ -253,7 +287,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
     : preview && preview.length > 0
       ? preview
       : hover && !preview && PAINTS.has(tool)
-        ? [{ ...hover, tile: selectedTile }]
+        ? placeStamp(brushStamp, map, hover, activeLayer).flatMap((edit) => edit.cells)
         : hover && tool === 'eraser'
           ? [{ ...hover, tile: EMPTY_TILE }]
           : [];
@@ -275,6 +309,21 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
         if (typing) return;
         const key = event.key.toLowerCase();
         const onCanvas = target instanceof HTMLElement && target.classList.contains('map-canvas');
+        if ((event.metaKey || event.ctrlKey) && tool === 'select') {
+          // Copy (or cut) the selected area as the brush; Shift: the active layer only.
+          if (event.altKey || !area || (key !== 'c' && key !== 'x')) return;
+          const layer = event.shiftKey ? activeLayer : undefined;
+          const copied = copyArea(map, area.a, area.b, layer);
+          if (!copied) return;
+          if (key === 'x') {
+            editMap(doc, file.path, 'Cut area', (m) => clearArea(m, area.a, area.b, layer));
+          }
+          setBrushStamp(copied);
+          setPaletteBlock(null);
+          setTool('pencil');
+          event.preventDefault();
+          return;
+        }
         if (event.metaKey || event.ctrlKey) {
           // Copy, cut and paste events on the map (Events tool); paste lands where the pointer is.
           if (!onCanvas || tool !== 'event' || event.altKey || event.shiftKey) return;
@@ -295,7 +344,13 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
           return;
         }
         const shortcut = TOOLS.find((t) => t.key === key);
-        if (key === 'escape' && pickingStart) setPickingStart(false);
+        if ((key === 'delete' || key === 'backspace') && tool === 'select' && area) {
+          editMap(doc, file.path, 'Clear area', (m) => clearArea(m, area.a, area.b));
+          event.preventDefault();
+          return;
+        }
+        if (key === 'escape' && tool === 'select' && area) setArea(null);
+        else if (key === 'escape' && pickingStart) setPickingStart(false);
         else if (key === 'escape' && stroke.current) cancelStroke();
         else if (shortcut) chooseTool(shortcut.id);
         else if (
@@ -397,7 +452,11 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
             hover={hover}
             brush={brush}
             selection={
-              tool === 'event' ? (map.events.find((e) => e.id === selectedEvent) ?? null) : null
+              tool === 'event'
+                ? (map.events.find((e) => e.id === selectedEvent) ?? null)
+                : tool === 'select' && area
+                  ? areaOnMap(map, area.a, area.b)
+                  : null
             }
             walkability={walkability}
             onToolDown={toolDown}
@@ -431,6 +490,7 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
               );
               const cell = at && cellAt(at);
               if (eventDrag.current && cell) eventMove(cell);
+              if (areaDrag.current && cell) setArea((now) => (now ? { a: now.a, b: cell } : now));
               if (stroke.current && cell) {
                 stroke.current.moveTo(cell);
                 setPreview(stroke.current.preview);
@@ -522,9 +582,10 @@ export function MapEditor({ doc, file, onPlayFrom }: Props) {
               <TilePalette
                 tileset={tileset}
                 imageUrl={imageUrl.value}
-                selected={selectedTile}
-                onSelect={(tile) => {
-                  setSelectedTile(tile);
+                selected={paletteBlock}
+                onSelect={(stamp, block) => {
+                  setBrushStamp(stamp);
+                  setPaletteBlock(block);
                   if (!PAINTS.has(tool)) chooseTool('pencil');
                 }}
                 width={PALETTE_WIDTH}

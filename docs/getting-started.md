@@ -65,15 +65,23 @@ Click **First map**. The toolbar holds the painting tools:
 
 | Tool      | Key | What it does                                                 |
 | --------- | --- | ------------------------------------------------------------ |
-| Pencil    | B   | Paints the chosen tile; drag to paint a line                 |
+| Pencil    | B   | Paints the chosen tile (or block); drag to paint a line      |
 | Rectangle | R   | Drag to fill a rectangle                                     |
 | Fill      | F   | Fills the connected area of the same tile                    |
 | Eraser    | E   | Clears tiles (on upper layers, shows the layer below)        |
 | Pick      | I   | Picks the tile under the pointer (right-click does this too) |
+| Select    | M   | Selects an area to copy, cut or clear                        |
 | Events    | V   | Places and edits events (see below)                          |
 
 Pick a tile from the palette on the right, and the layer to paint on: **ground** for floors and
-**upper** for things on top, like trees and furniture. Press **W** to see where the player can
+**upper** for things on top, like trees and furniture.
+
+To paint something bigger than a tile, **drag across the palette** to pick a block of tiles (a
+whole tree or a roof) and click to place it all at once; dragging the pencil lays copies side by
+side, and Rectangle and Fill repeat it as a pattern. To reuse part of a map, choose **Select**
+(M), drag out an area, and press Ctrl+C: it becomes your brush, every layer included (add Shift
+for just the current layer), so the pencil places copies wherever you click. Ctrl+X cuts the
+area instead, and Delete clears it. Press **W** to see where the player can
 walk: blocked cells are tinted. Scroll to move around; hold Ctrl and scroll (or pinch on a
 trackpad), or press `=` and `-`, to zoom.
 
@@ -253,18 +261,18 @@ screen and in the menu. Their choices are kept with their saves.
 
 On a Mac, use ⌘ for Ctrl.
 
-| Keys                           | Where             | What                                          |
-| ------------------------------ | ----------------- | --------------------------------------------- |
-| Ctrl+S / Ctrl+Z / Ctrl+Shift+Z | Everywhere        | Save / undo / redo                            |
-| B R F E I V                    | Map               | Pencil, rectangle, fill, eraser, pick, events |
-| W / G                          | Map               | Walkable overlay / grid                       |
-| `=` `-` `0`                    | Map               | Zoom in / out / fit                           |
-| Space + drag, middle drag      | Map               | Scroll                                        |
-| Delete, Ctrl+C / X / V         | Map (Events tool) | Delete, copy, cut, paste an event             |
-| Enter, Delete, Alt+↑/↓         | Command list      | Edit, delete, move a command                  |
-| Shift+↑/↓, Ctrl+C / X / V      | Command list      | Select several, copy, cut, paste              |
-| W A S                          | Tileset           | Walkable, above, select modes                 |
-| Ctrl+. (or Stop)               | While playing     | Back to the editor                            |
+| Keys                           | Where             | What                                                  |
+| ------------------------------ | ----------------- | ----------------------------------------------------- |
+| Ctrl+S / Ctrl+Z / Ctrl+Shift+Z | Everywhere        | Save / undo / redo                                    |
+| B R F E I M V                  | Map               | Pencil, rectangle, fill, eraser, pick, select, events |
+| W / G                          | Map               | Walkable overlay / grid                               |
+| `=` `-` `0`                    | Map               | Zoom in / out / fit                                   |
+| Space + drag, middle drag      | Map               | Scroll                                                |
+| Delete, Ctrl+C / X / V         | Map (Events tool) | Delete, copy, cut, paste an event                     |
+| Enter, Delete, Alt+↑/↓         | Command list      | Edit, delete, move a command                          |
+| Shift+↑/↓, Ctrl+C / X / V      | Command list      | Select several, copy, cut, paste                      |
+| W A S                          | Tileset           | Walkable, above, select modes                         |
+| Ctrl+. (or Stop)               | While playing     | Back to the editor                                    |
 
 In the game itself: arrow keys or WASD walk, Enter or Space talks and confirms, Escape cancels and
 opens the menu, and F9 shows a debug panel while you test.

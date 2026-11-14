@@ -10,7 +10,13 @@ import {
   lineCells,
   openProject,
   rectCells,
+  type Stamp,
+  copyArea,
+  clearArea,
+  paletteStamp,
+  singleTileOf,
   tileAt,
+  tileStamp,
 } from '../src/index.js';
 
 const PATH = 'data/maps/m.json';
@@ -74,8 +80,11 @@ async function setup() {
   const doc = new ProjectDocument(await openProject(fs));
   expect(doc.project.problems).toEqual([]);
   const map = () => doc.file(PATH)?.data as GameMap;
-  const stroke = (tool: TileTool, x: number, y: number, tile = 3, layer = 0) =>
-    new TileStroke({ doc, path: PATH, layer, tool, tile }, { x, y });
+  const stroke = (tool: TileTool, x: number, y: number, tile: number | Stamp = 3, layer = 0) =>
+    new TileStroke(
+      { doc, path: PATH, layer, tool, stamp: typeof tile === 'number' ? tileStamp(tile) : tile },
+      { x, y },
+    );
   /** Layer rows as strings, "." for empty. */
   const rows = (layer = 0): string[] =>
     map().layers[layer]?.data.map((r) => r.map((t) => (t === EMPTY_TILE ? '.' : t)).join('')) ?? [];
@@ -204,5 +213,100 @@ describe('TileStroke', () => {
     // A cancelled stroke that painted nothing doesn't undo the previous one.
     stroke('pencil', 0, 0).cancel();
     expect(tileAt(map(), 0, 0, 0)).toBe(3);
+  });
+});
+
+describe('stamps', () => {
+  /** A 2 × 2 stamp of tiles 5 6 / 7 8. */
+  const block: Stamp = {
+    width: 2,
+    height: 2,
+    layers: [
+      [
+        [5, 6],
+        [7, 8],
+      ],
+    ],
+  };
+
+  it('cut from the palette as a block, leaving out cells past the last tile', () => {
+    const tileset = { columns: 4, tiles: new Array(10).fill({ passable: true }) } as never;
+    expect(paletteStamp(tileset, { x: 3, y: 1 }, { x: 2, y: 0 })).toEqual({
+      width: 2,
+      height: 2,
+      layers: [
+        [
+          [2, 3],
+          [6, 7],
+        ],
+      ],
+    });
+    expect(paletteStamp(tileset, { x: 1, y: 2 }, { x: 2, y: 2 }).layers).toEqual([
+      [[9, EMPTY_TILE]],
+    ]);
+    expect(singleTileOf(tileStamp(4))).toBe(4);
+    expect(singleTileOf(block)).toBeNull();
+  });
+
+  it('places a whole stamp at a click, clipped to the map', async () => {
+    const { stroke, rows } = await setup();
+    stroke('pencil', 3, 2, block).finish();
+    expect(rows()).toEqual(['00100', '00100', '00156', '00178']);
+    stroke('pencil', 4, 3, block).finish(); // only its top-left tile fits
+    expect(rows()[3]).toBe('00175');
+  });
+
+  it('drags copies on a grid of stamp-sized blocks, as one undo step', async () => {
+    const { doc, stroke, rows } = await setup();
+    const s = stroke('pencil', 0, 0, block);
+    s.moveTo({ x: 1, y: 0 }); // same block: nothing new
+    s.moveTo({ x: 3, y: 1 }); // next block over
+    s.finish();
+    // Blocks at (0, 0) and (2, 0); the second covers the wall in column 2.
+    expect(rows()).toEqual(['56560', '78780', '00100', '00100']);
+    doc.undo();
+    expect(rows()).toEqual(['00100', '00100', '00100', '00100']);
+  });
+
+  it('fills rectangles and areas with the stamp as a pattern', async () => {
+    const { stroke, rows } = await setup();
+    const r = stroke('rectangle', 0, 0, block);
+    r.moveTo({ x: 2, y: 2 });
+    expect(r.preview).toHaveLength(9);
+    r.finish();
+    expect(rows().slice(0, 3)).toEqual(['56500', '78700', '56500']);
+    const { stroke: fill, rows: rows2 } = await setup();
+    // The area right of the wall (columns 3 and 4), patterned from (4, 0): column 4 starts the
+    // stamp, column 3 is the stamp's second column wrapped round.
+    fill('fill', 4, 0, block).finish();
+    expect(rows2()).toEqual(['00165', '00187', '00165', '00187']);
+  });
+
+  it('copies an area with every layer (or one), and pastes it exactly, clearing too', async () => {
+    const { doc, map, stroke, rows } = await setup();
+    stroke('pencil', 1, 1, 9, 1).finish(); // something on the top layer
+    const all = copyArea(map(), { x: 0, y: 0 }, { x: 2, y: 1 });
+    expect(all?.layers).toEqual([
+      [
+        [0, 0, 1],
+        [0, 0, 1],
+      ],
+      [
+        [EMPTY_TILE, EMPTY_TILE, EMPTY_TILE],
+        [EMPTY_TILE, 9, EMPTY_TILE],
+      ],
+    ]);
+    expect(copyArea(map(), { x: 1, y: 1 }, { x: 1, y: 1 }, 1)?.layers).toEqual([[[9]]]);
+    expect(copyArea(map(), { x: 9, y: 9 }, { x: 12, y: 12 })).toBeNull();
+    // Paste it over the right side: the wall cell is copied as 1, the top layer's gaps clear.
+    stroke('pencil', 2, 2, 7, 1).finish();
+    if (!all) throw new Error('copy');
+    stroke('pencil', 2, 2, all).finish();
+    expect(rows().slice(2)).toEqual(['00001', '00001']);
+    expect(rows(1).slice(2)).toEqual(['.....', '...9.']);
+    doc.update('data/maps/m.json', 'map', 'Cut', (m) =>
+      clearArea(m, { x: 0, y: 0 }, { x: 4, y: 0 }),
+    );
+    expect(rows()[0]).toBe('.....');
   });
 });

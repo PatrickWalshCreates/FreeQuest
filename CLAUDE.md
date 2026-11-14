@@ -419,6 +419,16 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   reads. `cancel()` (Escape) undoes the stroke's own step only. Pointer roles in `MapCanvas`:
   left = tool, right or Alt = pick, middle or Space+drag = scroll. Keys B/R/F/E/I pick tools,
   W toggles the walkable overlay, which is `core`'s `CollisionMap` (tiles only, not events).
+- **Stamps** (`editor-core/stamps.ts`, tested; M12): the brush is always a `Stamp` (width,
+  height, one tile grid for the active layer or one per map layer). `tileStamp` (one tile),
+  `paletteStamp` (a block dragged in `TilePalette`; cells past the last tile are skipped),
+  `copyArea` / `clearArea` (the Select tool, M: Ctrl/⌘+C copies every layer, Shift the active
+  one, X cuts, Delete clears; the copy becomes the brush and the pencil is chosen). `TileStroke`
+  takes a `stamp`: the pencil places whole copies on a grid of stamp-sized blocks from the
+  press (`blockOrigin`, once per block), rectangle and fill paint it as a pattern anchored at
+  the press (`patternStamp`), the eraser stays one cell. Empty cells in a one-layer stamp are
+  skipped, in a copied area they clear (a paste matches the copy). Previews are the stamp's
+  cells (`placeStamp`), every layer together; the renderer's `setSelection` outlines areas.
 - Browser-pane note: the pane's page is 1024×768 but screenshots are 800×600, so convert
   screenshot coordinates (×1.28) before reasoning about map cells; synthetic `PointerEvent`s
   work for gestures the click tools can't do (e.g. Escape mid-drag).
@@ -940,11 +950,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     migration and 0.1's frozen project and save still opening.
   - Not in M11 (M12 candidates, "editor comfort"): renaming ids/assets with reference updates,
     multi-tile stamps, chunked rendering for big maps, message faces/portraits.
-- **M12 (planned)** Editor comfort, released as 0.3.0. M11 made the event language strong
+- **M12 (in progress)** Editor comfort, released as 0.3.0. M11 made the event language strong
   enough for real games; the friction is now in building them. Steps:
-  1. Multi-tile stamps: drag a block in the palette (a tree, a house) and paint it as one stamp
+  1. ~~Multi-tile stamps: drag a block in the palette (a tree, a house) and paint it as one stamp
      with pencil, rectangle and fill; copy, cut and paste a rectangle of a map (all layers, or
-     one), with a preview under the pointer; one undo step each
+     one), with a preview under the pointer; one undo step each~~ (done; a copied area becomes
+     the brush. Tried in browser mode: a 2 × 2 palette block placed with one click, an area
+     copied and painted elsewhere, undone and redone)
   2. Where things are used: one reference index in editor-core (every id a project refers to:
      switches, variables, maps, events, tilesets, characters, database entries, common events,
      assets) with the place of each use, replacing the separate `*Usages` helpers; a "Used by"

@@ -52,7 +52,7 @@ export class MapRenderer {
   private textures: readonly Texture[] = [];
   private gridZoom = 0;
   private hoverCell: { x: number; y: number } | null = null;
-  private selectedCell: { x: number; y: number } | null = null;
+  private selectedCell: { x: number; y: number; width?: number; height?: number } | null = null;
   private readonly selection = new Graphics();
   private options: RenderOptions | null = null;
 
@@ -259,8 +259,8 @@ export class MapRenderer {
     this.render();
   }
 
-  /** Outline the selected event's cell (null clears it). */
-  setSelection(cell: { x: number; y: number } | null): void {
+  /** Outline the selected event's cell, or a selected area of cells (null clears it). */
+  setSelection(cell: { x: number; y: number; width?: number; height?: number } | null): void {
     this.selectedCell = cell;
     this.drawSelection();
     this.render();
@@ -273,7 +273,7 @@ export class MapRenderer {
     if (!cell || !tileset) return;
     const { tileWidth: tw, tileHeight: th } = tileset;
     this.selection
-      .rect(cell.x * tw, cell.y * th, tw, th)
+      .rect(cell.x * tw, cell.y * th, (cell.width ?? 1) * tw, (cell.height ?? 1) * th)
       .stroke({ color: COLORS.selection, width: 2 * this.hairline, alignment: 1 });
   }
 

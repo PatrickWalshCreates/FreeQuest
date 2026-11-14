@@ -32,7 +32,13 @@ interface Props {
   readonly onToolCancel: () => void;
   readonly brush: readonly TileCell[];
   /** The selected event's cell, outlined. */
-  readonly selection: { readonly x: number; readonly y: number } | null;
+  /** The selected event's cell, or a selected area (Select tool). */
+  readonly selection: {
+    readonly x: number;
+    readonly y: number;
+    readonly width?: number;
+    readonly height?: number;
+  } | null;
   readonly walkability: Passability | null;
 }
 
@@ -74,6 +80,8 @@ export function MapCanvas(props: Props) {
   const { map, tileset, textures, graphics, viewport, options, hover, brush, walkability } = props;
   const selX = props.selection?.x;
   const selY = props.selection?.y;
+  const selW = props.selection?.width ?? 1;
+  const selH = props.selection?.height ?? 1;
   useEffect(() => renderer?.setMap(map, tileset, textures), [renderer, map, tileset, textures]);
   useEffect(() => renderer?.setEvents(map.events, graphics), [renderer, map.events, graphics]);
   useEffect(() => renderer?.setOptions(options), [renderer, options]);
@@ -85,9 +93,11 @@ export function MapCanvas(props: Props) {
   useEffect(
     () =>
       renderer?.setSelection(
-        selX === undefined || selY === undefined ? null : { x: selX, y: selY },
+        selX === undefined || selY === undefined
+          ? null
+          : { x: selX, y: selY, width: selW, height: selH },
       ),
-    [renderer, selX, selY],
+    [renderer, selX, selY, selW, selH],
   );
   useEffect(() => renderer?.setWalkability(walkability), [renderer, walkability]);
 
