@@ -1,7 +1,7 @@
 // `pnpm build:site`: the FreeQuest website, as static files in site-dist/
 // (published with GitHub Pages by .github/workflows/pages.yml). It has a
-// landing page with the downloads, the guides from docs/ as HTML, and the
-// demo game exported for the web under play/, playable on the page. Every
+// landing page with the downloads, the guides from docs/ as HTML, What's new
+// (CHANGELOG.md), and the demo game exported for the web under play/, playable on the page. Every
 // link is relative, so it works at any address. Needs the release player
 // built (`pnpm build`).
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -149,6 +149,7 @@ function layout(page: string, title: string, body: string, description: string):
   <nav>
     <a href="${to('index.html#download')}">Download</a>
     <a href="${to('guide/getting-started.html')}">Guide</a>
+    <a href="${to('whats-new.html')}">What's new</a>
     <a href="${to('index.html#demo')}">Play the demo</a>
     <a href="${REPO}" rel="noopener">GitHub</a>
   </nav>
@@ -158,7 +159,7 @@ ${body}
   <p>FreeQuest ${escape(version)} · free and open source under the
   <a href="${REPO}/blob/main/LICENSE" rel="noopener">MIT License</a> ·
   <a href="${REPO}" rel="noopener">source code</a> ·
-  <a href="${REPO}/blob/main/CHANGELOG.md" rel="noopener">what's new</a></p>
+  <a href="${to('whats-new.html')}">what's new</a></p>
   <p class="muted">An independent project, not affiliated with any other RPG maker. All art,
   music and sound are original.</p>
 </footer>
@@ -186,10 +187,38 @@ function guidePage(guide: (typeof GUIDES)[number]): string {
   return layout(guide.page, `${guide.title} · FreeQuest`, body, `FreeQuest: ${guide.title}.`);
 }
 
+/** What's new: CHANGELOG.md, with a list of its releases to jump to. */
+function whatsNewPage(): string {
+  const page = 'whats-new.html';
+  // The file's own title and introduction make way for the page's.
+  const blocks = parseMarkdown(readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'));
+  const first = blocks.findIndex((b) => b.type === 'heading' && b.level === 2);
+  const releases = blocks.filter(
+    (b): b is Extract<Block, { type: 'heading' }> => b.type === 'heading' && b.level === 2,
+  );
+  const toc = releases
+    .map((r) => `<li><a href="#${r.id}">${escape(plainText(r.content))}</a></li>`)
+    .join('');
+  const body = `<main class="guide-layout">
+  <nav class="guide-nav"><a href="${page}" aria-current="page">What's new</a><ul>${toc}</ul></nav>
+  <article class="guide">
+  <h1>What's new</h1>
+  <p>What changed in each FreeQuest release, newest first. Projects made with an older version
+  always open in a newer one and are upgraded when you save. The desktop editor (from 0.3.0)
+  offers new versions itself.</p>
+  ${blocks
+    .slice(first < 0 ? 0 : first)
+    .map((b) => block(b, page))
+    .join('\n')}
+  </article>
+</main>`;
+  return layout(page, "What's new · FreeQuest", body, "What's new in each FreeQuest release.");
+}
+
 const FEATURES: [string, string][] = [
   [
     'Maps',
-    'Paint tile maps in layers with a pencil, rectangles and fill, and see where the player can walk.',
+    'Paint tile maps up to 512 × 512 in layers with a pencil, rectangles, fill and multi-tile stamps.',
   ],
   [
     'Events and NPCs',
@@ -244,7 +273,8 @@ function landing(): string {
 
 <section id="download" class="downloads">
   <h2>Download the editor</h2>
-  <p>FreeQuest ${escape(version)}. Free for anything, including selling your games.</p>
+  <p>FreeQuest ${escape(version)} (<a href="whats-new.html">what's new</a>). Free for anything,
+  including selling your games. The editor updates itself from here on.</p>
   <div class="download-grid">${downloads}</div>
   <p class="muted">The apps aren't signed by a registered developer yet, so your computer asks once
   before opening them: <a href="guide/getting-started.html#1-get-the-editor">here's what to click</a>.
@@ -319,6 +349,7 @@ PNG.bitblt(tiles, grass, 0, 0, 32, 32, 0, 0);
 writeFileSync(join(OUT, 'art', 'grass.png'), PNG.sync.write(grass));
 write('index.html', landing());
 for (const guide of GUIDES) write(guide.page, guidePage(guide));
+write('whats-new.html', whatsNewPage());
 // GitHub Pages: serve files as they are (no Jekyll).
 write('.nojekyll', '');
 await exportDemo();

@@ -1,0 +1,144 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "attack",
+      "name": "Attack",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": true,
+          "element": "attack",
+          "formula": "a.attack * 4 - b.defense * 2",
+          "pool": "hp",
+          "variance": 0.2
+        }
+      ],
+      "hitType": "physical",
+      "icon": 16,
+      "mpCost": 0,
+      "occasion": "battle",
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "enemy"
+      }
+    },
+    {
+      "id": "guard",
+      "name": "Guard",
+      "effects": [
+        {
+          "type": "addState",
+          "chance": 1,
+          "state": "guarding"
+        }
+      ],
+      "hitType": "certain",
+      "icon": 17,
+      "mpCost": 0,
+      "occasion": "battle",
+      "successRate": 1,
+      "target": {
+        "side": "user"
+      }
+    },
+    {
+      "id": "power-strike",
+      "name": "Power Strike",
+      "description": "A heavy blow.",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": true,
+          "element": "attack",
+          "formula": "a.attack * 6 - b.defense * 2",
+          "pool": "hp",
+          "variance": 0.2
+        }
+      ],
+      "hitType": "physical",
+      "icon": 23,
+      "mpCost": 5,
+      "occasion": "battle",
+      "skillType": "technique",
+      "successRate": 0.95,
+      "target": {
+        "select": "one",
+        "side": "enemy"
+      }
+    },
+    {
+      "id": "fire",
+      "name": "Fire",
+      "description": "Scorches one enemy.",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": false,
+          "element": "fire",
+          "formula": "100 + a.magicAttack * 2 - b.magicDefense * 2",
+          "pool": "hp",
+          "variance": 0.2
+        }
+      ],
+      "hitType": "magical",
+      "icon": 18,
+      "mpCost": 5,
+      "occasion": "battle",
+      "skillType": "magic",
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "enemy"
+      }
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "description": "Freezes all enemies.",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": false,
+          "element": "ice",
+          "formula": "80 + a.magicAttack * 2 - b.magicDefense * 2",
+          "pool": "hp",
+          "variance": 0.2
+        }
+      ],
+      "hitType": "magical",
+      "icon": 19,
+      "mpCost": 9,
+      "occasion": "battle",
+      "skillType": "magic",
+      "successRate": 1,
+      "target": {
+        "select": "all",
+        "side": "enemy"
+      }
+    },
+    {
+      "id": "heal",
+      "name": "Heal",
+      "description": "Restores HP to one ally.",
+      "effects": [
+        {
+          "type": "recover",
+          "formula": "200 + a.magicAttack * 2",
+          "pool": "hp"
+        }
+      ],
+      "hitType": "certain",
+      "icon": 21,
+      "mpCost": 4,
+      "occasion": "always",
+      "skillType": "magic",
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "ally"
+      }
+    }
+  ]
+}

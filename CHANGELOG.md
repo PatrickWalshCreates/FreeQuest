@@ -4,6 +4,50 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## 0.3.0 (2026-11-14)
+
+Editor comfort: paint with whole blocks of tiles, see where everything is used, rename ids and
+files safely, build much bigger maps, give characters faces, and get new versions of the editor
+without downloading them by hand. Projects and saves from 0.1 and 0.2 open as before and are
+upgraded on save.
+
+### Maps
+
+- **Stamps**: drag across tiles in the palette (a tree, a house) and paint them as one block
+  with the pencil, rectangle and fill. The **Select** tool (M) copies, cuts or clears an area of
+  the map, every layer or just one, and the copy becomes your brush.
+- **Bigger maps**: up to 512 × 512 tiles (was 256). The game and the editor only draw what's near
+  the screen, so big maps open at once and play smoothly. Zoomed far out, the editor shows the
+  map as a small picture you can still paint on.
+
+### Finding and renaming
+
+- **Used by**: switches, variables, maps, database entries and common events list every place
+  that uses them, and deleting something tells you what still refers to it.
+- **Switches and variables** can now be created, renamed and deleted in Project settings.
+- **Rename id…** for switches, variables, maps, events, tilesets, characters and database
+  entries changes every reference in one step (undoable). Saves made before the rename keep
+  working.
+- **Rename or move** asset files from the Assets panel: every image or sound path that uses the
+  file is updated.
+
+### Messages
+
+- **Faces**: a message can show a face beside its text. A face sheet is a row of square faces
+  as tall as the picture; pick the face in the message dialog, and the preview shows it. The
+  demo's Elder and Mira have faces.
+
+### The editor
+
+- **Updates**: the desktop editor checks for a new version when it starts and offers to install
+  it and restart (or skip that version). **Help → About** has **Check for updates**. This is the
+  first version that can update itself: from here on, new versions arrive in the editor.
+
+### Formats
+
+- Project manifest 7 (a record of renamed ids, so older saves still load), maps 8 (message
+  faces). Older files are read as before; the editor upgrades them on save.
+
 ## 0.2.0 (2026-11-11)
 
 Events for real games: events can remember things, share commands, repeat, talk with names and

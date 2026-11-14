@@ -1,0 +1,31 @@
+{
+  "formatVersion": 4,
+  "entries": [
+    {
+      "id": "hero",
+      "name": "Hero",
+      "character": "hero",
+      "class": "warrior",
+      "equipment": {
+        "body": "leather-vest",
+        "weapon": "bronze-sword"
+      },
+      "level": 1,
+      "maxLevel": 99,
+      "modifiers": []
+    },
+    {
+      "id": "mira",
+      "name": "Mira",
+      "character": "mage",
+      "class": "mage",
+      "equipment": {
+        "body": "cloth-robe",
+        "weapon": "oak-staff"
+      },
+      "level": 3,
+      "maxLevel": 99,
+      "modifiers": []
+    }
+  ]
+}
