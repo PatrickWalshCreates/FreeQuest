@@ -24,8 +24,10 @@ export type UpdateState =
 let state: UpdateState = { status: 'idle' };
 /** The update found, kept to install it (not part of the state React sees). */
 let found: Update | null = null;
-/** The banner hides after "Later" until the next check. */
+/** The panel hides after "Later" (or OK) until the next check. */
 let dismissed = false;
+/** The last check was asked for (menu, Help, start screen): show its result whatever it is. */
+let manual = false;
 const listeners = new Set<() => void>();
 
 const set = (next: UpdateState) => {
@@ -37,9 +39,14 @@ export const updates = {
   get state(): UpdateState {
     return state;
   },
-  /** Whether the banner should show the offer. */
-  get offered(): boolean {
-    return state.status === 'available' && !dismissed;
+  /** Whether the corner panel shows: an offer, an install, or a check someone asked for. */
+  get shown(): boolean {
+    if (dismissed) return false;
+    return (
+      state.status === 'available' ||
+      state.status === 'installing' ||
+      (manual && state.status !== 'idle')
+    );
   },
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
@@ -50,24 +57,25 @@ export const updates = {
    * Look for a newer editor. At start (`manual` false) a skipped version and
    * any error stay quiet; from the About page every outcome is shown.
    */
-  async check(manual: boolean): Promise<void> {
+  async check(isManual: boolean): Promise<void> {
     if (!IN_DESKTOP_APP || state.status === 'checking' || state.status === 'installing') return;
+    manual = manual || isManual;
+    dismissed = false;
     set({ status: 'checking' });
     try {
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check({ timeout: 30_000 });
-      const skipped = manual ? null : readSkipped();
+      const skipped = isManual ? null : readSkipped();
       if (update && shouldOfferUpdate(FREEQUEST_VERSION, update.version, skipped)) {
         found = update;
-        dismissed = false;
         set({ status: 'available', version: update.version, notes: update.body ?? '' });
       } else {
         found = null;
-        set(manual ? { status: 'current' } : { status: 'idle' });
+        set(isManual ? { status: 'current' } : { status: 'idle' });
       }
     } catch (error) {
       found = null;
-      set(manual ? { status: 'error', message: describe(error) } : { status: 'idle' });
+      set(isManual ? { status: 'error', message: describe(error) } : { status: 'idle' });
     }
   },
 
@@ -107,9 +115,10 @@ export const updates = {
     set(state);
   },
 
-  /** Hide the banner until the next start. */
+  /** Hide the panel until the next check. */
   later(): void {
     dismissed = true;
+    manual = false;
     set(state);
   },
 };

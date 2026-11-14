@@ -20,6 +20,7 @@ import {
 } from '@freequest/editor-core';
 import {
   DATABASE_KINDS,
+  FREEQUEST_VERSION,
   type DatabaseKind,
   type GameMap,
   ID_PATTERN,
@@ -105,10 +106,11 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
 
   const save = async () => {
     try {
-      const { written, removed } = await doc.save();
+      const { written, removed, backup } = await doc.save();
       const parts = [
         ...(written.length > 0 ? [`saved ${plural(written.length, 'file')}`] : []),
         ...(removed.length > 0 ? [`deleted ${plural(removed.length, 'file')}`] : []),
+        ...(backup ? [`old versions kept in ${backup}`] : []),
       ];
       const text = parts.join(', ');
       setStatus({
@@ -300,6 +302,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
         <button onClick={onClose}>Close</button>
       </header>
 
+      <UpgradeNotice doc={doc} onUpgrade={() => void save()} />
       <DevCrash />
       <nav className="sidebar" aria-label="Project files">
         {groups.map((group, groupIndex) => (
@@ -603,4 +606,65 @@ function GameIdField({ doc }: { readonly doc: ProjectDocument }) {
       </span>
     </label>
   );
+}
+
+/**
+ * A project from another FreeQuest version: older files are upgraded in the
+ * editor and rewritten on save (the old ones kept in backups/ first); files
+ * from a newer FreeQuest can't be edited, so saving is off.
+ */
+function UpgradeNotice(props: { readonly doc: ProjectDocument; readonly onUpgrade: () => void }) {
+  const { doc } = props;
+  const [hidden, setHidden] = useState<string | null>(null);
+  const newer = doc.newerFiles;
+  const older = doc.olderFiles;
+  if (newer.length > 0) {
+    return (
+      <div className="upgrade-notice notice error" role="alert">
+        <strong>Made with a newer FreeQuest</strong>
+        <span>
+          {plural(newer.length, 'file')} ({newer.join(', ')}) {newer.length === 1 ? 'was' : 'were'}{' '}
+          saved by a newer version of FreeQuest than this one ({FREEQUEST_VERSION}). Saving is
+          turned off so nothing gets damaged: update the editor (Help → Check for updates), then
+          open the project again.
+        </span>
+      </div>
+    );
+  }
+  if (older.length > 0) {
+    return (
+      <div className="upgrade-notice notice" role="status">
+        <strong>This project was made with an older FreeQuest</strong>
+        <span>
+          It opens fine: {plural(older.length, 'file')} {older.length === 1 ? 'was' : 'were'}{' '}
+          upgraded to {FREEQUEST_VERSION}&rsquo;s format in the editor. Nothing on disk has changed
+          yet. Saving writes the new format, and first keeps copies of the old files in the
+          project&rsquo;s <code>backups/</code> folder.
+        </span>
+        <span className="actions">
+          <button type="button" className="primary" onClick={props.onUpgrade}>
+            Upgrade and save now
+          </button>
+        </span>
+      </div>
+    );
+  }
+  if (doc.lastBackup && hidden !== doc.lastBackup) {
+    const backup = doc.lastBackup;
+    return (
+      <div className="upgrade-notice notice" role="status">
+        <strong>Upgraded to {FREEQUEST_VERSION}</strong>
+        <span>
+          The files as they were before are kept in <code>{backup}</code> inside the project folder.
+          You can delete that folder once you&rsquo;re happy with the project.
+        </span>
+        <span className="actions">
+          <button type="button" onClick={() => setHidden(backup)}>
+            OK
+          </button>
+        </span>
+      </div>
+    );
+  }
+  return null;
 }

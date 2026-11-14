@@ -156,7 +156,7 @@ function layout(page: string, title: string, body: string, description: string):
 </header>
 ${body}
 <footer>
-  <p>FreeQuest ${escape(version)} · free and open source under the
+  <p>FreeQuest ${escape(version)} · created by Patrick Walsh · free and open source under the
   <a href="${REPO}/blob/main/LICENSE" rel="noopener">MIT License</a> ·
   <a href="${REPO}" rel="noopener">source code</a> ·
   <a href="${to('whats-new.html')}">what's new</a></p>

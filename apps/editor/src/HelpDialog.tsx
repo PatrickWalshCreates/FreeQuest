@@ -6,6 +6,8 @@ import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from '
 import exportingGuide from '../../../docs/exporting.md?raw';
 import gettingStarted from '../../../docs/getting-started.md?raw';
 import { AboutPanel } from './AboutPanel.js';
+import { IN_DESKTOP_APP } from './platform.js';
+import { updates } from './updater.js';
 import { Dialog } from './Dialog.js';
 import { openExternal } from './platform.js';
 
@@ -95,6 +97,11 @@ export function HelpDialog({ page: initial = 'getting-started', onClose }: Props
         </div>
       </div>
       <div className="actions">
+        {IN_DESKTOP_APP && (
+          <button type="button" className="help-update" onClick={() => void updates.check(true)}>
+            Check for updates
+          </button>
+        )}
         <button type="button" className="primary" onClick={onClose}>
           Close
         </button>

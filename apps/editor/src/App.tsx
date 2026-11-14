@@ -7,6 +7,7 @@ import { confirmDiscard, projectLocation } from './platform.js';
 import { rememberProject } from './recent.js';
 import { UpdateBanner } from './UpdateBanner.js';
 import { updates } from './updater.js';
+import { installAppMenu } from './app-menu.js';
 
 type AppState =
   | {
@@ -22,6 +23,11 @@ export function App() {
   const [state, setState] = useState<AppState>({ screen: 'start', error: null });
   // A newer editor? Checked once per start (desktop only; quiet when offline).
   useEffect(() => void updates.check(false), []);
+  // Mac: "Check for Updates…" in the app and Help menus.
+  useEffect(
+    () => void installAppMenu().catch((e: unknown) => console.warn('Menu not set up', e)),
+    [],
+  );
   return (
     <>
       <Screen state={state} setState={setState} />

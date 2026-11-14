@@ -37,7 +37,9 @@
     ],
     "resources": {
       "players/": "players/"
-    }
+    },
+    "publisher": "Patrick Walsh",
+    "copyright": "Copyright © 2026 Patrick Walsh and FreeQuest contributors. MIT License."
   },
   "plugins": {
     "updater": {

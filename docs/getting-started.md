@@ -30,8 +30,16 @@ FreeQuest isn't signed by a registered developer yet, so each system asks once:
 
 **Updates**: from version 0.3.0, the editor checks for a newer version each time it starts. When
 one is out, a panel in the corner offers **Install and restart** (save your project first),
-**What's new**, **Later** or **Skip this version**. **Help → About** has **Check for updates**.
-Your projects keep working: a newer editor opens them and upgrades their files when you save.
+**What's new**, **Later** or **Skip this version**. To check yourself, choose **Check for
+Updates…** in the Mac menu bar (under **FreeQuest Editor** or **Help**), or **Check for updates**
+in the editor's Help window or on its start screen.
+
+**Projects from older versions** keep working. When you open one, a notice says which files are
+in an older format: the editor has already upgraded them in memory, and nothing on disk changes
+until you save. Saving (or **Upgrade and save now**) first copies the old files, exactly as they
+were, into a `backups/` folder inside the project, then writes the new format. Delete that folder
+once you're happy. A project saved by a _newer_ FreeQuest than yours opens read-only (saving is
+turned off so nothing is damaged): update the editor first.
 
 > Prefer to build it yourself, or help make FreeQuest? See
 > [CONTRIBUTING.md](https://github.com/PatrickWalshCreates/FreeQuest/blob/main/CONTRIBUTING.md):

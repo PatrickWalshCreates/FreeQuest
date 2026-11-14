@@ -1,8 +1,14 @@
 import { AssetLibrary } from './assets.js';
-import { DATABASE_KINDS, type FileData, stableStringify } from '@freequest/schema';
+import {
+  DATABASE_KINDS,
+  FREEQUEST_VERSION,
+  type FileData,
+  stableStringify,
+} from '@freequest/schema';
 import {
   type DataFileKind,
   MANIFEST_PATH,
+  NEWER_FORMAT_MESSAGE,
   type OpenedProject,
   type Problem,
   type ProjectFile,
@@ -70,6 +76,18 @@ export interface SaveResult {
   readonly written: readonly string[];
   /** Paths deleted from disk (files removed in the editor), after the writes. */
   readonly removed: readonly string[];
+  /** Where copies of the older-format files were kept before they were upgraded, if any. */
+  readonly backup: string | null;
+}
+
+/** The folder, inside the project, that keeps old files from before an upgrade. */
+export const BACKUPS_FOLDER = 'backups';
+
+/** A backup folder's name: when, and which FreeQuest upgraded the files. */
+export function backupFolder(date: Date, version: string = FREEQUEST_VERSION): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const stamp = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+  return `${BACKUPS_FOLDER}/${stamp}-before-${version}`;
 }
 
 /** Saving was refused because some changed files don't match the schema (nothing was written). */
@@ -109,6 +127,8 @@ export class ProjectDocument {
   private savesInFlight = 0;
   /** Bumped on every change (edits, undo, redo, saves). */
   version = 0;
+  /** The backup folder the last upgrade made (this session), for the editor to point at. */
+  lastBackup: string | null = null;
 
   /** The image and sound files under assets/ (not part of the undo history). */
   readonly assets: AssetLibrary;
@@ -279,6 +299,16 @@ export class ProjectDocument {
     return this.dirtyPaths.length > 0;
   }
 
+  /** Files on disk in an older format: saving upgrades them (after backing them up). */
+  get olderFiles(): string[] {
+    return [...this.files.values()].filter((f) => f.migrated && f.data).map((f) => f.path);
+  }
+
+  /** Files saved by a newer FreeQuest: while there are any, saving is refused. */
+  get newerFiles(): string[] {
+    return [...this.files.values()].filter((f) => f.newer).map((f) => f.path);
+  }
+
   /**
    * Write every changed file (in canonical form via `stableStringify`).
    * Data files are written before project.json, so an interrupted save
@@ -304,6 +334,12 @@ export class ProjectDocument {
       });
     // Deleted after the manifest stops listing them, so it never points at a missing file.
     const removals = dirty.filter((path) => !this.files.has(path));
+    const newer = this.newerFiles;
+    if (newer.length > 0) {
+      throw new SaveBlockedError(
+        newer.map((source) => ({ source, message: NEWER_FORMAT_MESSAGE })),
+      );
+    }
     const blocked = pending.flatMap((file) =>
       schemaProblems(file.kind, file.data, file.path).map((message) => ({
         source: file.path,
@@ -311,6 +347,19 @@ export class ProjectDocument {
       })),
     );
     if (blocked.length > 0) throw new SaveBlockedError(blocked);
+
+    // Before anything older is overwritten, keep its file exactly as it was (byte for byte),
+    // so an upgrade can always be undone by hand.
+    const upgrading = pending.filter((file) => file.migrated);
+    let backup: string | null = null;
+    if (upgrading.length > 0) {
+      backup = backupFolder(new Date());
+      for (const file of upgrading) {
+        const bytes = await this.fs.readBytes(file.path);
+        await this.fs.writeBytes(`${backup}/${file.path}`, bytes);
+      }
+      this.lastBackup = backup;
+    }
 
     const written: string[] = [];
     const removed: string[] = [];
@@ -334,7 +383,7 @@ export class ProjectDocument {
     }
     // Assets renamed or moved since the last save: drop the copies nothing uses now.
     await this.assets.settle(this.project);
-    return { written, removed };
+    return { written, removed, backup };
   }
 
   private commit(label: string, changes: Map<string, Change>, coalesce: string | null): void {

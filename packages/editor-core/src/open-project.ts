@@ -6,6 +6,7 @@ import {
   type FileData,
   type FileKind,
   type FileRef,
+  FREEQUEST_VERSION,
   FormatVersionError,
   ProjectFileError,
   assembleDatabase,
@@ -22,6 +23,10 @@ export type DataFileKind = Exclude<FileKind, 'save'>;
 
 export const MANIFEST_PATH = 'project.json';
 
+/** What a file saved by a newer FreeQuest reports. */
+export const NEWER_FORMAT_MESSAGE =
+  'saved by a newer version of FreeQuest: update the editor to edit it (it is left untouched)';
+
 /** One file of an open project. */
 export interface ProjectFile<K extends DataFileKind = DataFileKind> {
   readonly kind: K;
@@ -32,6 +37,8 @@ export interface ProjectFile<K extends DataFileKind = DataFileKind> {
   readonly data: FileData<K> | null;
   /** The file is in an older format: saving it will upgrade it. */
   readonly migrated: boolean;
+  /** The file was saved by a newer FreeQuest: it can't be read, and must not be overwritten. */
+  readonly newer?: true;
   /** What is wrong with this file on its own (empty when it is fine). */
   readonly problems: readonly string[];
 }
@@ -114,11 +121,13 @@ async function readFile<K extends DataFileKind>(
   try {
     data = parseProjectFile(kind, raw, path);
   } catch (error) {
-    const problems =
-      error instanceof ProjectFileError
+    const newer = typeof version === 'number' && version > CURRENT_FORMAT_VERSION[kind];
+    const problems = newer
+      ? [NEWER_FORMAT_MESSAGE]
+      : error instanceof ProjectFileError
         ? error.problems
         : [error instanceof FormatVersionError ? error.message : String(error)];
-    return { kind, path, id, data: null, migrated, problems };
+    return { kind, path, id, data: null, migrated, problems, ...(newer ? { newer: true } : {}) };
   }
   const problems = contentProblems(kind, data, id);
   return { kind, path, id, data, migrated, problems };
@@ -137,6 +146,11 @@ function readAll<K extends 'tileset' | 'map' | 'character'>(
 /** Read and check a whole project folder. */
 export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
   const manifest = await readFile(fs, 'manifest', MANIFEST_PATH, 'project');
+  if (manifest.newer) {
+    throw new ProjectOpenError(
+      `${fs.label} was saved by a newer version of FreeQuest than this one (${FREEQUEST_VERSION}). Update the editor to open it: nothing was changed.`,
+    );
+  }
   if (!manifest.data) {
     throw new ProjectOpenError(
       `${fs.label} is not a FreeQuest project: ${MANIFEST_PATH} ${manifest.problems.join('; ')}`,

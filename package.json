@@ -4,6 +4,7 @@
   "private": true,
   "description": "FreeQuest: a free, open-source 2D RPG engine and editor.",
   "license": "MIT",
+  "author": "Patrick Walsh",
   "type": "module",
   "packageManager": "pnpm@12.18.0",
   "engines": {

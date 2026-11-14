@@ -28,6 +28,10 @@ this on the release build, ideally on a Mac user account that has never run Free
 - [ ] Edit something, then quit: the app asks about unsaved changes. Cancel keeps it open; Save
       then quit works.
 - [ ] **Assets**: import a PNG and a WAV by dropping them on the panel.
+- [ ] **Check for Updates…** from the menu bar (app menu and Help) and the start screen shows a
+      result in the corner (before publishing: "Couldn't check"; after: "newest version").
+- [ ] A project from the previous release opens with the "older FreeQuest" notice; **Upgrade and
+      save now** leaves its old files in `backups/` and the project opens clean afterwards.
 - [ ] **Export → macOS app** to a new folder: the app is made, opens with right-click → Open, the
       game plays, and saving then reopening the game keeps the save.
 - [ ] **Export → Web** to a new folder: upload or serve it (`vite preview --outDir <folder>`) and

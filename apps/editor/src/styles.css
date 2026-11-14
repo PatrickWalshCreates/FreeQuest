@@ -203,7 +203,9 @@ button.primary {
 /* Workspace: toolbar on top, sidebar | details, problems along the bottom. */
 .workspace {
   display: grid;
-  grid-template: 'toolbar toolbar' auto 'sidebar details' 1fr 'sidebar problems' auto / 230px 1fr;
+  grid-template:
+    'toolbar toolbar' auto 'upgrade upgrade' auto 'sidebar details' 1fr 'sidebar problems' auto
+    / 230px 1fr;
   height: 100%;
 }
 
@@ -2361,4 +2363,16 @@ h2.with-actions button {
   gap: 8px;
   align-items: center;
   margin-bottom: 12px;
+}
+
+/* A project from another FreeQuest version (older: upgrade on save; newer: read only). */
+.upgrade-notice {
+  grid-area: upgrade;
+  margin: 8px 12px 0;
+}
+
+.upgrade-notice .actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
 }

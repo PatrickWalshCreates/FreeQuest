@@ -796,6 +796,16 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   local manifest: `tauri-mac-build.mjs` passes extra arguments to `tauri build`, e.g.
   `--config '{"plugins":{"updater":{"endpoints":["http://localhost:5199/latest.json"],
 "dangerousInsecureTransportProtocol":true}}}'`.
+- **Project upgrades** (0.3.0): `ProjectFile.newer` marks files saved by a newer FreeQuest
+  (problem `NEWER_FORMAT_MESSAGE`; a newer `project.json` makes `openProject` refuse with "update
+  the editor"). `doc.olderFiles` / `doc.newerFiles`; `save()` refuses while any newer file exists
+  (`SaveBlockedError`), and before overwriting an older-format file copies its bytes to
+  `backups/<yyyy-mm-dd-hhmmss>-before-<version>/<path>` (`backupFolder`, `SaveResult.backup`,
+  `doc.lastBackup`). Tested in `upgrade.test.ts` with the frozen 0.2 project. UI:
+  `UpgradeNotice` in ProjectView (its own grid row): older → "Upgrade and save now"; newer → saving
+  off; after an upgrade, where the backup is. Mac menu bar: `app-menu.ts` takes Tauri's default
+  menu (JS API, `core:menu:default`) and adds "Check for Updates…" to the app and Help menus; a
+  manual check always shows its result in the corner panel (`updates.shown`).
 - `docs/release-checklist.md`: the by-hand checks for a release (dialogs, restarts, Gatekeeper,
   playing the demo).
 - Contributor files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (our own words), `SECURITY.md`

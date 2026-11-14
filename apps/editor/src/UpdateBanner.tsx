@@ -1,6 +1,7 @@
 // "A new editor is out": a small panel in the corner while an update is
 // offered or installing. Installing restarts the editor, so unsaved changes
 // are asked about first.
+import { FREEQUEST_VERSION } from '@freequest/schema';
 import { useSyncExternalStore } from 'react';
 import { confirmAction, openExternal } from './platform.js';
 import { updates } from './updater.js';
@@ -11,7 +12,8 @@ export const releaseUrl = (version: string) =>
 
 export function UpdateBanner(props: { readonly hasUnsavedChanges: () => boolean }) {
   const state = useSyncExternalStore(updates.subscribe, () => updates.state);
-  const offered = useSyncExternalStore(updates.subscribe, () => updates.offered);
+  const shown = useSyncExternalStore(updates.subscribe, () => updates.shown);
+  if (!shown) return null;
 
   if (state.status === 'installing') {
     return (
@@ -22,7 +24,36 @@ export function UpdateBanner(props: { readonly hasUnsavedChanges: () => boolean 
       </div>
     );
   }
-  if (state.status !== 'available' || !offered) return null;
+  if (state.status === 'checking') {
+    return (
+      <div className="update-banner" role="status">
+        <strong>Checking for updates…</strong>
+      </div>
+    );
+  }
+  if (state.status === 'current' || state.status === 'error') {
+    return (
+      <div className="update-banner" role="status">
+        <strong>
+          {state.status === 'current'
+            ? `FreeQuest Editor ${FREEQUEST_VERSION} is the newest version`
+            : 'Couldn’t check for updates'}
+        </strong>
+        {state.status === 'error' && (
+          <span className="hint">
+            {state.message.replace(/\.$/, '')}. Check your internet connection, or download the
+            newest version from the website.
+          </span>
+        )}
+        <div className="actions">
+          <button type="button" className="primary" onClick={() => updates.later()}>
+            OK
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (state.status !== 'available') return null;
 
   const install = async () => {
     if (

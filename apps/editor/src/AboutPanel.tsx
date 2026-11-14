@@ -30,6 +30,8 @@ export function AboutPanel() {
     <div className="about">
       <p>
         <strong>FreeQuest Editor {FREEQUEST_VERSION}</strong>
+        <br />
+        Created by Patrick Walsh
       </p>
       {IN_DESKTOP_APP && <UpdateCheck />}
       <p>
@@ -37,8 +39,8 @@ export function AboutPanel() {
         project, not affiliated with any other RPG maker.
       </p>
       <p className="muted">
-        MIT License · Copyright © 2026 FreeQuest contributors. Games you make with FreeQuest are
-        yours; exported games include FreeQuest's player and its licence notices.
+        MIT License · Copyright © 2026 Patrick Walsh and FreeQuest contributors. Games you make with
+        FreeQuest are yours; exported games include FreeQuest's player and its licence notices.
       </p>
       <button type="button" onClick={() => setShowNotices((v) => !v)}>
         {showNotices ? 'Hide' : 'Show'} third-party licences

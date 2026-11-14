@@ -40,8 +40,13 @@ upgraded on save.
 ### The editor
 
 - **Updates**: the desktop editor checks for a new version when it starts and offers to install
-  it and restart (or skip that version). **Help → About** has **Check for updates**. This is the
-  first version that can update itself: from here on, new versions arrive in the editor.
+  it and restart (or skip that version). **Check for Updates…** is in the Mac menu bar, the Help
+  window and the start screen. This is the first version that can update itself: from here on,
+  new versions arrive in the editor.
+- **Older projects, safely**: opening a project from an older FreeQuest says so; saving upgrades
+  its files only after copying the originals, byte for byte, into the project's `backups/`
+  folder. A project saved by a newer FreeQuest opens read-only instead of being overwritten.
+- **Credits**: About and the website now say who made FreeQuest.
 
 ### Formats
 

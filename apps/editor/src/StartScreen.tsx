@@ -5,6 +5,7 @@ import { type HelpPage, HelpDialog } from './HelpDialog.js';
 import { NewProjectDialog } from './NewProjectDialog.js';
 import { IN_DESKTOP_APP, desktopFs, devFs, projectFsAt } from './platform.js';
 import { forgetProject, loadRecent } from './recent.js';
+import { updates } from './updater.js';
 
 interface Props {
   readonly error: string | null;
@@ -74,6 +75,11 @@ export function StartScreen({ error, failed, onOpen }: Props) {
         <button className="link" onClick={() => setHelp('about')}>
           About FreeQuest
         </button>
+        {IN_DESKTOP_APP && (
+          <button className="link" onClick={() => void updates.check(true)}>
+            Check for updates
+          </button>
+        )}
       </div>
       {help && <HelpDialog page={help} onClose={() => setHelp(null)} />}
       {creating && (

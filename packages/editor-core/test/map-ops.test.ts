@@ -68,7 +68,7 @@ describe('document file changes', () => {
 
     doc.edit('Remove', (tx) => tx.remove('data/extra.json'));
     expect(doc.isDirty('data/extra.json')).toBe(true);
-    expect(await doc.save()).toEqual({ written: [], removed: ['data/extra.json'] });
+    expect(await doc.save()).toEqual({ written: [], removed: ['data/extra.json'], backup: null });
     expect(fs.files.has('data/extra.json')).toBe(false);
     expect(doc.dirty).toBe(false);
   });
