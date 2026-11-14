@@ -1,0 +1,5 @@
+[
+null,
+{"id":1,"actions":[{"conditionParam1":0,"conditionParam2":0,"conditionType":0,"rating":5,"skillId":1},{"conditionParam1":0,"conditionParam2":0.5,"conditionType":2,"rating":9,"skillId":3},{"conditionParam1":2,"conditionParam2":3,"conditionType":1,"rating":4,"skillId":2},{"conditionParam1":5,"conditionParam2":0,"conditionType":6,"rating":3,"skillId":4}],"battlerHue":0,"battlerName":"","dropItems":[{"dataId":1,"denominator":4,"kind":1},{"dataId":1,"denominator":1,"kind":2},{"dataId":0,"denominator":1,"kind":0}],"exp":12,"traits":[{"code":22,"dataId":0,"value":0.95},{"code":22,"dataId":1,"value":0.1},{"code":11,"dataId":2,"value":2}],"gold":7,"name":"Moth","note":"","params":[60,0,12,6,4,4,8,3]},
+{"id":2,"actions":[],"battlerHue":0,"battlerName":"","dropItems":[],"exp":0,"traits":[],"gold":0,"name":"Shade","note":"","params":[0,0,1,1,1,1,1,1]}
+]

@@ -829,10 +829,28 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   named ones plus unnamed ones something used. Switches and variables share one id space;
   `SystemTypes` turns MZ's type lists into system.json lists (weapon and armor types share
   one). `ImportReport`: `missing` / `changed` / `note`, each with where in the MZ project.
+- **Database** (`database.ts`, `mz-lists.ts`, `traits.ts`, `formula.ts`): `MzList` reads a
+  numbered list (unnamed entries are unused slots and skipped; weapons and armors share
+  equipment ids). Traits → modifiers: MZ gives battlers their base hit/evasion/critical as
+  traits, so on classes and enemies FreeQuest's base (0.95/0.05/0.04) is taken off; the
+  guard flag → damageTaken 0.5; physical damage rate → damageTaken (a different magical one is
+  reported); "add skill" on a class → a level-1 skill. State 1 is knockout; skills 1 and 2 are
+  the attack and guard skills. `translateFormula` maps the shared subset (`a.atk` → `a.attack`,
+  `Math.floor` → `floor`, `v[n]` → `v["<id>"]`, `===`) and checks the result with
+  `checkFormula`; anything else gets a stand-in formula and a report item quoting the original.
+  `levelCurve` keeps points until every level is within 0.5% (or half a point). Exp curves are
+  only approximated (base from MZ's, exponent 2: MZ's own formula isn't reproduced, clean-room),
+  reported once. Starting equipment goes in each item's own slot (repeats are skipped). Until
+  maps are imported (step 3) the template's maps stay with their events removed, since those
+  used the template's database.
 - Fixtures (`packages/importer/test/fixtures/`, Prettier-ignored to keep MZ's layout and
-  byte-order marks) are written by hand. Never read, run tests on, or paste from RPG Maker's
-  sample games or a real MZ project in a session: the user tries those on their own machine
-  and describes what went wrong.
+  byte-order marks) are written by hand.
+- **Trying real MZ projects** (the user's own, or the MZ sample games they provided): unzip them
+  outside the repo (the session scratchpad), run the importer on them with a script that prints
+  only masked, aggregate results (report items with names, text and formulas replaced by "…",
+  counts, project problems, crashes), and numbers-only diagnostics when something needs
+  explaining. Never open their data files, images, audio or plugins directly, never quote their
+  content, never commit anything from them or derived from them.
 
 ## Project file format
 
@@ -1122,11 +1140,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      `freequest import mz <folder> --out <dir>`~~ (done; system types are worked out and tested
      but written in step 2 with the entries that use them, since the Starter's entries need its
      own types; the `ImageCodec` comes with step 3, its first user)
-  2. Database: actors, classes (per-level stat tables → level curves with only the points
-     needed), skills, items, weapons + armors → equipment, states, enemies, troops (members;
-     troop battle events go in the report), traits → modifiers, effects. Damage formulas are
-     JavaScript in MZ: translate the common subset into FreeQuest formulas (`a.atk` →
-     `a.attack`…), keep anything else as a report item with a plain fallback.
+  2. ~~Database: actors, classes, skills, items, weapons + armors → equipment, states, enemies,
+     troops; traits → modifiers; JavaScript damage formulas translated where they can be~~
+     (done; tried on the user's two MZ sample games: both import with no project problems)
   3. Tilesets and maps: MZ tilesets are several sheets plus autotiles drawn from pieces; bake
      every autotile shape a map actually uses into one generated tileset image per MZ tileset
      (still frame of animated ones), with passability and "above" from MZ's flags (per-direction
