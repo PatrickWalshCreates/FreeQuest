@@ -66,6 +66,19 @@ const VARIANT_NAMES: Record<string, string> = {
   variable: 'Variable',
   hp: 'HP',
   mp: 'MP',
+  random: 'Random number',
+  game: 'Game data',
+  gold: 'Gold',
+  steps: 'Steps walked',
+  playTime: 'Play time (seconds)',
+  partySize: 'Party size',
+  itemCount: 'Number carried',
+  actorStat: 'Actor’s stat',
+  position: 'Position on the map',
+  held: 'A key is held',
+  facing: 'Facing',
+  actorState: 'Actor has a state',
+  actorName: 'Actor’s name',
 };
 
 function labelFor(ctx: FormContext, name: string): string {

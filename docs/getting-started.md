@@ -222,6 +222,29 @@ player** makes the player invisible (they still move), handy for cutscenes and i
 **Project settings → Player**, **Starts hidden** begins the game that way. The same section sets
 the character used when the party is empty, and the walking speed.
 
+### More from If…, Set variable and other commands
+
+- **If…** can also test what only matters at that moment: **a key is held**, which way the
+  player or an event is **facing**, whether a party member **has a state** (poisoned, asleep),
+  their **level, HP or MP** (also as a percent of the most), or an actor's **name**. These are
+  only offered in If…, not in page conditions.
+- **Set variable** can set a **random number** (from–to, both included) or **game data**: gold,
+  steps walked, play time in seconds, the party size, how many of an item the party carries, a
+  party member's stat, or where the player or an event stands (x or y). Then check it with If….
+- **Place event** puts an event on a tile at once (a number or a variable for each of x and y),
+  facing a way if you like; until the map loads again.
+- **Scroll map** moves the view away from the player by some tiles (the map's edges still stop
+  it), for showing a place in a cutscene; **Back to the player** returns it.
+- **Change HP**, **Change MP** and **Change state** affect one party member or everyone: a trap,
+  a curse, a blessing. Losing HP stops at 1 unless **Can knock out** is ticked.
+- **Menu or saving on/off** stops the player opening the menu, or saving from it (kept in saves,
+  until turned on again). **Open save screen** lets them save right there (at a save point, even
+  while saving is off); the save is made as if the event had finished. **Game over** and **Back
+  to title** end the game.
+- **Change battle music** sets the music for battles or for winning one (a boss theme); pick
+  none to go back to the project's own. **Background sound** loops a sound beside the music (rain,
+  wind, a crowd) until the map changes; each map can have its own under its settings.
+
 ### People who move, and things that happen on their own
 
 - **Moves** (on the page, under Graphic): **Wanders about**, **Walks toward the player**, or

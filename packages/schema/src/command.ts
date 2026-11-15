@@ -1,6 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, RelativePath } from './common.js';
-import { Condition } from './condition.js';
+import { IfCondition } from './condition.js';
+import { StatKey } from './database/common.js';
 import { MoveSteps } from './route.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
@@ -45,6 +46,65 @@ export const Operand = Type.Union([
   Type.Object({ variable: Id }, { additionalProperties: false }),
 ]);
 export type Operand = Static<typeof Operand>;
+
+/** A number the game knows, for setVariable (v9). Positions are tiles; play time is seconds. */
+export const GameValue = Type.Union([
+  Type.Object({ type: Type.Literal('gold') }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('steps') }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('playTime') }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('partySize') }, { additionalProperties: false }),
+  Type.Object(
+    {
+      type: Type.Literal('itemCount'),
+      kind: Type.Union([Type.Literal('item'), Type.Literal('equipment')]),
+      id: Id,
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('actorStat'),
+      actor: Id,
+      stat: Type.Union([
+        Type.Literal('level'),
+        Type.Literal('exp'),
+        Type.Literal('hp'),
+        Type.Literal('mp'),
+        ...StatKey.anyOf,
+      ]),
+    },
+    { additionalProperties: false, description: 'A party member’s stat (0 outside the party).' },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('position'),
+      /** "player", "this" (the event running the command) or an event id on this map. */
+      target: Id,
+      axis: Type.Union([Type.Literal('x'), Type.Literal('y')]),
+    },
+    { additionalProperties: false, description: 'Where the player or an event stands.' },
+  ),
+]);
+export type GameValue = Static<typeof GameValue>;
+
+/** What setVariable sets a variable to: a number, a variable, a random number or a game value. */
+export const VariableValue = Type.Union([
+  ...Operand.anyOf,
+  Type.Object(
+    {
+      random: Type.Object(
+        { min: Type.Integer(), max: Type.Integer() },
+        { additionalProperties: false },
+      ),
+    },
+    { additionalProperties: false, description: 'A random whole number from min to max (v9).' },
+  ),
+  Type.Object({ game: GameValue }, { additionalProperties: false }),
+]);
+export type VariableValue = Static<typeof VariableValue>;
+
+/** Which party members a command changes: one actor (if a member), or everyone. */
+const OptionalActor = Type.Optional(Id);
 
 /**
  * Event commands form a tree: block commands (`if`, `choice`) contain their
@@ -96,7 +156,7 @@ export const Command = Type.Cyclic(
       Type.Object(
         {
           type: Type.Literal('if'),
-          conditions: Type.Array(Condition, {
+          conditions: Type.Array(IfCondition, {
             minItems: 1,
             description: 'All conditions must hold.',
           }),
@@ -131,7 +191,7 @@ export const Command = Type.Cyclic(
           type: Type.Literal('setVariable'),
           variable: Id,
           op: VariableOp,
-          value: Operand,
+          value: VariableValue,
         },
         { additionalProperties: false },
       ),
@@ -327,6 +387,125 @@ export const Command = Type.Cyclic(
           additionalProperties: false,
           description:
             'Give an actor another character or name for the rest of the game, in or out of the party (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('placeEvent'),
+          /** Another event on this map; leave out for the event running the command. */
+          event: Type.Optional(Id),
+          x: Operand,
+          y: Operand,
+          direction: Type.Optional(Direction),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Put an event on a tile at once (until the map loads again). A spot outside the map is ignored (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('scrollMap'),
+          direction: Type.Union([
+            Type.Literal('up'),
+            Type.Literal('down'),
+            Type.Literal('left'),
+            Type.Literal('right'),
+            Type.Literal('back'),
+          ]),
+          /** How far, in tiles (not used by "back", which returns to the player). */
+          tiles: Type.Integer({ minimum: 0, maximum: 100 }),
+          /** Tiles per second. */
+          speed: Type.Number({ minimum: 0.5, maximum: 32 }),
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Move the view away from the player (the edges of the map still stop it), or back. Until the map changes (v9).',
+        },
+      ),
+      Type.Object(
+        { type: Type.Literal('gameOver') },
+        { additionalProperties: false, description: 'End the game: the game over screen (v9).' },
+      ),
+      Type.Object(
+        { type: Type.Literal('returnToTitle') },
+        { additionalProperties: false, description: 'End the game and go back to the title (v9).' },
+      ),
+      Type.Object(
+        { type: Type.Literal('openSave') },
+        {
+          additionalProperties: false,
+          description:
+            'Let the player save (even if saving is off). The save starts after this event, as if it had finished (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('setAccess'),
+          what: Type.Union([Type.Literal('menu'), Type.Literal('saving')]),
+          allowed: Type.Boolean(),
+        },
+        {
+          additionalProperties: false,
+          description: 'Allow or stop opening the menu, or saving from it. Kept in saves (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeBattleMusic'),
+          which: Type.Union([Type.Literal('battle'), Type.Literal('victory')]),
+          /** null goes back to the project's own (Project settings › Audio). */
+          path: Type.Union([RelativePath, Type.Null()]),
+        },
+        {
+          additionalProperties: false,
+          description: 'Change the music of battles or of winning one. Kept in saves (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('playBackgroundSound'),
+          /** null stops it. The map's own returns on the next map change. */
+          path: Type.Union([RelativePath, Type.Null()]),
+        },
+        {
+          additionalProperties: false,
+          description: 'A sound that loops beside the music (rain, wind, a crowd) (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeHp'),
+          actor: OptionalActor,
+          amount: Operand,
+          /** When false, losing HP stops at 1. */
+          canKnockOut: Type.Boolean(),
+        },
+        {
+          additionalProperties: false,
+          description: 'Give or take HP (negative takes) from one member or everyone (v9).',
+        },
+      ),
+      Type.Object(
+        { type: Type.Literal('changeMp'), actor: OptionalActor, amount: Operand },
+        {
+          additionalProperties: false,
+          description: 'Give or take MP (negative takes) from one member or everyone (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeState'),
+          actor: OptionalActor,
+          action: Type.Union([Type.Literal('add'), Type.Literal('remove')]),
+          state: Id,
+        },
+        {
+          additionalProperties: false,
+          description: 'Add or remove a state for one member or everyone (v9).',
         },
       ),
       Type.Object(

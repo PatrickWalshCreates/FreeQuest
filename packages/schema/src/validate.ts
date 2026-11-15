@@ -142,6 +142,39 @@ export function checkMapShape(map: GameMap): string[] {
             );
           }
         }
+        const at = `${where} pages[${p}].${path}`;
+        const isEvent = (id: string) =>
+          id === 'player' || id === 'this' || map.events.some((e) => e.id === id);
+        if (command.type === 'placeEvent') {
+          if (command.event !== undefined && !map.events.some((e) => e.id === command.event)) {
+            problems.push(`${at}: places "${command.event}", which isn't an event on this map`);
+          }
+          const { x, y } = command;
+          if (
+            (typeof x === 'number' && x >= map.width) ||
+            (typeof y === 'number' && y >= map.height)
+          ) {
+            problems.push(`${at}: (${String(x)}, ${String(y)}) is outside the map`);
+          }
+        }
+        if (command.type === 'if') {
+          for (const c of command.conditions) {
+            if (c.type === 'facing' && !isEvent(c.target)) {
+              problems.push(`${at}: tests "${c.target}", which isn't an event on this map`);
+            }
+          }
+        }
+        if (
+          command.type === 'setVariable' &&
+          typeof command.value === 'object' &&
+          'game' in command.value &&
+          command.value.game.type === 'position' &&
+          !isEvent(command.value.game.target)
+        ) {
+          problems.push(
+            `${at}: position of "${command.value.game.target}", which isn't an event on this map`,
+          );
+        }
         if (command.type === 'setFlag' && command.event !== undefined) {
           const other = command.event;
           if (!map.events.some((e) => e.id === other)) {

@@ -12,14 +12,22 @@ export interface MusicTrack {
   readonly loop: boolean;
 }
 
+/** Battle and victory music events chose (`World.battleMusic`; null = none). */
+export interface BattleMusicChoice {
+  readonly battle?: string | null;
+  readonly victory?: string | null;
+}
+
 /**
- * The track for a scene: the system's title/battle/victory/game-over music,
- * or the map's (as chosen by `World.music`). Victory plays once; the rest loop.
+ * The track for a scene: the system's title/battle/victory/game-over music
+ * (battle and victory as events changed them), or the map's (as chosen by
+ * `World.music`). Victory plays once; the rest loop.
  */
 export function musicFor(
   scene: MusicScene,
   audio: SystemAudio | undefined,
   mapMusic: string | null,
+  chosen: BattleMusicChoice = {},
 ): MusicTrack | null {
   const path =
     scene === 'map'
@@ -27,9 +35,13 @@ export function musicFor(
       : scene === 'title'
         ? audio?.titleMusic
         : scene === 'battle'
-          ? audio?.battleMusic
+          ? chosen.battle !== undefined
+            ? chosen.battle
+            : audio?.battleMusic
           : scene === 'victory'
-            ? audio?.victoryMusic
+            ? chosen.victory !== undefined
+              ? chosen.victory
+              : audio?.victoryMusic
             : audio?.gameOverMusic;
   return path ? { path, loop: scene !== 'victory' } : null;
 }

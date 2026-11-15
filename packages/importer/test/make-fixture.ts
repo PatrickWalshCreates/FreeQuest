@@ -108,7 +108,7 @@ writeFileSync(
     tilesetId: 1,
     width: w,
     data,
-    events: [null, keeper(), gate()],
+    events: [null, keeper(), gate(), stagehand()],
   }),
 );
 
@@ -245,6 +245,45 @@ function keeper() {
     ],
   };
 }
+/** Commands M14 step 4 brings across: game data, branch tests, placing, scrolling, audio, HP. */
+function stagehand() {
+  const branch = (params: unknown[]) => [cmd(111, 0, params), cmd(0, 1), cmd(412, 0)];
+  const list = [
+    cmd(122, 0, [1, 1, 0, 2, 1, 6]),
+    cmd(122, 0, [1, 1, 0, 3, 7, 2, 0]),
+    cmd(122, 0, [1, 1, 1, 3, 3, 1, 2]),
+    cmd(122, 0, [1, 1, 0, 3, 5, -1, 0]),
+    cmd(122, 0, [1, 1, 0, 4, '1 + 1']),
+    ...branch([4, 1, 6, 2]),
+    ...branch([4, 2, 1, 'Tam']),
+    ...branch([6, -1, 8]),
+    ...branch([11, 'ok', 0]),
+    ...branch([11, 'shift', 0]),
+    cmd(203, 0, [0, 0, 2, 1, 4]),
+    cmd(203, 0, [1, 1, 1, 1, 0]),
+    cmd(204, 0, [6, 3, 4, true]),
+    cmd(245, 0, [{ name: 'Wind', pan: 0, pitch: 100, volume: 90 }]),
+    cmd(246, 0, [10]),
+    cmd(132, 0, [{ name: 'Hollow', pan: 0, pitch: 100, volume: 90 }]),
+    cmd(133, 0, [{ name: '', pan: 0, pitch: 100, volume: 90 }]),
+    cmd(134, 0, [0]),
+    cmd(135, 0, [1]),
+    cmd(311, 0, [0, 0, 1, 0, 10, false]),
+    cmd(312, 0, [0, 1, 0, 0, 5]),
+    cmd(313, 0, [0, 1, 0, 2]),
+    cmd(352, 0),
+    cmd(353, 0),
+    cmd(354, 0),
+    cmd(0, 0),
+  ];
+  // Only there once 999 lanterns are lit (never, in the tests that play the map).
+  const conditions = {
+    ...(page({}).conditions as object),
+    variableValid: true,
+    variableValue: 999,
+  };
+  return { id: 3, name: 'Stagehand', note: '', x: 2, y: 2, pages: [page({ conditions, list })] };
+}
 function gate() {
   return {
     id: 2,
@@ -305,6 +344,8 @@ mkdirSync(join(root, 'audio', 'se'), { recursive: true });
 writeFileSync(join(root, 'audio', 'se', 'Chime.ogg'), 'OggS fake sound for tests');
 mkdirSync(join(root, 'audio', 'bgm'), { recursive: true });
 mkdirSync(join(root, 'audio', 'me'), { recursive: true });
+mkdirSync(join(root, 'audio', 'bgs'), { recursive: true });
+writeFileSync(join(root, 'audio', 'bgs', 'Wind.ogg'), 'OggS wind');
 writeFileSync(join(root, 'audio', 'se', 'Cursor.ogg'), 'OggS cursor');
 writeFileSync(join(root, 'audio', 'bgm', 'Hollow.ogg'), 'OggS hollow');
 writeFileSync(join(root, 'audio', 'bgm', 'Title.ogg'), 'OggS title');

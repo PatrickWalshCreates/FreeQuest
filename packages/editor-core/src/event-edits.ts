@@ -2,7 +2,8 @@
 // over map data plus thin document wrappers, so every edit is one undo step.
 import type {
   Command,
-  Condition,
+  IfCondition,
+  VariableValue,
   EventPage,
   GameMap,
   MapEvent,
@@ -353,6 +354,8 @@ export interface NameLookup {
   event?(id: string): string;
   /** A character sheet; ids are shown without one. */
   character?(id: string): string;
+  /** A state (poison…); ids are shown without one. */
+  state?(id: string): string;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */
@@ -378,6 +381,63 @@ function operand(value: Operand, names: NameLookup): string {
   return typeof value === 'number' ? String(value) : names.variable(value.variable);
 }
 
+/** What a setVariable sets: a number, a variable, a random number or a game value. */
+function variableValue(value: VariableValue, names: NameLookup): string {
+  if (typeof value === 'number' || 'variable' in value) return operand(value, names);
+  if ('random' in value) return `random ${value.random.min} to ${value.random.max}`;
+  const game = value.game;
+  switch (game.type) {
+    case 'gold':
+      return 'gold';
+    case 'steps':
+      return 'steps walked';
+    case 'playTime':
+      return 'play time (s)';
+    case 'partySize':
+      return 'party size';
+    case 'itemCount':
+      return `number of ${names.item(game.kind, game.id)}`;
+    case 'actorStat':
+      return `${names.actor(game.actor)}’s ${STAT_NAMES[game.stat] ?? game.stat}`;
+    case 'position':
+      return `${who(game.target, names)}’s ${game.axis}`;
+  }
+}
+
+const STAT_NAMES: Readonly<Record<string, string>> = {
+  level: 'level',
+  exp: 'exp',
+  hp: 'HP',
+  mp: 'MP',
+  hpPercent: 'HP %',
+  mpPercent: 'MP %',
+  maxHp: 'max HP',
+  maxMp: 'max MP',
+  attack: 'attack',
+  defense: 'defense',
+  magicAttack: 'magic attack',
+  magicDefense: 'magic defense',
+  agility: 'agility',
+  luck: 'luck',
+};
+
+/** "the player", "this event" or an event's name. */
+function who(target: string, names: NameLookup): string {
+  if (target === 'player') return 'the player';
+  if (target === 'this') return 'this event';
+  return names.event?.(target) ?? target;
+}
+
+const KEY_NAMES: Readonly<Record<string, string>> = {
+  confirm: 'Confirm',
+  cancel: 'Cancel',
+  menu: 'Menu',
+  up: '↑',
+  down: '↓',
+  left: '←',
+  right: '→',
+};
+
 function quote(text: string, max = 48): string {
   const line = text.split('\n')[0] ?? '';
   const more = line.length > max || text.includes('\n');
@@ -386,7 +446,7 @@ function quote(text: string, max = 48): string {
 
 const fileName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
-export function describeCondition(condition: Condition, names: NameLookup = ID_NAMES): string {
+export function describeCondition(condition: IfCondition, names: NameLookup = ID_NAMES): string {
   switch (condition.type) {
     case 'switch':
       return `${names.switchName(condition.switch)} is ${condition.value ? 'on' : 'off'}`;
@@ -403,6 +463,16 @@ export function describeCondition(condition: Condition, names: NameLookup = ID_N
       return `${names.actor(condition.actor)} is in the party`;
     case 'flag':
       return `flag “${condition.flag}” is ${condition.value ? 'on' : 'off'}`;
+    case 'held':
+      return `${KEY_NAMES[condition.action] ?? condition.action} is held`;
+    case 'facing':
+      return `${who(condition.target, names)} faces ${ARROWS[condition.direction] ?? condition.direction}`;
+    case 'actorState':
+      return `${names.actor(condition.actor)} ${condition.value ? 'has' : 'doesn’t have'} ${names.state?.(condition.state) ?? condition.state}`;
+    case 'actorStat':
+      return `${names.actor(condition.actor)}’s ${STAT_NAMES[condition.stat] ?? condition.stat} ${condition.op} ${condition.value}`;
+    case 'actorName':
+      return `${names.actor(condition.actor)} is called ${quote(condition.name)}`;
   }
 }
 
@@ -463,7 +533,7 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `Turn ${whose} “${command.flag}” ${command.value ? 'on' : 'off'}`;
     }
     case 'setVariable':
-      return `${names.variable(command.variable)} ${VARIABLE_OPS[command.op]} ${operand(command.value, names)}`;
+      return `${names.variable(command.variable)} ${VARIABLE_OPS[command.op]} ${variableValue(command.value, names)}`;
     case 'transfer':
       return `Transfer to ${names.map(command.map)} (${command.x}, ${command.y})${command.direction ? ` facing ${command.direction}` : ''}`;
     case 'wait':
@@ -512,6 +582,49 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
         command.wait && !command.repeat ? 'wait' : null,
       ].filter(Boolean);
       return `Move ${who}: ${describeRoute(command.steps)}${how.length > 0 ? ` (${how.join(', ')})` : ''}`;
+    }
+    case 'placeEvent': {
+      const what = command.event ? (names.event?.(command.event) ?? command.event) : 'this event';
+      return `Place ${what} at (${operand(command.x, names)}, ${operand(command.y, names)})${command.direction ? ` facing ${command.direction}` : ''}`;
+    }
+    case 'scrollMap':
+      return command.direction === 'back'
+        ? `Scroll the map back to the player${command.wait ? ', and wait' : ''}`
+        : `Scroll the map ${command.tiles} ${command.tiles === 1 ? 'tile' : 'tiles'} ${ARROWS[command.direction] ?? command.direction}${command.wait ? ', and wait' : ''}`;
+    case 'gameOver':
+      return 'Game over';
+    case 'returnToTitle':
+      return 'Back to the title screen';
+    case 'openSave':
+      return 'Open the save screen';
+    case 'setAccess':
+      return `${command.allowed ? 'Allow' : 'Stop'} ${command.what === 'menu' ? 'opening the menu' : 'saving'}`;
+    case 'changeBattleMusic': {
+      const what = command.which === 'battle' ? 'Battle music' : 'Victory music';
+      return command.path === null
+        ? `${what}: the project’s own`
+        : `${what}: ${fileName(command.path)}`;
+    }
+    case 'playBackgroundSound':
+      return command.path === null
+        ? 'Stop the background sound'
+        : `Background sound ${fileName(command.path)}`;
+    case 'changeHp':
+    case 'changeMp': {
+      const whom = command.actor ? names.actor(command.actor) : 'the party';
+      const what = command.type === 'changeHp' ? 'HP' : 'MP';
+      const amount =
+        typeof command.amount === 'number'
+          ? `${command.amount < 0 ? 'Take' : 'Give'} ${Math.abs(command.amount)} ${what} ${command.amount < 0 ? 'from' : 'to'} ${whom}`
+          : `Change ${whom}’s ${what} by ${operand(command.amount, names)}`;
+      return command.type === 'changeHp' && command.canKnockOut
+        ? `${amount} (can knock out)`
+        : amount;
+    }
+    case 'changeState': {
+      const whom = command.actor ? names.actor(command.actor) : 'the party';
+      const state = names.state?.(command.state) ?? command.state;
+      return command.action === 'add' ? `${whom}: add ${state}` : `${whom}: remove ${state}`;
     }
     case 'comment':
       return `// ${command.text.split('\n')[0] ?? ''}`;
@@ -600,7 +713,7 @@ export function describeRoute(steps: readonly MoveStep[]): string {
  */
 export function mapFlagNames(map: GameMap): string[] {
   const names = new Set<string>();
-  const fromConditions = (conditions: readonly Condition[]) => {
+  const fromConditions = (conditions: readonly IfCondition[]) => {
     for (const c of conditions) if (c.type === 'flag') names.add(c.flag);
   };
   for (const event of map.events) {
@@ -636,7 +749,7 @@ export const COMMAND_GROUPS: readonly {
 }[] = [
   { label: 'Messages', types: ['message', 'choice', 'comment'] },
   { label: 'Flow', types: ['if', 'loop', 'break', 'wait', 'callCommon', 'exitEvent'] },
-  { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag'] },
+  { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag', 'setAccess'] },
   {
     label: 'Party',
     types: [
@@ -646,12 +759,25 @@ export const COMMAND_GROUPS: readonly {
       'changeParty',
       'changeActor',
       'gainExp',
+      'changeHp',
+      'changeMp',
+      'changeState',
       'recoverAll',
     ],
   },
-  { label: 'World', types: ['transfer', 'moveRoute', 'hideEvent', 'hidePlayer', 'battle'] },
-  { label: 'Screen', types: ['fadeScreen', 'tintScreen', 'flashScreen', 'shakeScreen'] },
-  { label: 'Audio', types: ['playMusic', 'playSound'] },
+  {
+    label: 'World',
+    types: ['transfer', 'moveRoute', 'placeEvent', 'hideEvent', 'hidePlayer', 'battle'],
+  },
+  {
+    label: 'Screen',
+    types: ['fadeScreen', 'tintScreen', 'flashScreen', 'shakeScreen', 'scrollMap'],
+  },
+  {
+    label: 'Audio',
+    types: ['playMusic', 'playSound', 'playBackgroundSound', 'changeBattleMusic'],
+  },
+  { label: 'Game', types: ['openSave', 'gameOver', 'returnToTitle'] },
 ];
 
 export const COMMAND_NAMES: Record<Command['type'], string> = {
@@ -685,6 +811,17 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   battle: 'Start battle',
   playMusic: 'Play music',
   playSound: 'Play sound',
+  placeEvent: 'Place event',
+  scrollMap: 'Scroll map',
+  gameOver: 'Game over',
+  returnToTitle: 'Back to title',
+  openSave: 'Open save screen',
+  setAccess: 'Menu or saving on/off',
+  changeBattleMusic: 'Change battle music',
+  playBackgroundSound: 'Background sound',
+  changeHp: 'Change HP',
+  changeMp: 'Change MP',
+  changeState: 'Change state',
 };
 
 // Document wrappers ---------------------------------------------------------

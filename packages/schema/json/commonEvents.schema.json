@@ -267,6 +267,205 @@
                       }
                     },
                     "required": ["type", "flag", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A key (an input action) is held down.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "held"
+                      },
+                      "action": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "confirm"
+                          },
+                          {
+                            "type": "string",
+                            "const": "cancel"
+                          },
+                          {
+                            "type": "string",
+                            "const": "menu"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "action"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "The player or an event faces a direction.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "facing"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          }
+                        ]
+                      },
+                      "target": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "target", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A party member has a state (or not). Actors outside the party have none.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorState"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "state": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "actor", "state", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A party member's level, HP or MP (or HP/MP as a percent of the most). Actors outside the party count as 0.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorStat"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "stat": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "level"
+                          },
+                          {
+                            "type": "string",
+                            "const": "hp"
+                          },
+                          {
+                            "type": "string",
+                            "const": "mp"
+                          },
+                          {
+                            "type": "string",
+                            "const": "hpPercent"
+                          },
+                          {
+                            "type": "string",
+                            "const": "mpPercent"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "actor", "stat", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "An actor's name is this (as changed by events).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorName"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "actor", "name"]
                   }
                 ]
               },
@@ -383,6 +582,208 @@
                     }
                   },
                   "required": ["variable"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "A random whole number from min to max (v9).",
+                  "properties": {
+                    "random": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "max": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["min", "max"]
+                    }
+                  },
+                  "required": ["random"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "game": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "gold"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "steps"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "playTime"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "partySize"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "itemCount"
+                            },
+                            "kind": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "item"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "equipment"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "kind", "id"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "A party member’s stat (0 outside the party).",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "actorStat"
+                            },
+                            "actor": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            },
+                            "stat": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "level"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "exp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "hp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "mp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "maxHp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "maxMp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "attack"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "defense"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "magicAttack"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "magicDefense"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "agility"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "luck"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "actor", "stat"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "Where the player or an event stands.",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "position"
+                            },
+                            "axis": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "x"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "y"
+                                }
+                              ]
+                            },
+                            "target": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            }
+                          },
+                          "required": ["type", "target", "axis"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["game"]
                 }
               ]
             },
@@ -1265,6 +1666,363 @@
             }
           },
           "required": ["type", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Put an event on a tile at once (until the map loads again). A spot outside the map is ignored (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "placeEvent"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "up"
+                }
+              ]
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "x", "y"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move the view away from the player (the edges of the map still stop it), or back. Until the map changes (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "scrollMap"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "up"
+                },
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "back"
+                }
+              ]
+            },
+            "speed": {
+              "type": "number",
+              "maximum": 32,
+              "minimum": 0.5
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            },
+            "tiles": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 0
+            }
+          },
+          "required": ["type", "direction", "tiles", "speed", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "End the game: the game over screen (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gameOver"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "End the game and go back to the title (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "returnToTitle"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Let the player save (even if saving is off). The save starts after this event, as if it had finished (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "openSave"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Allow or stop opening the menu, or saving from it. Kept in saves (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setAccess"
+            },
+            "allowed": {
+              "type": "boolean"
+            },
+            "what": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "menu"
+                },
+                {
+                  "type": "string",
+                  "const": "saving"
+                }
+              ]
+            }
+          },
+          "required": ["type", "what", "allowed"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Change the music of battles or of winning one. Kept in saves (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeBattleMusic"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "which": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "battle"
+                },
+                {
+                  "type": "string",
+                  "const": "victory"
+                }
+              ]
+            }
+          },
+          "required": ["type", "which", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A sound that loops beside the music (rain, wind, a crowd) (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playBackgroundSound"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give or take HP (negative takes) from one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeHp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "canKnockOut": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "amount", "canKnockOut"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give or take MP (negative takes) from one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeMp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Add or remove a state for one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeState"
+            },
+            "action": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "remove"
+                }
+              ]
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "state": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "action", "state"]
         },
         {
           "type": "object",

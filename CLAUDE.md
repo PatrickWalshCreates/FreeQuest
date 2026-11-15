@@ -247,6 +247,23 @@ Never the other way.
   from `assets/faces/` first, and the faces to click; `FormContext.render` hooks now come before
   optional groups), the message preview draws the face. Art: `gen-placeholder-art.ts` draws
   `assets/faces/elder.png` and `mira.png` (calm, glad).
+- **Event commands of M14 step 4** (map v9, save v3; tested in `core/test/event-commands.test.ts`):
+  setVariable's value is a `VariableValue` (an `Operand`, `{ random: { min, max } }` or
+  `{ game: GameValue }`: gold, steps, playTime, partySize, itemCount, actorStat, position of
+  "player"/"this"/an event), worked out by core's `variableValue`. `if` takes `IfCondition` =
+  page `Condition` + `BranchTest` (held key, facing, actorState, actorStat incl. HP/MP %,
+  actorName): branch-only by schema, since pages refresh only on state/party versions.
+  `EventContext` gained `held`, `character`, `placeEvent`, `scroll`, `setAccess`, `playSeconds`,
+  `random`; `characterFor` resolves "this". Commands: `placeEvent` (x/y operands, off-map
+  ignored), `scrollMap` (core `MapScroll`, tiles offset added to the camera focus by the
+  runtime, reset on map change; "back"), `gameOver` / `returnToTitle` / `openSave` (requests;
+  only `save` is answered, by `continue()` when the save-only menu closes; `toSave({ fromEvent })`
+  saves as if the event had finished), `setAccess` (`World.access`, saved), `changeBattleMusic`
+  (`World.battleMusic`, saved; null = the project's), `playBackgroundSound` and map
+  `backgroundSound` (`World.backgroundSound`, like music; `AudioPlayer` has a second crossfading
+  `Channel` at the sound volume, map scenes only), `changeHp` (`canKnockOut`, knocked-out
+  members untouched) / `changeMp` / `changeState`. `World.playSeconds` counts world steps (set
+  from saves). The menu greys Save while saving is off.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -962,8 +979,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`),
   map 9 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
-  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden` and `party.looks`). Additive bumps migrate as no-ops.
+  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
+  `backgroundSound`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1270,14 +1288,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      jump, diagonal moves, step backward, play a sound, set a switch; page stepping and
      through~~ (done; every route step the samples use comes across except scripts, opacity,
      blend and frequency; Wolf's Gang's "imported differently" fell from 145 to 38)
-  4. Event commands and tests: variables from a random range or game data (gold, steps, play
-     time, positions, party size, item counts, actor stats), moving an event to a spot
-     (`placeEvent`), more branch tests (a key held, an actor's state, level or HP, a
-     character's facing), game over / back to title / open the save screen / allow saving and
-     the menu, battle and victory music changes, scrolling the map, background sounds (a
-     second looping channel, maps too). Fewer "condition to redo" branches [78 + 43 + 34…].
-     Labels and jumps stay out (commands are a tree, by design since M11); the importer
-     keeps reporting them.
+  4. ~~Event commands and tests: variables from a random range or game data, `placeEvent`,
+     more branch tests (a held key, facing, an actor's state, level, HP or name), game over /
+     back to title / open the save screen / menu and saving access, battle and victory music,
+     scrolling the map, background sounds (maps too); plus Change HP/MP/state~~ (done; the
+     samples' summaries list none of these any more: Wolf's Gang's 43 event placements, 10
+     scrolls, 39 variable settings (but 3 scripts) and its BGS come across; tried in the
+     editor's dialogs. Labels and jumps stay out, by design)
   5. Pictures: numbered pictures over the map (show with origin, position, scale, opacity;
      move over time; erase), kept across maps and in saves; core state like `ScreenEffects`,
      drawn by runtime between the map and the dialog [153 / 3; one game's message boxes].

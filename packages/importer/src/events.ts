@@ -14,6 +14,9 @@ import {
   type EventMovement,
   type EventPage,
   type EventTrigger,
+  type GameValue,
+  type IfCondition,
+  type InputAction,
   type MapEvent,
   type MoveStep,
   type RouteDirection,
@@ -121,6 +124,49 @@ const DIRECTIONS: Readonly<Record<number, Direction>> = {
   6: 'right',
   8: 'up',
 };
+const SCROLL_DIRECTIONS: Readonly<Record<number, 'up' | 'down' | 'left' | 'right'>> = {
+  2: 'down',
+  4: 'left',
+  6: 'right',
+  8: 'up',
+};
+
+/** MZ's button names and the input actions they are. */
+const BUTTONS: Readonly<Record<string, InputAction>> = {
+  ok: 'confirm',
+  cancel: 'cancel',
+  escape: 'menu',
+  menu: 'menu',
+  up: 'up',
+  down: 'down',
+  left: 'left',
+  right: 'right',
+};
+
+/** MZ's actor parameters for Control variables, in its order. */
+const ACTOR_STATS: readonly Extract<GameValue, { type: 'actorStat' }>['stat'][] = [
+  'level',
+  'exp',
+  'hp',
+  'mp',
+  'maxHp',
+  'maxMp',
+  'attack',
+  'defense',
+  'magicAttack',
+  'magicDefense',
+  'agility',
+  'luck',
+];
+
+const GAME_DATA_NAMES: Readonly<Record<number, string>> = {
+  4: 'an enemy',
+  5: 'a character',
+  6: 'a party member',
+  7: 'other',
+  8: 'the last action',
+};
+
 const COMPARE: readonly CompareOp[] = ['==', '>=', '<=', '>', '<', '!='];
 const VARIABLE_OPS: readonly VariableOp[] = ['set', 'add', 'sub', 'mul', 'div', 'mod'];
 
@@ -132,7 +178,7 @@ const PAUSES: Readonly<Record<number, number>> = { 1: 2, 2: 1, 3: 0.5, 4: 0.25, 
 /** Readable names of MZ commands FreeQuest doesn't have (our own wording). */
 const COMMAND_NAMES: Readonly<Record<number, string>> = {
   117: 'Common event',
-  122: 'Control variables (random, game data or script)',
+  122: 'Control variables (script or game data)',
   125: 'Change gold',
   126: 'Change items',
   127: 'Change weapons',
@@ -406,6 +452,52 @@ class Converter {
         const amount = int(3) === 0 ? int(4) : { variable: this.ctx.variables.id(int(4)) };
         return [{ type: 'gainExp', ...(actor ? { actor } : {}), amount }];
       }
+      case 203:
+        return [this.#placeEvent(p)];
+      case 204: {
+        const direction = SCROLL_DIRECTIONS[int(0)];
+        if (!direction) return [];
+        return [
+          {
+            type: 'scrollMap',
+            direction,
+            tiles: Math.max(0, Math.min(100, int(1))),
+            speed: Math.max(0.5, moveSpeed(int(2, 4))),
+            // MZ waits for a scroll only when asked (older projects have no flag: they waited).
+            wait: p[3] === undefined ? true : p[3] === true,
+          },
+        ];
+      }
+      case 352:
+        return [{ type: 'openSave' }];
+      case 353:
+        return [{ type: 'gameOver' }];
+      case 354:
+        return [{ type: 'returnToTitle' }];
+      case 134:
+      case 135:
+        return [
+          { type: 'setAccess', what: code === 134 ? 'saving' : 'menu', allowed: int(0) === 1 },
+        ];
+      case 132:
+      case 133: {
+        const name = asString(asRecord(p[0])['name']).trim();
+        if (!name) return [this.#unsupported(code, 'silence')];
+        const path = await this.#sound(code === 132 ? 'bgm' : 'me', p[0]);
+        return path
+          ? [{ type: 'changeBattleMusic', which: code === 132 ? 'battle' : 'victory', path }]
+          : [];
+      }
+      case 245: {
+        const path = await this.#sound('bgs', p[0]);
+        return path ? [{ type: 'playBackgroundSound', path }] : [];
+      }
+      case 246:
+        return [{ type: 'playBackgroundSound', path: null }];
+      case 311:
+      case 312:
+      case 313:
+        return this.#actorChange(code, p);
       case 355:
         return [this.#unsupported(355, [asString(p[0]), ...lines].join('\n'))];
       default:
@@ -469,7 +561,7 @@ class Converter {
   }
 
   /** An MZ branch test as a FreeQuest condition (or the never-on switch). */
-  #condition(p: readonly unknown[]): Condition {
+  #condition(p: readonly unknown[]): IfCondition {
     const int = (i: number) => asInt(p[i]);
     switch (int(0)) {
       case 0:
@@ -488,7 +580,22 @@ class Converter {
         return { type: 'flag', flag: asString(p[1], 'A').toLowerCase(), value: int(2) === 0 };
       case 4: {
         const actor = this.ctx.db.actors.id(int(1));
-        if (actor && int(2) === 0) return { type: 'inParty', actor };
+        if (!actor) break;
+        if (int(2) === 0) return { type: 'inParty', actor };
+        if (int(2) === 1) return { type: 'actorName', actor, name: asString(p[3]) };
+        const state = int(2) === 6 ? this.ctx.db.states.id(int(3)) : null;
+        if (state) return { type: 'actorState', actor, state, value: true };
+        break;
+      }
+      case 6: {
+        const target = this.#character(int(1));
+        const direction = DIRECTIONS[int(2)];
+        if (target && direction) return { type: 'facing', target, direction };
+        break;
+      }
+      case 11: {
+        const action = BUTTONS[asString(p[1])];
+        if (action) return { type: 'held', action };
         break;
       }
       case 7:
@@ -525,15 +632,103 @@ class Converter {
     let value: CommandOf<'setVariable'>['value'];
     if (int(3) === 0) value = int(4);
     else if (int(3) === 1) value = { variable: this.ctx.variables.id(int(4)) };
-    else
-      return [
-        this.#unsupported(122, ['', '', 'a random number', 'game data', 'a script'][int(3)] ?? ''),
-      ];
+    else if (int(3) === 2) value = { random: { min: int(4), max: int(5) } };
+    else if (int(3) === 3) {
+      const game = this.#gameValue(int(4), int(5), int(6));
+      if (!game)
+        return [this.#unsupported(122, `game data (${GAME_DATA_NAMES[int(4)] ?? 'other'})`)];
+      value = { game };
+    } else return [this.#unsupported(122, 'a script')];
     const out: Command[] = [];
     for (let n = int(0); n <= int(1) && out.length < 1000; n++) {
       if (n > 0) out.push({ type: 'setVariable', variable: this.ctx.variables.id(n), op, value });
     }
     return out;
+  }
+
+  /** MZ's game data for Control variables, where FreeQuest has it. */
+  #gameValue(type: number, a: number, b: number): GameValue | null {
+    switch (type) {
+      case 0:
+      case 1:
+      case 2: {
+        const id = (
+          type === 0 ? this.ctx.db.items : type === 1 ? this.ctx.db.weapons : this.ctx.db.armors
+        ).id(a);
+        return id ? { type: 'itemCount', kind: type === 0 ? 'item' : 'equipment', id } : null;
+      }
+      case 3: {
+        const actor = this.ctx.db.actors.id(a);
+        const stat = ACTOR_STATS[b];
+        return actor && stat ? { type: 'actorStat', actor, stat } : null;
+      }
+      case 5: {
+        const target = this.#character(a);
+        const axis = b === 0 ? 'x' : b === 1 ? 'y' : null;
+        return target && axis ? { type: 'position', target, axis } : null;
+      }
+      case 7:
+        return (
+          (
+            {
+              1: { type: 'partySize' },
+              2: { type: 'gold' },
+              3: { type: 'steps' },
+              4: { type: 'playTime' },
+            } as const
+          )[a] ?? null
+        );
+    }
+    return null;
+  }
+
+  /** MZ's character number: -1 the player, 0 this event, else an event on this map. */
+  #character(n: number): string | null {
+    if (n < 0) return 'player';
+    if (n === 0) return 'this';
+    return this.scope.event(n);
+  }
+
+  #placeEvent(p: readonly unknown[]): Command {
+    const int = (i: number) => asInt(p[i]);
+    const event = int(0) === 0 ? null : this.scope.event(int(0));
+    if (int(0) !== 0 && !event) return this.#unsupported(203, `for missing event ${int(0)}`);
+    const direction = DIRECTIONS[int(4)];
+    const where =
+      int(1) === 0
+        ? { x: Math.max(0, int(2)), y: Math.max(0, int(3)) }
+        : int(1) === 1
+          ? {
+              x: { variable: this.ctx.variables.id(int(2)) },
+              y: { variable: this.ctx.variables.id(int(3)) },
+            }
+          : null;
+    if (!where) return this.#unsupported(203, 'swapping with another event');
+    return {
+      type: 'placeEvent',
+      ...(event ? { event } : {}),
+      ...where,
+      ...(direction ? { direction } : {}),
+    };
+  }
+
+  /** Change HP (311), MP (312) or a state (313) for one actor or the whole party. */
+  #actorChange(code: 311 | 312 | 313, p: readonly unknown[]): Command[] {
+    const int = (i: number) => asInt(p[i]);
+    if (int(0) !== 0) return [this.#unsupported(code, 'actor from a variable')];
+    const actor = int(1) > 0 ? this.ctx.db.actors.id(int(1)) : null;
+    if (int(1) > 0 && !actor) return [this.#unsupported(code, `missing actor ${int(1)}`)];
+    const who = actor ? { actor } : {};
+    if (code === 313) {
+      const state = this.ctx.db.states.id(int(3));
+      if (!state) return [this.#unsupported(code, `missing state ${int(3)}`)];
+      return [{ type: 'changeState', ...who, action: int(2) === 0 ? 'add' : 'remove', state }];
+    }
+    const amount = this.#amount(int(2), int(3), int(4));
+    if (amount === null) return [this.#unsupported(code, 'by a variable, decreasing')];
+    return code === 311
+      ? [{ type: 'changeHp', ...who, amount, canKnockOut: p[5] === true }]
+      : [{ type: 'changeMp', ...who, amount }];
   }
 
   /** Gold or item amounts: increase (0) or decrease (1), by a number (0) or a variable (1). */

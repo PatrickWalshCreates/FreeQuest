@@ -29,8 +29,9 @@ const SavedActor = Type.Object(
 );
 
 /**
- * A saved game. Saving happens only from the menu, when no event is
- * running, so there is never interpreter state to store.
+ * A saved game. Saving happens from the menu, when no event is running, or
+ * from an event's Open save screen, saved as if that event had finished; so
+ * there is never interpreter state to store.
  */
 export const SaveFile = Type.Object(
   {
@@ -66,6 +67,23 @@ export const SaveFile = Type.Object(
     flags: Type.Record(Type.String(), Type.Record(Type.String(), Type.Array(Id))),
     /** The player hidden by an event (v3). */
     playerHidden: Type.Optional(Type.Boolean()),
+    /** The menu or saving turned off by an event (v3). */
+    access: Type.Optional(
+      Type.Object(
+        { menu: Type.Optional(Type.Boolean()), saving: Type.Optional(Type.Boolean()) },
+        { additionalProperties: false },
+      ),
+    ),
+    /** Battle and victory music changed by events; null = none (v3). */
+    battleMusic: Type.Optional(
+      Type.Object(
+        {
+          battle: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+          victory: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     party: Type.Object(
       {
         /** Actors' changed names and characters, members or not (v3). */

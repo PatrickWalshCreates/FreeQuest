@@ -55,6 +55,36 @@ const LABELS: Record<string, string> = {
   trigger: 'Starts when',
   switch: 'Switch',
   event: 'Another event (none: this one)',
+  tiles: 'Tiles',
+  speed: 'Speed (tiles/s)',
+  canKnockOut: 'Can knock out (otherwise stops at 1 HP)',
+  allowed: 'Allowed',
+  which: 'Music for',
+  what: 'What',
+  axis: 'Which',
+  action: 'Key',
+  target: 'Who',
+};
+
+/** Readable choices for fields whose values are words. */
+const CHOICE_LABELS: Record<string, Record<string, string>> = {
+  which: { battle: 'Battles', victory: 'Winning a battle' },
+  what: { menu: 'Opening the menu', saving: 'Saving from the menu' },
+  axis: { x: 'X (across)', y: 'Y (down)' },
+  action: { confirm: 'Confirm', cancel: 'Cancel', menu: 'Menu' },
+  stat: {
+    level: 'Level',
+    exp: 'Experience',
+    hp: 'HP',
+    mp: 'MP',
+    hpPercent: 'HP (% of most)',
+    mpPercent: 'MP (% of most)',
+    maxHp: 'Max HP',
+    maxMp: 'Max MP',
+    magicAttack: 'Magic attack',
+    magicDefense: 'Magic defense',
+  },
+  direction: { back: 'Back to the player' },
 };
 
 /** Fields whose text may hold `{…}` codes (messages, speakers, choice labels). */
@@ -93,6 +123,9 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   strength: 0.5,
   power: 6,
   wait: true,
+  // Scrolling the map: a few tiles at walking pace.
+  tiles: 4,
+  speed: 4,
 };
 
 const AUDIO_FIELDS = new Set<string>([
@@ -193,7 +226,7 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         ? COMMON_TRIGGERS[value]
         : field === 'to'
           ? { out: 'Out (to black)', in: 'In (back from black)' }[value]
-          : undefined,
+          : CHOICE_LABELS[field]?.[value],
     suggest: (field) => (field === 'flag' ? (lists.flags ?? []) : []),
     check: (field, value, parent) => {
       if (field === 'formula' && typeof value === 'string' && value !== '') {
@@ -228,7 +261,7 @@ export function projectNames(
   const m = project.manifest.data;
   const find = (list: readonly Named[] | undefined, id: string) =>
     list?.find((x) => x.id === id)?.name ?? id;
-  const entries = (kind: 'actors' | 'items' | 'equipment' | 'troops' | 'commonEvents') =>
+  const entries = (kind: 'actors' | 'items' | 'equipment' | 'troops' | 'commonEvents' | 'states') =>
     project.database[kind]?.data?.entries as Named[] | undefined;
   return {
     map: (id) => project.maps.get(id)?.data?.name ?? id,
@@ -240,5 +273,6 @@ export function projectNames(
     common: (id) => find(entries('commonEvents'), id),
     event: (id) => find(events, id),
     character: (id) => project.characters.get(id)?.data?.name || id,
+    state: (id) => find(entries('states'), id),
   };
 }

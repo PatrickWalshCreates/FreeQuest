@@ -10,6 +10,7 @@ import {
   type EventContext,
   type GameState,
   evaluateConditions,
+  variableValue,
   requireEvent,
   requireParty,
   toEventContext,
@@ -39,9 +40,21 @@ export type InterpreterRequest =
   | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
   | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean }
   /** Answered with `continue()` when the player leaves the shop. */
-  | { type: 'shop'; goods: readonly ShopGood[]; canSell: boolean };
+  | { type: 'shop'; goods: readonly ShopGood[]; canSell: boolean }
+  /** Answered with `continue()` when the player leaves the save screen. */
+  | { type: 'save' }
+  /** The game ends (game over, or back to the title): never answered. */
+  | { type: 'gameOver' }
+  | { type: 'title' };
 
 export type BattleOutcome = 'win' | 'escape' | 'lose';
+
+const SCROLL_DELTA = {
+  up: { dx: 0, dy: -1 },
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+} as const;
 
 /** Commands executed in one update before we assume a runaway loop. */
 const MAX_COMMANDS_PER_UPDATE = 10_000;
@@ -129,7 +142,13 @@ export class Interpreter {
   /** Answer a pending message, transfer or shop request. */
   continue(): void {
     const request = this.request;
-    if (request === null || request.type === 'choice' || request.type === 'battle') {
+    if (
+      request === null ||
+      request.type === 'choice' ||
+      request.type === 'battle' ||
+      request.type === 'gameOver' ||
+      request.type === 'title'
+    ) {
       throw new Error(
         `continue() called while ${request ? `a ${request.type}` : 'nothing'} is pending`,
       );
@@ -273,7 +292,11 @@ export class Interpreter {
         break;
       }
       case 'setVariable':
-        this.context.state.applyVariable(command.variable, command.op, command.value);
+        this.context.state.applyVariable(
+          command.variable,
+          command.op,
+          variableValue(command.value, this.context),
+        );
         break;
       case 'transfer':
         this.request = {
@@ -375,6 +398,69 @@ export class Interpreter {
           ...(command.name !== undefined ? { name: command.name } : {}),
           ...(command.character !== undefined ? { character: command.character } : {}),
         });
+        break;
+      case 'placeEvent': {
+        const id = command.event ?? this.context.self;
+        if (!id) throw new Error('placeEvent needs a map event, but there is none here');
+        this.context.placeEvent?.(
+          id,
+          this.operand(command.x),
+          this.operand(command.y),
+          command.direction,
+        );
+        break;
+      }
+      case 'scrollMap': {
+        const scroll = this.context.scroll;
+        if (!scroll) break;
+        const { dx, dy } =
+          command.direction === 'back' ? { dx: 0, dy: 0 } : SCROLL_DELTA[command.direction];
+        const done =
+          command.direction === 'back'
+            ? scroll.back(command.speed)
+            : scroll.by(dx * command.tiles, dy * command.tiles, command.speed);
+        if (command.wait) this.waitFor = done;
+        break;
+      }
+      case 'gameOver':
+        this.request = { type: 'gameOver' };
+        break;
+      case 'returnToTitle':
+        this.request = { type: 'title' };
+        break;
+      case 'openSave':
+        this.request = { type: 'save' };
+        break;
+      case 'setAccess':
+        this.context.setAccess?.(command.what, command.allowed);
+        break;
+      case 'changeBattleMusic':
+        this.context.audio?.setBattleMusic?.(command.which, command.path);
+        break;
+      case 'playBackgroundSound':
+        this.context.audio?.playBackgroundSound?.(command.path);
+        break;
+      case 'changeHp': {
+        const amount = this.operand(command.amount);
+        for (const member of this.targets(command.type, command.actor)) {
+          if (member.isKnockedOut) continue;
+          const next = member.hp + amount;
+          member.setHp(command.canKnockOut ? next : Math.max(1, next));
+        }
+        break;
+      }
+      case 'changeMp': {
+        const amount = this.operand(command.amount);
+        for (const member of this.targets(command.type, command.actor)) {
+          member.setMp(member.mp + amount);
+        }
+        break;
+      }
+      case 'changeState':
+        for (const member of this.targets(command.type, command.actor)) {
+          if (command.action === 'add') member.addState(command.state, this.context.random);
+          else member.removeState(command.state);
+        }
         break;
       case 'loop':
         if (this.stack.length >= MAX_DEPTH) throw new Error(`loops nest ${MAX_DEPTH} deep`);

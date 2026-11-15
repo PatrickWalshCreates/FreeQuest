@@ -7,6 +7,44 @@
       "type": "number",
       "const": 3
     },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "menu": {
+          "type": "boolean"
+        },
+        "saving": {
+          "type": "boolean"
+        }
+      }
+    },
+    "battleMusic": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "battle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "victory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "direction": {
       "anyOf": [
         {

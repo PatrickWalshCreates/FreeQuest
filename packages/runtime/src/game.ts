@@ -419,13 +419,15 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     }
   };
 
-  const openMenu = () => {
+  /** The map menu, or only its save list for an event's Open save screen. */
+  const openMenu = (saveOnly = false) => {
     menu = new MenuController({
       world,
       saves,
       game: manifest.id,
       playSeconds: () => playSeconds,
       onSaved: () => sfx('save'),
+      saveOnly,
     });
     menuView = new MenuView(() => world, width, height, theme, icons);
     app.stage.addChildAt(menuView.container, app.stage.getChildIndex(titleView.container));
@@ -433,6 +435,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
 
   /** The menu opens only when nothing else is going on. */
   const canOpenMenu = () =>
+    world.access.menu &&
     !world.interpreter &&
     !transfer.isActive &&
     !world.player.isMoving &&
@@ -461,8 +464,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     player.sprite.zIndex = depthFor(ry);
     shown?.events.update(tileWidth, tileHeight, alpha);
     const camera = computeCamera({
-      focusX: (rx + 0.5) * tileWidth,
-      focusY: (ry + 0.5) * tileHeight,
+      // An event may have scrolled the view away from the player.
+      focusX: (rx + 0.5 + world.scroll.x) * tileWidth,
+      focusY: (ry + 0.5 + world.scroll.y) * tileHeight,
       viewWidth: width,
       viewHeight: height,
       mapWidth: world.pixelWidth,
@@ -511,8 +515,11 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         } else if (menu) {
           menu.update(input);
           if (menu.outcome === 'quit') toTitle();
-          else if (menu.outcome === 'closed') closeMenu();
-          else if (menu.outcome === 'options') openOptions();
+          else if (menu.outcome === 'closed') {
+            closeMenu();
+            // An event's save screen: the event carries on.
+            if (world.interpreter?.pending?.type === 'save') world.interpreter.continue();
+          } else if (menu.outcome === 'options') openOptions();
         } else if (shop) {
           // The world waits while the shop is open (like the menu).
           shop.update(input);
@@ -523,6 +530,13 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         } else if (world.interpreter?.pending?.type === 'shop') {
           const request = world.interpreter.pending;
           openShop(request.goods, request.canSell);
+        } else if (world.interpreter?.pending?.type === 'save') {
+          dialog = new DialogController();
+          openMenu(true);
+        } else if (world.interpreter?.pending?.type === 'gameOver') {
+          battles.showGameOver();
+        } else if (world.interpreter?.pending?.type === 'title') {
+          toTitle();
         } else {
           // Battles, dialog and transfers first: they consume the input and
           // answer the running event's requests before the world steps.
@@ -556,7 +570,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     if (battleView && controller) battleView.render(controller.state, elapsed);
     fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
     battleSounds();
-    audio.setMusic(musicFor(musicScene(), db.system.audio, world.music));
+    audio.setMusic(musicFor(musicScene(), db.system.audio, world.music, world.battleMusic));
+    // The background sound loops only on the map (not in battles or on the title).
+    audio.setBackground(musicScene() === 'map' ? world.backgroundSound : null);
   };
   render(1);
   app.ticker.add(tick);

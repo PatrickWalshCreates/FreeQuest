@@ -114,6 +114,7 @@ describe('importing events', () => {
     expect(map.events.map((e) => [e.id, e.name, e.x, e.y])).toEqual([
       ['keeper', 'Keeper', 1, 2],
       ['gate', 'Gate', 3, 1],
+      ['stagehand', 'Stagehand', 2, 2],
     ]);
     const [first, second] = map.events[0]?.pages ?? [];
     expect(first).toMatchObject({
@@ -239,6 +240,57 @@ describe('importing events', () => {
     ]);
   });
 
+  it('converts game data, branch tests, placing, scrolling, audio, access and HP', async () => {
+    const { map, messages } = await imported();
+    const commands = map.events[2]?.pages[0]?.commands ?? [];
+    const set = (value: unknown, op = 'set') => ({
+      type: 'setVariable',
+      variable: 'lanterns-lit',
+      op,
+      value,
+    });
+    const test = (condition: unknown) => ({ type: 'if', conditions: [condition], then: [] });
+    expect(commands).toEqual([
+      set({ random: { min: 1, max: 6 } }),
+      set({ game: { type: 'gold' } }),
+      set({ game: { type: 'actorStat', actor: 'wren', stat: 'hp' } }, 'add'),
+      set({ game: { type: 'position', target: 'player', axis: 'x' } }),
+      {
+        type: 'comment',
+        text: 'From MZ, not imported: Control variables (script or game data): a script',
+      },
+      test({ type: 'actorState', actor: 'wren', state: 'bracing', value: true }),
+      test({ type: 'actorName', actor: 'tamsin', name: 'Tam' }),
+      test({ type: 'facing', target: 'player', direction: 'up' }),
+      test({ type: 'held', action: 'confirm' }),
+      test({ type: 'switch', switch: 'imported-condition-to-redo', value: true }),
+      { type: 'placeEvent', x: 2, y: 1, direction: 'left' },
+      {
+        type: 'placeEvent',
+        event: 'keeper',
+        x: { variable: 'lanterns-lit' },
+        y: { variable: 'lanterns-lit' },
+      },
+      { type: 'scrollMap', direction: 'right', tiles: 3, speed: 4, wait: true },
+      { type: 'playBackgroundSound', path: 'assets/audio/bgs/wind.ogg' },
+      { type: 'playBackgroundSound', path: null },
+      { type: 'changeBattleMusic', which: 'battle', path: 'assets/audio/bgm/hollow.ogg' },
+      { type: 'comment', text: 'From MZ, not imported: Change victory music: silence' },
+      { type: 'setAccess', what: 'saving', allowed: false },
+      { type: 'setAccess', what: 'menu', allowed: true },
+      { type: 'changeHp', amount: -10, canKnockOut: false },
+      { type: 'changeMp', actor: 'wren', amount: 5 },
+      { type: 'changeState', actor: 'wren', action: 'add', state: 'bracing' },
+      { type: 'openSave' },
+      { type: 'gameOver' },
+      { type: 'returnToTitle' },
+    ]);
+    expect(messages('Maps › Hollow › Stagehand')).toEqual([
+      "Commands FreeQuest doesn't have, kept as comments: Control variables (script or game data), Change victory music.",
+      "1 branch tests something FreeQuest can't; it now tests the switch “Imported: condition to redo”, which is never on.",
+    ]);
+  });
+
   it('reports what each list left out, once', async () => {
     const { messages } = await imported();
     expect(messages('Maps › Hollow › Keeper')).toEqual([
@@ -361,6 +413,7 @@ describe('music and sounds', () => {
       [
         'assets/audio/bgm/hollow.ogg',
         'assets/audio/bgm/title.ogg',
+        'assets/audio/bgs/wind.ogg',
         'assets/audio/se/chime.ogg',
         'assets/audio/se/cursor.ogg',
       ],
@@ -371,9 +424,7 @@ describe('music and sounds', () => {
       "audio/bgm/Fight.ogg is missing, so it's silent.",
       "audio/me/Victory.ogg is missing; there's only an .m4a, which FreeQuest doesn't play. Convert it to .ogg and add it in the editor's Assets.",
     ]);
-    expect(where('Maps › Hollow')).toContain(
-      'Its background sound (BGS) isn’t played; FreeQuest maps have music only.',
-    );
+    expect(map.backgroundSound).toBe('assets/audio/bgs/wind.ogg');
     expect((await openProject(target)).problems).toEqual([]);
   });
 });

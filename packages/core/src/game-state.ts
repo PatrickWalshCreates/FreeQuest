@@ -2,13 +2,17 @@ import type {
   Command,
   CommandOf,
   CompareOp,
-  Condition,
+  Direction,
+  IfCondition,
+  InputAction,
   Manifest,
   Operand,
   VariableOp,
+  VariableValue,
 } from '@freequest/schema';
 import type { Party } from './party.js';
 import type { ScreenEffects } from './screen.js';
+import type { MapScroll } from './scroll.js';
 
 /** Event flags that are on: map id → event id → flag ids (as saves store them). */
 export type FlagData = Record<string, Record<string, string[]>>;
@@ -139,7 +143,7 @@ export class GameState {
   }
 
   /** Apply `variable <op>= operand`. Division truncates toward zero; division by zero leaves the value unchanged. */
-  applyVariable(id: string, op: VariableOp, operand: Operand): void {
+  applyVariable(id: string, op: VariableOp, operand: Operand | number): void {
     const rhs = typeof operand === 'number' ? operand : this.getVariable(operand.variable);
     const lhs = this.getVariable(id);
     this.setVariable(id, applyOp(lhs, op, rhs));
@@ -207,6 +211,34 @@ export interface EventContext {
   readonly hideEvent?: (id: string, hidden: boolean) => void;
   /** Hide the player (or show them again). Without one it does nothing. */
   readonly hidePlayer?: (hidden: boolean) => void;
+  /** Whether an input action is held (the world's input this step). Without one, nothing is. */
+  readonly held?: (action: InputAction) => boolean;
+  /** The player ("player") or a map event by id, or null if there's no such character. */
+  readonly character?: (id: string) => CharacterPlace | null;
+  /** Put a map event on a tile (ignored outside the map). */
+  readonly placeEvent?: (id: string, x: number, y: number, direction?: Direction) => void;
+  /** The view's scroll away from the player. Without one, scrollMap does nothing. */
+  readonly scroll?: MapScroll;
+  /** Turn the menu or saving on or off. */
+  readonly setAccess?: (what: 'menu' | 'saving', allowed: boolean) => void;
+  /** Seconds played so far. */
+  readonly playSeconds?: () => number;
+  /** Uniform random in [0, 1), for random numbers. Defaults to Math.random. */
+  readonly random?: () => number;
+}
+
+/** Where a character stands and faces. */
+export interface CharacterPlace {
+  readonly x: number;
+  readonly y: number;
+  readonly direction: Direction;
+}
+
+/** A character an event names: "player", "this" (the event itself) or an event id. */
+export function characterFor(context: EventContext, target: string): CharacterPlace | null {
+  const id = target === 'this' ? context.self : target;
+  if (!id) return null;
+  return context.character?.(id) ?? null;
 }
 
 /** Starts move routes for the interpreter. */
@@ -219,6 +251,10 @@ export interface RouteHost {
 export interface AudioSink {
   playMusic(path: string | null): void;
   playSound(path: string): void;
+  /** A looping sound beside the music; null stops it. */
+  playBackgroundSound?(path: string | null): void;
+  /** Battle or victory music; null goes back to the project's own. */
+  setBattleMusic?(which: 'battle' | 'victory', path: string | null): void;
 }
 
 /** Accept either a full context or just a GameState. */
@@ -244,7 +280,7 @@ export function requireParty(context: EventContext, what: string): Party {
 }
 
 export function evaluateCondition(
-  condition: Condition,
+  condition: IfCondition,
   context: EventContext | GameState,
 ): boolean {
   const ctx = toEventContext(context);
@@ -272,12 +308,77 @@ export function evaluateCondition(
       const { map, event } = requireEvent(ctx, 'a flag condition');
       return ctx.state.getFlag(map, event, condition.flag) === condition.value;
     }
+    case 'held':
+      return ctx.held?.(condition.action) ?? false;
+    case 'facing':
+      return characterFor(ctx, condition.target)?.direction === condition.direction;
+    case 'actorState': {
+      const member = requireParty(ctx, 'an actor condition').member(condition.actor);
+      return (member?.hasState(condition.state) ?? false) === condition.value;
+    }
+    case 'actorStat': {
+      const member = requireParty(ctx, 'an actor condition').member(condition.actor);
+      const percent = (value: number, max: number) => (max > 0 ? (value * 100) / max : 0);
+      const value = !member
+        ? 0
+        : condition.stat === 'level'
+          ? member.level
+          : condition.stat === 'hp'
+            ? member.hp
+            : condition.stat === 'mp'
+              ? member.mp
+              : condition.stat === 'hpPercent'
+                ? percent(member.hp, member.maxHp)
+                : percent(member.mp, member.maxMp);
+      return compare(value, condition.op, condition.value);
+    }
+    case 'actorName':
+      return requireParty(ctx, 'an actor condition').actorName(condition.actor) === condition.name;
+  }
+}
+
+/** The number a setVariable value stands for, now. */
+export function variableValue(value: VariableValue, context: EventContext | GameState): number {
+  const ctx = toEventContext(context);
+  if (typeof value === 'number') return value;
+  if ('variable' in value) return ctx.state.getVariable(value.variable);
+  if ('random' in value) {
+    const { min, max } = value.random;
+    const low = Math.min(min, max);
+    const high = Math.max(min, max);
+    return low + Math.floor((ctx.random ?? Math.random)() * (high - low + 1));
+  }
+  const game = value.game;
+  switch (game.type) {
+    case 'gold':
+      return requireParty(ctx, 'gold').gold;
+    case 'steps':
+      return requireParty(ctx, 'steps').steps;
+    case 'partySize':
+      return requireParty(ctx, 'the party size').members.length;
+    case 'playTime':
+      return Math.floor(ctx.playSeconds?.() ?? 0);
+    case 'itemCount':
+      return requireParty(ctx, 'an item count').count(game.kind, game.id);
+    case 'actorStat': {
+      const member = requireParty(ctx, 'an actor stat').member(game.actor);
+      if (!member) return 0;
+      if (game.stat === 'level') return member.level;
+      if (game.stat === 'exp') return member.exp;
+      if (game.stat === 'hp') return member.hp;
+      if (game.stat === 'mp') return member.mp;
+      return member.stat(game.stat);
+    }
+    case 'position': {
+      const place = characterFor(ctx, game.target);
+      return place ? place[game.axis] : 0;
+    }
   }
 }
 
 /** True when every condition holds (and for an empty list). */
 export function evaluateConditions(
-  conditions: readonly Condition[],
+  conditions: readonly IfCondition[],
   context: EventContext | GameState,
 ): boolean {
   const ctx = toEventContext(context);

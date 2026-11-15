@@ -299,6 +299,7 @@ describe('schema forms', () => {
         flag: 'opened',
         common: 'rest',
         color: '#ffffff',
+        state: 'poison',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);

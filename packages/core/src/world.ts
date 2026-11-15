@@ -9,6 +9,7 @@ import {
   emptyDatabase,
 } from '@freequest/schema';
 import { ScreenEffects } from './screen.js';
+import { MapScroll } from './scroll.js';
 import { translateSave } from './save-renames.js';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
@@ -74,6 +75,16 @@ export class World {
   private runningEvent: EventInstance | null = null;
   /** Fades, tints, flashes and shakes: game-wide, kept across maps (and the tint in saves). */
   readonly screen = new ScreenEffects();
+  /** The view moved away from the player by events (in tiles), until the map changes. */
+  readonly scroll = new MapScroll();
+  /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
+  readonly access = { menu: true, saving: true };
+  /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
+  readonly battleMusic: { battle?: string | null; victory?: string | null } = {};
+  /** Seconds this game has been played on the map (and in what it opened), for events. */
+  playSeconds = 0;
+  /** This step's input, for events that test a key. */
+  private input: InputState | null = null;
   /** The party's version when the player last looked like its leader (a route's look lasts until it changes). */
   private lookedAtParty = -1;
   /** The character for the player when the party is empty. */
@@ -101,6 +112,8 @@ export class World {
   private pendingEncounter: string | null = null;
   /** Music set by an event; undefined = use the map's own. Cleared on map change. */
   private musicOverride: string | null | undefined = undefined;
+  /** A background sound set by an event, like the music. */
+  private backgroundOverride: string | null | undefined = undefined;
   private readonly sounds: string[] = [];
   private readonly audio: AudioSink = {
     playMusic: (path) => {
@@ -108,6 +121,14 @@ export class World {
     },
     playSound: (path) => {
       this.sounds.push(path);
+    },
+    playBackgroundSound: (path) => {
+      this.backgroundOverride = path;
+    },
+    setBattleMusic: (which, path) => {
+      if (path !== null) this.battleMusic[which] = path;
+      else if (which === 'battle') delete this.battleMusic.battle;
+      else delete this.battleMusic.victory;
     },
   };
 
@@ -185,6 +206,8 @@ export class World {
     this.pendingEncounter = null;
     this.encounterCountdown = this.rollEncounterSteps();
     this.musicOverride = undefined;
+    this.backgroundOverride = undefined;
+    this.scroll.reset();
   }
 
   /**
@@ -240,8 +263,20 @@ export class World {
    * running: saving happens from the menu. Parallel events aren't saved;
    * they start again from the top after loading.
    */
-  toSave(options: { game: string; playSeconds: number; savedAt?: Date }): SaveFile {
-    if (this.running) throw new Error('cannot save while an event is running');
+  toSave(options: {
+    game: string;
+    playSeconds: number;
+    savedAt?: Date;
+    /** Saving from an event's Open save screen: saved as if that event had finished. */
+    fromEvent?: boolean;
+  }): SaveFile {
+    if (this.running && !options.fromEvent) {
+      throw new Error('cannot save while an event is running');
+    }
+    const access = {
+      ...(this.access.menu ? {} : { menu: false }),
+      ...(this.access.saving ? {} : { saving: false }),
+    };
     const party = this.party.toData();
     return {
       formatVersion: SAVE_FORMAT_VERSION,
@@ -255,6 +290,8 @@ export class World {
       ...this.state.toData(),
       screen: this.screen.toData(),
       ...(this.playerHidden ? { playerHidden: true } : {}),
+      ...(Object.keys(access).length > 0 ? { access } : {}),
+      ...(Object.keys(this.battleMusic).length > 0 ? { battleMusic: { ...this.battleMusic } } : {}),
       party: {
         ...(party.looks ? { looks: party.looks } : {}),
         members: party.members,
@@ -292,6 +329,10 @@ export class World {
     });
     world.screen.loadData(save.screen);
     world.playerHidden = save.playerHidden ?? false;
+    world.access.menu = save.access?.menu ?? true;
+    world.access.saving = save.access?.saving ?? true;
+    Object.assign(world.battleMusic, save.battleMusic ?? {});
+    world.playSeconds = save.playSeconds;
     return world;
   }
 
@@ -599,8 +640,28 @@ export class World {
       hidePlayer: (hidden) => {
         this.player.hidden = hidden;
       },
+      held: (action) => this.input?.isDown(action) ?? false,
+      character: this.characterById,
+      placeEvent: this.placeEventById,
+      scroll: this.scroll,
+      setAccess: (what, allowed) => {
+        this.access[what] = allowed;
+      },
+      playSeconds: () => this.playSeconds,
+      random: this.random,
     };
   }
+
+  private readonly characterById = (id: string) =>
+    id === 'player' ? this.player : (this.events.find((e) => e.id === id) ?? null);
+
+  /** Put an event on a tile at once, cancelling its step (a spot off the map is ignored). */
+  private readonly placeEventById = (id: string, x: number, y: number, direction?: Direction) => {
+    const event = this.events.find((e) => e.id === id);
+    if (!event || !this.collision.inBounds(x, y)) return;
+    event.mover.placeAt(x, y);
+    if (direction) event.mover.face(direction);
+  };
 
   /** The context for the commands of one map event (so "this" in a route means it). */
   private contextFor(event: EventInstance | null): EventContext {
@@ -663,6 +724,13 @@ export class World {
   /** The music that should be playing on the map: an event's choice, else the map's, else none. */
   get music(): string | null {
     return this.musicOverride !== undefined ? this.musicOverride : (this.currentMap.music ?? null);
+  }
+
+  /** The background sound that should loop: an event's choice, else the map's, else none. */
+  get backgroundSound(): string | null {
+    return this.backgroundOverride !== undefined
+      ? this.backgroundOverride
+      : (this.currentMap.backgroundSound ?? null);
   }
 
   /** Sounds events asked for since the last call, in order. */
@@ -744,7 +812,10 @@ export class World {
 
   /** Advance the simulation by one fixed step of `dt` seconds. */
   step(dt: number, input: InputState): void {
+    this.input = input;
+    this.playSeconds += dt;
     this.screen.update(dt);
+    this.scroll.update(dt);
     // A party change (a new leader, a changed actor) ends a look a route gave the player.
     if (this.party.version !== this.lookedAtParty) {
       this.lookedAtParty = this.party.version;

@@ -33,6 +33,21 @@ More of what RPG Maker MZ games use, in FreeQuest itself and brought across by t
 - MZ's move route commands and page options import as these (all but scripts, opacity, blend
   mode and frequency).
 
+### Event commands
+
+- **Set variable** to a **random number** or **game data**: gold, steps, play time, party size,
+  items carried, a party member's stats, where the player or an event stands.
+- **If…** tests a **held key**, a character's **facing**, a party member's **state**, **level**,
+  **HP or MP**, and an actor's **name**.
+- New commands: **Place event**, **Scroll map**, **Change HP**, **Change MP**, **Change state**,
+  **Menu or saving on/off**, **Open save screen** (saving mid-event, as if it had finished),
+  **Game over**, **Back to title**, **Change battle music** (battles or victory) and **Background
+  sound**, a loop beside the music that maps can have too.
+- MZ's Control variables (random and game data), branches on buttons, facing, actors' states and
+  names, Set event location, Scroll map, Change HP/MP/state, save and menu access, Open save
+  screen, Game over, Return to title, battle and victory music and background sounds import as
+  these. Labels and jumps stay out: FreeQuest's commands are a tree.
+
 ## 0.4.0 (2026-11-14)
 
 Bring your RPG Maker MZ game across: the editor imports an MZ project into a new FreeQuest

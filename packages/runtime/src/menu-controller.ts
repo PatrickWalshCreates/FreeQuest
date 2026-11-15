@@ -68,6 +68,11 @@ export interface MenuControllerOptions {
   readonly random?: () => number;
   /** Called after a successful save (e.g. to play a sound). */
   readonly onSaved?: (slot: number) => void;
+  /**
+   * Only the save list, for an event's Open save screen: it saves even while
+   * saving is off, as if the event had finished, and closes when backed out of.
+   */
+  readonly saveOnly?: boolean;
 }
 
 const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Options', 'Quit'] as const;
@@ -75,7 +80,7 @@ const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Options', 'Quit
 const usableInMenu = (o: SkillEntry['occasion']) => o === 'always' || o === 'menu';
 
 export class MenuController {
-  private readonly stack: Screen[] = [{ kind: 'root', cursor: 0 }];
+  private readonly stack: Screen[];
   private feedback: string | null = null;
   private result: MenuOutcome | null = null;
   private readonly world: World;
@@ -84,6 +89,7 @@ export class MenuController {
   constructor(private readonly options: MenuControllerOptions) {
     this.world = options.world;
     this.random = options.random ?? Math.random;
+    this.stack = [{ kind: options.saveOnly ? 'save' : 'root', cursor: 0 }];
   }
 
   /** Back from the options screen, still on the root list. */
@@ -170,7 +176,11 @@ export class MenuController {
         return ROOT.map((label) => ({
           label,
           enabled:
-            label !== 'Skills' || this.party.members.some((m) => this.menuSkills(m).length > 0),
+            label === 'Skills'
+              ? this.party.members.some((m) => this.menuSkills(m).length > 0)
+              : label === 'Save'
+                ? this.world.access.saving
+                : true,
         }));
       case 'items':
         return this.carriedItems().map(({ entry, count }) => ({
@@ -402,6 +412,7 @@ export class MenuController {
       const save = this.world.toSave({
         game: this.options.game,
         playSeconds: this.options.playSeconds(),
+        ...(this.options.saveOnly ? { fromEvent: true } : {}),
       });
       this.options.saves.write(slot, save);
       this.feedback = `Saved to slot ${slot}.`;

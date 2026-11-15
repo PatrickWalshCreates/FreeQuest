@@ -1,6 +1,12 @@
 import type { CharacterSheet } from './character.js';
-import { type Command, type Operand, strayBreaks, walkCommands } from './command.js';
-import type { Condition } from './condition.js';
+import {
+  type Command,
+  type Operand,
+  type VariableValue,
+  strayBreaks,
+  walkCommands,
+} from './command.js';
+import type { IfCondition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
 import type { MoveStep } from './route.js';
@@ -49,10 +55,11 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     equipment: new Set(db.equipment.map((e) => e.id)),
     actor: new Set(db.actors.map((e) => e.id)),
     common: new Set(db.commonEvents.map((e) => e.id)),
+    state: new Set(db.states.map((e) => e.id)),
   };
   const checkEntry = (
     where: string,
-    kind: 'item' | 'equipment' | 'actor' | 'troop' | 'common',
+    kind: 'item' | 'equipment' | 'actor' | 'troop' | 'common' | 'state',
     id: string,
   ) => {
     if (dbIds && !dbIds[kind].has(id)) {
@@ -61,6 +68,18 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
   };
   const checkOperand = (where: string, operand: Operand) => {
     if (typeof operand === 'object') checkVariable(where, operand.variable);
+  };
+  const checkValue = (where: string, value: VariableValue) => {
+    if (typeof value !== 'object') return;
+    if ('variable' in value) checkVariable(where, value.variable);
+    else if ('random' in value) {
+      if (value.random.min > value.random.max) {
+        problems.push(
+          `${where}: random number from ${value.random.min} to ${value.random.max}, but the lowest is above the highest`,
+        );
+      }
+    } else if (value.game.type === 'itemCount') checkEntry(where, value.game.kind, value.game.id);
+    else if (value.game.type === 'actorStat') checkEntry(where, 'actor', value.game.actor);
   };
   const checks = {
     checkSwitch,
@@ -85,12 +104,17 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
         problems.push(`${where}: (${x}, ${y}) is outside map "${mapId}"`);
       }
     },
-    checkConditions(where: string, conditions: readonly Condition[]) {
+    checkConditions(where: string, conditions: readonly IfCondition[]) {
       for (const c of conditions) {
         if (c.type === 'switch') checkSwitch(where, c.switch);
         else if (c.type === 'variable') checkVariable(where, c.variable);
         else if (c.type === 'hasItem') checkEntry(where, c.kind, c.id);
-        else if (c.type === 'inParty') checkEntry(where, 'actor', c.actor);
+        else if (c.type === 'inParty' || c.type === 'actorStat' || c.type === 'actorName') {
+          checkEntry(where, 'actor', c.actor);
+        } else if (c.type === 'actorState') {
+          checkEntry(where, 'actor', c.actor);
+          checkEntry(where, 'state', c.state);
+        }
       }
     },
     /** Text codes in a message, speaker or choice label: their syntax and the ids they name. */
@@ -122,7 +146,7 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
             break;
           case 'setVariable':
             checkVariable(at, command.variable);
-            checkOperand(at, command.value);
+            checkValue(at, command.value);
             break;
           case 'transfer':
             checks.checkTile(at, command.map, command.x, command.y);
@@ -155,6 +179,19 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
             break;
           case 'moveRoute':
             checks.checkSteps(at, command.steps);
+            break;
+          case 'placeEvent':
+            checkOperand(at, command.x);
+            checkOperand(at, command.y);
+            break;
+          case 'changeHp':
+          case 'changeMp':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            checkOperand(at, command.amount);
+            break;
+          case 'changeState':
+            if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
+            checkEntry(at, 'state', command.state);
             break;
           case 'changeActor':
             checkEntry(at, 'actor', command.actor);

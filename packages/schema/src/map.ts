@@ -52,6 +52,8 @@ export const GameMap = Type.Object(
     encounters: Type.Optional(Encounters),
     /** Background music while on this map (loops). Omit for silence. */
     music: Type.Optional(RelativePath),
+    /** A sound looping beside the music while on this map (rain, wind; v9). Omit for none. */
+    backgroundSound: Type.Optional(RelativePath),
   },
   { title: 'FreeQuest map', additionalProperties: false },
 );

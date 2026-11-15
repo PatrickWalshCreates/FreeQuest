@@ -17,7 +17,8 @@ export interface AssetUse {
 /**
  * Every asset path the project's data refers to: tileset and character
  * images, enemy images, the iconset, map music, system music and sounds,
- * and playMusic / playSound commands in events and common events.
+ * and playMusic / playSound / background sound / battle music commands in
+ * events and common events.
  */
 export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
   const found = new Map<string, { kind: AssetKind; usedBy: string[] }>();
@@ -39,12 +40,16 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     if (!map) continue;
     const where = `map ${map.name || id}`;
     add(map.music, 'audio', `${where}: music`);
+    add(map.backgroundSound, 'audio', `${where}: background sound`);
     for (const event of map.events) {
       event.pages.forEach((page, i) =>
         walkCommands(page.commands, (command) => {
           const at = `${where}, event ${event.name} (page ${i + 1})`;
           if (command.type === 'playMusic') add(command.path, 'audio', at);
           if (command.type === 'playSound') add(command.path, 'audio', at);
+          if (command.type === 'playBackgroundSound' || command.type === 'changeBattleMusic') {
+            add(command.path, 'audio', at);
+          }
           if (command.type === 'message') add(command.face?.image, 'image', at);
           if (command.type === 'moveRoute') addStepSounds(command.steps, at);
         }),
@@ -74,6 +79,9 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
       const at = `common event ${common.name}`;
       if (command.type === 'playMusic') add(command.path, 'audio', at);
       if (command.type === 'playSound') add(command.path, 'audio', at);
+      if (command.type === 'playBackgroundSound' || command.type === 'changeBattleMusic') {
+        add(command.path, 'audio', at);
+      }
       if (command.type === 'message') add(command.face?.image, 'image', at);
       if (command.type === 'moveRoute') addStepSounds(command.steps, at);
     });

@@ -112,6 +112,16 @@ describe('BattleFlow', () => {
     expect(flow.fade).toBe(1);
   });
 
+  it('shows game over for an event’s Game over command', () => {
+    const { flow, hooks } = setup();
+    flow.showGameOver();
+    expect(flow.isGameOver).toBe(true);
+    expect(flow.fade).toBe(1);
+    expect(hooks.gameOver).toHaveBeenCalledOnce();
+    flow.reset();
+    expect(flow.isGameOver).toBe(false);
+  });
+
   it('continues the event with onLose when losing is allowed', async () => {
     const { world, flow, hooks, tick, flush, fightThrough } = setup();
     for (const m of world.party.members) m.setHp(0);

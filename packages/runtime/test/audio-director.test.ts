@@ -10,6 +10,17 @@ const audio = {
 };
 
 describe('musicFor', () => {
+  it('plays the battle and victory music events chose (null: none)', () => {
+    expect(musicFor('battle', audio, null, { battle: 'audio/boss.wav' })).toEqual({
+      path: 'audio/boss.wav',
+      loop: true,
+    });
+    expect(musicFor('victory', audio, null, { victory: null })).toBeNull();
+    expect(musicFor('victory', audio, null, { battle: 'audio/boss.wav' })?.path).toBe(
+      'audio/victory.wav',
+    );
+  });
+
   it('picks the system track for each screen and the map track on the map', () => {
     expect(musicFor('title', audio, null)).toEqual({ path: 'audio/title.wav', loop: true });
     expect(musicFor('battle', audio, 'audio/meadow.wav')).toEqual({

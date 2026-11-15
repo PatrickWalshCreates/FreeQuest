@@ -56,9 +56,13 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   transfers, battles with their win/escape/lose branches, shops, move routes, screen effects,
   waits, music and sounds; actors' new names and pictures, hiding the player, and move routes'
   jumps, diagonals, image changes, through, direction fix, animation, sounds and switches (from
-  0.5).
+  0.5). Also from 0.5: random numbers and game data in Control variables (items, gold, steps,
+  play time, party size, actor stats, positions), branches on buttons, facing, actors' states
+  and names, Set event location, Scroll map, Change HP/MP/state, save and menu access, Open save
+  screen, Game over, Return to title, battle and victory music changes and background sounds.
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
-  each map's music. Only `.ogg` files are copied (FreeQuest doesn't play `.m4a`).
+  each map's music and background sound. Only `.ogg` files are copied (FreeQuest doesn't play
+  `.m4a`).
 
 ## What doesn't (yet)
 
@@ -66,10 +70,11 @@ The report names each one and where it was. The usual ones:
 
 - **Scripts and plugins**: FreeQuest never runs JavaScript, so script calls, plugin commands
   and plugins stay as comments.
-- **Commands FreeQuest doesn't have**: pictures, battle animations and balloons, weather, moving
-  an event to a spot, labels and jumps, changing an actor's states or HP from an event,
-  background sounds, and more. They stay as comments saying "From MZ, not imported".
-- **Branches on things FreeQuest can't test** (a script, a button, an actor's state…) keep both
+- **Commands FreeQuest doesn't have**: pictures, battle animations and balloons, weather, labels
+  and jumps, swapping two events' places, and more. They stay as comments saying "From MZ, not
+  imported".
+- **Branches on things FreeQuest can't test** (a script, an actor's class or skill, buttons
+  other than the arrows, OK, Cancel and Menu…) keep both
   sides, but test the switch **Imported: condition to redo**, which is never on: the "else"
   side runs until you change the condition.
 - **Battle features**: TP, buffs and debuffs, counterattacks, extra attacks, and troops' battle

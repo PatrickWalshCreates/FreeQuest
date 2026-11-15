@@ -58,6 +58,7 @@ const ASSET_FIELDS = new Set<string>([
   'image',
   'music',
   'path',
+  'backgroundSound',
   'titleMusic',
   'battleMusic',
   'victoryMusic',

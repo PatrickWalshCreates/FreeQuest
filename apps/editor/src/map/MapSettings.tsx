@@ -14,7 +14,7 @@ interface Props {
 
 const DEFAULT_ENCOUNTER_STEPS = 30;
 
-/** Map-wide settings: tileset, size, music, random battles. */
+/** Map-wide settings: tileset, size, music, background sound, random battles. */
 export function MapSettings({ doc, path, map }: Props) {
   const [resizing, setResizing] = useState(false);
   const { audio } = useProjectLists(doc);
@@ -27,6 +27,9 @@ export function MapSettings({ doc, path, map }: Props) {
     change(label, (m) => (m.encounters ? { ...m, encounters: fn(m.encounters) } : m), coalesce);
 
   const musicOptions = [...new Set([...audio, ...(map.music ? [map.music] : [])])].sort();
+  const backgroundOptions = [
+    ...new Set([...audio, ...(map.backgroundSound ? [map.backgroundSound] : [])]),
+  ].sort();
 
   const usedBy = mapUsages(doc.project, map.id);
   const isStart = doc.project.manifest.data.start.map === map.id;
@@ -82,6 +85,27 @@ export function MapSettings({ doc, path, map }: Props) {
         >
           <option value="">(silence)</option>
           {musicOptions.map((p) => (
+            <option key={p} value={p}>
+              {p.replace(/^assets\//, '')}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="Background sound">
+        <select
+          value={map.backgroundSound ?? ''}
+          title="A sound that loops beside the music while on this map: rain, wind, a crowd"
+          onChange={(e) => {
+            const sound = e.target.value;
+            change('Change background sound', (m) => {
+              const { backgroundSound: _old, ...rest } = m;
+              return sound ? { ...rest, backgroundSound: sound } : rest;
+            });
+          }}
+        >
+          <option value="">(none)</option>
+          {backgroundOptions.map((p) => (
             <option key={p} value={p}>
               {p.replace(/^assets\//, '')}
             </option>

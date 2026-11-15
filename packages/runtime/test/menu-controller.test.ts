@@ -167,6 +167,37 @@ describe('MenuController', () => {
     expect(slot.kind === 'save' && slot.save.playSeconds).toBe(3725);
   });
 
+  it('greys out Save while events have turned saving off', () => {
+    const { world, menu } = setup();
+    world.access.saving = false;
+    expect(menu.state.options[4]).toMatchObject({ label: 'Save', enabled: false });
+  });
+
+  it('opens on the save list for an event, saving as if the event had finished', () => {
+    const { world, saves } = setup();
+    world.access.saving = false;
+    world.run([{ type: 'openSave' }]);
+    world.step(1 / 60, new ActionState());
+    const menu = new MenuController({
+      world,
+      saves,
+      game: manifest.id,
+      playSeconds: () => 5,
+      saveOnly: true,
+    });
+    expect(menu.state.screen).toBe('save');
+    const input = new ActionState();
+    input.press('confirm');
+    menu.update(input);
+    expect(menu.state.message).toBe('Saved to slot 1.');
+    input.endStep();
+    input.release('confirm');
+    input.press('cancel');
+    menu.update(input);
+    expect(menu.outcome).toBe('closed');
+    expect(saves.read(1).kind).toBe('save');
+  });
+
   it('reports a failed save instead of throwing', () => {
     const { world } = setup();
     const full = new SaveStore(

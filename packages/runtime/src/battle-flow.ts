@@ -98,6 +98,13 @@ export class BattleFlow {
     }
   }
 
+  /** Game over without a battle (an event's Game over command). */
+  showGameOver(): void {
+    this.current = null;
+    this.phase = { kind: 'over' };
+    this.hooks.gameOver();
+  }
+
   /** Back to idle (e.g. after a new game starts from the game-over screen). */
   reset(): void {
     this.phase = { kind: 'idle' };

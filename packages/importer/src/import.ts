@@ -175,16 +175,18 @@ export async function importMzProject(
       },
       events,
     );
-    // Map music (MZ's "autoplay" music; its background sounds FreeQuest doesn't have).
+    // Map music and background sound (when MZ plays them automatically).
     const bgm = asString(asRecord(map.raw['bgm'])['name']).trim();
     const music = map.raw['autoplayBgm'] === true ? await audio.sound('bgm', bgm, map.where) : null;
-    if (map.raw['autoplayBgs'] === true && asString(asRecord(map.raw['bgs'])['name']).trim()) {
-      report.missing(
-        map.where,
-        'Its background sound (BGS) isn’t played; FreeQuest maps have music only.',
-      );
-    }
-    map.data = { ...map.data, events: mapEvents, ...(music ? { music } : {}) };
+    const bgs = asString(asRecord(map.raw['bgs'])['name']).trim();
+    const backgroundSound =
+      map.raw['autoplayBgs'] === true && bgs ? await audio.sound('bgs', bgs, map.where) : null;
+    map.data = {
+      ...map.data,
+      events: mapEvents,
+      ...(music ? { music } : {}),
+      ...(backgroundSound ? { backgroundSound } : {}),
+    };
   }
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
   const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
