@@ -930,20 +930,33 @@ function drawFace(p: FacePalette, glad: boolean): Canvas {
   const hair = hex(p.hair);
   const dark = hex('#1e1a24');
   const clothes = hex(p.clothes);
-  // Shoulders and neck.
+  // Shoulders.
   ellipse(c, 24, 50, 19, 10, clothes);
-  c.rect(20, 34, 9, 8, shade);
   // Hair behind the head (Mira's falls to the shoulders).
   if (p.style === 'mira') {
     ellipse(c, 24, 22, 15, 15, hair);
     c.rect(9, 22, 6, 20, hair);
     c.rect(33, 22, 6, 20, hair);
   }
+  // The neck, in front of the hair behind the head.
+  c.rect(20, 34, 9, 8, shade);
   // Head, with a shaded jaw.
   ellipse(c, 24, 23, 11, 13, skin);
-  // Only the skin: on Mira the row also crosses her hair, which would get a light stripe.
+  // The jaw's edge: the lowest skin pixel of each column, shaded (only skin, never hair).
   const isSkin = (x: number, y: number) => c.get(x, y).every((v, i) => v === skin[i]);
-  for (let x = 15; x <= 33; x++) if (isSkin(x, 34)) c.set(x, 34, shade);
+  for (let x = 13; x <= 35; x++) {
+    for (let y = F - 1; y >= 24; y--) {
+      if (!isSkin(x, y)) continue;
+      c.set(x, y, shade);
+      break;
+    }
+  }
+  // A lone light pixel left between shaded ones (the chin's tip pokes one row lower).
+  const isShade = (x: number, y: number) => c.get(x, y).every((v, i) => v === shade[i]);
+  for (let y = 30; y < F - 1; y++)
+    for (let x = 14; x <= 34; x++)
+      if (isSkin(x, y) && isShade(x - 1, y) && isShade(x + 1, y) && isShade(x, y + 1))
+        c.set(x, y, shade);
   // Ears.
   c.rect(12, 22, 2, 5, shade);
   c.rect(35, 22, 2, 5, shade);
