@@ -941,7 +941,9 @@ function drawFace(p: FacePalette, glad: boolean): Canvas {
   }
   // Head, with a shaded jaw.
   ellipse(c, 24, 23, 11, 13, skin);
-  for (let x = 15; x <= 33; x++) if (c.get(x, 34)[3] > 0) c.set(x, 34, shade);
+  // Only the skin: on Mira the row also crosses her hair, which would get a light stripe.
+  const isSkin = (x: number, y: number) => c.get(x, y).every((v, i) => v === skin[i]);
+  for (let x = 15; x <= 33; x++) if (isSkin(x, 34)) c.set(x, 34, shade);
   // Ears.
   c.rect(12, 22, 2, 5, shade);
   c.rect(35, 22, 2, 5, shade);
