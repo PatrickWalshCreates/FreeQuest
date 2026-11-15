@@ -3,6 +3,7 @@ import { type Command, type Operand, strayBreaks, walkCommands } from './command
 import type { Condition } from './condition.js';
 import type { Database } from './database/checks.js';
 import type { Manifest } from './manifest.js';
+import type { MoveStep } from './route.js';
 import { EMPTY_TILE, type GameMap } from './map.js';
 import { parseTextCodes, textCodeReferences } from './text-codes.js';
 import type { Tileset } from './tileset.js';
@@ -66,6 +67,14 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     checkVariable,
     checkEntry,
     checkOperand,
+    /** Route steps that name a character or a switch (v9). */
+    checkSteps(where: string, steps: readonly MoveStep[]) {
+      steps.forEach((step, i) => {
+        if (step.type === 'character' && !ctx.characters.has(step.character)) {
+          problems.push(`${where} steps[${i}]: unknown character "${step.character}"`);
+        } else if (step.type === 'switch') checkSwitch(`${where} steps[${i}]`, step.switch);
+      });
+    },
     checkTile(where: string, mapId: string, x: number, y: number) {
       if (!mapIds.has(mapId)) {
         problems.push(`${where}: unknown map "${mapId}"`);
@@ -144,6 +153,9 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
           case 'callCommon':
             checkEntry(at, 'common', command.common);
             break;
+          case 'moveRoute':
+            checks.checkSteps(at, command.steps);
+            break;
           case 'changeActor':
             checkEntry(at, 'actor', command.actor);
             if (command.character !== undefined && !ctx.characters.has(command.character)) {
@@ -185,7 +197,7 @@ export function checkManifestReferences(ctx: ReferenceContext): string[] {
 /** References made by one map: its tileset, event graphics, flags and transfer targets. */
 export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[] {
   const problems: string[] = [];
-  const { checkConditions, checkEntry, checkCommands } = makeChecks(ctx, problems);
+  const { checkConditions, checkEntry, checkCommands, checkSteps } = makeChecks(ctx, problems);
   const file = `map "${map.id}"`;
   const tileset = ctx.tilesets.get(map.tileset);
   if (!tileset) problems.push(`${file}: unknown tileset "${map.tileset}"`);
@@ -213,6 +225,7 @@ export function checkMapReferences(map: GameMap, ctx: ReferenceContext): string[
       if (page.graphic && !ctx.characters.has(page.graphic.character)) {
         problems.push(`${where}: unknown character "${page.graphic.character}"`);
       }
+      if (page.movement?.type === 'route') checkSteps(`${where} movement`, page.movement.steps);
       checkCommands(page.commands, where);
     });
   }

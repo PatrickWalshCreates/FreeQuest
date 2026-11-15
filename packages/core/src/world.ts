@@ -74,8 +74,8 @@ export class World {
   private runningEvent: EventInstance | null = null;
   /** Fades, tints, flashes and shakes: game-wide, kept across maps (and the tint in saves). */
   readonly screen = new ScreenEffects();
-  /** Hidden by a hidePlayer command (or from the start); the player still walks. Saved. */
-  playerHidden: boolean;
+  /** The party's version when the player last looked like its leader (a route's look lasts until it changes). */
+  private lookedAtParty = -1;
   /** The character for the player when the party is empty. */
   private readonly fallbackCharacter: string;
   /** Interpreters of parallel pages, running alongside play (one per event). */
@@ -124,7 +124,8 @@ export class World {
       speed: manifest.player.speed,
     });
     this.playerSpeed = manifest.player.speed;
-    this.playerHidden = manifest.player.hidden ?? false;
+    this.player.hidden = manifest.player.hidden ?? false;
+    this.lookedAtParty = this.party.version;
     this.fallbackCharacter = manifest.player.character;
     // Assigned for the type checker; `enterMap` sets them for real.
     this.currentMap = map;
@@ -294,9 +295,21 @@ export class World {
     return world;
   }
 
-  /** The character the player shows as: the party leader's, or the project's player character. */
+  /**
+   * The character the player shows as: one a move route gave them (until the
+   * party changes), else the party leader's, else the project's player character.
+   */
   get playerCharacter(): string {
-    return this.party.members[0]?.character ?? this.fallbackCharacter;
+    return this.player.character ?? this.party.members[0]?.character ?? this.fallbackCharacter;
+  }
+
+  /** Hidden by a hidePlayer command, a route, or from the start; the player still walks. Saved. */
+  get playerHidden(): boolean {
+    return this.player.hidden;
+  }
+
+  set playerHidden(hidden: boolean) {
+    this.player.hidden = hidden;
   }
 
   /** Map size in pixels. */
@@ -584,7 +597,7 @@ export class World {
       screen: this.screen,
       hideEvent: this.hideEventById,
       hidePlayer: (hidden) => {
-        this.playerHidden = hidden;
+        this.player.hidden = hidden;
       },
     };
   }
@@ -606,7 +619,12 @@ export class World {
 
   /** What routes see: where the player is, and the world's random numbers. */
   private get surroundings(): RouteSurroundings {
-    return { player: this.player, random: this.random };
+    return {
+      player: this.player,
+      random: this.random,
+      playSound: (path) => this.audio.playSound(path),
+      setSwitch: (id, value) => this.state.setSwitch(id, value),
+    };
   }
 
   /**
@@ -727,6 +745,13 @@ export class World {
   /** Advance the simulation by one fixed step of `dt` seconds. */
   step(dt: number, input: InputState): void {
     this.screen.update(dt);
+    // A party change (a new leader, a changed actor) ends a look a route gave the player.
+    if (this.party.version !== this.lookedAtParty) {
+      this.lookedAtParty = this.party.version;
+      this.player.character = null;
+    }
+    this.player.idle(dt);
+    for (const event of this.currentEvents) event.mover.idle(dt);
     this.refreshEvents();
     // An event running at the start of this step owns this step's input, so
     // the confirm press that closes its last message can't start a new one.

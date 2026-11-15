@@ -94,8 +94,9 @@ export class EventInstance {
     this.refresh(context, true);
   }
 
+  /** Level with characters, and not walking through things (which others then walk through too). */
   get blocks(): boolean {
-    return this.page?.layer === 'same';
+    return this.page?.layer === 'same' && !this.mover.through;
   }
 
   /**
@@ -110,5 +111,11 @@ export class EventInstance {
     // that shows its open lid as another facing).
     const graphic = this.page?.graphic;
     if (!keepDirection || graphic?.fixed) this.direction = graphic?.direction ?? 'down';
+    // A new page brings its own look; the event running keeps what its route set.
+    if (!keepDirection) {
+      this.mover.resetLooks();
+      this.mover.stepAnimation = graphic?.stepping === true;
+      this.mover.through = this.page?.through === true;
+    }
   }
 }

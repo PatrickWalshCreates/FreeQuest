@@ -54,7 +54,9 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   movement; messages with faces, names, colours and pacing; choices, branches, loops; switches,
   variables and self switches (which become FreeQuest's event flags); gold, items, the party;
   transfers, battles with their win/escape/lose branches, shops, move routes, screen effects,
-  waits, music and sounds; actors' new names and pictures, and hiding the player (from 0.5).
+  waits, music and sounds; actors' new names and pictures, hiding the player, and move routes'
+  jumps, diagonals, image changes, through, direction fix, animation, sounds and switches (from
+  0.5).
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
   each map's music. Only `.ogg` files are copied (FreeQuest doesn't play `.m4a`).
 

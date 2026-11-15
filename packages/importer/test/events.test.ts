@@ -131,7 +131,12 @@ describe('importing events', () => {
           target: 'this',
           steps: [
             { type: 'move', direction: 'up' },
+            { type: 'jump', x: 0, y: 0 },
             { type: 'wait', seconds: 0.5 },
+            // No image hides it; an image shows it again, looking like that.
+            { type: 'hidden', on: true },
+            { type: 'character', character: 'lamplighters-2' },
+            { type: 'hidden', on: false },
           ],
           repeat: false,
           skipBlocked: true,
@@ -239,7 +244,6 @@ describe('importing events', () => {
     expect(messages('Maps › Hollow › Keeper')).toEqual([
       "Commands FreeQuest doesn't have, kept as comments: Script, Show balloon.",
       "1 branch tests something FreeQuest can't; it now tests the switch “Imported: condition to redo”, which is never on.",
-      "Move route steps FreeQuest doesn't have were left out: jump.",
     ]);
   });
 

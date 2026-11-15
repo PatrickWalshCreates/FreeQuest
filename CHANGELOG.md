@@ -23,6 +23,16 @@ More of what RPG Maker MZ games use, in FreeQuest itself and brought across by t
 - **Project settings → Player**: the character for an empty party, the walking speed and
   starting hidden.
 
+### Move routes
+
+- New steps: **diagonal moves**, **backward** (keeping the facing), **quarter turns**, **jump**
+  (on the spot or up to 8 tiles), **look like another character**, **walk through things**,
+  **keep facing**, **walking animation** on/off, **step in place**, **hide**/show, **play a
+  sound** and **set a switch**, under "More…" in the route editor.
+- Event pages can **step in place** (torches, fountains) and **walk through things**.
+- MZ's move route commands and page options import as these (all but scripts, opacity, blend
+  mode and frequency).
+
 ## 0.4.0 (2026-11-14)
 
 Bring your RPG Maker MZ game across: the editor imports an MZ project into a new FreeQuest

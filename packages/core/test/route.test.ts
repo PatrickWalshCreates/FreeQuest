@@ -234,3 +234,109 @@ describe('moveRoute command', () => {
     expect([...xs].sort()).toEqual([2, 3]);
   });
 });
+
+describe('route steps from 0.5', () => {
+  // '#' is a wall.
+  const map = CollisionMap.fromMap(makeMap(['.....', '..#..', '.....']), tileset);
+  const runSteps = (mover: GridMover, steps: MoveStep[], seconds = 3, extra = {}) => {
+    const runner = new RouteRunner(steps, { repeat: false, skipBlocked: true });
+    const surroundings = { ...around, ...extra };
+    for (let t = 0; t < seconds * 60 && !runner.isDone(mover); t++) {
+      runner.update(DT, mover, map, surroundings);
+    }
+    return runner;
+  };
+
+  it('moves diagonally past a corner, but not into a wall', () => {
+    // From (2, 0) down-left to (1, 1): the wall at (2, 1) is beside the way, (1, 0) is open.
+    const mover = new GridMover({ x: 2, y: 0, direction: 'down', speed: 4 });
+    runSteps(mover, [move('down-left')]);
+    expect([mover.x, mover.y, mover.direction]).toEqual([1, 1, 'left']);
+    // From (1, 0) down-right is the wall itself: it only turns.
+    const blocked = new GridMover({ x: 1, y: 0, direction: 'down', speed: 4 });
+    runSteps(blocked, [move('down-right')]);
+    expect([blocked.x, blocked.y, blocked.direction]).toEqual([1, 0, 'right']);
+  });
+
+  it('steps backward keeping its facing, and turns a quarter at a time', () => {
+    const mover = new GridMover({ x: 2, y: 2, direction: 'right', speed: 4 });
+    runSteps(mover, [move('backward'), { type: 'turn', direction: 'clockwise' }]);
+    expect([mover.x, mover.y, mover.direction]).toEqual([1, 2, 'down']);
+  });
+
+  it('jumps on the spot and over a wall, landing only on open tiles', () => {
+    const mover = new GridMover({ x: 2, y: 0, direction: 'down', speed: 4 });
+    const runner = new RouteRunner([{ type: 'jump', x: 0, y: 2 }], {
+      repeat: false,
+      skipBlocked: false,
+    });
+    runner.update(DT, mover, map, around);
+    runner.update(DT * 10, mover, map, around);
+    expect(mover.jumpHeight).toBeGreaterThan(0);
+    for (let t = 0; t < 120 && !runner.isDone(mover); t++) runner.update(DT, mover, map, around);
+    expect([mover.x, mover.y, mover.jumpHeight]).toEqual([2, 2, 0]);
+    // Onto the wall: it can't, so (not skipping) it waits.
+    const stuck = new GridMover({ x: 2, y: 0, direction: 'down', speed: 4 });
+    const blocked = new RouteRunner([{ type: 'jump', x: 0, y: 1 }], {
+      repeat: false,
+      skipBlocked: false,
+    });
+    for (let t = 0; t < 60; t++) blocked.update(DT, stuck, map, around);
+    expect([stuck.y, blocked.isDone(stuck)]).toEqual([0, false]);
+    const spot = new GridMover({ x: 0, y: 0, direction: 'down', speed: 4 });
+    runSteps(spot, [{ type: 'jump', x: 0, y: 0 }]);
+    expect([spot.x, spot.y]).toEqual([0, 0]);
+  });
+
+  it('walks through walls, keeps its facing, and changes how it looks', () => {
+    const mover = new GridMover({ x: 2, y: 0, direction: 'down', speed: 4 });
+    runSteps(mover, [
+      { type: 'through', on: true },
+      { type: 'fixFacing', on: true },
+      move('down'),
+      { type: 'turn', direction: 'left' },
+      { type: 'character', character: 'ghost' },
+      { type: 'hidden', on: true },
+      { type: 'walkAnimation', on: false },
+      { type: 'stepAnimation', on: true },
+    ]);
+    expect([mover.x, mover.y, mover.direction]).toEqual([2, 1, 'down']);
+    expect(mover).toMatchObject({
+      character: 'ghost',
+      hidden: true,
+      walkAnimation: false,
+      stepAnimation: true,
+    });
+    // Stepping in place animates while standing.
+    const before = mover.distanceWalked;
+    mover.idle(1);
+    expect(mover.distanceWalked).toBeGreaterThan(before);
+    expect(mover.isAnimating).toBe(true);
+    mover.resetLooks();
+    expect(mover).toMatchObject({
+      character: null,
+      hidden: false,
+      through: false,
+      facingFixed: false,
+    });
+  });
+
+  it('plays sounds and sets switches through the world', () => {
+    const sounds: string[] = [];
+    const switches: [string, boolean][] = [];
+    runSteps(
+      new GridMover({ x: 0, y: 0, direction: 'down', speed: 4 }),
+      [
+        { type: 'sound', path: 'assets/audio/step.wav' },
+        { type: 'switch', switch: 'door', value: true },
+      ],
+      1,
+      {
+        playSound: (p: string) => sounds.push(p),
+        setSwitch: (id: string, v: boolean) => switches.push([id, v]),
+      },
+    );
+    expect(sounds).toEqual(['assets/audio/step.wav']);
+    expect(switches).toEqual([['door', true]]);
+  });
+});

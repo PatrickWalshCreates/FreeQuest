@@ -563,12 +563,12 @@ class Converter {
     };
   }
 
-  #moveRoute(p: readonly unknown[]): Command[] {
+  async #moveRoute(p: readonly unknown[]): Promise<Command[]> {
     const who = asInt(p[0]);
     const target = who < 0 ? 'player' : who === 0 ? 'this' : this.scope.event(who);
     if (!target) return [this.#unsupported(205, `for missing event ${who}`)];
     const route = asRecord(p[1]);
-    const steps = this.routeSteps(route['list']);
+    const steps = await this.routeSteps(route['list']);
     if (steps.length === 0) return [];
     const repeat = route['repeat'] === true;
     return [
@@ -584,7 +584,7 @@ class Converter {
   }
 
   /** MZ move route commands as route steps; ones FreeQuest lacks are noted. */
-  routeSteps(list: unknown): MoveStep[] {
+  async routeSteps(list: unknown): Promise<MoveStep[]> {
     const steps: MoveStep[] = [];
     const MOVES: Readonly<Record<number, RouteDirection>> = {
       1: 'down',
@@ -595,13 +595,21 @@ class Converter {
       10: 'toward-player',
       11: 'away-from-player',
       12: 'forward',
+      5: 'down-left',
+      6: 'down-right',
+      7: 'up-left',
+      8: 'up-right',
+      13: 'backward',
     };
     const TURNS: Readonly<Record<number, TurnDirection>> = {
       16: 'down',
       17: 'left',
       18: 'right',
       19: 'up',
+      20: 'clockwise',
+      21: 'counterclockwise',
       22: 'around',
+      23: 'random',
       24: 'random',
       25: 'toward-player',
       26: 'away-from-player',
@@ -619,7 +627,29 @@ class Converter {
         const seconds = frames(asInt(params[0]));
         if (seconds > 0) steps.push({ type: 'wait', seconds: Math.min(60, seconds) });
       } else if (code === 29) steps.push({ type: 'speed', speed: moveSpeed(asInt(params[0], 4)) });
-      else Leftovers.count(this.left.routeSteps, ROUTE_NAMES[code] ?? `route command ${code}`);
+      else if (code === 14) {
+        const clamp8 = (n: number) => Math.max(-8, Math.min(8, n));
+        steps.push({ type: 'jump', x: clamp8(asInt(params[0])), y: clamp8(asInt(params[1])) });
+      } else if (code === 27 || code === 28) {
+        const n = asInt(params[0]);
+        if (n > 0)
+          steps.push({ type: 'switch', switch: this.ctx.switches.id(n), value: code === 27 });
+      } else if (ON_OFF_STEPS[code]) {
+        const [type, on] = ON_OFF_STEPS[code];
+        steps.push({ type, on });
+      } else if (code === 41) {
+        const character = await this.ctx.graphics.character(
+          asString(params[0]),
+          asInt(params[1]),
+          this.scope.where,
+        );
+        // MZ hides a character by giving it no image, and shows it by giving one back.
+        if (character) steps.push({ type: 'character', character }, { type: 'hidden', on: false });
+        else if (asString(params[0]) === '') steps.push({ type: 'hidden', on: true });
+      } else if (code === 44) {
+        const path = await this.#sound('se', params[0]);
+        if (path) steps.push({ type: 'sound', path });
+      } else Leftovers.count(this.left.routeSteps, ROUTE_NAMES[code] ?? `route command ${code}`);
     }
     return steps;
   }
@@ -648,6 +678,25 @@ class Converter {
     return this.ctx.audio.sound(folder, name, this.scope.where);
   }
 }
+
+/** MZ's on/off route commands and the steps they become. */
+const ON_OFF_STEPS: Readonly<
+  Record<
+    number,
+    readonly ['walkAnimation' | 'stepAnimation' | 'fixFacing' | 'through' | 'hidden', boolean]
+  >
+> = {
+  31: ['walkAnimation', true],
+  32: ['walkAnimation', false],
+  33: ['stepAnimation', true],
+  34: ['stepAnimation', false],
+  35: ['fixFacing', true],
+  36: ['fixFacing', false],
+  37: ['through', true],
+  38: ['through', false],
+  39: ['hidden', true],
+  40: ['hidden', false],
+};
 
 const ROUTE_NAMES: Readonly<Record<number, string>> = {
   5: 'diagonal moves',
@@ -771,7 +820,7 @@ async function convertPage(
   const converter = new Converter(ctx, scope);
   if (moveType === 3) {
     const route = asRecord(page['moveRoute']);
-    const steps = converter.routeSteps(route['list']);
+    const steps = await converter.routeSteps(route['list']);
     if (steps.length > 0) movement = { type: 'route', speed, pause, steps };
     if (route['repeat'] === false)
       converter.left.notes.add('Its own route walked once; FreeQuest page routes repeat.');
@@ -787,11 +836,13 @@ async function convertPage(
             character,
             direction,
             ...(page['directionFix'] === true ? { fixed: true } : {}),
+            ...(page['stepAnime'] === true ? { stepping: true } : {}),
           },
         }
       : {}),
     trigger: TRIGGERS[asInt(page['trigger'])] ?? 'action',
     layer: LAYERS[asInt(page['priorityType'], 1)] ?? 'same',
+    ...(page['through'] === true ? { through: true } : {}),
     ...(movement ? { movement } : {}),
     commands,
   };

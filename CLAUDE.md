@@ -115,7 +115,17 @@ Never the other way.
   `EventViews` interpolates them like the player (`remember()` before each logic step).
 - **Move routes** (`schema/route.ts`, `core/route.ts`): steps `move` / `turn` (fixed or
   `forward`, `around`, `random`, `toward-player`, `away-from-player`, worked out when the step
-  runs), `wait`, `speed`. `RouteRunner` walks any `GridMover`: one move per update at most (a
+  runs; v9 adds diagonals and `backward` for moves, `clockwise` / `counterclockwise` for turns),
+  `wait`, `speed`, and (v9) `jump` (x, y up to ±8; lands only on passable tiles; `jumpHeight`
+  arcs), `character` (look like), `through`, `fixFacing`, `walkAnimation`, `stepAnimation`,
+  `hidden`, `sound`, `switch` (through `RouteSurroundings.playSound` / `setSwitch`). These set
+  `GridMover` fields (`through`, `facingFixed`, `walkAnimation`, `stepAnimation`, `hidden`,
+  `character`; `isAnimating`, `idle(dt)` for stepping in place); `tryMove(dx, dy, facing)`
+  steps diagonally (its tile free and one side open) or without turning. A page change resets
+  an event's looks (`resetLooks`) to the page's (`graphic.stepping`, `page.through`, v9);
+  events walking through don't block. The player's route look lasts until the party changes,
+  and `World.playerHidden` is the player mover's `hidden`. Route steps' characters and switches
+  are checked (`checkSteps`), their sounds exported. `RouteRunner` walks any `GridMover`: one move per update at most (a
   repeating route of turns can't spin), blocked moves wait or are skipped, an optional pause
   after each move. The `moveRoute` command (target `player`, `this` = the event running it,
   or an event id) goes through `EventContext.routes` (`RouteHost`, the world) and returns a
@@ -1256,9 +1266,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      player as in MZ, Wolf's Gang's 26 actor changes come across. Faces aren't per actor in
      FreeQuest, so an image change takes only the map character. Project settings gained a
      Player section: character for an empty party, speed, starts hidden)
-  3. Move routes: change the character (`image` step), walk through things, keep facing,
-     walking/stepping animation on/off, jump, diagonal moves, step backward, play a sound,
-     set a switch [~350 steps in all; 164 image changes]. Same map v9.
+  3. ~~Move routes: change the character, through, keep facing, walking/stepping animation,
+     jump, diagonal moves, step backward, play a sound, set a switch; page stepping and
+     through~~ (done; every route step the samples use comes across except scripts, opacity,
+     blend and frequency; Wolf's Gang's "imported differently" fell from 145 to 38)
   4. Event commands and tests: variables from a random range or game data (gold, steps, play
      time, positions, party size, item counts, actor stats), moving an event to a spot
      (`placeEvent`), more branch tests (a key held, an actor's state, level or HP, a

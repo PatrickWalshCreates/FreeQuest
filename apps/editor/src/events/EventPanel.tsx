@@ -31,7 +31,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { type CommandActions, CommandList, listActions } from './CommandList.js';
-import { RouteSteps } from './RouteSteps.js';
+import { RouteChoicesContext, RouteSteps } from './RouteSteps.js';
 import { RenameIdButton } from '../RenameIdButton.js';
 import { ColorField } from '../forms/ColorField.js';
 import { CommandExtras } from './CommandExtras.js';
@@ -344,315 +344,361 @@ function EventEditor(props: {
   const characters = [...project.characters];
 
   if (!page) return null;
+  const routeChoices = {
+    characters: [...project.characters.entries()].map(([id, f]) => ({
+      id,
+      name: f.data?.name || id,
+    })),
+    switches: project.manifest.data.switches,
+    sounds: audio,
+  };
   return (
-    <section className="event-editor">
-      <div className="event-header">
-        <label className="field grow">
-          <span>Event name</span>
-          <input
-            value={event.name}
-            onChange={(e) => {
-              const name = e.target.value;
-              changeEvent('Rename event', (ev) => ({ ...ev, name }), `event-name:${event.id}`);
-            }}
-            onBlur={() => doc.endCoalescing()}
-          />
-        </label>
-        <button
-          title={`Copy this event, all pages included (${MOD}C on the map)`}
-          onClick={() => clipboard.set({ kind: 'event', event })}
-        >
-          Copy
-        </button>
-        <button
-          className="danger"
-          title="Delete this event (Delete key on the map)"
-          onClick={() => {
-            editMap(doc, path, 'Delete event', (m) => removeEvent(m, event.id));
-            onSelect(null);
-          }}
-        >
-          Delete
-        </button>
-      </div>
-      <p className="hint">
-        Id <code>{event.id}</code> at {event.x}, {event.y}. When several pages’ conditions hold, the
-        last one is used.{' '}
-        {mapData && (
-          <RenameIdButton
-            doc={doc}
-            kind="event"
-            id={`${mapData.id}/${event.id}`}
-            what="event"
-            onRenamed={(id) => onSelect(id)}
-          />
-        )}
-      </p>
-
-      <div className="page-tabs" role="tablist" aria-label="Pages">
-        {event.pages.map((_, i) => (
-          <button
-            key={i}
-            role="tab"
-            aria-selected={i === shownPage}
-            className={i === shownPage ? 'on' : undefined}
-            onClick={() => setPageIndex(i)}
-          >
-            {i + 1}
-          </button>
-        ))}
-        <span className="spacer" />
-        <button
-          title="Add a page"
-          onClick={() => {
-            changeEvent('Add page', addPage);
-            setPageIndex(event.pages.length);
-          }}
-        >
-          + Page
-        </button>
-        <button
-          title="Copy this page"
-          onClick={() => {
-            changeEvent('Copy page', (e) => duplicatePage(e, shownPage));
-            setPageIndex(shownPage + 1);
-          }}
-        >
-          Copy
-        </button>
-        <button
-          title="Move this page earlier"
-          aria-label="Move page earlier"
-          disabled={shownPage === 0}
-          onClick={() => {
-            changeEvent('Move page', (e) => movePage(e, shownPage, -1));
-            setPageIndex(shownPage - 1);
-          }}
-        >
-          ←
-        </button>
-        <button
-          title="Move this page later"
-          aria-label="Move page later"
-          disabled={shownPage === event.pages.length - 1}
-          onClick={() => {
-            changeEvent('Move page', (e) => movePage(e, shownPage, 1));
-            setPageIndex(shownPage + 1);
-          }}
-        >
-          →
-        </button>
-        <button
-          className="danger"
-          title="Delete this page"
-          disabled={event.pages.length === 1}
-          onClick={() => {
-            changeEvent('Delete page', (e) => removePage(e, shownPage));
-            setPageIndex(Math.max(0, shownPage - 1));
-          }}
-        >
-          Delete
-        </button>
-      </div>
-
-      <div className="page-settings">
-        <label className="field">
-          <span>Starts when</span>
-          <select
-            value={page.trigger}
-            onChange={(e) =>
-              changePage('Change trigger', (p) => ({
-                ...p,
-                trigger: e.target.value as EventTrigger,
-              }))
-            }
-          >
-            {TRIGGERS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Drawn</span>
-          <select
-            value={page.layer}
-            onChange={(e) =>
-              changePage('Change layer', (p) => ({ ...p, layer: e.target.value as EventLayer }))
-            }
-          >
-            {LAYERS.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="row">
+    <RouteChoicesContext.Provider value={routeChoices}>
+      <section className="event-editor">
+        <div className="event-header">
           <label className="field grow">
-            <span>Graphic</span>
-            <select
-              value={page.graphic?.character ?? ''}
+            <span>Event name</span>
+            <input
+              value={event.name}
               onChange={(e) => {
-                const character = e.target.value;
-                changePage('Change graphic', (p) => {
-                  const { graphic: old, ...rest } = p;
-                  return character
-                    ? {
-                        ...rest,
-                        graphic: {
-                          character,
-                          direction: old?.direction ?? 'down',
-                          ...(old?.fixed ? { fixed: true } : {}),
-                        },
-                      }
-                    : rest;
-                });
+                const name = e.target.value;
+                changeEvent('Rename event', (ev) => ({ ...ev, name }), `event-name:${event.id}`);
               }}
+              onBlur={() => doc.endCoalescing()}
+            />
+          </label>
+          <button
+            title={`Copy this event, all pages included (${MOD}C on the map)`}
+            onClick={() => clipboard.set({ kind: 'event', event })}
+          >
+            Copy
+          </button>
+          <button
+            className="danger"
+            title="Delete this event (Delete key on the map)"
+            onClick={() => {
+              editMap(doc, path, 'Delete event', (m) => removeEvent(m, event.id));
+              onSelect(null);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+        <p className="hint">
+          Id <code>{event.id}</code> at {event.x}, {event.y}. When several pages’ conditions hold,
+          the last one is used.{' '}
+          {mapData && (
+            <RenameIdButton
+              doc={doc}
+              kind="event"
+              id={`${mapData.id}/${event.id}`}
+              what="event"
+              onRenamed={(id) => onSelect(id)}
+            />
+          )}
+        </p>
+
+        <div className="page-tabs" role="tablist" aria-label="Pages">
+          {event.pages.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === shownPage}
+              className={i === shownPage ? 'on' : undefined}
+              onClick={() => setPageIndex(i)}
             >
-              <option value="">(invisible)</option>
-              {characters.map(([id, file]) => (
-                <option key={id} value={id}>
-                  {file.data?.name ?? id}
+              {i + 1}
+            </button>
+          ))}
+          <span className="spacer" />
+          <button
+            title="Add a page"
+            onClick={() => {
+              changeEvent('Add page', addPage);
+              setPageIndex(event.pages.length);
+            }}
+          >
+            + Page
+          </button>
+          <button
+            title="Copy this page"
+            onClick={() => {
+              changeEvent('Copy page', (e) => duplicatePage(e, shownPage));
+              setPageIndex(shownPage + 1);
+            }}
+          >
+            Copy
+          </button>
+          <button
+            title="Move this page earlier"
+            aria-label="Move page earlier"
+            disabled={shownPage === 0}
+            onClick={() => {
+              changeEvent('Move page', (e) => movePage(e, shownPage, -1));
+              setPageIndex(shownPage - 1);
+            }}
+          >
+            ←
+          </button>
+          <button
+            title="Move this page later"
+            aria-label="Move page later"
+            disabled={shownPage === event.pages.length - 1}
+            onClick={() => {
+              changeEvent('Move page', (e) => movePage(e, shownPage, 1));
+              setPageIndex(shownPage + 1);
+            }}
+          >
+            →
+          </button>
+          <button
+            className="danger"
+            title="Delete this page"
+            disabled={event.pages.length === 1}
+            onClick={() => {
+              changeEvent('Delete page', (e) => removePage(e, shownPage));
+              setPageIndex(Math.max(0, shownPage - 1));
+            }}
+          >
+            Delete
+          </button>
+        </div>
+
+        <div className="page-settings">
+          <label className="field">
+            <span>Starts when</span>
+            <select
+              value={page.trigger}
+              onChange={(e) =>
+                changePage('Change trigger', (p) => ({
+                  ...p,
+                  trigger: e.target.value as EventTrigger,
+                }))
+              }
+            >
+              {TRIGGERS.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>Facing</span>
+            <span>Drawn</span>
             <select
-              value={page.graphic?.direction ?? 'down'}
-              disabled={!page.graphic}
-              onChange={(e) => {
-                const direction = e.target.value as 'down' | 'left' | 'right' | 'up';
-                changePage('Change facing', (p) =>
-                  p.graphic ? { ...p, graphic: { ...p.graphic, direction } } : p,
-                );
-              }}
+              value={page.layer}
+              onChange={(e) =>
+                changePage('Change layer', (p) => ({ ...p, layer: e.target.value as EventLayer }))
+              }
             >
-              {(['down', 'left', 'right', 'up'] as const).map((d) => (
-                <option key={d} value={d}>
-                  {d}
+              {LAYERS.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
                 </option>
               ))}
             </select>
           </label>
+          <div className="row">
+            <label className="field grow">
+              <span>Graphic</span>
+              <select
+                value={page.graphic?.character ?? ''}
+                onChange={(e) => {
+                  const character = e.target.value;
+                  changePage('Change graphic', (p) => {
+                    const { graphic: old, ...rest } = p;
+                    return character
+                      ? {
+                          ...rest,
+                          graphic: {
+                            character,
+                            direction: old?.direction ?? 'down',
+                            ...(old?.fixed ? { fixed: true } : {}),
+                          },
+                        }
+                      : rest;
+                  });
+                }}
+              >
+                <option value="">(invisible)</option>
+                {characters.map(([id, file]) => (
+                  <option key={id} value={id}>
+                    {file.data?.name ?? id}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Facing</span>
+              <select
+                value={page.graphic?.direction ?? 'down'}
+                disabled={!page.graphic}
+                onChange={(e) => {
+                  const direction = e.target.value as 'down' | 'left' | 'right' | 'up';
+                  changePage('Change facing', (p) =>
+                    p.graphic ? { ...p, graphic: { ...p.graphic, direction } } : p,
+                  );
+                }}
+              >
+                {(['down', 'left', 'right', 'up'] as const).map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label
+            className="toggle"
+            title="For chests, signs and statues: keeps this facing instead of turning toward the player when talked to"
+          >
+            <input
+              type="checkbox"
+              checked={page.graphic?.fixed === true}
+              disabled={!page.graphic}
+              onChange={(e) => {
+                const fixed = e.target.checked;
+                changePage('Change fixed facing', (p) => {
+                  if (!p.graphic) return p;
+                  const { fixed: _old, ...graphic } = p.graphic;
+                  return { ...p, graphic: fixed ? { ...graphic, fixed: true } : graphic };
+                });
+              }}
+            />
+            Keep this facing (doesn’t turn to the player)
+          </label>
+          <label
+            className="toggle"
+            title="Animates all the time, e.g. a torch, a fountain or a flag"
+          >
+            <input
+              type="checkbox"
+              checked={page.graphic?.stepping === true}
+              disabled={!page.graphic}
+              onChange={(e) => {
+                const stepping = e.target.checked;
+                changePage('Change stepping', (p) => {
+                  if (!p.graphic) return p;
+                  const { stepping: _old, ...graphic } = p.graphic;
+                  return { ...p, graphic: stepping ? { ...graphic, stepping: true } : graphic };
+                });
+              }}
+            />
+            Steps in place
+          </label>
+          <label
+            className="toggle"
+            title="Passes through walls and characters, and they through it (ghosts, things in the air)"
+          >
+            <input
+              type="checkbox"
+              checked={page.through === true}
+              onChange={(e) => {
+                const through = e.target.checked;
+                changePage('Change walking through', (p) => {
+                  const { through: _old, ...rest } = p;
+                  return through ? { ...rest, through: true } : rest;
+                });
+              }}
+            />
+            Walks through things
+          </label>
+          <MovementFields
+            movement={page.movement}
+            onChange={(label, movement, coalesce) =>
+              editMap(
+                doc,
+                path,
+                label,
+                (m) =>
+                  updatePage(m, event.id, shownPage, (p) => {
+                    const { movement: _, ...rest } = p;
+                    return movement ? { ...rest, movement } : rest;
+                  }),
+                coalesce ? { coalesce: `${coalesce}:${event.id}:${shownPage}` } : {},
+              )
+            }
+          />
         </div>
-        <label
-          className="toggle"
-          title="For chests, signs and statues: keeps this facing instead of turning toward the player when talked to"
+
+        <h3>Conditions</h3>
+        {page.conditions.length === 0 ? (
+          <p className="hint">Always active (no conditions).</p>
+        ) : (
+          <ul className="conditions">
+            {page.conditions.map((c, i) => (
+              <li key={i}>
+                <button
+                  className="link-row"
+                  onClick={() => setEditingCondition({ index: i, value: c })}
+                  title="Edit this condition"
+                >
+                  {describeCondition(c, names)}
+                </button>
+                <button
+                  className="icon"
+                  aria-label="Remove condition"
+                  onClick={() =>
+                    changePage('Remove condition', (p) => ({
+                      ...p,
+                      conditions: p.conditions.filter((_, j) => j !== i),
+                    }))
+                  }
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          className="small"
+          onClick={() =>
+            setEditingCondition({
+              index: null,
+              value: defaultFor(CONDITION_SCHEMA, ctx.pick) as Condition,
+            })
+          }
         >
-          <input
-            type="checkbox"
-            checked={page.graphic?.fixed === true}
-            disabled={!page.graphic}
-            onChange={(e) => {
-              const fixed = e.target.checked;
-              changePage('Change fixed facing', (p) => {
-                if (!p.graphic) return p;
-                const { fixed: _old, ...graphic } = p.graphic;
-                return { ...p, graphic: fixed ? { ...graphic, fixed: true } : graphic };
-              });
+          + Condition
+        </button>
+
+        <h3>Commands</h3>
+        <CommandList
+          key={shownPage}
+          commands={page.commands}
+          ctx={ctx}
+          names={names}
+          actions={commands}
+          extra={(command, setCommand) => (
+            <CommandExtras doc={doc} command={command} setCommand={setCommand} />
+          )}
+        />
+
+        {editingCondition && (
+          <ValueDialog
+            title={editingCondition.index === null ? 'Add condition' : 'Edit condition'}
+            schema={CONDITION_SCHEMA}
+            initial={editingCondition.value}
+            ctx={ctx}
+            validate={conditionProblem}
+            variantName={(label) => CONDITION_NAMES[label as Condition['type']] ?? label}
+            okLabel={editingCondition.index === null ? 'Add' : 'Save'}
+            onClose={() => setEditingCondition(null)}
+            onOk={(condition) => {
+              const index = editingCondition.index;
+              changePage(index === null ? 'Add condition' : 'Edit condition', (p) => ({
+                ...p,
+                conditions:
+                  index === null
+                    ? [...p.conditions, condition]
+                    : p.conditions.map((c, j) => (j === index ? condition : c)),
+              }));
+              setEditingCondition(null);
             }}
           />
-          Keep this facing (doesn’t turn to the player)
-        </label>
-        <MovementFields
-          movement={page.movement}
-          onChange={(label, movement, coalesce) =>
-            editMap(
-              doc,
-              path,
-              label,
-              (m) =>
-                updatePage(m, event.id, shownPage, (p) => {
-                  const { movement: _, ...rest } = p;
-                  return movement ? { ...rest, movement } : rest;
-                }),
-              coalesce ? { coalesce: `${coalesce}:${event.id}:${shownPage}` } : {},
-            )
-          }
-        />
-      </div>
-
-      <h3>Conditions</h3>
-      {page.conditions.length === 0 ? (
-        <p className="hint">Always active (no conditions).</p>
-      ) : (
-        <ul className="conditions">
-          {page.conditions.map((c, i) => (
-            <li key={i}>
-              <button
-                className="link-row"
-                onClick={() => setEditingCondition({ index: i, value: c })}
-                title="Edit this condition"
-              >
-                {describeCondition(c, names)}
-              </button>
-              <button
-                className="icon"
-                aria-label="Remove condition"
-                onClick={() =>
-                  changePage('Remove condition', (p) => ({
-                    ...p,
-                    conditions: p.conditions.filter((_, j) => j !== i),
-                  }))
-                }
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <button
-        className="small"
-        onClick={() =>
-          setEditingCondition({
-            index: null,
-            value: defaultFor(CONDITION_SCHEMA, ctx.pick) as Condition,
-          })
-        }
-      >
-        + Condition
-      </button>
-
-      <h3>Commands</h3>
-      <CommandList
-        key={shownPage}
-        commands={page.commands}
-        ctx={ctx}
-        names={names}
-        actions={commands}
-        extra={(command, setCommand) => (
-          <CommandExtras doc={doc} command={command} setCommand={setCommand} />
         )}
-      />
-
-      {editingCondition && (
-        <ValueDialog
-          title={editingCondition.index === null ? 'Add condition' : 'Edit condition'}
-          schema={CONDITION_SCHEMA}
-          initial={editingCondition.value}
-          ctx={ctx}
-          validate={conditionProblem}
-          variantName={(label) => CONDITION_NAMES[label as Condition['type']] ?? label}
-          okLabel={editingCondition.index === null ? 'Add' : 'Save'}
-          onClose={() => setEditingCondition(null)}
-          onOk={(condition) => {
-            const index = editingCondition.index;
-            changePage(index === null ? 'Add condition' : 'Edit condition', (p) => ({
-              ...p,
-              conditions:
-                index === null
-                  ? [...p.conditions, condition]
-                  : p.conditions.map((c, j) => (j === index ? condition : c)),
-            }));
-            setEditingCondition(null);
-          }}
-        />
-      )}
-    </section>
+      </section>
+    </RouteChoicesContext.Provider>
   );
 }

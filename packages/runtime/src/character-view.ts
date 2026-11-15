@@ -10,6 +10,10 @@ export interface CharacterPose {
   readonly direction: Direction;
   readonly isMoving: boolean;
   readonly distanceWalked: number;
+  /** Legs moving (walking with the animation on, or stepping in place); default: while moving. */
+  readonly isAnimating?: boolean;
+  /** Tiles above the ground, mid-jump. */
+  readonly jumpHeight?: number;
 }
 
 /** A character sheet with its image cut into frames, row by row. */
@@ -54,11 +58,15 @@ export class CharacterView {
     tileHeight: number,
   ): void {
     const { walkCycle, idleFrame } = this.graphic.sheet;
-    const column = pose.isMoving
-      ? (walkCycle[Math.floor(pose.distanceWalked * FRAMES_PER_TILE) % walkCycle.length] ??
-        idleFrame)
-      : idleFrame;
+    const column =
+      (pose.isAnimating ?? pose.isMoving)
+        ? (walkCycle[Math.floor(pose.distanceWalked * FRAMES_PER_TILE) % walkCycle.length] ??
+          idleFrame)
+        : idleFrame;
     this.sprite.texture = this.frameFor(pose.direction, column);
-    this.sprite.position.set((realX + 0.5) * tileWidth, (realY + 1) * tileHeight);
+    this.sprite.position.set(
+      (realX + 0.5) * tileWidth,
+      (realY + 1 - (pose.jumpHeight ?? 0)) * tileHeight,
+    );
   }
 }

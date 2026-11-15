@@ -754,9 +754,29 @@
                           {
                             "type": "string",
                             "const": "away-from-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "backward"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down-left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down-right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up-left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up-right"
                           }
                         ],
-                        "description": "forward: the way the character faces; the player ones are worked out at the time."
+                        "description": "forward: the way the character faces; backward: away from it, still facing it; the four diagonals move one tile both ways (v9); the player ones are worked out at the time."
                       }
                     },
                     "required": ["type", "direction"]
@@ -791,6 +811,14 @@
                           {
                             "type": "string",
                             "const": "around"
+                          },
+                          {
+                            "type": "string",
+                            "const": "clockwise"
+                          },
+                          {
+                            "type": "string",
+                            "const": "counterclockwise"
                           },
                           {
                             "type": "string",
@@ -843,6 +871,159 @@
                       }
                     },
                     "required": ["type", "speed"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Jump to a tile nearby, or on the spot (0, 0) (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "jump"
+                      },
+                      "x": {
+                        "type": "integer",
+                        "description": "Tiles to the right (left if negative).",
+                        "maximum": 8,
+                        "minimum": -8
+                      },
+                      "y": {
+                        "type": "integer",
+                        "description": "Tiles down (up if negative).",
+                        "maximum": 8,
+                        "minimum": -8
+                      }
+                    },
+                    "required": ["type", "x", "y"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Look like another character from here on (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "character"
+                      },
+                      "character": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "character"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk through walls and characters, or stop doing so (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "through"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Keep facing one way while moving and turning, or stop (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "fixFacing"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Animate the legs while walking (on by default) (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "walkAnimation"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Keep stepping in place even when standing (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "stepAnimation"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Become invisible (still there), or visible again (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "hidden"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Play a sound (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "sound"
+                      },
+                      "path": {
+                        "type": "string",
+                        "description": "Path relative to the project root, using \"/\" separators.",
+                        "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                      }
+                    },
+                    "required": ["type", "path"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Turn a switch on or off (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "switch"
+                      },
+                      "switch": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "switch", "value"]
                   }
                 ]
               },
@@ -1499,6 +1680,9 @@
                     },
                     "fixed": {
                       "type": "boolean"
+                    },
+                    "stepping": {
+                      "type": "boolean"
                     }
                   },
                   "required": ["character", "direction"]
@@ -1621,9 +1805,29 @@
                                       {
                                         "type": "string",
                                         "const": "away-from-player"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "backward"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "down-left"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "down-right"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "up-left"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "up-right"
                                       }
                                     ],
-                                    "description": "forward: the way the character faces; the player ones are worked out at the time."
+                                    "description": "forward: the way the character faces; backward: away from it, still facing it; the four diagonals move one tile both ways (v9); the player ones are worked out at the time."
                                   }
                                 },
                                 "required": ["type", "direction"]
@@ -1658,6 +1862,14 @@
                                       {
                                         "type": "string",
                                         "const": "around"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "clockwise"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "counterclockwise"
                                       },
                                       {
                                         "type": "string",
@@ -1710,6 +1922,159 @@
                                   }
                                 },
                                 "required": ["type", "speed"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Jump to a tile nearby, or on the spot (0, 0) (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "jump"
+                                  },
+                                  "x": {
+                                    "type": "integer",
+                                    "description": "Tiles to the right (left if negative).",
+                                    "maximum": 8,
+                                    "minimum": -8
+                                  },
+                                  "y": {
+                                    "type": "integer",
+                                    "description": "Tiles down (up if negative).",
+                                    "maximum": 8,
+                                    "minimum": -8
+                                  }
+                                },
+                                "required": ["type", "x", "y"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Look like another character from here on (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "character"
+                                  },
+                                  "character": {
+                                    "type": "string",
+                                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                                  }
+                                },
+                                "required": ["type", "character"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Walk through walls and characters, or stop doing so (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "through"
+                                  },
+                                  "on": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "on"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Keep facing one way while moving and turning, or stop (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "fixFacing"
+                                  },
+                                  "on": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "on"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Animate the legs while walking (on by default) (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "walkAnimation"
+                                  },
+                                  "on": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "on"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Keep stepping in place even when standing (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "stepAnimation"
+                                  },
+                                  "on": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "on"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Become invisible (still there), or visible again (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "hidden"
+                                  },
+                                  "on": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "on"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Play a sound (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "sound"
+                                  },
+                                  "path": {
+                                    "type": "string",
+                                    "description": "Path relative to the project root, using \"/\" separators.",
+                                    "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                                  }
+                                },
+                                "required": ["type", "path"]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "description": "Turn a switch on or off (v9).",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "switch"
+                                  },
+                                  "switch": {
+                                    "type": "string",
+                                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                                  },
+                                  "value": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["type", "switch", "value"]
                               }
                             ]
                           },
@@ -1719,6 +2084,9 @@
                       "required": ["type", "speed", "pause", "steps"]
                     }
                   ]
+                },
+                "through": {
+                  "type": "boolean"
                 },
                 "trigger": {
                   "anyOf": [

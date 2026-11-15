@@ -231,6 +231,14 @@ the character used when the party is empty, and the walking speed.
 - **Move route** (a command) walks the player, the event itself or any event on the map along a
   route, for cutscenes: a guard stepping aside, the hero walking to the door. Tick **Wait until
   done** to finish the walk before the next command.
+- Routes can do more than walk: diagonal moves, **Backward** (stepping back while still facing
+  forward), quarter turns, and under **More…**: **Jump** (on the spot, or up to 8 tiles, landing
+  only where there's room), **Look like a character** (a costume change, a statue coming to
+  life), **Walk through things**, **Keep facing**, **Walking animation** off (sliding),
+  **Step in place**, **Hide**, **Play a sound** and **Set a switch**. Changes to how an event
+  looks last until its page changes; the player's until the party changes.
+- On a page, **Steps in place** animates a graphic all the time (torches, fountains, flags) and
+  **Walks through things** lets the event pass walls and characters (and them pass it).
 - **Trigger: Parallel** runs a page's commands over and over alongside play: a sound now and then,
   a timer, a switch that flips. If one shows a message, it waits until nothing else is running.
 - **Trigger: Touch** on an NPC that walks toward the player makes a chaser: when it reaches the

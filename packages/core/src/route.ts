@@ -1,6 +1,6 @@
 import type { MoveStep, RouteDirection, TurnDirection } from '@freequest/schema';
 import type { Passability } from './collision.js';
-import { DIRECTIONS, type Direction } from './direction.js';
+import { DIRECTIONS, DIRECTION_DELTA, type Direction } from './direction.js';
 import type { GridMover, MoveHooks } from './grid-mover.js';
 
 const OPPOSITE: Readonly<Record<Direction, Direction>> = {
@@ -10,10 +10,35 @@ const OPPOSITE: Readonly<Record<Direction, Direction>> = {
   right: 'left',
 };
 
+const CLOCKWISE: Readonly<Record<Direction, Direction>> = {
+  up: 'right',
+  right: 'down',
+  down: 'left',
+  left: 'up',
+};
+const COUNTERCLOCKWISE: Readonly<Record<Direction, Direction>> = {
+  up: 'left',
+  left: 'down',
+  down: 'right',
+  right: 'up',
+};
+
+/** Diagonal moves: their steps across and down. */
+const DIAGONALS: Readonly<Record<string, { dx: number; dy: number }>> = {
+  'up-left': { dx: -1, dy: -1 },
+  'up-right': { dx: 1, dy: -1 },
+  'down-left': { dx: -1, dy: 1 },
+  'down-right': { dx: 1, dy: 1 },
+};
+
 /** What a route needs to know about the world around the character it moves. */
 export interface RouteSurroundings {
   readonly player: { readonly x: number; readonly y: number };
   readonly random: () => number;
+  /** Plays a route's sound (silent without one). */
+  readonly playSound?: (path: string) => void;
+  /** Sets a switch for a route's switch step (ignored without one). */
+  readonly setSwitch?: (id: string, value: boolean) => void;
 }
 
 export interface RouteOptions {
@@ -34,7 +59,10 @@ function towardPlayer(mover: GridMover, around: RouteSurroundings): Direction | 
   return dy > 0 ? 'down' : 'up';
 }
 
-/** A route direction worked out now, for `mover`. */
+/**
+ * A route direction worked out now, for `mover` (one of the four ways;
+ * diagonals and backward are moves of their own, see `RouteRunner`).
+ */
 export function resolveDirection(
   direction: RouteDirection | TurnDirection,
   mover: GridMover,
@@ -44,7 +72,18 @@ export function resolveDirection(
     case 'forward':
       return mover.direction;
     case 'around':
+    case 'backward':
       return OPPOSITE[mover.direction];
+    case 'clockwise':
+      return CLOCKWISE[mover.direction];
+    case 'counterclockwise':
+      return COUNTERCLOCKWISE[mover.direction];
+    case 'up-left':
+    case 'down-left':
+      return 'left';
+    case 'up-right':
+    case 'down-right':
+      return 'right';
     case 'random':
       return DIRECTIONS[Math.floor(around.random() * DIRECTIONS.length)] ?? mover.direction;
     case 'toward-player':
@@ -117,32 +156,57 @@ export class RouteRunner {
       const step = this.steps[this.index];
       if (!step) return;
       switch (step.type) {
-        case 'move': {
-          const direction = resolveDirection(step.direction, mover, around);
-          let offered = false;
+        case 'move':
+        case 'jump': {
           const { x, y } = mover;
-          mover.update(
-            time,
-            passability,
-            () => {
-              if (offered) return null;
-              offered = true;
-              return direction;
-            },
-            hooks,
-          );
-          const started = mover.isMoving || mover.x !== x || mover.y !== y;
-          if (started) {
+          if (!this.startMove(step, mover, passability, around, hooks)) {
+            if (!this.options.skipBlocked) return;
+            this.index++;
+            break;
+          }
+          if (mover.isMoving) mover.update(time, passability, () => null, hooks);
+          if (mover.isMoving || mover.x !== x || mover.y !== y || step.type === 'jump') {
             this.index++;
             this.moved = true;
             return;
           }
-          if (!this.options.skipBlocked) return;
           this.index++;
           break;
         }
         case 'turn':
-          mover.direction = resolveDirection(step.direction, mover, around);
+          mover.face(resolveDirection(step.direction, mover, around));
+          this.index++;
+          break;
+        case 'character':
+          mover.character = step.character;
+          this.index++;
+          break;
+        case 'through':
+          mover.through = step.on;
+          this.index++;
+          break;
+        case 'fixFacing':
+          mover.facingFixed = step.on;
+          this.index++;
+          break;
+        case 'walkAnimation':
+          mover.walkAnimation = step.on;
+          this.index++;
+          break;
+        case 'stepAnimation':
+          mover.stepAnimation = step.on;
+          this.index++;
+          break;
+        case 'hidden':
+          mover.hidden = step.on;
+          this.index++;
+          break;
+        case 'sound':
+          around.playSound?.(step.path);
+          this.index++;
+          break;
+        case 'switch':
+          around.setSwitch?.(step.switch, step.value);
           this.index++;
           break;
         case 'wait':
@@ -155,5 +219,31 @@ export class RouteRunner {
           break;
       }
     }
+  }
+
+  /** Start a move or jump step; false when it's blocked. */
+  private startMove(
+    step: Extract<MoveStep, { type: 'move' | 'jump' }>,
+    mover: GridMover,
+    passability: Passability,
+    around: RouteSurroundings,
+    hooks?: MoveHooks,
+  ): boolean {
+    if (step.type === 'jump') return mover.jump(step.x, step.y, passability);
+    const diagonal = DIAGONALS[step.direction];
+    if (diagonal) {
+      const facing = resolveDirection(step.direction, mover, around);
+      return mover.tryMove(diagonal.dx, diagonal.dy, facing, passability, hooks);
+    }
+    const direction = resolveDirection(step.direction, mover, around);
+    const { dx, dy } = DIRECTION_DELTA[direction];
+    // Backward keeps the facing; the others turn first.
+    return mover.tryMove(
+      dx,
+      dy,
+      step.direction === 'backward' ? null : direction,
+      passability,
+      hooks,
+    );
   }
 }

@@ -528,7 +528,16 @@ const ARROWS: Readonly<Record<string, string>> = {
   random: 'random',
   'toward-player': 'toward player',
   'away-from-player': 'away from player',
+  backward: 'backward',
+  'down-left': '↙',
+  'down-right': '↘',
+  'up-left': '↖',
+  'up-right': '↗',
+  clockwise: '↻',
+  counterclockwise: '↺',
 };
+
+const onOff = (on: boolean) => (on ? 'on' : 'off');
 
 /** One route step, short: "↑", "turn ←", "wait 1 s", "speed 6". */
 export function describeStep(step: MoveStep): string {
@@ -541,8 +550,28 @@ export function describeStep(step: MoveStep): string {
       return `wait ${step.seconds} s`;
     case 'speed':
       return `speed ${step.speed}`;
+    case 'jump':
+      return step.x === 0 && step.y === 0 ? 'jump' : `jump ${signed(step.x)},${signed(step.y)}`;
+    case 'character':
+      return `look like ${step.character}`;
+    case 'through':
+      return `through ${onOff(step.on)}`;
+    case 'fixFacing':
+      return `fix facing ${onOff(step.on)}`;
+    case 'walkAnimation':
+      return `walk animation ${onOff(step.on)}`;
+    case 'stepAnimation':
+      return `stepping ${onOff(step.on)}`;
+    case 'hidden':
+      return step.on ? 'hide' : 'show';
+    case 'sound':
+      return `sound ${step.path.split('/').pop() ?? step.path}`;
+    case 'switch':
+      return `switch ${step.switch} ${onOff(step.value)}`;
   }
 }
+
+const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 /** A route, short: runs of the same step are counted ("↑ ×3, wait 1 s, ←"). */
 export function describeRoute(steps: readonly MoveStep[]): string {

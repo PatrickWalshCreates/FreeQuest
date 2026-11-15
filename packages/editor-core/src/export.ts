@@ -1,7 +1,7 @@
 // Turning a project into the files a finished game needs: every data file,
 // and exactly the images and sounds the data refers to, checked first so an
 // export never ships a game that fails to start.
-import { SOUND_KEYS, walkCommands } from '@freequest/schema';
+import { type MoveStep, SOUND_KEYS, walkCommands } from '@freequest/schema';
 import { MANIFEST_PATH, type OpenedProject, type Problem, allFiles } from './open-project.js';
 import type { ProjectFs } from './project-fs.js';
 import { utf8Length } from './utf8.js';
@@ -28,6 +28,10 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     found.set(path, entry);
   };
 
+  // Sounds played by move route steps (v9).
+  const addStepSounds = (steps: readonly MoveStep[], at: string) => {
+    for (const step of steps) if (step.type === 'sound') add(step.path, 'audio', at);
+  };
   for (const [id, file] of project.tilesets) add(file.data?.image, 'image', `tileset ${id}`);
   for (const [id, file] of project.characters) add(file.data?.image, 'image', `character ${id}`);
   for (const [id, file] of project.maps) {
@@ -42,8 +46,14 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
           if (command.type === 'playMusic') add(command.path, 'audio', at);
           if (command.type === 'playSound') add(command.path, 'audio', at);
           if (command.type === 'message') add(command.face?.image, 'image', at);
+          if (command.type === 'moveRoute') addStepSounds(command.steps, at);
         }),
       );
+      event.pages.forEach((page, i) => {
+        if (page.movement?.type === 'route') {
+          addStepSounds(page.movement.steps, `${where}, event ${event.name} (page ${i + 1}) route`);
+        }
+      });
     }
   }
 
@@ -65,6 +75,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
       if (command.type === 'playMusic') add(command.path, 'audio', at);
       if (command.type === 'playSound') add(command.path, 'audio', at);
       if (command.type === 'message') add(command.face?.image, 'image', at);
+      if (command.type === 'moveRoute') addStepSounds(command.steps, at);
     });
   }
   return new Map([...found].sort(([a], [b]) => a.localeCompare(b)));

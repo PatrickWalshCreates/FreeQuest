@@ -41,7 +41,9 @@ export class EventViews {
   update(tileWidth: number, tileHeight: number, alpha = 1): void {
     for (const event of this.events) {
       const page = event.page;
-      const graphic = page?.graphic && this.graphics.get(page.graphic.character);
+      // A move route can give an event another look (or one, if its page has none).
+      const character = event.mover.character ?? page?.graphic?.character;
+      const graphic = character !== undefined ? this.graphics.get(character) : undefined;
       let view = this.views.get(event);
       if (!page || !graphic) {
         if (view) view.sprite.visible = false;
@@ -53,8 +55,8 @@ export class EventViews {
         this.container.addChild(view.sprite);
       }
       view.setGraphic(graphic);
-      view.sprite.visible = true;
       const { mover } = event;
+      view.sprite.visible = !mover.hidden;
       const from = this.previous.get(event) ?? { x: mover.realX, y: mover.realY };
       const x = from.x + (mover.realX - from.x) * alpha;
       const y = from.y + (mover.realY - from.y) * alpha;
@@ -63,6 +65,8 @@ export class EventViews {
           direction: event.direction,
           isMoving: mover.isMoving,
           distanceWalked: mover.distanceWalked,
+          isAnimating: mover.isAnimating,
+          jumpHeight: mover.jumpHeight,
         },
         x,
         y,

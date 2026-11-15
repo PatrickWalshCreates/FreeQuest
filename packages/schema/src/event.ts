@@ -83,12 +83,16 @@ export const EventPage = Type.Object(
           direction: Direction,
           /** Keeps this facing: doesn't turn toward the player when talked to (v7). */
           fixed: Type.Optional(Type.Boolean()),
+          /** Steps in place all the time, e.g. a flickering torch (v9). */
+          stepping: Type.Optional(Type.Boolean()),
         },
         { additionalProperties: false, description: 'Omit for an invisible event.' },
       ),
     ),
     trigger: EventTrigger,
     layer: EventLayer,
+    /** Walks through walls and characters, and they through it (v9). */
+    through: Type.Optional(Type.Boolean()),
     movement: Type.Optional(EventMovement),
     commands: Type.Array(Command),
   },

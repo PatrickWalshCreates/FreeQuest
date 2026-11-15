@@ -228,6 +228,8 @@ function keeper() {
                 { code: 4, parameters: [] },
                 { code: 14, parameters: [0, 0] },
                 { code: 15, parameters: [30] },
+                { code: 41, parameters: ['', 0] },
+                { code: 41, parameters: ['Lamplighters', 1] },
                 { code: 0, parameters: [] },
               ],
               repeat: false,
