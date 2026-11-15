@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { GameState, Interpreter, Party, expandPlainText, expandText } from '../src/index.js';
+import {
+  GameState,
+  Interpreter,
+  Party,
+  expandPlainText,
+  expandText,
+  plainText,
+} from '../src/index.js';
 import { demoDb } from './demo-db.js';
 
 function context() {
@@ -72,5 +79,21 @@ describe('text codes', () => {
     it.continue();
     it.update(0);
     expect(it.pending).toMatchObject({ type: 'choice', options: ['Give Potion'] });
+  });
+});
+
+describe('pacing codes', () => {
+  it('become marks among the runs, and no text', () => {
+    const runs = expandText('a{wait:1.5}b{key}{instant}c{/instant}', new GameState());
+    expect(runs).toEqual([
+      { kind: 'text', text: 'a', color: null },
+      { kind: 'wait', seconds: 1.5 },
+      { kind: 'text', text: 'b', color: null },
+      { kind: 'key' },
+      { kind: 'instant', on: true },
+      { kind: 'text', text: 'c', color: null },
+      { kind: 'instant', on: false },
+    ]);
+    expect(plainText(runs)).toBe('abc');
   });
 });

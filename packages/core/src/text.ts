@@ -4,10 +4,17 @@
 import { parseTextCodes } from '@freequest/schema';
 import { type EventContext, type GameState, requireParty, toEventContext } from './game-state.js';
 
-/** A piece of a message: text in one colour (null = the window's colour), or an icon. */
+/**
+ * A piece of a message: text in one colour (null = the window's colour), an
+ * icon, or a mark for the reveal (a pause, a wait for a key, the start or end
+ * of instant text), which takes no room.
+ */
 export type TextRun =
   | { readonly kind: 'text'; readonly text: string; readonly color: string | null }
-  | { readonly kind: 'icon'; readonly icon: number };
+  | { readonly kind: 'icon'; readonly icon: number }
+  | { readonly kind: 'wait'; readonly seconds: number }
+  | { readonly kind: 'key' }
+  | { readonly kind: 'instant'; readonly on: boolean };
 
 /**
  * Expand a text's codes against the game. Codes with problems show nothing
@@ -64,6 +71,16 @@ export function expandText(source: string, context: EventContext | GameState): T
         break;
       case 'icon':
         runs.push({ kind: 'icon', icon: Number(arg) });
+        break;
+      case 'wait':
+        runs.push({ kind: 'wait', seconds: Number(arg) });
+        break;
+      case 'key':
+        runs.push({ kind: 'key' });
+        break;
+      case 'instant':
+      case '/instant':
+        runs.push({ kind: 'instant', on: token.name === 'instant' });
         break;
     }
   }

@@ -161,3 +161,62 @@ describe('DialogController choices', () => {
     expect(env.dialog.message?.text).toBe('Now');
   });
 });
+
+describe('DialogController pacing codes', () => {
+  // 60 characters a second: one character per step.
+  it('pauses at {wait} for its seconds, then carries on', () => {
+    const { dialog, tick } = setup([say('Hi{wait:0.5}there')], 60);
+    tick(); // picked up
+    tick(2);
+    expect(dialog.message?.revealed).toBe(2);
+    tick(29); // half a second is 30 steps
+    expect(dialog.message?.revealed).toBe(2);
+    tick(2);
+    expect(dialog.message?.revealed).toBeGreaterThan(2);
+    tick(10);
+    expect(dialog.message?.complete).toBe(true);
+  });
+
+  it('stops at {key} until confirm, which carries on in the same box', () => {
+    const { dialog, interpreter, tick, tap } = setup([say('Wait.{key} Now.')], 60);
+    tick(10);
+    expect(dialog.message).toMatchObject({ revealed: 5, waitingForKey: true, complete: false });
+    tick(30);
+    expect(dialog.message?.revealed).toBe(5);
+    tap('confirm');
+    expect(dialog.message?.waitingForKey).toBe(false);
+    expect(interpreter.isDone).toBe(false);
+    tick(10);
+    expect(dialog.message?.complete).toBe(true);
+    tap('confirm');
+    expect(interpreter.isDone).toBe(true);
+  });
+
+  it('shows {instant} text at once', () => {
+    const { dialog, tick } = setup([say('ab{instant}cdefgh{/instant}ij')], 60);
+    tick(); // picked up
+    tick(2);
+    expect(dialog.message?.revealed).toBe(8); // "ab", then "cdefgh" at once
+    tick(1);
+    expect(dialog.message?.revealed).toBe(9);
+  });
+
+  it('skips pauses on confirm, but still stops at the next {key}', () => {
+    const { dialog, tick, tap } = setup([say('a{wait:5}b{key}c{wait:5}d')], 60);
+    tick(2);
+    tap('confirm'); // skip the long pause
+    expect(dialog.message).toMatchObject({ revealed: 2, waitingForKey: true });
+    tap('confirm'); // carry on
+    tap('confirm'); // skip again: to the end
+    expect(dialog.message).toMatchObject({ revealed: 4, complete: true });
+  });
+
+  it('shows the whole text, pauses and all, under a choice', () => {
+    const { dialog, tick } = setup(
+      [say('Pick{wait:3} one.{key}'), { type: 'choice', options: [{ label: 'A', commands: [] }] }],
+      60,
+    );
+    tick(3);
+    expect(dialog.message?.complete).toBe(false);
+  });
+});

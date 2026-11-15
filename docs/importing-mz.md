@@ -51,7 +51,7 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
 - **Characters, faces, enemy pictures and icons**, cut out of MZ's sheets as FreeQuest needs
   them. The player looks like the first party member.
 - **Events and common events**: pages with their conditions, picture, trigger, priority and
-  movement; messages with faces, names and colours; choices, branches, loops; switches,
+  movement; messages with faces, names, colours and pacing; choices, branches, loops; switches,
   variables and self switches (which become FreeQuest's event flags); gold, items, the party;
   transfers, battles with their win/escape/lose branches, shops, move routes, screen effects,
   waits, music and sounds.
@@ -74,7 +74,9 @@ The report names each one and where it was. The usual ones:
   events. Experience curves are FreeQuest's own shape, set from each class's base value.
 - **Map details**: water is still (its first frame), wall shadows and regions aren't used, and
   tiles you can pass from some sides only become walkable from every side.
-- **Pauses in messages** (`\.`, `\|`, `\!`) and font size changes are left out.
+- **Font size changes** in messages (and `\^`, `\$`) are left out. Pauses (`\.`, `\|`), waits
+  for a key (`\!`) and instant text (`\>`…`\<`) come across as FreeQuest's `{wait}`, `{key}` and
+  `{instant}` codes (from 0.5).
 
 Many of these are coming: the next version of FreeQuest adds what MZ games use most.
 

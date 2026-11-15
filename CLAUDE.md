@@ -216,7 +216,12 @@ Never the other way.
   `runs`, speakers and choice labels are plain text. Runtime `rich-text.ts` (PixiJS-free,
   tested with a fake `measure`): `layoutRuns` wraps across colours/icons (a word stays whole),
   `runsLength` / `revealPiece` reveal by units (chars, icons; line breaks don't count, wrapped
-  spaces do). `DialogView` draws one Text per same-colour piece (a style per colour) and icon
+  spaces do). Pacing (M14): `{wait:n}` (seconds, up to `MAX_TEXT_WAIT` 10), `{key}`,
+  `{instant}`…`{/instant}` are runs of kind `wait` / `key` / `instant` that take no room;
+  `revealMarks` puts them at reveal units, and `DialogController` stops at a wait for its
+  seconds, at a key until confirm (`MessageState.waitingForKey`, the arrow shows), and shows
+  instant text at once; confirm mid-reveal skips to the next `{key}` (pauses skipped). The
+  editor's preview ignores them. `DialogView` draws one Text per same-colour piece (a style per colour) and icon
   sprites; `UiTheme.textColors` names the colours (`textColor()`). Editor: `previewText` /
   `textProblems` (editor-core) back `CommandExtras` (message preview + code help, shared by
   event pages and common events) and live checks on `text`/`speaker`/`label` (not comments:
@@ -1236,10 +1241,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   that the importer then brings across. Behaviour may match MZ's; the design, names and code
   are ours (clean-room). Measured uses in the samples (Wolf's Gang / Winds Rhapsody) are in
   brackets. Steps:
-  1. Message pacing: text codes for a pause (`{wait:0.25}`), waiting for a key mid-message
-     (`{key}`) and instant text, in the reveal (runtime `rich-text.ts`) and the editor's
-     preview and help; the importer turns MZ's \\. \\| \\! \\> \\< into them [348 / 85].
-     Text codes live in strings, so no format change (older players drop unknown codes).
+  1. ~~Message pacing: `{wait:n}`, `{key}`, `{instant}`…`{/instant}`; the importer turns MZ's
+     pauses, key waits and instant text into them~~ (done; the samples' 692 pauses and 198 key
+     waits now come across, and no message codes are left in their reports)
   2. Who the player looks like: the player is drawn as the party leader's character (the
      manifest's `player.character` stays the fallback for an empty party), a `changeActor`
      command (character, face, name), and hiding the player (MZ's transparency and "start

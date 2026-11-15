@@ -1,6 +1,6 @@
 import type { TextRun } from '@freequest/core';
 import { describe, expect, it } from 'vitest';
-import { layoutRuns, revealPiece, runsLength } from '../src/rich-text.js';
+import { layoutRuns, revealMarks, revealPiece, runsLength } from '../src/rich-text.js';
 
 /** Every character is 6 px wide; icons take 10. */
 const options = (maxWidth: number) => ({
@@ -74,5 +74,27 @@ describe('layoutRuns', () => {
     expect(at(4)).toEqual(['ab', '[]', '·', '·']);
     expect(at(6)).toEqual(['ab', '[]', 'c', '·']);
     expect(at(11)).toEqual(['ab', '[]', 'cd', 'ef']);
+  });
+});
+
+describe('reveal marks', () => {
+  it('sit at the unit they come before, and take no room', () => {
+    const runs = [
+      { kind: 'text', text: 'Hi\n', color: null },
+      { kind: 'wait', seconds: 0.5 },
+      { kind: 'icon', icon: 3 },
+      { kind: 'key' },
+      { kind: 'text', text: 'yo', color: null },
+      { kind: 'instant', on: true },
+    ] as const;
+    expect(runsLength(runs)).toBe(5);
+    expect(revealMarks(runs)).toEqual([
+      { at: 2, kind: 'wait', seconds: 0.5 },
+      { at: 3, kind: 'key' },
+      { at: 5, kind: 'instant', on: true },
+    ]);
+    const layout = layoutRuns(runs, { maxWidth: 100, measure: (t) => t.length * 6, iconWidth: 10 });
+    expect(layout.length).toBe(5);
+    expect(layout.lines.map((l) => l.map((p) => p.kind))).toEqual([['text'], ['icon', 'text']]);
   });
 });

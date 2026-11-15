@@ -28,6 +28,13 @@ const CODES = {
   color: 'color',
   '/color': 'none',
   icon: 'index',
+  /** Pause the reveal for this many seconds. */
+  wait: 'seconds',
+  /** Wait for the player to press confirm, then carry on in the same box. */
+  key: 'none',
+  /** Show the text up to {/instant} at once. */
+  instant: 'none',
+  '/instant': 'none',
 } as const;
 export type TextCodeName = keyof typeof CODES;
 
@@ -41,6 +48,9 @@ export const TEXT_CODE_HELP: readonly { readonly code: string; readonly shows: s
   { code: '{item:id}', shows: 'an item’s name ({equipment:id} for equipment)' },
   { code: '{color:red}…{/color}', shows: `coloured text (${TEXT_COLORS.join(', ')} or #rrggbb)` },
   { code: '{icon:3}', shows: 'an icon from the iconset' },
+  { code: '{wait:0.5}', shows: 'a pause while the text appears, in seconds' },
+  { code: '{key}', shows: 'waits for a key, then the text carries on' },
+  { code: '{instant}…{/instant}', shows: 'text that appears all at once' },
   { code: '{{', shows: 'a { on its own' },
 ];
 
@@ -56,6 +66,15 @@ export interface ParsedText {
 
 const ID = /^[a-z0-9][a-z0-9_-]*$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** The longest `{wait:…}`, in seconds. */
+export const MAX_TEXT_WAIT = 10;
+
+function isWaitSeconds(arg: string): boolean {
+  if (!/^[0-9]*\.?[0-9]+$/.test(arg)) return false;
+  const n = Number(arg);
+  return n > 0 && n <= MAX_TEXT_WAIT;
+}
 
 /** A colour a `{color:…}` code accepts. */
 export function isTextColor(value: string): boolean {
@@ -103,7 +122,7 @@ export function parseTextCodes(source: string): ParsedText {
           ? `{${name}} takes nothing after it`
           : null
         : arg === null || arg === ''
-          ? `{${name}:…} needs ${wants === 'id' ? 'an id' : wants === 'color' ? 'a colour' : 'a number'}`
+          ? `{${name}:…} needs ${wants === 'id' ? 'an id' : wants === 'color' ? 'a colour' : wants === 'seconds' ? 'a number of seconds' : 'a number'}`
           : wants === 'id' && !ID.test(arg)
             ? `{${body}}: "${arg}" isn't an id`
             : wants === 'color' && !isTextColor(arg)
@@ -112,7 +131,9 @@ export function parseTextCodes(source: string): ParsedText {
                 ? `{${body}}: the position is a number from 1`
                 : wants === 'index' && !/^[0-9]+$/.test(arg)
                   ? `{${body}}: the icon is a number from 0`
-                  : null;
+                  : wants === 'seconds' && !isWaitSeconds(arg)
+                    ? `{${body}}: the wait is seconds, more than 0 and at most ${MAX_TEXT_WAIT}`
+                    : null;
     if (problem) {
       problems.push(problem);
       continue;

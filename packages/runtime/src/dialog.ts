@@ -4,7 +4,7 @@
 // draws whatever state this holds.
 import type { InputState, InterpreterRequest, TextRun } from '@freequest/core';
 import type { MessageFace } from '@freequest/schema';
-import { runsLength } from './rich-text.js';
+import { type RevealMark, revealMarks, runsLength } from './rich-text.js';
 
 /** The part of an Interpreter the dialog needs. */
 export interface DialogTarget {
@@ -25,6 +25,8 @@ export interface MessageState {
   /** Reveal units shown so far: characters and icons (may be fractional). */
   readonly revealed: number;
   readonly complete: boolean;
+  /** Stopped at a `{key}` until the player presses confirm. */
+  readonly waitingForKey: boolean;
 }
 
 export interface ChoiceState {
@@ -47,6 +49,14 @@ export class DialogController {
   private revealed = 0;
   /** Reveal units in the current message (characters and icons). */
   private length = 0;
+  /** The message's pauses, waits for a key and instant parts, in order; `nextMark` is the next to reach. */
+  private marks: readonly RevealMark[] = [];
+  private nextMark = 0;
+  /** Seconds left of a `{wait}`. */
+  private waitLeft = 0;
+  private waitingKey = false;
+  /** Inside `{instant}`…`{/instant}`. */
+  private instant = false;
   private cursor = 0;
 
   constructor(options: DialogOptions = {}) {
@@ -63,7 +73,8 @@ export class DialogController {
       text: request.text,
       runs: request.runs,
       revealed: Math.min(this.revealed, this.length),
-      complete: this.revealed >= this.length,
+      complete: this.complete,
+      waitingForKey: this.waitingKey,
     };
   }
 
@@ -90,11 +101,22 @@ export class DialogController {
         this.choiceRequest = null;
         this.revealed = 0;
         this.length = runsLength(request.runs);
+        this.marks = revealMarks(request.runs);
+        this.nextMark = 0;
+        this.waitLeft = 0;
+        this.waitingKey = false;
+        this.instant = false;
+        this.advance(0);
         return; // a fresh message ignores input from the step it appeared in
       }
-      if (this.revealed < this.length) {
-        this.revealed += dt * this.charsPerSecond;
-        if (input.justPressed('confirm')) this.revealed = this.length;
+      if (!this.complete) {
+        if (this.waitingKey) {
+          if (input.justPressed('confirm')) {
+            this.waitingKey = false;
+            this.advance(0);
+          }
+        } else if (input.justPressed('confirm')) this.skip();
+        else this.advance(dt);
         return;
       }
       // Keep the message showing until the next request arrives, so
@@ -108,7 +130,7 @@ export class DialogController {
         this.choiceRequest = request;
         this.cursor = 0;
         // The message that asked the question stays up, fully revealed.
-        if (this.messageRequest) this.revealed = this.length;
+        if (this.messageRequest) this.showAll();
         return;
       }
       const count = request.options.length;
@@ -127,11 +149,99 @@ export class DialogController {
     this.close();
   }
 
+  /** Fully shown, past every pause and wait. */
+  private get complete(): boolean {
+    return (
+      this.revealed >= this.length &&
+      this.nextMark >= this.marks.length &&
+      this.waitLeft <= 0 &&
+      !this.waitingKey
+    );
+  }
+
+  /**
+   * Reveal for `dt` seconds: characters at the reveal speed, all at once
+   * inside instant text, stopping at a pause (for its seconds) or a wait
+   * for a key.
+   */
+  private advance(dt: number): void {
+    if (this.waitLeft > 0) {
+      this.waitLeft -= dt;
+      if (this.waitLeft > 1e-9) return; // (steps of 1/60 don't add up exactly)
+      dt = Math.max(0, -this.waitLeft); // time left over reveals on
+      this.waitLeft = 0;
+    }
+    let budget = dt > 0 ? dt * this.charsPerSecond : 0; // (0 × Infinity would be NaN)
+    for (let guard = 0; guard <= this.marks.length + 1; guard++) {
+      this.reachMarks();
+      if (this.waitingKey || this.waitLeft > 0) return;
+      const stop = this.marks[this.nextMark]?.at ?? this.length;
+      if (this.instant) {
+        this.revealed = Math.max(this.revealed, stop);
+      } else {
+        const room = stop - this.revealed;
+        if (budget < room) {
+          this.revealed += budget;
+          return;
+        }
+        this.revealed = stop;
+        budget -= room;
+      }
+      if (this.nextMark >= this.marks.length) return;
+    }
+  }
+
+  /** Act on the marks the reveal has reached: start a pause, a wait for a key, or instant text. */
+  private reachMarks(): void {
+    for (
+      let mark = this.marks[this.nextMark];
+      mark && mark.at <= this.revealed;
+      mark = this.marks[this.nextMark]
+    ) {
+      this.nextMark++;
+      if (mark.kind === 'instant') this.instant = mark.on;
+      else if (mark.kind === 'wait') {
+        this.waitLeft = mark.seconds;
+        return;
+      } else {
+        this.waitingKey = true;
+        return;
+      }
+    }
+  }
+
+  /** Confirm during the reveal: show the text up to the next wait for a key (skipping pauses), or all of it. */
+  private skip(): void {
+    this.waitLeft = 0;
+    for (let mark = this.marks[this.nextMark]; mark; mark = this.marks[this.nextMark]) {
+      this.nextMark++;
+      this.revealed = Math.max(this.revealed, mark.at);
+      if (mark.kind === 'key') {
+        this.waitingKey = true;
+        return;
+      }
+      if (mark.kind === 'instant') this.instant = mark.on;
+    }
+    this.revealed = this.length;
+  }
+
+  private showAll(): void {
+    this.revealed = this.length;
+    this.nextMark = this.marks.length;
+    this.waitLeft = 0;
+    this.waitingKey = false;
+  }
+
   private close(): void {
     this.messageRequest = null;
     this.choiceRequest = null;
     this.revealed = 0;
     this.length = 0;
+    this.marks = [];
+    this.nextMark = 0;
+    this.waitLeft = 0;
+    this.waitingKey = false;
+    this.instant = false;
     this.cursor = 0;
   }
 }

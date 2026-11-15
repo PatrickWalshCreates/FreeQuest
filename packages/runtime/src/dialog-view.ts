@@ -226,7 +226,7 @@ export class DialogView {
       this.reveal(message.revealed);
 
       // Bobbing "more" marker once the text is fully shown and no choice is open.
-      this.more.visible = message.complete && dialog.choice === null;
+      this.more.visible = (message.complete || message.waitingForKey) && dialog.choice === null;
       if (this.more.visible) {
         const bob = Math.round(Math.sin(time * 6) * 1.5);
         this.more

@@ -197,11 +197,17 @@ them in curly brackets:
 | `{item:id}`            | an item's name (`{equipment:id}` for equipment)                                   |
 | `{color:red}…{/color}` | coloured text: white, gray, red, orange, yellow, green, blue, purple or `#rrggbb` |
 | `{icon:3}`             | an icon from the iconset                                                          |
+| `{wait:0.5}`           | a pause while the text appears, in seconds (up to 10)                             |
+| `{key}`                | waits for a key press, then the text carries on in the same box                   |
+| `{instant}…{/instant}` | text that appears all at once                                                     |
 | `{{`                   | a `{` on its own                                                                  |
 
 So `{member:1} found {color:yellow}{v:coins} {currency}{/color}!` might show "Hero found 12 G!"
 with the amount in yellow. The message dialog previews the text as it will look (values only the
-game knows show in [brackets]) and points out codes it doesn't understand. Choices show names and
+game knows show in [brackets]) and points out codes it doesn't understand. Pauses and waits
+only show in the game: `Well…{wait:0.5} I suppose.{key} Fine, take it.` pauses, then waits for a
+key before the last sentence (pressing a key while the text appears skips ahead to the next
+`{key}`). Choices show names and
 values but not colours or icons.
 
 Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries

@@ -29,11 +29,36 @@ export interface LayoutOptions {
   readonly iconWidth: number;
 }
 
+/** Reveal units a run takes: characters other than line breaks, 1 for an icon, 0 for a mark. */
+function units(run: TextRun): number {
+  if (run.kind === 'icon') return 1;
+  if (run.kind === 'text') return run.text.replace(/\n/g, '').length;
+  return 0;
+}
+
 /** Reveal units in runs: characters other than line breaks, and icons. */
 export function runsLength(runs: readonly TextRun[]): number {
   let n = 0;
-  for (const run of runs) n += run.kind === 'icon' ? 1 : run.text.replace(/\n/g, '').length;
+  for (const run of runs) n += units(run);
   return n;
+}
+
+/** Something the reveal does on reaching a point in the text. */
+export type RevealMark =
+  | { readonly at: number; readonly kind: 'wait'; readonly seconds: number }
+  | { readonly at: number; readonly kind: 'key' }
+  | { readonly at: number; readonly kind: 'instant'; readonly on: boolean };
+
+/** The runs' marks (pauses, waits for a key, instant text), at the reveal unit each comes before. */
+export function revealMarks(runs: readonly TextRun[]): RevealMark[] {
+  const marks: RevealMark[] = [];
+  let at = 0;
+  for (const run of runs) {
+    if (run.kind === 'wait' || run.kind === 'key' || run.kind === 'instant')
+      marks.push({ ...run, at });
+    else at += units(run);
+  }
+  return marks;
 }
 
 type Atom =
@@ -50,6 +75,7 @@ function atoms(runs: readonly TextRun[]): Atom[] {
       out.push(run);
       continue;
     }
+    if (run.kind !== 'text') continue; // marks take no room
     for (const part of run.text.split(/(\n|[^\S\n]+)/)) {
       if (!part) continue;
       if (part === '\n') out.push({ kind: 'break' });

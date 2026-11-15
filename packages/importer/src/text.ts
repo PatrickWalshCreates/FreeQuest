@@ -1,7 +1,7 @@
-// MZ's backslash codes in messages and choices (\V[3], \N[1], \C[2]…) as
+// MZ's backslash codes in messages and choices (\V[3], \N[1], \C[2], \.…) as
 // FreeQuest's `{…}` text codes. Colour numbers name colours in the project's
 // window skin, so `color(n)` supplies them. Codes FreeQuest has no match for
-// (pauses, font sizes, the gold window) are dropped and named in `dropped`.
+// (font sizes, the gold window) are dropped and named in `dropped`.
 
 export interface TextContext {
   readonly variable: (n: number) => string;
@@ -17,12 +17,16 @@ export interface ConvertedText {
   readonly dropped: readonly string[];
 }
 
+/** MZ's pacing codes and FreeQuest's: a quarter-second pause, a second, a key, instant text. */
+const PACING: Readonly<Record<string, string>> = {
+  '.': '{wait:0.25}',
+  '|': '{wait:1}',
+  '!': '{key}',
+  '>': '{instant}',
+  '<': '{/instant}',
+};
+
 const DROPPED_NAMES: Readonly<Record<string, string>> = {
-  '.': 'short pause (\\.)',
-  '|': 'long pause (\\|)',
-  '!': 'wait for a key (\\!)',
-  '>': 'instant text (\\>)',
-  '<': 'instant text (\\<)',
   '^': 'no wait at the end (\\^)',
   $: 'gold window (\\$)',
   '{': 'bigger text (\\{)',
@@ -51,6 +55,12 @@ export function convertText(source: string, ctx: TextContext): ConvertedText {
     // \\ is a backslash.
     if (next === '\\') {
       out += '\\';
+      i++;
+      continue;
+    }
+    const pacing = PACING[next];
+    if (pacing) {
+      out += pacing;
       i++;
       continue;
     }

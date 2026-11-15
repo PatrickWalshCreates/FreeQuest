@@ -68,12 +68,19 @@ describe('message text', () => {
       dropped: [],
     });
   });
+  it('turns pauses, waits for a key and instant text into pacing codes', () => {
+    expect(convertText('a\\.b\\|c\\!d\\>fast\\<e', ctx)).toEqual({
+      text: 'a{wait:0.25}b{wait:1}c{key}d{instant}fast{/instant}e',
+      dropped: [],
+    });
+  });
+
   it('drops what FreeQuest can’t do, and closes colours left open', () => {
-    expect(convertText('\\C[2]wait\\. \\! \\FS[24]big \\N[9]', ctx)).toEqual({
+    expect(convertText('\\C[2]wait\\^ \\$ \\FS[24]big \\N[9]', ctx)).toEqual({
       text: '{color:#ff3030}wait  big {/color}',
       dropped: [
-        'short pause (\\.)',
-        'wait for a key (\\!)',
+        'no wait at the end (\\^)',
+        'gold window (\\$)',
         '\\FS[24]',
         'the name of missing actor 9 (\\N[9])',
       ],
@@ -162,7 +169,7 @@ describe('importing events', () => {
       type: 'message',
       speaker: 'Keeper',
       face: { image: 'assets/faces/lamplighters_face.png', index: 2 },
-      text: 'Hello {actor:wren}! You lit {v:lanterns-lit} lanterns.\n{color:#ff3030}Careful{/color} out there {{friend}.',
+      text: 'Hello {actor:wren}! You lit {v:lanterns-lit} lanterns.\n{color:#ff3030}Careful{/color} {wait:0.25}out there {{friend}.',
     });
     expect(commands[1]).toEqual({
       type: 'choice',
@@ -224,7 +231,6 @@ describe('importing events', () => {
     expect(messages('Maps › Hollow › Keeper')).toEqual([
       "Commands FreeQuest doesn't have, kept as comments: Script, Show balloon.",
       "1 branch tests something FreeQuest can't; it now tests the switch “Imported: condition to redo”, which is never on.",
-      'Text codes left out: short pause (\\.).',
       "Move route steps FreeQuest doesn't have were left out: jump.",
     ]);
   });

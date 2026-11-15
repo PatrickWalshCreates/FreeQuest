@@ -60,3 +60,28 @@ describe('parseTextCodes', () => {
     expect(isTextColor('#abc')).toBe(false);
   });
 });
+
+describe('pacing codes', () => {
+  it('parse pauses, waits for a key and instant text', () => {
+    expect(parseTextCodes('a{wait:0.25}b{key}{instant}c{/instant}').tokens).toEqual([
+      { kind: 'text', text: 'a' },
+      { kind: 'code', name: 'wait', arg: '0.25' },
+      { kind: 'text', text: 'b' },
+      { kind: 'code', name: 'key', arg: null },
+      { kind: 'code', name: 'instant', arg: null },
+      { kind: 'text', text: 'c' },
+      { kind: 'code', name: '/instant', arg: null },
+    ]);
+  });
+
+  it('say what’s wrong with a wait', () => {
+    expect(parseTextCodes('{wait}').problems).toEqual(['{wait:…} needs a number of seconds']);
+    for (const bad of ['{wait:0}', '{wait:11}', '{wait:-1}', '{wait:soon}']) {
+      expect(parseTextCodes(bad).problems[0]).toMatch(
+        /the wait is seconds, more than 0 and at most 10/,
+      );
+    }
+    expect(parseTextCodes('{key:1}').problems).toEqual(['{key} takes nothing after it']);
+    expect(parseTextCodes('{wait:10}{wait:.5}').problems).toEqual([]);
+  });
+});
