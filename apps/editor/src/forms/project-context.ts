@@ -239,5 +239,6 @@ export function projectNames(
     troop: (id) => find(entries('troops'), id),
     common: (id) => find(entries('commonEvents'), id),
     event: (id) => find(events, id),
+    character: (id) => project.characters.get(id)?.data?.name || id,
   };
 }

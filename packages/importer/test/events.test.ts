@@ -164,6 +164,9 @@ describe('importing events', () => {
       'playSound',
       'comment',
       'callCommon',
+      'changeActor',
+      'changeActor',
+      'hidePlayer',
     ]);
     expect(commands[0]).toEqual({
       type: 'message',
@@ -224,6 +227,11 @@ describe('importing events', () => {
     expect(commands[8]).toEqual({ type: 'playSound', path: 'assets/audio/se/chime.ogg' });
     expect(commands[9]).toEqual({ type: 'comment', text: 'From MZ, not imported: Show balloon' });
     expect(commands[10]).toEqual({ type: 'callCommon', common: 'open-gate' });
+    expect(commands.slice(11)).toEqual([
+      { type: 'changeActor', actor: 'tamsin', character: 'lamplighters-4' },
+      { type: 'changeActor', actor: 'wren', name: 'Wren the Bright' },
+      { type: 'hidePlayer', hidden: true },
+    ]);
   });
 
   it('reports what each list left out, once', async () => {

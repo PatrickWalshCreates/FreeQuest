@@ -1047,6 +1047,47 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Hide the player (they are still there and can move) or show them again (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "hidePlayer"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "hidden"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give an actor another character or name for the rest of the game, in or out of the party (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeActor"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "character": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Repeat these commands until a Break loop (or Exit event) inside them.",
           "properties": {
             "type": {

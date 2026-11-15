@@ -54,7 +54,7 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   movement; messages with faces, names, colours and pacing; choices, branches, loops; switches,
   variables and self switches (which become FreeQuest's event flags); gold, items, the party;
   transfers, battles with their win/escape/lose branches, shops, move routes, screen effects,
-  waits, music and sounds.
+  waits, music and sounds; actors' new names and pictures, and hiding the player (from 0.5).
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
   each map's music. Only `.ogg` files are copied (FreeQuest doesn't play `.m4a`).
 
@@ -65,7 +65,7 @@ The report names each one and where it was. The usual ones:
 - **Scripts and plugins**: FreeQuest never runs JavaScript, so script calls, plugin commands
   and plugins stay as comments.
 - **Commands FreeQuest doesn't have**: pictures, battle animations and balloons, weather, moving
-  an event to a spot, labels and jumps, changing an actor's name, states or HP from an event,
+  an event to a spot, labels and jumps, changing an actor's states or HP from an event,
   background sounds, and more. They stay as comments saying "From MZ, not imported".
 - **Branches on things FreeQuest can't test** (a script, a button, an actor's state…) keep both
   sides, but test the switch **Imported: condition to redo**, which is never on: the "else"

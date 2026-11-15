@@ -367,6 +367,15 @@ export class Interpreter {
         this.context.hideEvent?.(id, command.hidden);
         break;
       }
+      case 'hidePlayer':
+        this.context.hidePlayer?.(command.hidden);
+        break;
+      case 'changeActor':
+        this.party('changeActor').changeActor(command.actor, {
+          ...(command.name !== undefined ? { name: command.name } : {}),
+          ...(command.character !== undefined ? { character: command.character } : {}),
+        });
+        break;
       case 'loop':
         if (this.stack.length >= MAX_DEPTH) throw new Error(`loops nest ${MAX_DEPTH} deep`);
         this.stack.push({ commands: command.commands, index: 0, loop: true });

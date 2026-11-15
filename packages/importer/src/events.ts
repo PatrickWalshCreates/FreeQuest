@@ -329,6 +329,26 @@ class Converter {
         return this.#moveRoute(p);
       case 214:
         return [{ type: 'hideEvent', hidden: true }];
+      case 211:
+        // Transparency: 0 makes the player see-through (hidden), 1 shows them.
+        return [{ type: 'hidePlayer', hidden: int(0) === 0 }];
+      case 320:
+      case 322: {
+        const actor = this.ctx.db.actors.id(int(0));
+        if (!actor) return [this.#unsupported(code, `missing actor ${int(0)}`)];
+        if (code === 320) {
+          const name = asString(p[1]).trim();
+          return name ? [{ type: 'changeActor', actor, name }] : [];
+        }
+        // Actor images: the map character (faces and battlers aren't per actor in FreeQuest).
+        const character = await this.ctx.graphics.character(
+          asString(p[1]),
+          int(2),
+          this.scope.where,
+        );
+        if (!character) return [this.#unsupported(code, 'a character picture that isn’t there')];
+        return [{ type: 'changeActor', actor, character }];
+      }
       case 221:
       case 222:
         return [{ type: 'fadeScreen', to: code === 221 ? 'out' : 'in', seconds: 0.4, wait: true }];

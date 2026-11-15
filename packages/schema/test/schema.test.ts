@@ -101,7 +101,7 @@ describe('migrate', () => {
       readFileSync(join(FIXTURES, 'release-0.1', 'save-slot-1.json'), 'utf8'),
     ) as object;
     const save = parseProjectFile('save', raw, 'save-slot-1.json');
-    expect(save.formatVersion).toBe(2);
+    expect(save.formatVersion).toBe(CURRENT_FORMAT_VERSION.save);
     expect(save.flags).toEqual({});
     expect({ ...save, formatVersion: 1, flags: undefined }).toEqual({ ...raw, flags: undefined });
   });

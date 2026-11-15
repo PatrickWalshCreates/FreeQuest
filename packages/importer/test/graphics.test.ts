@@ -32,8 +32,11 @@ describe('importing pictures', () => {
       'lamplighters-6',
       'tamsin',
       'lamplighters-2',
+      'lamplighters-4',
       'hollow-tile-3',
     ]);
+    // MZ's "start transparent": the player starts hidden.
+    expect(manifest.player.hidden).toBe(true);
     expect(manifest.player.character).toBe('lamplighters-6');
     const sheet = JSON.parse(
       await target.readText('data/characters/lamplighters-6.json'),

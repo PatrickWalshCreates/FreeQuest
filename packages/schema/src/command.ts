@@ -305,6 +305,31 @@ export const Command = Type.Cyclic(
         },
       ),
       Type.Object(
+        {
+          type: Type.Literal('hidePlayer'),
+          hidden: Type.Boolean(),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Hide the player (they are still there and can move) or show them again (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeActor'),
+          actor: Id,
+          /** How the actor looks on the map (and the player, while they lead the party). */
+          character: Type.Optional(Id),
+          name: Type.Optional(Type.String({ minLength: 1 })),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Give an actor another character or name for the rest of the game, in or out of the party (v9).',
+        },
+      ),
+      Type.Object(
         { type: Type.Literal('loop'), commands: CommandList },
         {
           additionalProperties: false,

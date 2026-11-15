@@ -141,9 +141,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   canvas.tabIndex = 0;
   options.parent.appendChild(canvas);
 
-  const player = new CharacterView(
-    getOrThrow(characterGraphics, manifest.player.character, 'character'),
-  );
+  // The player looks like the party's leader (see World.playerCharacter).
+  let playerCharacter = manifest.player.character;
+  const player = new CharacterView(getOrThrow(characterGraphics, playerCharacter, 'character'));
   const characters = new Container({ label: 'characters', sortableChildren: true });
   characters.addChild(player.sprite);
   const scene = new Container({ label: 'scene' });
@@ -451,6 +451,12 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     const { tileWidth, tileHeight } = world.tileset;
     const rx = prevX + (world.player.realX - prevX) * alpha;
     const ry = prevY + (world.player.realY - prevY) * alpha;
+    if (world.playerCharacter !== playerCharacter) {
+      const graphic = characterGraphics.get(world.playerCharacter);
+      if (graphic) player.setGraphic(graphic);
+      playerCharacter = world.playerCharacter;
+    }
+    player.sprite.visible = !world.playerHidden;
     player.update(world.player, rx, ry, tileWidth, tileHeight);
     player.sprite.zIndex = depthFor(ry);
     shown?.events.update(tileWidth, tileHeight, alpha);

@@ -144,6 +144,15 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
           case 'callCommon':
             checkEntry(at, 'common', command.common);
             break;
+          case 'changeActor':
+            checkEntry(at, 'actor', command.actor);
+            if (command.character !== undefined && !ctx.characters.has(command.character)) {
+              problems.push(`${at}: unknown character "${command.character}"`);
+            }
+            if (command.character === undefined && command.name === undefined) {
+              problems.push(`${at}: changes nothing (give a character or a name)`);
+            }
+            break;
         }
       });
     },

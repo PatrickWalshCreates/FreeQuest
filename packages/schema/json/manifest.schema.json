@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 7
+      "const": 8
     },
     "id": {
       "type": "string",
@@ -121,6 +121,10 @@
           "type": "string",
           "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "The player starts hidden (an event shows them) (v8)."
         },
         "speed": {
           "type": "number",

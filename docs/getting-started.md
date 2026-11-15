@@ -213,6 +213,15 @@ values but not colours or icons.
 Select commands with Shift to copy a whole conversation (Ctrl+C, Ctrl+V). Events and database entries
 copy and paste too, even into another project.
 
+### Who the player looks like
+
+The player looks like the first member of the party. **Change actor** (in the Party commands)
+gives an actor another character or name for the rest of the game, whether they're in the party
+or not: put a hero in disguise, or let the player name a companion's horse. **Hide or show the
+player** makes the player invisible (they still move), handy for cutscenes and intros; in
+**Project settings → Player**, **Starts hidden** begins the game that way. The same section sets
+the character used when the party is empty, and the walking speed.
+
 ### People who move, and things that happen on their own
 
 - **Moves** (on the page, under Graphic): **Wanders about**, **Walks toward the player**, or

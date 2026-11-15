@@ -274,7 +274,11 @@ export async function importMzProject(
       id,
       screen: mz.system.screen,
       database: databasePaths,
-      player: { ...manifest.player, character: playerCharacter },
+      player: {
+        ...manifest.player,
+        character: playerCharacter,
+        ...(mz.system.startHidden ? { hidden: true } : {}),
+      },
       characters: [
         ...(placeholderUsed ? manifest.characters : []),
         ...pictures.characters.map((c) => ({ id: c.data.id, path: c.path })),

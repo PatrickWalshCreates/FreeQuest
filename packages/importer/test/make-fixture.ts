@@ -191,6 +191,9 @@ function keeper() {
     cmd(250, 0, [{ name: 'Chime', pan: 0, pitch: 100, volume: 90 }]),
     cmd(213, 0, [-1, 1, false]),
     cmd(117, 0, [1]),
+    cmd(322, 0, [2, 'Lamplighters', 3, '', 0, '']),
+    cmd(320, 0, [1, 'Wren the Bright']),
+    cmd(211, 0, [0]),
     cmd(0, 0),
   ];
   return {

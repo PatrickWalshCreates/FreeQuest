@@ -4,6 +4,25 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## Unreleased (0.5.0)
+
+More of what RPG Maker MZ games use, in FreeQuest itself and brought across by the importer.
+
+### Messages
+
+- **Pacing**: `{wait:0.5}` pauses while text appears, `{key}` waits for a key and carries on in
+  the same box, `{instant}…{/instant}` shows text at once. MZ's `\.`, `\|`, `\!`, `\>` and `\<`
+  import as these.
+
+### The player and actors
+
+- The player **looks like the party's leader**. **Change actor** gives any actor another
+  character or name for the rest of the game; **Hide or show the player**, and **Starts hidden**
+  in Project settings, for intros and cutscenes. Both are kept in saves. MZ's Change actor
+  images, Change name, Transparency and "start transparent" import as these.
+- **Project settings → Player**: the character for an empty party, the walking speed and
+  starting hidden.
+
 ## 0.4.0 (2026-11-14)
 
 Bring your RPG Maker MZ game across: the editor imports an MZ project into a new FreeQuest

@@ -74,6 +74,10 @@ export class World {
   private runningEvent: EventInstance | null = null;
   /** Fades, tints, flashes and shakes: game-wide, kept across maps (and the tint in saves). */
   readonly screen = new ScreenEffects();
+  /** Hidden by a hidePlayer command (or from the start); the player still walks. Saved. */
+  playerHidden: boolean;
+  /** The character for the player when the party is empty. */
+  private readonly fallbackCharacter: string;
   /** Interpreters of parallel pages, running alongside play (one per event). */
   private readonly parallels = new Map<EventInstance, Interpreter>();
   /** Interpreters of parallel common events, by id. */
@@ -120,6 +124,8 @@ export class World {
       speed: manifest.player.speed,
     });
     this.playerSpeed = manifest.player.speed;
+    this.playerHidden = manifest.player.hidden ?? false;
+    this.fallbackCharacter = manifest.player.character;
     // Assigned for the type checker; `enterMap` sets them for real.
     this.currentMap = map;
     this.currentTileset = tileset;
@@ -247,7 +253,9 @@ export class World {
       direction: this.player.direction,
       ...this.state.toData(),
       screen: this.screen.toData(),
+      ...(this.playerHidden ? { playerHidden: true } : {}),
       party: {
+        ...(party.looks ? { looks: party.looks } : {}),
         members: party.members,
         gold: party.gold,
         items: party.items,
@@ -282,7 +290,13 @@ export class World {
       ...(options.random ? { random: options.random } : {}),
     });
     world.screen.loadData(save.screen);
+    world.playerHidden = save.playerHidden ?? false;
     return world;
+  }
+
+  /** The character the player shows as: the party leader's, or the project's player character. */
+  get playerCharacter(): string {
+    return this.party.members[0]?.character ?? this.fallbackCharacter;
   }
 
   /** Map size in pixels. */
@@ -569,6 +583,9 @@ export class World {
       commonEvent: this.commonEventCommands,
       screen: this.screen,
       hideEvent: this.hideEventById,
+      hidePlayer: (hidden) => {
+        this.playerHidden = hidden;
+      },
     };
   }
 

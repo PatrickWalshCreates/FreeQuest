@@ -75,6 +75,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 5, migrate: (d) => d },
     // v7: the rename record for saves. Additive.
     { from: 6, migrate: (d) => d },
+    // v8: the player can start hidden. Additive.
+    { from: 7, migrate: (d) => d },
   ],
   tileset: [],
   map: [
@@ -92,10 +94,16 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 6, migrate: (d) => d },
     // v8: message faces. Additive.
     { from: 7, migrate: (d) => d },
+    // v9: changeActor and hidePlayer. Additive.
+    { from: 8, migrate: (d) => d },
   ],
   character: [],
-  // Save v2: event flags (none were set before).
-  save: [{ from: 1, migrate: (d) => ({ ...d, flags: {} }) }],
+  // Save v2: event flags (none were set before). v3: actors' changed looks and
+  // names, the player hidden (both optional, so additive).
+  save: [
+    { from: 1, migrate: (d) => ({ ...d, flags: {} }) },
+    { from: 2, migrate: (d) => d },
+  ],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
   // Both additive. v4: enemy action conditions (every action gets an empty list).
   ...(Object.fromEntries(

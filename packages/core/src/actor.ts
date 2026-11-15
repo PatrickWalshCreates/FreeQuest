@@ -16,6 +16,12 @@ export interface ActorData {
   states: StateInstance[];
 }
 
+/** An actor's changed name and character (a changeActor command), kept by the party. */
+export interface ActorLooks {
+  name?: string;
+  character?: string;
+}
+
 /** What happened when experience was gained. */
 export interface LevelUpResult {
   readonly levelsGained: number;
@@ -30,7 +36,15 @@ export class Actor extends Battler {
   private readonly equipped = new Map<string, string>();
   private readonly extraSkills = new Set<string>();
 
-  constructor(db: DatabaseIndex, id: string) {
+  /**
+   * @param looks The actor's changed name and character, if any (the party's,
+   *   so changes made while the actor is out of the party still apply).
+   */
+  constructor(
+    db: DatabaseIndex,
+    id: string,
+    private readonly looks: () => ActorLooks | undefined = () => undefined,
+  ) {
     super(db);
     this.entry = db.actors.get(id);
     this.currentLevel = this.entry.level;
@@ -40,8 +54,8 @@ export class Actor extends Battler {
   }
 
   /** Restore an actor from saved data. */
-  static fromData(db: DatabaseIndex, data: ActorData): Actor {
-    const actor = new Actor(db, data.id);
+  static fromData(db: DatabaseIndex, data: ActorData, looks?: () => ActorLooks | undefined): Actor {
+    const actor = new Actor(db, data.id, looks);
     actor.currentLevel = data.level;
     actor.currentExp = data.exp;
     actor.equipped.clear();
@@ -73,7 +87,12 @@ export class Actor extends Battler {
   }
 
   get name(): string {
-    return this.entry.name;
+    return this.looks()?.name ?? this.entry.name;
+  }
+
+  /** The character the actor shows as (and the player, while this actor leads). */
+  get character(): string {
+    return this.looks()?.character ?? this.entry.character;
   }
 
   get classEntry(): ClassEntry {

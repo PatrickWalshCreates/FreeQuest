@@ -1,7 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, PositiveInt } from './common.js';
 
-export const SAVE_FORMAT_VERSION = 2;
+export const SAVE_FORMAT_VERSION = 3;
 
 const Counts = Type.Record(Type.String(), NonNegativeInt);
 
@@ -64,8 +64,20 @@ export const SaveFile = Type.Object(
     ),
     /** Event flags that are on: map id → event id → flag ids (v2). */
     flags: Type.Record(Type.String(), Type.Record(Type.String(), Type.Array(Id))),
+    /** The player hidden by an event (v3). */
+    playerHidden: Type.Optional(Type.Boolean()),
     party: Type.Object(
       {
+        /** Actors' changed names and characters, members or not (v3). */
+        looks: Type.Optional(
+          Type.Record(
+            Type.String(),
+            Type.Object(
+              { name: Type.Optional(Type.String()), character: Type.Optional(Id) },
+              { additionalProperties: false },
+            ),
+          ),
+        ),
         members: Type.Array(SavedActor),
         gold: NonNegativeInt,
         items: Counts,

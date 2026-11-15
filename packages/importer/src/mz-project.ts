@@ -40,6 +40,8 @@ export interface MzSystem {
   readonly party: readonly number[];
   /** Side-view battles (enemy images in img/sv_enemies). */
   readonly sideView: boolean;
+  /** The player starts transparent (hidden). */
+  readonly startHidden: boolean;
 }
 
 export interface MzMapInfo {
@@ -139,6 +141,7 @@ function readSystem(raw: Readonly<Record<string, unknown>>): MzSystem {
       y: Math.max(0, asInt(raw['startY'])),
     },
     sideView: raw['optSideView'] === true,
+    startHidden: raw['optTransparent'] === true,
     party: asArray(raw['partyMembers'])
       .map((v) => asInt(v))
       .filter((n) => n > 0),

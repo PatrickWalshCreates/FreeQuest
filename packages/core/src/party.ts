@@ -1,4 +1,4 @@
-import { Actor, type ActorData } from './actor.js';
+import { Actor, type ActorData, type ActorLooks } from './actor.js';
 import type { DatabaseIndex } from './database.js';
 
 export const MAX_GOLD = 99_999_999;
@@ -18,6 +18,8 @@ export interface PartyData {
   equipment: Record<string, number>;
   /** Total steps walked (drives step-based effects; handy for stats). */
   steps: number;
+  /** Actors' changed names and characters, by actor id (members or not). */
+  looks?: Record<string, ActorLooks>;
 }
 
 /** What one map step did to the party. */
@@ -34,6 +36,7 @@ export class Party {
   private currentGold = 0;
   private stepCount = 0;
   private changes = 0;
+  private readonly looks = new Map<string, ActorLooks>();
   private readonly bags: Record<InventoryKind, Map<string, number>> = {
     item: new Map(),
     equipment: new Map(),
@@ -51,7 +54,10 @@ export class Party {
 
   static fromData(db: DatabaseIndex, data: PartyData): Party {
     const party = new Party(db);
-    party.memberList.push(...data.members.map((m) => Actor.fromData(db, m)));
+    for (const [id, look] of Object.entries(data.looks ?? {})) {
+      if (db.actors.find(id)) party.looks.set(id, { ...look });
+    }
+    party.memberList.push(...data.members.map((m) => Actor.fromData(db, m, party.lookOf(m.id))));
     party.currentGold = data.gold;
     for (const [id, n] of Object.entries(data.items)) party.bags.item.set(id, n);
     for (const [id, n] of Object.entries(data.equipment)) party.bags.equipment.set(id, n);
@@ -66,7 +72,29 @@ export class Party {
       items: Object.fromEntries(this.bags.item),
       equipment: Object.fromEntries(this.bags.equipment),
       steps: this.stepCount,
+      ...(this.looks.size > 0
+        ? { looks: Object.fromEntries([...this.looks].map(([id, l]) => [id, { ...l }])) }
+        : {}),
     };
+  }
+
+  private lookOf(id: string): () => ActorLooks | undefined {
+    return () => this.looks.get(id);
+  }
+
+  /** Give an actor (a member or not) another name or character, for the rest of the game. */
+  changeActor(id: string, change: ActorLooks): void {
+    this.db.actors.get(id); // throws for an unknown actor
+    const look = { ...this.looks.get(id) };
+    if (change.name !== undefined) look.name = change.name;
+    if (change.character !== undefined) look.character = change.character;
+    this.looks.set(id, look);
+    this.changes++;
+  }
+
+  /** An actor's name now (changed or the database's), whether or not they're a member. */
+  actorName(id: string): string {
+    return this.looks.get(id)?.name ?? this.db.actors.find(id)?.name ?? id;
   }
 
   get steps(): number {
@@ -115,7 +143,7 @@ export class Party {
   /** Add an actor at the end of the party. Does nothing if already a member. */
   addMember(id: string): void {
     if (this.hasMember(id)) return;
-    this.memberList.push(new Actor(this.db, id));
+    this.memberList.push(new Actor(this.db, id, this.lookOf(id)));
     this.changes++;
   }
 

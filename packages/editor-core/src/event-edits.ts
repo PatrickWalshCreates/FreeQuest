@@ -351,6 +351,8 @@ export interface NameLookup {
   common?(id: string): string;
   /** An event on the map being edited (for move routes); ids are shown without one. */
   event?(id: string): string;
+  /** A character sheet; ids are shown without one. */
+  character?(id: string): string;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */
@@ -436,6 +438,17 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
     case 'hideEvent': {
       const who = command.event ? (names.event?.(command.event) ?? command.event) : 'this event';
       return `${command.hidden ? 'Hide' : 'Show'} ${who}`;
+    }
+    case 'hidePlayer':
+      return command.hidden ? 'Hide the player' : 'Show the player';
+    case 'changeActor': {
+      const changes = [
+        command.character !== undefined
+          ? `looks like ${names.character?.(command.character) ?? command.character}`
+          : '',
+        command.name !== undefined ? `is called ${quote(command.name)}` : '',
+      ].filter(Boolean);
+      return `${names.actor(command.actor)} ${changes.join(' and ') || 'changes nothing'}`;
     }
     case 'loop':
       return 'Loop (repeats until Break loop)';
@@ -597,9 +610,17 @@ export const COMMAND_GROUPS: readonly {
   { label: 'Game state', types: ['setSwitch', 'setVariable', 'setFlag'] },
   {
     label: 'Party',
-    types: ['changeGold', 'changeItems', 'shop', 'changeParty', 'gainExp', 'recoverAll'],
+    types: [
+      'changeGold',
+      'changeItems',
+      'shop',
+      'changeParty',
+      'changeActor',
+      'gainExp',
+      'recoverAll',
+    ],
   },
-  { label: 'World', types: ['transfer', 'moveRoute', 'hideEvent', 'battle'] },
+  { label: 'World', types: ['transfer', 'moveRoute', 'hideEvent', 'hidePlayer', 'battle'] },
   { label: 'Screen', types: ['fadeScreen', 'tintScreen', 'flashScreen', 'shakeScreen'] },
   { label: 'Audio', types: ['playMusic', 'playSound'] },
 ];
@@ -616,6 +637,8 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   flashScreen: 'Flash screen',
   shakeScreen: 'Shake screen',
   hideEvent: 'Hide or show event',
+  hidePlayer: 'Hide or show the player',
+  changeActor: 'Change actor',
   loop: 'Loop',
   break: 'Break loop',
   exitEvent: 'Exit event',

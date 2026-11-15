@@ -2385,3 +2385,19 @@ h2.with-actions button {
   border-radius: var(--radius);
   padding: 0 12px;
 }
+
+/* Project settings: the player section. */
+.player-settings {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px 12px;
+  margin: 12px 0;
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+}
+
+.player-settings legend {
+  padding: 0 4px;
+  font-weight: 600;
+}

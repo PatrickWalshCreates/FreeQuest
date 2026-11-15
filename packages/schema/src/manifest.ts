@@ -9,7 +9,7 @@ import {
   RelativePath,
 } from './common.js';
 
-export const MANIFEST_FORMAT_VERSION = 7;
+export const MANIFEST_FORMAT_VERSION = 8;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -90,6 +90,9 @@ export const Manifest = Type.Object(
           exclusiveMinimum: 0,
           description: 'Walking speed in tiles per second.',
         }),
+        hidden: Type.Optional(
+          Type.Boolean({ description: 'The player starts hidden (an event shows them) (v8).' }),
+        ),
       },
       { additionalProperties: false },
     ),

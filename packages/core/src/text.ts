@@ -45,8 +45,8 @@ export function expandText(source: string, context: EventContext | GameState): T
         add(String(ctx.state.getVariable(arg)));
         break;
       case 'actor':
-        // A member's current name, else the database's.
-        add(party().member(arg)?.name ?? party().db.actors.find(arg)?.name ?? arg);
+        // The actor's name now (a changeActor command may have changed it).
+        add(party().actorName(arg));
         break;
       case 'member':
         add(party().members[Number(arg) - 1]?.name ?? '');

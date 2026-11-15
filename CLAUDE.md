@@ -290,6 +290,12 @@ Never the other way.
 - **Battler** (`battler.ts`) is shared by `Actor` and `Enemy`: HP/MP clamped; 0 HP adds the
   `knockout: true` state; removing knockout revives at ≥1 HP (so "remove knockout, recover 25%"
   yields 1 + 25%). States sorted by priority, count down by battle turn (`tickTurn`) or map step.
+- **Actor looks** (M14): `Party.changeActor(id, { name?, character? })` keeps changes for any
+  actor (member or not) in `looks`, which `Actor.name` / `Actor.character` read through, and
+  `actorName(id)` (`{actor:id}` uses it). `World.playerCharacter` is the leader's character,
+  else the manifest's `player.character`; `World.playerHidden` (from `player.hidden`, the
+  `hidePlayer` command, saves) hides the sprite only (the player still walks). The runtime
+  swaps the player's `CharacterView` graphic when `playerCharacter` changes.
 - **Party** (`party.ts`): members, gold (≤ 99,999,999), separate item/equipment bags (≤ 99 each),
   equip/unequip through the bag. Every map step calls `party.onStep()`; poison/regen ticks every 20
   steps and can't knock out on the map. `Party.version` (like `GameState.version`) drives page
@@ -941,13 +947,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
-- Current versions: manifest 7 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+- Current versions: manifest 8 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
-  `commonEvents` database category; v7: `renames`, the rename record for saves),
-  map 8 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`),
+  map 9 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
-  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 2 (v2: `flags`, `{}` for older saves, and optional `screen`). Additive bumps migrate as no-ops.
+  facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden` and `party.looks`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1244,12 +1250,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   1. ~~Message pacing: `{wait:n}`, `{key}`, `{instant}`…`{/instant}`; the importer turns MZ's
      pauses, key waits and instant text into them~~ (done; the samples' 692 pauses and 198 key
      waits now come across, and no message codes are left in their reports)
-  2. Who the player looks like: the player is drawn as the party leader's character (the
-     manifest's `player.character` stays the fallback for an empty party), a `changeActor`
-     command (character, face, name), and hiding the player (MZ's transparency and "start
-     transparent"). Actors' changed looks and names go in saves (save v3). Importer: Change
-     actor images, Change name, Transparency, the start option [an intro's silhouette hero; 25
-     renames]. Map v9.
+  2. ~~Who the player looks like: the party leader's character, `changeActor` (character,
+     name), `hidePlayer` and "starts hidden"; saved; the importer brings Change actor images,
+     Change name, Transparency and MZ's start option~~ (done; Winds Rhapsody's intro hides its
+     player as in MZ, Wolf's Gang's 26 actor changes come across. Faces aren't per actor in
+     FreeQuest, so an image change takes only the map character. Project settings gained a
+     Player section: character for an empty party, speed, starts hidden)
   3. Move routes: change the character (`image` step), walk through things, keep facing,
      walking/stepping animation on/off, jump, diagonal moves, step backward, play a sound,
      set a switch [~350 steps in all; 164 image changes]. Same map v9.

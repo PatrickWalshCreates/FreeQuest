@@ -451,6 +451,7 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           <h1>{labelOf(current)}</h1>
           {current.data && 'name' in current.data && <NameField doc={doc} file={current} />}
           {current.kind === 'manifest' && <GameIdField doc={doc} />}
+          {current.kind === 'manifest' && <PlayerSettings doc={doc} />}
           <Summary file={current} />
           {current.kind === 'manifest' && current.data && <SwitchesAndVariables doc={doc} />}
           {!current.data && <p className="error">This file could not be loaded.</p>}
@@ -605,6 +606,80 @@ function GameIdField({ doc }: { readonly doc: ProjectDocument }) {
           : 'Use lowercase letters, digits, "-" and "_", starting with a letter or digit.'}
       </span>
     </label>
+  );
+}
+
+/** The player: their character when the party is empty, walking speed, and starting hidden. */
+function PlayerSettings({ doc }: { readonly doc: ProjectDocument }) {
+  const project = doc.project;
+  const player = project.manifest.data.player;
+  const change = (label: string, fn: (p: typeof player) => typeof player, coalesce?: string) =>
+    doc.update(
+      MANIFEST_PATH,
+      'manifest',
+      label,
+      (m) => ({ ...m, player: fn(m.player) }),
+      coalesce ? { coalesce } : undefined,
+    );
+  const characters = [...project.characters.entries()].map(([id, file]) => ({
+    id,
+    name: file.data?.name || id,
+  }));
+  return (
+    <fieldset className="player-settings">
+      <legend>Player</legend>
+      <p className="hint">
+        The player looks like the first member of the party (changed with Change actor). This
+        character is for when the party is empty.
+      </p>
+      <label className="field">
+        <span>Character</span>
+        <select
+          value={player.character}
+          onChange={(e) =>
+            change('Change player character', (p) => ({ ...p, character: e.target.value }))
+          }
+        >
+          {characters.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>Walking speed (tiles per second)</span>
+        <input
+          type="number"
+          min={0.5}
+          max={16}
+          step={0.5}
+          value={player.speed}
+          onChange={(e) => {
+            const speed = Number(e.target.value);
+            if (speed > 0 && speed <= 16)
+              change('Change player speed', (p) => ({ ...p, speed }), 'player-speed');
+          }}
+          onBlur={() => doc.endCoalescing()}
+        />
+      </label>
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={player.hidden === true}
+          onChange={(e) =>
+            change(
+              e.target.checked ? 'Hide the player at the start' : 'Show the player at the start',
+              (p) => {
+                const { hidden: _, ...rest } = p;
+                return e.target.checked ? { ...rest, hidden: true } : rest;
+              },
+            )
+          }
+        />
+        Starts hidden (an event shows the player with “Hide or show the player”)
+      </label>
+    </fieldset>
   );
 }
 

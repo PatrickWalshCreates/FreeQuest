@@ -228,5 +228,6 @@
       "pitch": 100,
       "volume": 90
     }
-  ]
+  ],
+  "optTransparent": true
 }

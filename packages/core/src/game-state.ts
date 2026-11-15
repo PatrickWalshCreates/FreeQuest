@@ -205,6 +205,8 @@ export interface EventContext {
   readonly screen?: ScreenEffects;
   /** Hide an event on the map (or show it again) until the map loads again. */
   readonly hideEvent?: (id: string, hidden: boolean) => void;
+  /** Hide the player (or show them again). Without one it does nothing. */
+  readonly hidePlayer?: (hidden: boolean) => void;
 }
 
 /** Starts move routes for the interpreter. */
