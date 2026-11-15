@@ -215,6 +215,54 @@
       },
       "required": ["members", "gold", "items", "equipment", "steps"]
     },
+    "pictures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "opacity": {
+            "type": "number",
+            "maximum": 1,
+            "minimum": 0
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "top-left"
+              },
+              {
+                "type": "string",
+                "const": "center"
+              }
+            ]
+          },
+          "scaleX": {
+            "type": "number",
+            "minimum": 0
+          },
+          "scaleY": {
+            "type": "number",
+            "minimum": 0
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": ["number", "image", "origin", "x", "y", "scaleX", "scaleY", "opacity"]
+      }
+    },
     "playSeconds": {
       "type": "number",
       "minimum": 0

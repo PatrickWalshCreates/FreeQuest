@@ -64,6 +64,11 @@ const LABELS: Record<string, string> = {
   axis: 'Which',
   action: 'Key',
   target: 'Who',
+  number: 'Picture number (higher ones are drawn on top)',
+  origin: 'X and Y place its',
+  scaleX: 'Width (%)',
+  scaleY: 'Height (%)',
+  opacity: 'Opacity (0–1)',
 };
 
 /** Readable choices for fields whose values are words. */
@@ -85,6 +90,13 @@ const CHOICE_LABELS: Record<string, Record<string, string>> = {
     magicDefense: 'Magic defense',
   },
   direction: { back: 'Back to the player' },
+  origin: { 'top-left': 'Top-left corner', center: 'Centre' },
+  easing: {
+    linear: 'Steady',
+    'ease-in': 'Starts slow',
+    'ease-out': 'Ends slow',
+    'ease-in-out': 'Starts and ends slow',
+  },
 };
 
 /** Fields whose text may hold `{…}` codes (messages, speakers, choice labels). */
@@ -126,6 +138,11 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   // Scrolling the map: a few tiles at walking pace.
   tiles: 4,
   speed: 4,
+  // Pictures: number 1, full size, solid.
+  number: 1,
+  scaleX: 100,
+  scaleY: 100,
+  opacity: 1,
 };
 
 const AUDIO_FIELDS = new Set<string>([

@@ -264,6 +264,17 @@ Never the other way.
   `Channel` at the sound volume, map scenes only), `changeHp` (`canKnockOut`, knocked-out
   members untouched) / `changeMp` / `changeState`. `World.playSeconds` counts world steps (set
   from saves). The menu greys Save while saving is off.
+- **Pictures** (map v9, save v3 `pictures`; M14 step 5): `showPicture` (number 1–100, image,
+  `origin` top-left/center, x/y operands in screen pixels, `scaleX`/`scaleY` percent, `opacity`
+  0–1), `movePicture` (the same look plus `seconds`, `easing`, `wait`), `erasePicture`. Core
+  `pictures.ts` (`Pictures`, `ease`): game-wide on `World.pictures`, kept across maps, advanced
+  in `World.step`; scale is a factor in core and saves; a move's "finished" check is true once
+  it arrives or the picture is replaced/erased/missing; saves keep where a move has got to.
+  Runtime `PictureView` (texture cache, sprites by number, zIndex = number) is drawn between
+  the map scene and the screen effects, hidden on the title and in battles. Editor-core:
+  `assets/pictures` folder; export and the reference index see `image`. Importer:
+  `GraphicsImporter.picture` copies `img/pictures/<name>.png`; Show with no image = erase;
+  blend modes noted; rotate/tint stay comments.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -980,8 +991,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   map 9 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`). Additive bumps migrate as no-ops.
+  `backgroundSound`, pictures), tileset 1, character 1, every database file 4 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1295,9 +1306,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      samples' summaries list none of these any more: Wolf's Gang's 43 event placements, 10
      scrolls, 39 variable settings (but 3 scripts) and its BGS come across; tried in the
      editor's dialogs. Labels and jumps stay out, by design)
-  5. Pictures: numbered pictures over the map (show with origin, position, scale, opacity;
-     move over time; erase), kept across maps and in saves; core state like `ScreenEffects`,
-     drawn by runtime between the map and the dialog [153 / 3; one game's message boxes].
+  5. ~~Pictures: numbered pictures over the map (show with origin, position, scale, opacity;
+     move over time with easing; erase), kept across maps and in saves; core state like
+     `ScreenEffects`, drawn by runtime between the map and the screen effects~~ (done; every
+     Show/Move/Erase picture in both samples comes across (153 in Wolf's Gang, 61 images);
+     they use no rotation, tint or blend modes. Seen in the dev player: a picture shown, a
+     second faded in at double size)
   6. Animations and balloons: FreeQuest's own animation format (a database category: a sprite
      sheet, frames, timing, sounds), played on events, the player and in battle (skills and
      items get an optional animation), and balloon icons over characters. MZ's animations are

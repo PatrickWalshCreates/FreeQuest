@@ -591,6 +591,12 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return command.direction === 'back'
         ? `Scroll the map back to the player${command.wait ? ', and wait' : ''}`
         : `Scroll the map ${command.tiles} ${command.tiles === 1 ? 'tile' : 'tiles'} ${ARROWS[command.direction] ?? command.direction}${command.wait ? ', and wait' : ''}`;
+    case 'showPicture':
+      return `Show picture ${command.number}: ${fileName(command.image)} at (${operand(command.x, names)}, ${operand(command.y, names)})${command.opacity < 1 ? `, ${Math.round(command.opacity * 100)}% opaque` : ''}`;
+    case 'movePicture':
+      return `Move picture ${command.number} to (${operand(command.x, names)}, ${operand(command.y, names)})${command.opacity < 1 ? `, ${Math.round(command.opacity * 100)}% opaque` : ''}${timing(command)}`;
+    case 'erasePicture':
+      return `Erase picture ${command.number}`;
     case 'gameOver':
       return 'Game over';
     case 'returnToTitle':
@@ -771,7 +777,16 @@ export const COMMAND_GROUPS: readonly {
   },
   {
     label: 'Screen',
-    types: ['fadeScreen', 'tintScreen', 'flashScreen', 'shakeScreen', 'scrollMap'],
+    types: [
+      'fadeScreen',
+      'tintScreen',
+      'flashScreen',
+      'shakeScreen',
+      'scrollMap',
+      'showPicture',
+      'movePicture',
+      'erasePicture',
+    ],
   },
   {
     label: 'Audio',
@@ -812,6 +827,9 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   playMusic: 'Play music',
   playSound: 'Play sound',
   placeEvent: 'Place event',
+  showPicture: 'Show picture',
+  movePicture: 'Move picture',
+  erasePicture: 'Erase picture',
   scrollMap: 'Scroll map',
   gameOver: 'Game over',
   returnToTitle: 'Back to title',

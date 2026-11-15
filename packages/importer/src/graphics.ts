@@ -34,6 +34,8 @@ export class GraphicsImporter {
   readonly #characterIds = new Set<string>();
   readonly #faceIds = new Set<string>();
   readonly #enemyIds = new Set<string>();
+  readonly #pictures = new Map<string, string | null>();
+  readonly #pictureIds = new Set<string>();
   readonly #out: {
     characters: ImportedGraphics['characters'][number][];
     files: ImportedGraphics['files'][number][];
@@ -209,6 +211,25 @@ export class GraphicsImporter {
     }
     if (!path) this.report.missing(where, await this.#missing(`img/${folders[0]}/${name}.png`));
     this.#enemies.set(name, path);
+    return path;
+  }
+
+  /** A picture from img/pictures, copied as it is (on first use). */
+  async picture(name: string, where: string): Promise<string | null> {
+    if (name === '') return null;
+    if (this.#pictures.has(name)) return this.#pictures.get(name) ?? null;
+    let path: string | null = null;
+    try {
+      const bytes = await this.fs.readBytes(`img/pictures/${name}.png`);
+      const id = uniqueId(idFromName(name, 'picture'), this.#pictureIds);
+      this.#pictureIds.add(id);
+      path = `assets/pictures/${id}.png`;
+      this.#out.files.push({ path, bytes });
+    } catch (error) {
+      if (!(error instanceof FileNotFoundError)) throw error;
+      this.report.missing(where, await this.#missing(`img/pictures/${name}.png`));
+    }
+    this.#pictures.set(name, path);
     return path;
   }
 

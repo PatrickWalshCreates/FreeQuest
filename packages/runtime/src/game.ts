@@ -39,6 +39,7 @@ import { ShopView } from './shop-view.js';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
+import { PictureView } from './picture-view.js';
 import { fitScale } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
 import { TransferController } from './transfer.js';
@@ -149,6 +150,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const scene = new Container({ label: 'scene' });
   scene.addChild(characters);
   app.stage.addChild(scene);
+  // Pictures events show: over the map, under the screen effects (a fade covers them).
+  const pictureView = new PictureView((path) => loadPixelTexture(project.assetUrl(path)));
+  app.stage.addChild(pictureView.container);
   // Events' fades, tints and flashes: over the map, under messages and menus.
   const screenEffects = new Graphics({ label: 'screen-effects' });
   app.stage.addChild(screenEffects);
@@ -477,6 +481,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     // Only the chunks around the camera are built (and freed again when it moves away).
     shown?.view.update({ x: camera.x, y: camera.y, width, height });
     drawScreenEffects(screenEffects, screen, width, height);
+    pictureView.render(world.pictures.list);
   };
 
   const tick = () => {
@@ -557,6 +562,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       elapsed += dt;
     });
     screenEffects.visible = mode === 'playing';
+    // Pictures belong to the map's scene: not over the title or a battle.
+    pictureView.container.visible = mode === 'playing' && scene.visible;
     if (mode === 'title' || mode === 'loading') {
       titleView.render(title.state, manifest.name);
     } else {

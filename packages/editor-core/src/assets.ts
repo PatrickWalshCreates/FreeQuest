@@ -19,6 +19,7 @@ export const ASSET_FOLDERS: readonly {
   { path: 'assets/characters', label: 'Characters', type: 'image' },
   { path: 'assets/enemies', label: 'Enemies', type: 'image' },
   { path: 'assets/faces', label: 'Faces', type: 'image' },
+  { path: 'assets/pictures', label: 'Pictures', type: 'image' },
   { path: 'assets/images', label: 'Other images', type: 'image' },
   { path: 'assets/audio', label: 'Audio', type: 'audio' },
 ];

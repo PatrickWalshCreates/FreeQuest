@@ -2027,6 +2027,227 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Show an image over the map at a screen position (replacing the picture with that number). Pictures stay across maps and in saves until erased (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showPicture"
+            },
+            "image": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 = invisible, 1 = solid.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "origin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "top-left"
+                },
+                {
+                  "type": "string",
+                  "const": "center"
+                }
+              ]
+            },
+            "scaleX": {
+              "type": "integer",
+              "description": "Width, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "scaleY": {
+              "type": "integer",
+              "description": "Height, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "number", "image", "origin", "x", "y", "scaleX", "scaleY", "opacity"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move, resize or fade a picture over time (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "movePicture"
+            },
+            "easing": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "linear"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-in"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-out"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-in-out"
+                }
+              ]
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 = invisible, 1 = solid.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "origin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "top-left"
+                },
+                {
+                  "type": "string",
+                  "const": "center"
+                }
+              ]
+            },
+            "scaleX": {
+              "type": "integer",
+              "description": "Width, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "scaleY": {
+              "type": "integer",
+              "description": "Height, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "number", "origin", "x", "y", "scaleX", "scaleY", "opacity", "seconds", "easing", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Take a picture away (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "erasePicture"
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            }
+          },
+          "required": ["type", "number"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Repeat these commands until a Break loop (or Exit event) inside them.",
           "properties": {
             "type": {

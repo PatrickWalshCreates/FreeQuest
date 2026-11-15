@@ -13,6 +13,7 @@ import {
   type EventLayer,
   type EventMovement,
   type EventPage,
+  type Easing,
   type EventTrigger,
   type GameValue,
   type IfCondition,
@@ -124,6 +125,8 @@ const DIRECTIONS: Readonly<Record<number, Direction>> = {
   6: 'right',
   8: 'up',
 };
+const EASINGS: readonly Easing[] = ['linear', 'ease-in', 'ease-out', 'ease-in-out'];
+
 const SCROLL_DIRECTIONS: Readonly<Record<number, 'up' | 'down' | 'left' | 'right'>> = {
   2: 'down',
   4: 'left',
@@ -468,6 +471,11 @@ class Converter {
           },
         ];
       }
+      case 231:
+      case 232:
+        return this.#picture(code, p);
+      case 235:
+        return [{ type: 'erasePicture', number: Math.max(1, Math.min(100, int(0))) }];
       case 352:
         return [{ type: 'openSave' }];
       case 353:
@@ -680,6 +688,45 @@ class Converter {
         );
     }
     return null;
+  }
+
+  /** Show picture (231) or Move picture (232): its look, and a move's time and easing. */
+  async #picture(code: 231 | 232, p: readonly unknown[]): Promise<Command[]> {
+    const int = (i: number) => asInt(p[i]);
+    const number = int(0);
+    if (number < 1 || number > 100) return [this.#unsupported(code, `picture number ${number}`)];
+    const byVariables = int(3) === 1;
+    const position = (i: number) =>
+      byVariables ? { variable: this.ctx.variables.id(int(i)) } : int(i);
+    const look = {
+      origin: int(2) === 1 ? ('center' as const) : ('top-left' as const),
+      x: position(4),
+      y: position(5),
+      scaleX: Math.max(0, Math.min(2000, int(6))),
+      scaleY: Math.max(0, Math.min(2000, int(7))),
+      opacity: Math.round((Math.max(0, Math.min(255, int(8))) / 255) * 1000) / 1000,
+    };
+    if (int(9) !== 0) {
+      this.left.notes.add('A picture used a blend mode (add, multiply…); it’s drawn normally.');
+    }
+    if (code === 232) {
+      return [
+        {
+          type: 'movePicture',
+          number,
+          ...look,
+          seconds: Math.min(60, frames(int(10))),
+          easing: EASINGS[int(12)] ?? 'linear',
+          wait: p[11] === true,
+        },
+      ];
+    }
+    // A picture shown with no image leaves its slot empty: MZ's way of erasing it.
+    if (asString(p[1]) === '') return [{ type: 'erasePicture', number }];
+    const image = await this.ctx.graphics.picture(asString(p[1]), this.scope.where);
+    if (!image)
+      return [this.#unsupported(231, `a picture that isn’t there (${asString(p[1]) || 'none'})`)];
+    return [{ type: 'showPicture', number, image, ...look }];
   }
 
   /** MZ's character number: -1 the player, 0 this event, else an event on this map. */

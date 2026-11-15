@@ -13,6 +13,7 @@ import type {
 import type { Party } from './party.js';
 import type { ScreenEffects } from './screen.js';
 import type { MapScroll } from './scroll.js';
+import type { Pictures } from './pictures.js';
 
 /** Event flags that are on: map id → event id → flag ids (as saves store them). */
 export type FlagData = Record<string, Record<string, string[]>>;
@@ -219,6 +220,8 @@ export interface EventContext {
   readonly placeEvent?: (id: string, x: number, y: number, direction?: Direction) => void;
   /** The view's scroll away from the player. Without one, scrollMap does nothing. */
   readonly scroll?: MapScroll;
+  /** Pictures over the map. Without them, picture commands do nothing. */
+  readonly pictures?: Pictures;
   /** Turn the menu or saving on or off. */
   readonly setAccess?: (what: 'menu' | 'saving', allowed: boolean) => void;
   /** Seconds played so far. */

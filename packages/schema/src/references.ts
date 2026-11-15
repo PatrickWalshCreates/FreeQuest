@@ -180,6 +180,8 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
           case 'moveRoute':
             checks.checkSteps(at, command.steps);
             break;
+          case 'showPicture':
+          case 'movePicture':
           case 'placeEvent':
             checkOperand(at, command.x);
             checkOperand(at, command.y);

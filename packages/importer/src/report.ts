@@ -58,6 +58,7 @@ const KNOWN_TOPICS: readonly (readonly [RegExp, string])[] = [
   [/hit \d+ times/, 'Skills that hit several times'],
   [/hidden item/, 'Hidden items'],
   [/water shows its first frame/, 'Moving water'],
+  [/blend mode/, 'Picture blend modes'],
   [/no character picture/, 'Actors without a character picture'],
   [/drained/, 'Draining skills'],
   [/targeted (allies whether|everyone)/, 'Skills targeting knocked-out allies or everyone'],

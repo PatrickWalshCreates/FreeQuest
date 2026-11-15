@@ -74,6 +74,24 @@ export const SaveFile = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    /** Pictures shown by events, as they are now (v3). */
+    pictures: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            number: Type.Integer({ minimum: 1 }),
+            image: Type.String(),
+            origin: Type.Union([Type.Literal('top-left'), Type.Literal('center')]),
+            x: Type.Number(),
+            y: Type.Number(),
+            scaleX: Type.Number({ minimum: 0 }),
+            scaleY: Type.Number({ minimum: 0 }),
+            opacity: Type.Number({ minimum: 0, maximum: 1 }),
+          },
+          { additionalProperties: false },
+        ),
+      ),
+    ),
     /** Battle and victory music changed by events; null = none (v3). */
     battleMusic: Type.Optional(
       Type.Object(

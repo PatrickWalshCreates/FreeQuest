@@ -103,6 +103,33 @@ export const VariableValue = Type.Union([
 ]);
 export type VariableValue = Static<typeof VariableValue>;
 
+/** A picture's number: its slot (higher numbers are drawn over lower ones). */
+export const MAX_PICTURES = 100;
+const PictureNumber = Type.Integer({ minimum: 1, maximum: MAX_PICTURES });
+
+/** Where a picture's x and y put it: its top-left corner, or its centre. */
+export const PictureOrigin = Type.Union([Type.Literal('top-left'), Type.Literal('center')]);
+export type PictureOrigin = Static<typeof PictureOrigin>;
+
+/** How a picture's move speeds up and slows down. */
+export const Easing = Type.Union([
+  Type.Literal('linear'),
+  Type.Literal('ease-in'),
+  Type.Literal('ease-out'),
+  Type.Literal('ease-in-out'),
+]);
+export type Easing = Static<typeof Easing>;
+
+/** Where a picture is and how it looks (screen pixels, percent sizes, opacity 0–1). */
+const PictureLook = {
+  origin: PictureOrigin,
+  x: Operand,
+  y: Operand,
+  scaleX: Type.Integer({ minimum: 0, maximum: 2000, description: 'Width, in percent.' }),
+  scaleY: Type.Integer({ minimum: 0, maximum: 2000, description: 'Height, in percent.' }),
+  opacity: Type.Number({ minimum: 0, maximum: 1, description: '0 = invisible, 1 = solid.' }),
+};
+
 /** Which party members a command changes: one actor (if a member), or everyone. */
 const OptionalActor = Type.Optional(Id);
 
@@ -507,6 +534,37 @@ export const Command = Type.Cyclic(
           additionalProperties: false,
           description: 'Add or remove a state for one member or everyone (v9).',
         },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('showPicture'),
+          number: PictureNumber,
+          image: RelativePath,
+          ...PictureLook,
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Show an image over the map at a screen position (replacing the picture with that number). Pictures stay across maps and in saves until erased (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('movePicture'),
+          number: PictureNumber,
+          ...PictureLook,
+          seconds: EffectSeconds,
+          easing: Easing,
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description: 'Move, resize or fade a picture over time (v9).',
+        },
+      ),
+      Type.Object(
+        { type: Type.Literal('erasePicture'), number: PictureNumber },
+        { additionalProperties: false, description: 'Take a picture away (v9).' },
       ),
       Type.Object(
         { type: Type.Literal('loop'), commands: CommandList },

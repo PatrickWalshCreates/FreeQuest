@@ -33,6 +33,15 @@ More of what RPG Maker MZ games use, in FreeQuest itself and brought across by t
 - MZ's move route commands and page options import as these (all but scripts, opacity, blend
   mode and frequency).
 
+### Pictures
+
+- **Show picture**, **Move picture** and **Erase picture**: numbered images over the map at a
+  screen position, with an origin (corner or centre), size and opacity; moves take seconds and
+  can start or end slowly. Pictures stay across maps and in saves. A **Pictures** folder in the
+  Assets panel.
+- MZ's Show, Move and Erase picture import as these, with the pictures they show (blend modes
+  are drawn normally; rotating and tinting pictures aren't imported yet).
+
 ### Event commands
 
 - **Set variable** to a **random number** or **game data**: gold, steps, play time, party size,

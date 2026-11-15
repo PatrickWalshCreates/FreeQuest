@@ -222,6 +222,18 @@ player** makes the player invisible (they still move), handy for cutscenes and i
 **Project settings → Player**, **Starts hidden** begins the game that way. The same section sets
 the character used when the party is empty, and the walking speed.
 
+### Pictures over the map
+
+**Show picture** (in the Screen commands) puts an image over the map, at a position on the
+screen in pixels: a title card, a map, a portrait, a whole scene drawn by hand. Each picture has
+a **number** from 1 to 100; higher numbers are drawn on top, and showing another image with the
+same number replaces it. X and Y place its top-left corner or its centre, width and height are
+percentages (100 = its own size), and opacity runs from 0 (invisible) to 1 (solid), so a picture
+can start invisible and fade in. **Move picture** slides, resizes or fades it over some seconds,
+starting or ending slowly if you like; tick **Wait until done** to let it finish first. **Erase
+picture** takes it away. Pictures stay when the player changes maps and are kept in saves, until
+erased. Put your images in `assets/pictures` (the Assets panel has a Pictures folder).
+
 ### More from If…, Set variable and other commands
 
 - **If…** can also test what only matters at that moment: **a key is held**, which way the

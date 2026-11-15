@@ -10,6 +10,7 @@ import {
 } from '@freequest/schema';
 import { ScreenEffects } from './screen.js';
 import { MapScroll } from './scroll.js';
+import { Pictures } from './pictures.js';
 import { translateSave } from './save-renames.js';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
@@ -77,6 +78,8 @@ export class World {
   readonly screen = new ScreenEffects();
   /** The view moved away from the player by events (in tiles), until the map changes. */
   readonly scroll = new MapScroll();
+  /** Pictures events show over the map: game-wide, kept across maps and in saves. */
+  readonly pictures = new Pictures();
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
   readonly access = { menu: true, saving: true };
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
@@ -291,6 +294,7 @@ export class World {
       screen: this.screen.toData(),
       ...(this.playerHidden ? { playerHidden: true } : {}),
       ...(Object.keys(access).length > 0 ? { access } : {}),
+      ...(this.pictures.list.length > 0 ? { pictures: this.pictures.toData() } : {}),
       ...(Object.keys(this.battleMusic).length > 0 ? { battleMusic: { ...this.battleMusic } } : {}),
       party: {
         ...(party.looks ? { looks: party.looks } : {}),
@@ -329,6 +333,7 @@ export class World {
     });
     world.screen.loadData(save.screen);
     world.playerHidden = save.playerHidden ?? false;
+    world.pictures.loadData(save.pictures);
     world.access.menu = save.access?.menu ?? true;
     world.access.saving = save.access?.saving ?? true;
     Object.assign(world.battleMusic, save.battleMusic ?? {});
@@ -644,6 +649,7 @@ export class World {
       character: this.characterById,
       placeEvent: this.placeEventById,
       scroll: this.scroll,
+      pictures: this.pictures,
       setAccess: (what, allowed) => {
         this.access[what] = allowed;
       },
@@ -816,6 +822,7 @@ export class World {
     this.playSeconds += dt;
     this.screen.update(dt);
     this.scroll.update(dt);
+    this.pictures.update(dt);
     // A party change (a new leader, a changed actor) ends a look a route gave the player.
     if (this.party.version !== this.lookedAtParty) {
       this.lookedAtParty = this.party.version;

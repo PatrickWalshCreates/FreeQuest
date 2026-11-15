@@ -422,6 +422,28 @@ export class Interpreter {
         if (command.wait) this.waitFor = done;
         break;
       }
+      case 'showPicture':
+      case 'movePicture': {
+        const pictures = this.context.pictures;
+        if (!pictures) break;
+        const look = {
+          origin: command.origin,
+          x: this.operand(command.x),
+          y: this.operand(command.y),
+          scaleX: command.scaleX / 100,
+          scaleY: command.scaleY / 100,
+          opacity: command.opacity,
+        };
+        if (command.type === 'showPicture') pictures.show(command.number, command.image, look);
+        else {
+          const done = pictures.move(command.number, look, command.seconds, command.easing);
+          if (command.wait) this.waitFor = done;
+        }
+        break;
+      }
+      case 'erasePicture':
+        this.context.pictures?.erase(command.number);
+        break;
       case 'gameOver':
         this.request = { type: 'gameOver' };
         break;

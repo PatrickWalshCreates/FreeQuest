@@ -271,6 +271,11 @@ function stagehand() {
     cmd(311, 0, [0, 0, 1, 0, 10, false]),
     cmd(312, 0, [0, 1, 0, 0, 5]),
     cmd(313, 0, [0, 1, 0, 2]),
+    cmd(231, 0, [1, 'Sky', 1, 0, 10, 20, 100, 50, 128, 0]),
+    cmd(232, 0, [1, '', 0, 0, 30, 40, 100, 100, 255, 0, 60, true, 2]),
+    cmd(233, 0, [1, 5]),
+    cmd(235, 0, [1]),
+    cmd(231, 0, [2, '', 0, 0, 0, 0, 100, 100, 255, 0]),
     cmd(352, 0),
     cmd(353, 0),
     cmd(354, 0),
@@ -344,6 +349,13 @@ mkdirSync(join(root, 'audio', 'se'), { recursive: true });
 writeFileSync(join(root, 'audio', 'se', 'Chime.ogg'), 'OggS fake sound for tests');
 mkdirSync(join(root, 'audio', 'bgm'), { recursive: true });
 mkdirSync(join(root, 'audio', 'me'), { recursive: true });
+// A picture (our own: a 4 × 2 gradient).
+{
+  const png = new PNG({ width: 4, height: 2 });
+  for (let i = 0; i < 8; i++) png.data.set([i * 30, 100, 200, 255], i * 4);
+  mkdirSync(join(root, 'img', 'pictures'), { recursive: true });
+  writeFileSync(join(root, 'img', 'pictures', 'Sky.png'), PNG.sync.write(png));
+}
 mkdirSync(join(root, 'audio', 'bgs'), { recursive: true });
 writeFileSync(join(root, 'audio', 'bgs', 'Wind.ogg'), 'OggS wind');
 writeFileSync(join(root, 'audio', 'se', 'Cursor.ogg'), 'OggS cursor');

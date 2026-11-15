@@ -51,6 +51,8 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
             add(command.path, 'audio', at);
           }
           if (command.type === 'message') add(command.face?.image, 'image', at);
+          if (command.type === 'showPicture') add(command.image, 'image', at);
+          if (command.type === 'showPicture') add(command.image, 'image', at);
           if (command.type === 'moveRoute') addStepSounds(command.steps, at);
         }),
       );

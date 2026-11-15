@@ -300,6 +300,7 @@ describe('schema forms', () => {
         common: 'rest',
         color: '#ffffff',
         state: 'poison',
+        image: 'assets/pictures/sky.png',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);
