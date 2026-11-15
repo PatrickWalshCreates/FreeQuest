@@ -1,9 +1,10 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "entries": [
     {
       "id": "potion",
       "name": "Potion",
+      "animation": "sparkle",
       "consumable": true,
       "description": "Restores 30% of max HP, at least 100.",
       "effects": [

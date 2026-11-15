@@ -11,6 +11,7 @@ import {
 import { ScreenEffects } from './screen.js';
 import { MapScroll } from './scroll.js';
 import { Pictures } from './pictures.js';
+import { CharacterEffects } from './animations.js';
 import { translateSave } from './save-renames.js';
 import { CollisionMap, type Passability } from './collision.js';
 import { DatabaseIndex } from './database.js';
@@ -80,6 +81,8 @@ export class World {
   readonly scroll = new MapScroll();
   /** Pictures events show over the map: game-wide, kept across maps and in saves. */
   readonly pictures = new Pictures();
+  /** Animations and balloons playing on the player and events (cleared by a new map). */
+  readonly effects = new CharacterEffects();
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
   readonly access = { menu: true, saving: true };
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
@@ -211,6 +214,7 @@ export class World {
     this.musicOverride = undefined;
     this.backgroundOverride = undefined;
     this.scroll.reset();
+    this.effects.clear();
   }
 
   /**
@@ -650,6 +654,16 @@ export class World {
       placeEvent: this.placeEventById,
       scroll: this.scroll,
       pictures: this.pictures,
+      showAnimation: (id, target) => {
+        const entry = this.db.animations.find(id);
+        if (!entry || !this.characterById(target)) return () => true;
+        return this.effects.play(entry, target);
+      },
+      showBalloon: (balloon, target) => {
+        const balloons = this.db.system.balloons;
+        if (!balloons || !this.characterById(target)) return () => true;
+        return this.effects.balloon(balloon, balloons.frames, target);
+      },
       setAccess: (what, allowed) => {
         this.access[what] = allowed;
       },
@@ -823,6 +837,7 @@ export class World {
     this.screen.update(dt);
     this.scroll.update(dt);
     this.pictures.update(dt);
+    this.effects.update(dt, (path) => this.sounds.push(path));
     // A party change (a new leader, a changed actor) ends a look a route gave the player.
     if (this.party.version !== this.lookedAtParty) {
       this.lookedAtParty = this.party.version;

@@ -43,6 +43,43 @@ function setup(troop = 'slimes', options: SetupOptions = {}) {
 }
 
 describe('BattleController', () => {
+  it('keeps a hit’s line up while its animation plays on the target', () => {
+    const party = Party.start(db, { party: ['hero'], gold: 0 });
+    const battle = new Battle({
+      db,
+      party,
+      troop: 'slimes',
+      state: new GameState(),
+      canEscape: true,
+      random: () => 0.5,
+    });
+    // Lines shorter than the slash (6 frames at 15 per second = 0.4 s).
+    const ui = new BattleController(battle, db, { lineSeconds: 0.1 });
+    const input = new ActionState();
+    const step = (press?: Action) => {
+      if (press) input.press(press);
+      ui.update(1 / 60, input);
+      input.endStep();
+      if (press) input.release(press);
+    };
+    for (let i = 0; i < 60 && ui.state.stage === 'playback'; i++) step();
+    step('confirm'); // Fight
+    step('confirm'); // Attack
+    step('confirm'); // the first slime
+    let ticks = 0;
+    for (let i = 0; i < 600 && !ui.state.animation; i++) step();
+    const playing = ui.state.animation;
+    expect(playing?.entry.id).toBe('slash');
+    expect(playing?.target).toBe(battle.enemies[0]);
+    const line = ui.state.line;
+    while (ui.state.line === line && ticks < 600) {
+      step();
+      ticks++;
+    }
+    expect(ticks).toBeGreaterThanOrEqual(23);
+    expect(ui.drainSounds()).toEqual([]);
+  });
+
   it('announces the enemies, then opens the party menu', () => {
     const { ui, tick } = setup();
     expect(ui.state).toMatchObject({ stage: 'playback', line: 'Slime A and Slime B appear!' });
@@ -197,18 +234,26 @@ describe('describeEvent', () => {
       removedStates: [],
       learnedSkills: [],
     };
-    expect(describeEvent({ type: 'hit', user: hero, result: hit }, db)).toEqual([
+    expect(describeEvent({ type: 'hit', user: hero, result: hit, animation: null }, db)).toEqual([
       'Critical hit! Slime A takes 60 damage.',
       'Slime A is defeated!',
     ]);
     expect(
       describeEvent(
-        { type: 'hit', user: slime, result: { ...hit, target: hero, critical: false } },
+        {
+          type: 'hit',
+          user: slime,
+          result: { ...hit, target: hero, critical: false },
+          animation: null,
+        },
         db,
       ),
     ).toEqual(['Hero takes 60 damage.', 'Hero falls!']);
     expect(
-      describeEvent({ type: 'hit', user: hero, result: { ...hit, missed: true } }, db),
+      describeEvent(
+        { type: 'hit', user: hero, result: { ...hit, missed: true }, animation: null },
+        db,
+      ),
     ).toEqual(['Slime A evades the attack!']);
     expect(
       describeEvent(

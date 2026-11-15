@@ -2,6 +2,8 @@ import type { Actor, Battle, BattleEvent, Battler, Enemy } from '@freequest/core
 import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from 'pixi.js';
 import type { BattleUiState } from './battle-controller.js';
 import { DEFAULT_UI_THEME, type UiTheme, drawWindow } from './dialog-view.js';
+import type { AnimationSheets } from './effect-views.js';
+import { animationSeconds } from '@freequest/schema';
 import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 
 const STATUS_ROW = 22;
@@ -40,6 +42,10 @@ export class BattleView {
   private readonly cursor = new Graphics();
   private readonly popupLayer = new Container();
   private readonly popups: Popup[] = [];
+  /** The animation playing on a battler (one at a time: the current log line's). */
+  private readonly animationSprite = new Sprite();
+  /** A hit whose damage number shows once its animation has played. */
+  private pendingHit: Extract<BattleEvent, { type: 'hit' }> | null = null;
   private readonly style: TextStyle;
   private readonly small: TextStyle;
   private lastEvent: BattleEvent | null = null;
@@ -55,6 +61,7 @@ export class BattleView {
     enemyTextures: ReadonlyMap<string, Texture>,
     private readonly theme: UiTheme = DEFAULT_UI_THEME,
     private readonly icons: IconSheet = NO_ICONS,
+    private readonly sheets: AnimationSheets | null = null,
   ) {
     this.style = new TextStyle({
       fontFamily: theme.fontFamily,
@@ -71,7 +78,10 @@ export class BattleView {
     this.container.addChild(this.backdrop(), this.enemyLayer);
     this.layoutEnemies(enemyTextures);
     this.container.addChild(this.logFrame, this.logText, this.statusFrame, this.statusLayer);
-    this.container.addChild(this.menuFrame, this.menuLayer, this.cursor, this.popupLayer);
+    this.container.addChild(this.menuFrame, this.menuLayer, this.cursor);
+    this.container.addChild(this.animationSprite, this.popupLayer);
+    this.animationSprite.anchor.set(0.5);
+    this.animationSprite.visible = false;
   }
 
   private backdrop(): Graphics {
@@ -113,19 +123,47 @@ export class BattleView {
     this.lastTime = time;
     if (state.event !== this.lastEvent) {
       this.lastEvent = state.event;
-      if (state.event?.type === 'hit') this.onHit(state.event);
+      // With an animation, the damage number (and a knockout's fade) waits until it has played.
+      if (this.pendingHit) this.onHit(this.pendingHit);
+      this.pendingHit = null;
+      if (state.event?.type === 'hit') {
+        if (state.animation) this.pendingHit = state.event;
+        else this.onHit(state.event);
+      }
+    }
+    const playing = state.animation;
+    if (this.pendingHit && (!playing || playing.elapsed >= animationSeconds(playing.entry))) {
+      this.onHit(this.pendingHit);
+      this.pendingHit = null;
     }
     this.renderEnemies(dt);
     this.renderLog(state.line);
     this.renderStatus(state);
     this.renderMenu(state);
     this.renderCursor(state);
+    this.renderAnimation(state);
     this.renderPopups(dt);
+  }
+
+  private renderAnimation(state: BattleUiState): void {
+    const playing = state.animation;
+    // Gone after its last frame (the line may stay up longer).
+    const over = playing && playing.elapsed >= animationSeconds(playing.entry);
+    const texture = playing && !over && this.sheets?.animation(playing.entry, playing.elapsed);
+    const at = playing && this.positionOf(playing.target);
+    this.animationSprite.visible = Boolean(texture && at);
+    if (!texture || !at || !playing) return;
+    this.animationSprite.texture = texture;
+    // Over an enemy's middle, or over an actor's status row.
+    const isEnemy = this.enemySprites.some((s) => s.enemy === playing.target);
+    this.animationSprite.position.set(at.x, isEnemy ? at.y : at.y - STATUS_ROW / 2);
   }
 
   private renderEnemies(dt: number): void {
     for (const s of this.enemySprites) {
-      if (s.enemy.isKnockedOut && s.fadeAge === null) s.fadeAge = 0;
+      // An enemy still being hit (its animation playing) falls once the hit lands.
+      const beingHit = this.pendingHit?.result.target === s.enemy;
+      if (s.enemy.isKnockedOut && s.fadeAge === null && !beingHit) s.fadeAge = 0;
       if (!s.enemy.isKnockedOut) s.fadeAge = null;
       if (s.fadeAge !== null) s.fadeAge += dt;
       s.flash = Math.max(0, s.flash - dt);

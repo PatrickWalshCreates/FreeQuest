@@ -1,9 +1,10 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "entries": [
     {
       "id": "attack",
       "name": "Attack",
+      "animation": "slash",
       "effects": [
         {
           "type": "damage",
@@ -46,6 +47,7 @@
     {
       "id": "power-strike",
       "name": "Power Strike",
+      "animation": "slash",
       "description": "A heavy blow.",
       "effects": [
         {
@@ -121,6 +123,7 @@
     {
       "id": "heal",
       "name": "Heal",
+      "animation": "sparkle",
       "description": "Restores HP to one ally.",
       "effects": [
         {

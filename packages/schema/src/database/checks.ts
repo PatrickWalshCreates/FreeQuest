@@ -13,6 +13,7 @@ import type {
   SystemData,
   TroopEntry,
   CommonEventEntry,
+  AnimationEntry,
 } from './categories.js';
 import { DATABASE_FORMAT_VERSION } from './categories.js';
 import { STAT_KEYS } from './common.js';
@@ -31,6 +32,7 @@ export interface Database {
   readonly enemies: readonly EnemyEntry[];
   readonly troops: readonly TroopEntry[];
   readonly commonEvents: readonly CommonEventEntry[];
+  readonly animations: readonly AnimationEntry[];
 }
 
 export function emptySystem(): SystemData {
@@ -56,6 +58,7 @@ export function emptyDatabase(): Database {
     enemies: [],
     troops: [],
     commonEvents: [],
+    animations: [],
   };
 }
 
@@ -75,6 +78,7 @@ export function assembleDatabase(files: DatabaseFiles): Database {
     enemies: files.enemies?.entries ?? [],
     troops: files.troops?.entries ?? [],
     commonEvents: files.commonEvents?.entries ?? [],
+    animations: files.animations?.entries ?? [],
   };
 }
 
@@ -123,6 +127,7 @@ export function checkDatabase(
   const enemies = ids(db.enemies, 'enemies');
   ids(db.troops, 'troops');
   ids(db.commonEvents, 'commonEvents');
+  const animations = ids(db.animations, 'animations');
 
   const need = (set: Set<string>, id: string, kind: string, where: string) => {
     if (!set.has(id)) problems.push(`${where}: unknown ${kind} "${id}"`);
@@ -205,6 +210,19 @@ export function checkDatabase(
     checkEffects(s.effects, where);
   }
   for (const it of db.items) checkEffects(it.effects, `items "${it.id}"`);
+  for (const [list, kind] of [
+    [db.skills, 'skills'],
+    [db.items, 'items'],
+  ] as const) {
+    for (const entry of list) {
+      if (entry.animation !== undefined) {
+        need(animations, entry.animation, 'animation', `${kind} "${entry.id}" animation`);
+      }
+    }
+  }
+  if (db.system.balloons && db.system.balloons.names.length === 0) {
+    problems.push('system balloons: name at least one balloon');
+  }
   for (const e of db.equipment) {
     const where = `equipment "${e.id}"`;
     need(slots, e.slot, 'equipment slot', where);

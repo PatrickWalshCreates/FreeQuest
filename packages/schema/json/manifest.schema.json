@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 8
+      "const": 9
     },
     "id": {
       "type": "string",
@@ -42,6 +42,11 @@
       "description": "Path of each database file. A missing category is empty.",
       "properties": {
         "actors": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "animations": {
           "type": "string",
           "description": "Path relative to the project root, using \"/\" separators.",
           "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"

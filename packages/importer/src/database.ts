@@ -42,6 +42,8 @@ export interface DatabaseContext extends TraitContext {
   readonly placeholderCharacter: string;
   /** Called when something uses the placeholder character. */
   readonly usedPlaceholder: () => void;
+  /** MZ animation `n`'s id (marking it used), or null. */
+  readonly animation: (n: number) => string | null;
 }
 
 export interface ImportedDatabase {
@@ -300,7 +302,19 @@ function usable(entry: JsonRecord, where: string, ctx: DatabaseContext) {
     hitType: HIT_TYPES[asInt(entry['hitType'])] ?? 'certain',
     successRate: clamp(asInt(entry['successRate'], 100) / 100, 0, 1),
     effects: usableEffects(entry, where, ctx),
+    ...animationOf(entry, ctx),
   };
+}
+
+/**
+ * A skill's or item's animation: its own, or for "the normal attack" (-1) the
+ * attack skill's (MZ's skill 1).
+ */
+function animationOf(entry: JsonRecord, ctx: DatabaseContext): { animation?: string } {
+  let n = asInt(entry['animationId']);
+  if (n < 0) n = asInt(ctx.db.skills.entries.get(1)?.['animationId']);
+  const id = n > 0 ? ctx.animation(n) : null;
+  return id ? { animation: id } : {};
 }
 
 function importSkill(id: string, name: string, s: JsonRecord, ctx: DatabaseContext): SkillEntry {
@@ -640,7 +654,7 @@ function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseConte
 export function systemData(
   types: SystemTypes,
   imported: ImportedDatabase,
-  keep: Pick<SystemData, 'audio' | 'iconset'>,
+  keep: Pick<SystemData, 'audio' | 'iconset' | 'balloons'>,
 ): SystemData {
   return {
     formatVersion: DATABASE_FORMAT_VERSION,
@@ -649,6 +663,7 @@ export function systemData(
     ...(imported.guardSkill ? { guardSkill: imported.guardSkill } : {}),
     ...(keep.audio ? { audio: keep.audio } : {}),
     ...(keep.iconset ? { iconset: keep.iconset } : {}),
+    ...(keep.balloons ? { balloons: keep.balloons } : {}),
   };
 }
 

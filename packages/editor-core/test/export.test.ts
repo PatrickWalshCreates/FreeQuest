@@ -38,7 +38,7 @@ describe('assetReferences', () => {
     });
     expect(refs.get('assets/audio/meadow.wav')?.usedBy).toEqual(['map Meadow: music']);
     expect(refs.get('assets/audio/sfx-heal.wav')?.usedBy).toEqual(
-      expect.arrayContaining(['system sound heal', 'common event Rest']),
+      expect.arrayContaining(['system sound heal', 'animation Sparkle']),
     );
     expect(refs.get('assets/enemies/wolf.png')?.usedBy).toEqual(['enemy Wolf']);
     expect(refs.get('assets/faces/mira.png')).toEqual({
@@ -64,7 +64,7 @@ describe('planExport', () => {
     expect(paths).not.toContain('assets/unused/old-sketch.png');
     expect(paths).not.toContain('notes.txt');
     // project.json, 1 tileset, 2 maps, 3 characters, 9 database files.
-    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(20);
+    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(21);
   });
 
   it('blocks on project problems and missing images, warns about missing sounds', async () => {

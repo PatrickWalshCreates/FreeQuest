@@ -40,6 +40,7 @@ import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { PictureView } from './picture-view.js';
+import { AnimationSheets, CharacterEffectViews } from './effect-views.js';
 import { fitScale } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
 import { TransferController } from './transfer.js';
@@ -150,6 +151,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const scene = new Container({ label: 'scene' });
   scene.addChild(characters);
   app.stage.addChild(scene);
+  // Animations and balloons: on the map over every character, and in battles.
+  const animationSheets = new AnimationSheets((path) => loadPixelTexture(project.assetUrl(path)));
+  const effectViews = new CharacterEffectViews(animationSheets);
   // Pictures events show: over the map, under the screen effects (a fade covers them).
   const pictureView = new PictureView((path) => loadPixelTexture(project.assetUrl(path)));
   app.stage.addChild(pictureView.container);
@@ -170,6 +174,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     faces.preload(faceImages(world.map.events.flatMap((e) => e.pages.map((p) => p.commands))));
     scene.addChildAt(view.below, 0);
     scene.addChild(view.above);
+    // Animations and balloons over everything on the map.
+    scene.addChild(effectViews.container);
     shown = {
       map: world.map,
       view,
@@ -205,7 +211,15 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       );
     },
     begin(battle) {
-      battleView = new BattleView(battle, width, height, enemyTextures, theme, icons);
+      battleView = new BattleView(
+        battle,
+        width,
+        height,
+        enemyTextures,
+        theme,
+        icons,
+        animationSheets,
+      );
       scene.visible = false;
       dialogView.container.visible = false;
       app.stage.addChildAt(battleView.container, app.stage.getChildIndex(fadeOverlay));
@@ -297,12 +311,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   /** Battle sounds: a sting when a battle opens, hits and heals as the log plays. */
   const battleSounds = () => {
     const controller = battles.controller;
+    for (const path of controller?.drainSounds() ?? []) audio.playSound(path);
     if (controller && !hadBattle) sfx('battleStart');
     hadBattle = controller !== null;
     const event = controller?.state.event ?? null;
     if (event === lastBattleEvent) return;
     lastBattleEvent = event;
     if (event?.type !== 'hit' || event.result.missed) return;
+    // An animation with its own sounds speaks for the hit.
+    const animation = event.animation !== null ? db.animations.find(event.animation) : undefined;
+    if (animation && animation.sounds.length > 0) return;
     if (event.result.hpDamage > 0) sfx('damage');
     else if (event.result.hpDamage < 0) sfx('heal');
   };
@@ -482,6 +500,11 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     shown?.view.update({ x: camera.x, y: camera.y, width, height });
     drawScreenEffects(screenEffects, screen, width, height);
     pictureView.render(world.pictures.list);
+    effectViews.render(world.effects, db.system.balloons, (target) => {
+      if (target !== 'player') return shown?.events.spotOf(target) ?? null;
+      const sprite = player.sprite;
+      return sprite.visible ? { x: sprite.x, y: sprite.y, height: sprite.height } : null;
+    });
   };
 
   const tick = () => {

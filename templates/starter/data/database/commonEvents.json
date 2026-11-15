@@ -1,5 +1,5 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "entries": [
     {
       "id": "rest",
@@ -13,10 +13,6 @@
           "wait": true
         },
         {
-          "type": "playSound",
-          "path": "assets/audio/sfx-heal.wav"
-        },
-        {
           "type": "recoverAll"
         },
         {
@@ -27,6 +23,12 @@
           "type": "fadeScreen",
           "seconds": 0.6,
           "to": "in",
+          "wait": true
+        },
+        {
+          "type": "showAnimation",
+          "animation": "sparkle",
+          "target": "player",
           "wait": true
         },
         {

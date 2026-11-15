@@ -1,9 +1,10 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "entries": [
     {
       "id": "potion",
       "name": "Potion",
+      "animation": "sparkle",
       "consumable": true,
       "description": "Restores 30% of max HP, at least 100.",
       "effects": [
@@ -27,6 +28,7 @@
     {
       "id": "ether",
       "name": "Ether",
+      "animation": "sparkle",
       "consumable": true,
       "description": "Restores 50 MP.",
       "effects": [
@@ -72,6 +74,7 @@
     {
       "id": "revive-leaf",
       "name": "Revive Leaf",
+      "animation": "sparkle",
       "consumable": true,
       "description": "Revives a fallen ally.",
       "effects": [

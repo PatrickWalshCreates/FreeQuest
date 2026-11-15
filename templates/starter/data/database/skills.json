@@ -1,9 +1,10 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "entries": [
     {
       "id": "attack",
       "name": "Attack",
+      "animation": "slash",
       "effects": [
         {
           "type": "damage",

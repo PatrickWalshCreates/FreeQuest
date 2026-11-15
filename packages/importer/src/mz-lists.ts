@@ -60,6 +60,7 @@ export interface MzDatabase {
   readonly states: MzList;
   readonly enemies: MzList;
   readonly troops: MzList;
+  readonly animations: MzList;
 }
 
 const FILES = {
@@ -70,6 +71,7 @@ const FILES = {
   states: ['States', 'state'],
   enemies: ['Enemies', 'enemy'],
   troops: ['Troops', 'troop'],
+  animations: ['Animations', 'animation'],
 } as const;
 
 export async function readMzDatabase(fs: ProjectFs): Promise<MzDatabase> {
@@ -92,6 +94,7 @@ export async function readMzDatabase(fs: ProjectFs): Promise<MzDatabase> {
     states: get('states'),
     enemies: get('enemies'),
     troops: get('troops'),
+    animations: get('animations'),
     weapons: new MzList(await read('Weapons'), 'weapon', equipment),
     armors: new MzList(await read('Armors'), 'armor', equipment),
   };

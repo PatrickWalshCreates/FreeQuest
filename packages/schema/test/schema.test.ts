@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  DATABASE_FORMAT_VERSION,
   CURRENT_FORMAT_VERSION,
   DATABASE_KINDS,
   type DatabaseFiles,
@@ -111,14 +112,16 @@ describe('migrate', () => {
       entries: { actions: object[] }[];
     };
     const data = parseProjectFile('enemies', raw, 'enemies.json');
-    expect(data.formatVersion).toBe(4);
+    expect(data.formatVersion).toBe(DATABASE_FORMAT_VERSION);
     const actions = data.entries.flatMap((e) => e.actions);
     expect(actions.length).toBe(raw.entries.flatMap((e) => e.actions).length);
     expect(actions.every((a) => Array.isArray(a.conditions) && a.conditions.length === 0)).toBe(
       true,
     );
     // Other database files pass through unchanged.
-    expect(parseProjectFile('items', { formatVersion: 3, entries: [] }).formatVersion).toBe(4);
+    expect(parseProjectFile('items', { formatVersion: 3, entries: [] }).formatVersion).toBe(
+      DATABASE_FORMAT_VERSION,
+    );
   });
 
   it('makes ids from names', () => {

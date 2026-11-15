@@ -25,6 +25,7 @@ export type RefKind =
   | 'enemy'
   | 'troop'
   | 'commonEvent'
+  | 'animation'
   | 'element'
   | 'equipmentSlot'
   | 'equipmentType'
@@ -83,6 +84,7 @@ const FIELD_KINDS: Readonly<Record<string, RefKind>> = {
   enemies: 'enemy',
   troop: 'troop',
   common: 'commonEvent',
+  animation: 'animation',
   element: 'element',
   slot: 'equipmentSlot',
   equipmentType: 'equipmentType',

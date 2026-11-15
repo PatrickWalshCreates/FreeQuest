@@ -14,7 +14,7 @@ import { Command } from '../command.js';
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 4;
+export const DATABASE_FORMAT_VERSION = 5;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
@@ -74,6 +74,24 @@ export const SystemData = Type.Object(
       Type.Object(
         { image: RelativePath, iconSize: PositiveInt, columns: PositiveInt },
         { additionalProperties: false },
+      ),
+    ),
+    balloons: Type.Optional(
+      Type.Object(
+        {
+          image: RelativePath,
+          size: PositiveInt,
+          frames: PositiveInt,
+          names: Type.Array(Type.String({ minLength: 1 }), {
+            minItems: 1,
+            description: 'One per row of the image, top first.',
+          }),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Balloons over characters (v5): an image with one balloon per row, each `frames` square frames of `size` pixels, played left to right.',
+        },
       ),
     ),
   },
@@ -141,6 +159,8 @@ const Usable = {
   hitType: HitType,
   successRate: Type.Number({ minimum: 0, maximum: 1 }),
   effects: Type.Array(Effect),
+  /** Played on each target in battle (v5). */
+  animation: Type.Optional(Id),
 };
 
 export const SkillEntry = Type.Object(
@@ -311,6 +331,34 @@ export const CommonEventEntry = Type.Object(
 );
 export type CommonEventEntry = Static<typeof CommonEventEntry>;
 
+/**
+ * An animation (v5): frames cut from a sheet (left to right, then down), played at `fps`,
+ * centred on a character or a battler, with sounds at chosen frames. Without an image it
+ * only plays its sounds and takes its time (a stand-in to draw later).
+ */
+export const AnimationEntry = Type.Object(
+  {
+    id: Id,
+    name: Type.String({ minLength: 1 }),
+    image: Type.Optional(RelativePath),
+    frameWidth: PositiveInt,
+    frameHeight: PositiveInt,
+    frames: PositiveInt,
+    fps: Type.Number({ minimum: 1, maximum: 60, description: 'Frames per second.' }),
+    sounds: Type.Array(
+      Type.Object({ frame: NonNegativeInt, path: RelativePath }, { additionalProperties: false }),
+    ),
+    note: Type.Optional(Type.String({ description: 'For authors; never shown in the game.' })),
+  },
+  { additionalProperties: false },
+);
+export type AnimationEntry = Static<typeof AnimationEntry>;
+
+/** How long an animation plays, in seconds. */
+export function animationSeconds(entry: Pick<AnimationEntry, 'frames' | 'fps'>): number {
+  return entry.frames / entry.fps;
+}
+
 const V = DATABASE_FORMAT_VERSION;
 export const ActorsFile = DatabaseFile('FreeQuest actors', ActorEntry, V);
 export const ClassesFile = DatabaseFile('FreeQuest classes', ClassEntry, V);
@@ -321,3 +369,4 @@ export const StatesFile = DatabaseFile('FreeQuest states', StateEntry, V);
 export const EnemiesFile = DatabaseFile('FreeQuest enemies', EnemyEntry, V);
 export const TroopsFile = DatabaseFile('FreeQuest troops', TroopEntry, V);
 export const CommonEventsFile = DatabaseFile('FreeQuest common events', CommonEventEntry, V);
+export const AnimationsFile = DatabaseFile('FreeQuest animations', AnimationEntry, V);

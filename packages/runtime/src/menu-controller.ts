@@ -396,7 +396,9 @@ export class MenuController {
     }
     const user = use.kind === 'skill' ? use.user : leader;
     const lines = user
-      ? results.flatMap((result) => describeEvent({ type: 'hit', user, result }, this.db))
+      ? results.flatMap((result) =>
+          describeEvent({ type: 'hit', user, result, animation: null }, this.db),
+        )
       : [];
     this.feedback = lines.join(' ') || 'Nothing happened.';
     // Leave the target list once the item runs out or the skill can't be paid for again.

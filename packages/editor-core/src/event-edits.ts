@@ -356,6 +356,10 @@ export interface NameLookup {
   character?(id: string): string;
   /** A state (poison…); ids are shown without one. */
   state?(id: string): string;
+  /** An animation; ids are shown without one. */
+  animation?(id: string): string;
+  /** A balloon's name by its row; "#n" without one. */
+  balloon?(row: number): string;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */
@@ -597,6 +601,10 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       return `Move picture ${command.number} to (${operand(command.x, names)}, ${operand(command.y, names)})${command.opacity < 1 ? `, ${Math.round(command.opacity * 100)}% opaque` : ''}${timing(command)}`;
     case 'erasePicture':
       return `Erase picture ${command.number}`;
+    case 'showAnimation':
+      return `Animation ${names.animation?.(command.animation) ?? command.animation} on ${who(command.target, names)}${command.wait ? ', and wait' : ''}`;
+    case 'showBalloon':
+      return `Balloon ${names.balloon?.(command.balloon) ?? `#${command.balloon}`} over ${who(command.target, names)}${command.wait ? ', and wait' : ''}`;
     case 'gameOver':
       return 'Game over';
     case 'returnToTitle':
@@ -786,6 +794,8 @@ export const COMMAND_GROUPS: readonly {
       'showPicture',
       'movePicture',
       'erasePicture',
+      'showAnimation',
+      'showBalloon',
     ],
   },
   {
@@ -830,6 +840,8 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   showPicture: 'Show picture',
   movePicture: 'Move picture',
   erasePicture: 'Erase picture',
+  showAnimation: 'Show animation',
+  showBalloon: 'Show balloon',
   scrollMap: 'Scroll map',
   gameOver: 'Game over',
   returnToTitle: 'Back to title',

@@ -45,7 +45,13 @@ export type BattleEvent =
     }
   | { readonly type: 'cannotAct'; readonly user: Battler; readonly state: string }
   | { readonly type: 'confused'; readonly user: Battler }
-  | { readonly type: 'hit'; readonly user: Battler; readonly result: TargetResult }
+  | {
+      readonly type: 'hit';
+      readonly user: Battler;
+      readonly result: TargetResult;
+      /** The skill's or item's animation, played on the target (null: none). */
+      readonly animation: string | null;
+    }
   | { readonly type: 'regen'; readonly battler: Battler; readonly amount: number }
   | { readonly type: 'stateExpired'; readonly battler: Battler; readonly state: string }
   | { readonly type: 'escape'; readonly success: boolean }
@@ -292,7 +298,8 @@ export class Battle {
       events.push({ type: 'actionFailed', user, name: usable.name, reason });
       return;
     }
-    for (const result of results) events.push({ type: 'hit', user, result });
+    const animation = usable.animation ?? null;
+    for (const result of results) events.push({ type: 'hit', user, result, animation });
   }
 
   /** A confused battler attacks someone at random, friend or foe. */
@@ -305,7 +312,7 @@ export class Battle {
     const attack = this.db.skills.get(attackId);
     events.push({ type: 'action', user, name: attack.name });
     for (const result of useSkill(user, attack, [target], 'battle', this.ctx)) {
-      events.push({ type: 'hit', user, result });
+      events.push({ type: 'hit', user, result, animation: attack.animation ?? null });
     }
   }
 

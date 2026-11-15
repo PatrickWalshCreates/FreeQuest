@@ -2231,6 +2231,57 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Play an animation on the player or an event (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showAnimation"
+            },
+            "animation": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "target", "animation", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Show a balloon (!, ?, a heart…) over the player or an event (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showBalloon"
+            },
+            "balloon": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "target", "balloon", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "Take a picture away (v9).",
           "properties": {
             "type": {

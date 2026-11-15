@@ -29,12 +29,13 @@ import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
 import { CommandExtras } from '../events/CommandExtras.js';
-import type { Command, MessageFace } from '@freequest/schema';
+import type { AnimationEntry, Command, MessageFace } from '@freequest/schema';
 import { FaceField } from '../events/FaceField.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
 import { confirmAction } from '../platform.js';
 import { IconField, IconImage, useIconset } from './IconField.js';
+import { AnimationPreview, BalloonField } from './AnimationField.js';
 import { ColorField } from '../forms/ColorField.js';
 import { RenameIdButton } from '../RenameIdButton.js';
 import { MOD } from '../keys.js';
@@ -56,6 +57,7 @@ const SINGULAR: Record<EntryKind, string> = {
   enemies: 'enemy',
   troops: 'troop',
   commonEvents: 'common event',
+  animations: 'animation',
 };
 
 type EntriesData = { readonly formatVersion: number; readonly entries: readonly Entry[] };
@@ -84,6 +86,12 @@ export function DatabaseEditor({ doc, file }: Props) {
           />
         ) : field === 'color' ? (
           <ColorField value={value} onChange={onChange} />
+        ) : field === 'balloon' ? (
+          <BalloonField
+            names={project.database.system?.data?.balloons?.names ?? []}
+            value={typeof value === 'number' ? value : 0}
+            onChange={onChange}
+          />
         ) : undefined,
     }),
     [doc, project, lists],
@@ -364,6 +372,9 @@ function EntriesEditor(props: {
                 )
               }
             />
+            {kind === 'animations' && (
+              <AnimationPreview doc={doc} entry={entry as unknown as AnimationEntry} />
+            )}
             {kind === 'commonEvents' && (
               <CommonEventCommands
                 key={`commands:${entry.id}`}
@@ -516,6 +527,7 @@ const ENTRY_REF_KINDS: Record<EntryKind, RenameKind> = {
   enemies: 'enemy',
   troops: 'troop',
   commonEvents: 'commonEvent',
+  animations: 'animation',
 };
 
 /** Where a database entry is used (or that nothing uses it yet). */

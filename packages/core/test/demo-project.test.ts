@@ -49,9 +49,13 @@ describe('demo project', () => {
     const page = elder && activePage(elder, fresh.state);
     if (!elder || !page) throw new Error('demo map has no active elder page');
 
-    const talk = fresh.run(page.commands);
+    const talk = fresh.run(
+      page.commands,
+      fresh.events.find((e) => e.id === 'elder'),
+    );
     const input = new ActionState();
-    fresh.step(1 / 60, input);
+    // He's surprised first (a balloon, waited for), then speaks.
+    for (let i = 0; i < 300 && !talk.pending; i++) fresh.step(1 / 60, input);
     expect(talk.pending).toMatchObject({ type: 'message', speaker: 'Elder' });
     talk.continue();
     fresh.step(1 / 60, input);

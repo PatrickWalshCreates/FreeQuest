@@ -563,6 +563,33 @@ export const Command = Type.Cyclic(
         },
       ),
       Type.Object(
+        {
+          type: Type.Literal('showAnimation'),
+          /** "player", "this" (the event running the command) or an event id on this map. */
+          target: Id,
+          animation: Id,
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description: 'Play an animation on the player or an event (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('showBalloon'),
+          /** "player", "this" (the event running the command) or an event id on this map. */
+          target: Id,
+          /** Which balloon: a row of the balloon image (Database › System), from 0. */
+          balloon: NonNegativeInt,
+          wait: WaitForIt,
+        },
+        {
+          additionalProperties: false,
+          description: 'Show a balloon (!, ?, a heart…) over the player or an event (v9).',
+        },
+      ),
+      Type.Object(
         { type: Type.Literal('erasePicture'), number: PictureNumber },
         { additionalProperties: false, description: 'Take a picture away (v9).' },
       ),

@@ -275,6 +275,27 @@ Never the other way.
   `assets/pictures` folder; export and the reference index see `image`. Importer:
   `GraphicsImporter.picture` copies `img/pictures/<name>.png`; Show with no image = erase;
   blend modes noted; rotate/tint stay comments.
+- **Animations and balloons** (manifest v9: the `animations` database category; database v5:
+  skills'/items' `animation`, system `balloons` {image, size, frames, names}; map v9
+  `showAnimation` / `showBalloon` with "player"/"this"/event targets; M14 step 6). An
+  `AnimationEntry` is frames of `frameWidth` × `frameHeight` cut left to right then down,
+  `frames`, `fps`, `sounds` [{frame, path}], optional `image` (none = a timed stand-in) and
+  `note`; `animationSeconds`. Core `animations.ts`: `CharacterEffects` on `World.effects`
+  (animations overlap, one balloon per character, `BALLOON_FPS` 12 + `BALLOON_HOLD`), sounds go
+  through the world's sound queue at their frames (`animationSounds`), cleared on map change;
+  battle `hit` events carry the usable's `animation`. Runtime: `effect-views.ts`
+  (`AnimationSheets` cache and cut sheets; `CharacterEffectViews` on top of the map scene at each
+  character's sprite via `EventViews.spotOf`); `BattleController` holds a hit's first line for
+  max(line, animation), exposes `state.animation` and `drainSounds()`; `BattleView` draws it
+  over the target and shows the damage number (and a knockout's fade) once it has played; a hit
+  whose animation has sounds skips the generic damage/heal sound. Editor: the category in the
+  database list, `AnimationField.tsx` (`BalloonField` by name, `AnimationPreview` looping on a
+  canvas). Importer `animations.ts`: `AnimationImporter` makes stand-ins only for used MZ
+  animations (length from sound/flash timings and speed, 30 fps, sounds converted, a note);
+  `animationId` -1 = MZ skill 1's; `GraphicsImporter.balloons` copies `img/system/Balloon.png`
+  (48 px, 8 frames, `MZ_BALLOON_NAMES`) on first use; the template's animations and balloon
+  image are never copied. Demo/Starter art: `balloons.png` (8 kinds, 24 px), `sparkle.png`,
+  `slash.png`; the elder is surprised, Rest sparkles.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -985,14 +1006,15 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
-- Current versions: manifest 8 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+- Current versions: manifest 9 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
-  `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`),
+  `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`; v9: the `animations` category),
   map 9 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`, pictures), tileset 1, character 1, every database file 4 (v2: combat modifiers,
-  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`). Additive bumps migrate as no-ops.
+  `backgroundSound`, pictures), tileset 1, character 1, every database file 5 (v2: combat modifiers,
+  troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
+  animations, skills'/items' `animation`, system `balloons`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1312,18 +1334,18 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      Show/Move/Erase picture in both samples comes across (153 in Wolf's Gang, 61 images);
      they use no rotation, tint or blend modes. Seen in the dev player: a picture shown, a
      second faded in at double size)
-  6. Animations and balloons: FreeQuest's own animation format (a database category: a sprite
+  6. ~~Animations and balloons: FreeQuest's own animation format (a database category: a sprite
      sheet, frames, timing, sounds), played on events, the player and in battle (skills and
-     items get an optional animation), and balloon icons over characters. MZ's animations are
-     Effekseer effects that can't be converted: the importer makes a named placeholder per
-     MZ animation for the author to fill in [135 / 28 + 13 balloons].
+     items get an optional animation), and balloon icons over characters; the importer makes a
+     named stand-in per used MZ animation~~ (done; Rhapsody gets 43 stand-ins and its balloons,
+     Wolf's Gang 50; seen in the dev player: balloons, the sparkle, the battle slash)
   7. Battles: TP (gained from damage and actions, skill costs), buffs and debuffs, skills that
      hit several times, items and skills that run a common event, and troop battle events
      (pages on turns, HP and switches, with their own commands) [22 TP skills; 34 troops with
      events; 16 common-event items].
   8. A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
      the 0.5 formats frozen, and a 0.5.0 release through the checklist.
-  - Formats: map 9, database 5, save 3 (and system.json), each with a migration; 0.1–0.3
+  - Formats: map 9, database 5, save 3, manifest 9 (the animations category), each with a migration; 0.1–0.3
     frozen projects and saves keep opening (0.4 changed no format).
   - Not in M14: labels and jumps, scripts and plugins (never JavaScript; the plugin API is
     its own milestone), weather, vehicles, movies, side-view battlers, map regions, wall

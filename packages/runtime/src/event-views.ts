@@ -24,6 +24,16 @@ export class EventViews {
     private readonly container: Container,
   ) {}
 
+  /** Where an event's sprite is drawn (feet and height), or null if it isn't. */
+  spotOf(id: string): { x: number; y: number; height: number } | null {
+    for (const [event, view] of this.views) {
+      if (event.id !== id) continue;
+      const sprite = view.sprite;
+      return sprite.visible ? { x: sprite.x, y: sprite.y, height: sprite.height } : null;
+    }
+    return null;
+  }
+
   /** Remove and destroy every sprite this created (e.g. when leaving the map). */
   destroy(): void {
     for (const view of this.views.values()) view.sprite.destroy();

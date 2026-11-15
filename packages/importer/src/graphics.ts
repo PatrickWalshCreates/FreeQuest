@@ -6,6 +6,7 @@
 //  - an MZ face sheet is a 4 × 2 grid; FreeQuest's is one row of square faces,
 //    so the faces are laid out in a row and keep their numbers;
 //  - enemy images and the icon sheet are copied as they are.
+import { MZ_BALLOON_NAMES } from './animations.js';
 import { FileNotFoundError, type ProjectFs, uniqueId } from '@freequest/editor-core';
 import { CHARACTER_FORMAT_VERSION, type CharacterSheet, idFromName } from '@freequest/schema';
 import { type ImageCodec, type RgbaImage, blankImage, copyArea } from './image.js';
@@ -23,6 +24,13 @@ export interface ImportedGraphics {
     readonly image: string;
     readonly iconSize: number;
     readonly columns: number;
+  } | null;
+  /** MZ's balloon image, when an event shows a balloon (system.json's `balloons`). */
+  readonly balloons: {
+    readonly image: string;
+    readonly size: number;
+    readonly frames: number;
+    readonly names: string[];
   } | null;
 }
 
@@ -266,6 +274,29 @@ export class GraphicsImporter {
     };
   }
 
+  #balloons: ImportedGraphics['balloons'] | undefined = undefined;
+
+  /**
+   * MZ's balloon image (rows of 8 frames of 48 px), copied on first use.
+   * False when the project doesn't have it (reported once).
+   */
+  async balloons(where: string): Promise<boolean> {
+    if (this.#balloons === undefined) {
+      const from = 'img/system/Balloon.png';
+      try {
+        const bytes = await this.fs.readBytes(from);
+        const image = 'assets/system/balloons.png';
+        this.#out.files.push({ path: image, bytes });
+        this.#balloons = { image, size: 48, frames: 8, names: [...MZ_BALLOON_NAMES] };
+      } catch (error) {
+        if (!(error instanceof FileNotFoundError)) throw error;
+        this.report.missing(where, await this.#missing(from));
+        this.#balloons = null;
+      }
+    }
+    return this.#balloons !== null;
+  }
+
   /** Everything made, plus the icon sheet when the project has one. */
   async finish(): Promise<ImportedGraphics> {
     let iconset: ImportedGraphics['iconset'] = null;
@@ -288,6 +319,6 @@ export class GraphicsImporter {
           : `${from} couldn't be read as a PNG.`,
       );
     }
-    return { ...this.#out, iconset };
+    return { ...this.#out, iconset, balloons: this.#balloons ?? null };
   }
 }

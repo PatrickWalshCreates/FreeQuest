@@ -1,4 +1,5 @@
 import type {
+  AnimationEntry,
   ActorEntry,
   ClassEntry,
   Database,
@@ -50,6 +51,7 @@ export class DatabaseIndex {
   readonly enemies: Lookup<EnemyEntry>;
   readonly troops: Lookup<TroopEntry>;
   readonly commonEvents: Lookup<CommonEventEntry>;
+  readonly animations: Lookup<AnimationEntry>;
   /** The state that means "knocked out", if the database defines one. */
   readonly knockoutState: StateEntry | undefined;
 
@@ -63,6 +65,7 @@ export class DatabaseIndex {
     this.enemies = new Lookup(data.enemies, 'enemy');
     this.troops = new Lookup(data.troops, 'troop');
     this.commonEvents = new Lookup(data.commonEvents, 'common event');
+    this.animations = new Lookup(data.animations, 'animation');
     this.knockoutState = data.states.find((s) => s.knockout);
   }
 

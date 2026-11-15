@@ -69,6 +69,17 @@ const LABELS: Record<string, string> = {
   scaleX: 'Width (%)',
   scaleY: 'Height (%)',
   opacity: 'Opacity (0–1)',
+  frameWidth: 'Frame width (px)',
+  frameHeight: 'Frame height (px)',
+  frames: 'Frames',
+  fps: 'Frames per second',
+  frame: 'At frame (from 0)',
+  note: 'Note (for you; not shown in the game)',
+  animation: 'Animation',
+  balloon: 'Balloon',
+  balloons: 'Balloons over characters',
+  size: 'Frame size (px, square)',
+  names: 'Names (one per row, top first)',
 };
 
 /** Readable choices for fields whose values are words. */
@@ -143,6 +154,11 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   scaleX: 100,
   scaleY: 100,
   opacity: 1,
+  // A new animation: 8 frames of 32 px at 12 per second.
+  frameWidth: 32,
+  frameHeight: 32,
+  frames: 8,
+  fps: 12,
 };
 
 const AUDIO_FIELDS = new Set<string>([
@@ -165,7 +181,8 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
     | 'states'
     | 'enemies'
     | 'troops'
-    | 'commonEvents';
+    | 'commonEvents'
+    | 'animations';
   const db = (kind: EntryKind): Named[] =>
     (project.database[kind]?.data?.entries as Named[] | undefined) ?? [];
   const system = project.database.system?.data;
@@ -225,6 +242,8 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return options(lists.events ?? []);
       case 'common':
         return options(db('commonEvents'));
+      case 'animation':
+        return options(db('animations'));
       case 'target':
         return [
           { value: 'this', label: 'This event' },
@@ -278,8 +297,9 @@ export function projectNames(
   const m = project.manifest.data;
   const find = (list: readonly Named[] | undefined, id: string) =>
     list?.find((x) => x.id === id)?.name ?? id;
-  const entries = (kind: 'actors' | 'items' | 'equipment' | 'troops' | 'commonEvents' | 'states') =>
-    project.database[kind]?.data?.entries as Named[] | undefined;
+  const entries = (
+    kind: 'actors' | 'items' | 'equipment' | 'troops' | 'commonEvents' | 'states' | 'animations',
+  ) => project.database[kind]?.data?.entries as Named[] | undefined;
   return {
     map: (id) => project.maps.get(id)?.data?.name ?? id,
     switchName: (id) => find(m.switches, id),
@@ -291,5 +311,7 @@ export function projectNames(
     event: (id) => find(events, id),
     character: (id) => project.characters.get(id)?.data?.name || id,
     state: (id) => find(entries('states'), id),
+    animation: (id) => find(entries('animations'), id),
+    balloon: (row) => project.database.system?.data?.balloons?.names[row] ?? `#${row}`,
   };
 }

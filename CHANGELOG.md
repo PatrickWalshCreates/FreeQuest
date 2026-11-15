@@ -42,6 +42,19 @@ More of what RPG Maker MZ games use, in FreeQuest itself and brought across by t
 - MZ's Show, Move and Erase picture import as these, with the pictures they show (blend modes
   are drawn normally; rotating and tinting pictures aren't imported yet).
 
+### Animations and balloons
+
+- **Database › Animations**, a new category: frames cut from an image, frames per second and
+  sounds at chosen frames, with a preview in the editor. **Show animation** plays one on the
+  player or an event; skills and items can play one on each target in battle (the damage shows
+  once it has played).
+- **Show balloon** pops a balloon over the player or an event. Balloons are rows of an image set
+  in Database › System; the demo and new projects have eight of FreeQuest's own.
+- MZ's animations become named stand-ins with their length and sounds (they're Effekseer effects,
+  which can't be converted) for you to draw; only the ones the game uses come across. MZ's Show
+  animation, Show balloon (with the project's balloon image) and skills' and items' animations
+  import as these.
+
 ### Event commands
 
 - **Set variable** to a **random number** or **game data**: gold, steps, play time, party size,

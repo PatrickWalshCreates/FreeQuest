@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 4
+      "const": 5
     },
     "attackSkill": {
       "type": "string",
@@ -83,6 +83,36 @@
           "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
         }
       }
+    },
+    "balloons": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Balloons over characters (v5): an image with one balloon per row, each `frames` square frames of `size` pixels, played left to right.",
+      "properties": {
+        "frames": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "image": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "names": {
+          "type": "array",
+          "description": "One per row of the image, top first.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["image", "size", "frames", "names"]
     },
     "currency": {
       "type": "string",

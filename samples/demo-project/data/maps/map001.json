@@ -101,6 +101,12 @@
           "trigger": "action",
           "commands": [
             {
+              "type": "showBalloon",
+              "balloon": 0,
+              "target": "this",
+              "wait": true
+            },
+            {
               "type": "message",
               "face": {
                 "image": "assets/faces/elder.png",

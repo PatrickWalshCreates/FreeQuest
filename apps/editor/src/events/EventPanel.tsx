@@ -1,3 +1,4 @@
+import { BalloonField } from '../database/AnimationField.js';
 import {
   CONDITION_SCHEMA,
   type ProjectDocument,
@@ -324,6 +325,12 @@ function EventEditor(props: {
           <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
         ) : field === 'color' ? (
           <ColorField value={value} onChange={onChange} />
+        ) : field === 'balloon' ? (
+          <BalloonField
+            names={project.database.system?.data?.balloons?.names ?? []}
+            value={typeof value === 'number' ? value : 0}
+            onChange={onChange}
+          />
         ) : undefined,
     }),
     [doc, project, audio, images, mapEvents, flags],

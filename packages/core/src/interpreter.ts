@@ -441,6 +441,20 @@ export class Interpreter {
         }
         break;
       }
+      case 'showAnimation':
+      case 'showBalloon': {
+        // Without a world to play them in (a bare interpreter), they do nothing.
+        if (!this.context.showAnimation && !this.context.showBalloon) break;
+        const target = command.target === 'this' ? this.context.self : command.target;
+        if (!target)
+          throw new Error(`${command.type} on "this" needs a map event, but there is none here`);
+        const done =
+          command.type === 'showAnimation'
+            ? this.context.showAnimation?.(command.animation, target)
+            : this.context.showBalloon?.(command.balloon, target);
+        if (done && command.wait) this.waitFor = done;
+        break;
+      }
       case 'erasePicture':
         this.context.pictures?.erase(command.number);
         break;

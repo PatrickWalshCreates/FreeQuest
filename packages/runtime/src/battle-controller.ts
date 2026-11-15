@@ -10,9 +10,15 @@ import {
   type Battler,
   type DatabaseIndex,
   type InputState,
+  animationSounds,
   canTarget,
 } from '@freequest/core';
-import type { ItemEntry, SkillEntry } from '@freequest/schema';
+import {
+  type AnimationEntry,
+  type ItemEntry,
+  type SkillEntry,
+  animationSeconds,
+} from '@freequest/schema';
 import { withIcon } from './icons.js';
 import { describeEvent } from './battle-text.js';
 
@@ -46,6 +52,14 @@ export interface BattleUiState {
   /** The event behind the current line (for hit flashes and damage numbers). */
   readonly event: BattleEvent | null;
   readonly outcome: BattleOutcome | null;
+  /** An animation playing on a battler: its entry, target and seconds in (or null). */
+  readonly animation: BattleAnimation | null;
+}
+
+export interface BattleAnimation {
+  readonly entry: AnimationEntry;
+  readonly target: Battler;
+  readonly elapsed: number;
 }
 
 interface Line {
@@ -53,6 +67,8 @@ interface Line {
   readonly event: BattleEvent | null;
   /** Results stay up until confirmed rather than advancing on a timer. */
   readonly hold: boolean;
+  /** The animation that plays while this line is up (a hit's first line). */
+  readonly animation?: AnimationEntry;
 }
 
 type Pending = { kind: 'skill'; entry: SkillEntry } | { kind: 'item'; entry: ItemEntry };
@@ -75,6 +91,8 @@ export class BattleController {
   private targets: Battler[] = [];
   private queue: Line[] = [];
   private lineTime = 0;
+  /** Animation sounds due since the last `drainSounds()`. */
+  private readonly sounds: string[] = [];
   private finalOutcome: BattleOutcome | null = null;
   private readonly lineSeconds: number;
 
@@ -105,7 +123,16 @@ export class BattleController {
       line: line?.text ?? null,
       event: line?.event ?? null,
       outcome: this.finalOutcome,
+      animation:
+        line?.animation && line.event?.type === 'hit'
+          ? { entry: line.animation, target: line.event.result.target, elapsed: this.lineTime }
+          : null,
     };
+  }
+
+  /** Animation sounds due since the last call, in order. */
+  drainSounds(): string[] {
+    return this.sounds.splice(0);
   }
 
   /** The underlying battle's phase (e.g. 'won' while the victory lines play). */
@@ -140,7 +167,13 @@ export class BattleController {
         event.type === 'victory' ||
         event.type === 'defeat' ||
         (event.type === 'escape' && event.success);
-      for (const text of describeEvent(event, this.db)) this.queue.push({ text, event, hold });
+      const animation =
+        event.type === 'hit' && event.animation !== null && !event.result.missed
+          ? this.db.animations.find(event.animation)
+          : undefined;
+      describeEvent(event, this.db).forEach((text, i) =>
+        this.queue.push({ text, event, hold, ...(i === 0 && animation ? { animation } : {}) }),
+      );
     }
     this.stage = 'playback';
     this.lineTime = 0;
@@ -152,9 +185,14 @@ export class BattleController {
       this.afterPlayback();
       return;
     }
+    const from = this.lineTime;
     this.lineTime += dt;
+    // A line with an animation stays up until it has played (confirm still skips it).
+    const animation = line.animation;
+    if (animation) this.sounds.push(...animationSounds(animation, from, this.lineTime));
+    const seconds = Math.max(this.lineSeconds, animation ? animationSeconds(animation) : 0);
     const confirmed = input.justPressed('confirm');
-    if (confirmed || (!line.hold && this.lineTime >= this.lineSeconds)) {
+    if (confirmed || (!line.hold && this.lineTime >= seconds)) {
       this.queue.shift();
       this.lineTime = 0;
       if (this.queue.length === 0) this.afterPlayback();

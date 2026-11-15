@@ -42,12 +42,15 @@ const keep = (file: string, ids: string[], change: (e: Entry) => Entry = (e) => 
 
 rmSync(OUT, { recursive: true, force: true });
 
-// Assets: the overworld tiles, the hero, a villager, the slime, icons, and all the (small) audio.
+// Assets: the overworld tiles, the hero, a villager, the slime, icons, balloons, animations,
+// and all the (small) audio.
 copy('assets/tilesets/overworld.png');
 copy('assets/characters/hero.png');
 copy('assets/characters/villager.png');
 copy('assets/enemies/slime.png');
 copy('assets/system/iconset.png');
+copy('assets/system/balloons.png');
+copy('assets/animations');
 copy('assets/audio');
 copy('data/tilesets/overworld.json');
 copy('data/characters/hero.json');
@@ -171,6 +174,8 @@ keep('enemies', ['slime'], (e) => ({
 keep('troops', ['slimes']);
 // A shared "rest" any event can call (an inn, a bed), as an example of common events.
 keep('commonEvents', ['rest']);
+// The slash (attacks) and the sparkle (the potion, resting), and the balloons in system.json.
+keep('animations', ['slash', 'sparkle']);
 
 const demo = readJson<Manifest>('project.json');
 const manifest: Manifest = {

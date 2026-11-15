@@ -2,6 +2,7 @@
   null,
   {
     "id": 1,
+    "animationId": 2,
     "damage": {
       "critical": true,
       "elementId": -1,
@@ -40,6 +41,7 @@
   },
   {
     "id": 3,
+    "animationId": -1,
     "damage": {
       "critical": false,
       "elementId": 2,

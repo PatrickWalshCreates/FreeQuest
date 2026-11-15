@@ -77,6 +77,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 6, migrate: (d) => d },
     // v8: the player can start hidden. Additive.
     { from: 7, migrate: (d) => d },
+    // v9: the animations database category. Additive.
+    { from: 8, migrate: (d) => d },
   ],
   tileset: [],
   map: [
@@ -94,7 +96,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 6, migrate: (d) => d },
     // v8: message faces. Additive.
     { from: 7, migrate: (d) => d },
-    // v9: changeActor and hidePlayer. Additive.
+    // v9: changeActor, hidePlayer, route steps, more commands and branch tests,
+    // background sounds, pictures, animations and balloons. Additive.
     { from: 8, migrate: (d) => d },
   ],
   character: [],
@@ -106,6 +109,7 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
   ],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
   // Both additive. v4: enemy action conditions (every action gets an empty list).
+  // v5: animations (skills' and items' optional animation, system balloons). Additive.
   ...(Object.fromEntries(
     DATABASE_KINDS.map((k) => [
       k,
@@ -115,6 +119,7 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
           from: 3,
           migrate: k === 'enemies' ? addActionConditions : (d: Record<string, unknown>) => d,
         },
+        { from: 4, migrate: (d: Record<string, unknown>) => d },
       ],
     ]),
   ) as Record<DatabaseKind, Migration[]>),

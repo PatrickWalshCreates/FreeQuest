@@ -60,7 +60,13 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   play time, party size, actor stats, positions), branches on buttons, facing, actors' states
   and names, Set event location, Scroll map, Change HP/MP/state, save and menu access, Open save
   screen, Game over, Return to title, battle and victory music changes and background sounds;
-  and pictures: Show, Move (with its easing) and Erase picture, with the images they use.
+  and pictures: Show, Move (with its easing) and Erase picture, with the images they use;
+  Show balloon (with the project's balloon image) and Show animation.
+- **Animations**: MZ's are Effekseer effects, which FreeQuest can't play or turn into frames. Each
+  one an event, skill or item uses becomes a stand-in in **Database › Animations** with its name,
+  about its length and its sounds at their times, but no image: the report counts them under
+  "Animations to draw". Give each an image of frames and it plays where MZ's did, also in
+  battle. Flashes aren't brought across.
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
   each map's music and background sound. Only `.ogg` files are copied (FreeQuest doesn't play
   `.m4a`).
@@ -71,8 +77,8 @@ The report names each one and where it was. The usual ones:
 
 - **Scripts and plugins**: FreeQuest never runs JavaScript, so script calls, plugin commands
   and plugins stay as comments.
-- **Commands FreeQuest doesn't have**: battle animations and balloons, weather, labels and
-  jumps, swapping two events' places, rotating or tinting pictures, and more. They stay as comments saying "From MZ, not
+- **Commands FreeQuest doesn't have**: weather, labels and jumps, swapping two events' places,
+  rotating or tinting pictures, and more. They stay as comments saying "From MZ, not
   imported".
 - **Branches on things FreeQuest can't test** (a script, an actor's class or skill, buttons
   other than the arrows, OK, Cancel and Menu…) keep both

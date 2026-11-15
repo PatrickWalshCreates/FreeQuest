@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 4
+      "const": 5
     },
     "entries": {
       "type": "array",
@@ -21,6 +21,11 @@
           "name": {
             "type": "string",
             "minLength": 1
+          },
+          "animation": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
           },
           "consumable": {
             "type": "boolean"

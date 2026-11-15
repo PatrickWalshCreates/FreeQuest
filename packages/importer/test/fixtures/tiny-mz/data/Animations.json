@@ -1,0 +1,42 @@
+[
+  null,
+  {
+    "id": 1,
+    "displayType": 0,
+    "effectName": "Glow",
+    "flashTimings": [{ "frame": 0, "duration": 30, "color": [255, 255, 255, 170] }],
+    "name": "Lantern glow",
+    "offsetX": 0,
+    "offsetY": 0,
+    "rotation": { "x": 0, "y": 0, "z": 0 },
+    "scale": 100,
+    "soundTimings": [{ "frame": 30, "se": { "name": "Chime", "pan": 0, "pitch": 100, "volume": 90 } }],
+    "speed": 100
+  },
+  {
+    "id": 2,
+    "displayType": 0,
+    "effectName": "Cut",
+    "flashTimings": [],
+    "name": "Cut",
+    "offsetX": 0,
+    "offsetY": 0,
+    "rotation": { "x": 0, "y": 0, "z": 0 },
+    "scale": 100,
+    "soundTimings": [],
+    "speed": 200
+  },
+  {
+    "id": 3,
+    "displayType": 0,
+    "effectName": "Unused",
+    "flashTimings": [],
+    "name": "Never used",
+    "offsetX": 0,
+    "offsetY": 0,
+    "rotation": { "x": 0, "y": 0, "z": 0 },
+    "scale": 100,
+    "soundTimings": [],
+    "speed": 100
+  }
+]

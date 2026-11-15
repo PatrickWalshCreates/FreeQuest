@@ -56,10 +56,11 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     actor: new Set(db.actors.map((e) => e.id)),
     common: new Set(db.commonEvents.map((e) => e.id)),
     state: new Set(db.states.map((e) => e.id)),
+    animation: new Set(db.animations.map((e) => e.id)),
   };
   const checkEntry = (
     where: string,
-    kind: 'item' | 'equipment' | 'actor' | 'troop' | 'common' | 'state',
+    kind: 'item' | 'equipment' | 'actor' | 'troop' | 'common' | 'state' | 'animation',
     id: string,
   ) => {
     if (dbIds && !dbIds[kind].has(id)) {
@@ -191,6 +192,22 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
             if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
             checkOperand(at, command.amount);
             break;
+          case 'showAnimation':
+            checkEntry(at, 'animation', command.animation);
+            break;
+          case 'showBalloon': {
+            const balloons = db?.system.balloons;
+            if (db && !balloons) {
+              problems.push(
+                `${at}: shows a balloon, but there's no balloon image (Database › System)`,
+              );
+            } else if (balloons && command.balloon >= balloons.names.length) {
+              problems.push(
+                `${at}: balloon ${command.balloon} doesn't exist (there are ${balloons.names.length})`,
+              );
+            }
+            break;
+          }
           case 'changeState':
             if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
             checkEntry(at, 'state', command.state);

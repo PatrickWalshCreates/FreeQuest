@@ -30,6 +30,7 @@ const ENTRY_FILES: Partial<Record<RenameKind, DatabaseKind>> = {
   enemy: 'enemies',
   troop: 'troops',
   commonEvent: 'commonEvents',
+  animation: 'animations',
 };
 
 /** System lists holding each kind of type. */

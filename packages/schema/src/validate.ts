@@ -13,6 +13,7 @@ import {
   SystemData,
   TroopsFile,
   CommonEventsFile,
+  AnimationsFile,
 } from './database/index.js';
 import { strayBreaks, walkCommands } from './command.js';
 import { Manifest } from './manifest.js';
@@ -36,6 +37,7 @@ export const SCHEMAS = {
   enemies: EnemiesFile,
   troops: TroopsFile,
   commonEvents: CommonEventsFile,
+  animations: AnimationsFile,
 } satisfies Record<FileKind, TSchema>;
 
 export type FileData<K extends FileKind> = Static<(typeof SCHEMAS)[K]>;
@@ -145,6 +147,12 @@ export function checkMapShape(map: GameMap): string[] {
         const at = `${where} pages[${p}].${path}`;
         const isEvent = (id: string) =>
           id === 'player' || id === 'this' || map.events.some((e) => e.id === id);
+        if (
+          (command.type === 'showAnimation' || command.type === 'showBalloon') &&
+          !isEvent(command.target)
+        ) {
+          problems.push(`${at}: plays on "${command.target}", which isn't an event on this map`);
+        }
         if (command.type === 'placeEvent') {
           if (command.event !== undefined && !map.events.some((e) => e.id === command.event)) {
             problems.push(`${at}: places "${command.event}", which isn't an event on this map`);

@@ -72,6 +72,11 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     }
     for (const key of SOUND_KEYS) add(audio?.sounds?.[key], 'audio', `system sound ${key}`);
     add(system.iconset?.image, 'image', 'system iconset');
+    add(system.balloons?.image, 'image', 'system balloons');
+  }
+  for (const animation of project.database.animations?.data?.entries ?? []) {
+    add(animation.image, 'image', `animation ${animation.name}`);
+    for (const sound of animation.sounds) add(sound.path, 'audio', `animation ${animation.name}`);
   }
   for (const enemy of project.database.enemies?.data?.entries ?? []) {
     add(enemy.image, 'image', `enemy ${enemy.name}`);

@@ -10,6 +10,7 @@ import states from '../../../samples/demo-project/data/database/states.json' wit
 import system from '../../../samples/demo-project/data/database/system.json' with { type: 'json' };
 import troops from '../../../samples/demo-project/data/database/troops.json' with { type: 'json' };
 import commonEvents from '../../../samples/demo-project/data/database/commonEvents.json' with { type: 'json' };
+import animations from '../../../samples/demo-project/data/database/animations.json' with { type: 'json' };
 import { DatabaseIndex } from '../src/index.js';
 
 export function demoDb(): DatabaseIndex {
@@ -25,6 +26,7 @@ export function demoDb(): DatabaseIndex {
       enemies: parseProjectFile('enemies', enemies),
       troops: parseProjectFile('troops', troops),
       commonEvents: parseProjectFile('commonEvents', commonEvents),
+      animations: parseProjectFile('animations', animations),
     }),
   );
 }

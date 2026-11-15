@@ -222,6 +222,10 @@ export interface EventContext {
   readonly scroll?: MapScroll;
   /** Pictures over the map. Without them, picture commands do nothing. */
   readonly pictures?: Pictures;
+  /** Play an animation on "player" or an event id; returns a "finished" check. */
+  readonly showAnimation?: (animation: string, target: string) => () => boolean;
+  /** Show a balloon (a row of the balloon image) over "player" or an event id. */
+  readonly showBalloon?: (balloon: number, target: string) => () => boolean;
   /** Turn the menu or saving on or off. */
   readonly setAccess?: (what: 'menu' | 'saving', allowed: boolean) => void;
   /** Seconds played so far. */

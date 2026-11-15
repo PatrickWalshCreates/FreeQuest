@@ -3,6 +3,8 @@
 //   assets/characters/<name>.png   3 frames x 4 directions, 32px frames
 //   assets/enemies/<id>.png        64x64 battle art
 //   assets/system/iconset.png      8x4 grid of 16px item, gear, skill and state icons
+//   assets/system/balloons.png     8 balloons (rows) of 6 frames of 24px
+//   assets/animations/*.png        animation frames of 32px in a row (sparkle, slash)
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -1050,6 +1052,185 @@ function drawFaces(): void {
   }
 }
 
+// Balloons over characters: one row per kind, 6 frames of 24 px (it pops up, then bobs).
+const B = 24;
+const BALLOON_KINDS = ['surprise', 'question', 'music', 'heart', 'anger', 'sweat', 'idea', 'sleep'];
+
+/** The symbol inside a balloon, drawn in a 24 px cell around (12, 10). */
+function balloonSymbol(c: Canvas, kind: string, ox: number, oy: number): void {
+  const ink = hex('#2a2230');
+  const at = (x: number, y: number, w: number, h: number, color: RGBA) =>
+    c.rect(ox + x, oy + y, w, h, color);
+  switch (kind) {
+    case 'surprise':
+      at(11, 4, 2, 8, hex('#d83a3a'));
+      at(11, 14, 2, 2, hex('#d83a3a'));
+      break;
+    case 'question':
+      at(9, 5, 6, 2, hex('#3a6ad8'));
+      at(14, 6, 2, 4, hex('#3a6ad8'));
+      at(11, 10, 3, 2, hex('#3a6ad8'));
+      at(11, 12, 2, 1, hex('#3a6ad8'));
+      at(11, 14, 2, 2, hex('#3a6ad8'));
+      break;
+    case 'music':
+      at(13, 4, 1, 9, ink);
+      at(13, 4, 4, 2, ink);
+      at(9, 11, 5, 4, ink);
+      break;
+    case 'heart':
+      ellipse(c, ox + 9, oy + 8, 3, 3, hex('#e04a78'));
+      ellipse(c, ox + 15, oy + 8, 3, 3, hex('#e04a78'));
+      triangle(
+        c,
+        [
+          [ox + 6, oy + 9],
+          [ox + 18, oy + 9],
+          [ox + 12, oy + 16],
+        ],
+        hex('#e04a78'),
+      );
+      break;
+    case 'anger':
+      for (const [dx, dy] of [
+        [0, 0],
+        [5, 0],
+        [0, 5],
+        [5, 5],
+      ] as const) {
+        at(8 + dx, 5 + dy, 2, 2, hex('#d83a3a'));
+      }
+      at(10, 7, 3, 1, hex('#d83a3a'));
+      at(10, 10, 3, 1, hex('#d83a3a'));
+      at(9, 7, 1, 3, hex('#d83a3a'));
+      at(13, 7, 1, 3, hex('#d83a3a'));
+      break;
+    case 'sweat':
+      triangle(
+        c,
+        [
+          [ox + 12, oy + 4],
+          [ox + 9, oy + 11],
+          [ox + 15, oy + 11],
+        ],
+        hex('#4aa0e0'),
+      );
+      ellipse(c, ox + 12, oy + 12, 3, 3, hex('#4aa0e0'));
+      at(11, 10, 1, 2, hex('#cfe8fa'));
+      break;
+    case 'idea':
+      ellipse(c, ox + 12, oy + 8, 4, 4, hex('#f2c83a'));
+      at(10, 12, 5, 2, hex('#f2c83a'));
+      at(10, 14, 5, 2, hex('#8a8a96'));
+      at(11, 6, 1, 2, hex('#fff6c8'));
+      break;
+    case 'sleep':
+      for (const [x, y, n] of [
+        [7, 10, 4],
+        [13, 5, 4],
+      ] as const) {
+        at(x, y, n, 1, ink);
+        line(c, ox + x + n - 1, oy + y + 1, ox + x, oy + y + n - 2, ink);
+        at(x, y + n - 1, n, 1, ink);
+      }
+      break;
+  }
+}
+
+function drawBalloons(): void {
+  const frames = 6;
+  const sheet = new Canvas(B * frames, B * BALLOON_KINDS.length);
+  const white = hex('#fbfbf7');
+  const ink = hex('#2a2230');
+  BALLOON_KINDS.forEach((kind, row) => {
+    for (let f = 0; f < frames; f++) {
+      const cell = new Canvas(B, B);
+      const scale = [0.4, 0.75, 1, 1, 1, 1][f] ?? 1;
+      const bob = f >= 3 ? ([0, -1, 0][f - 3] ?? 0) : 0;
+      const rx = Math.round(10 * scale);
+      const ry = Math.round(8 * scale);
+      const cy = 18 - ry + bob;
+      ellipse(cell, 12, cy, rx, ry, white);
+      if (scale === 1) {
+        triangle(
+          cell,
+          [
+            [10, cy + ry - 1],
+            [14, cy + ry - 1],
+            [11, cy + ry + 3],
+          ],
+          white,
+        );
+        balloonSymbol(cell, kind, 0, cy - 10);
+      }
+      // A dark outline around the white.
+      const out = new Canvas(B, B);
+      out.blit(cell, 0, 0);
+      for (let y = 0; y < B; y++)
+        for (let x = 0; x < B; x++) {
+          if (cell.get(x, y)[3] > 0) continue;
+          const near = [
+            [x - 1, y],
+            [x + 1, y],
+            [x, y - 1],
+            [x, y + 1],
+          ].some(
+            ([nx = 0, ny = 0]) => nx >= 0 && ny >= 0 && nx < B && ny < B && cell.get(nx, ny)[3] > 0,
+          );
+          if (near) out.set(x, y, ink);
+        }
+      sheet.blit(out, f * B, row * B);
+    }
+  });
+  sheet.save(join(ROOT, 'assets', 'system', 'balloons.png'));
+}
+
+// Animations: frames of 32 px in one row. A sparkle of light (healing) and a sword slash.
+const A = 32;
+
+function drawSparkle(): void {
+  const frames = 8;
+  const sheet = new Canvas(A * frames, A);
+  const colors = [hex('#ffffff'), hex('#b8f5a8'), hex('#6ad870')];
+  for (let f = 0; f < frames; f++) {
+    const cell = new Canvas(A, A);
+    const t = f / (frames - 1);
+    // Six twinkles rising and spreading out, then fading to green.
+    for (let k = 0; k < 6; k++) {
+      const angle = (k / 6) * Math.PI * 2 + t * 1.5;
+      const r = 3 + t * 11;
+      const x = Math.round(16 + Math.cos(angle) * r);
+      const y = Math.round(18 + Math.sin(angle) * r * 0.7 - t * 8);
+      const color = colors[Math.min(2, Math.floor(t * 3))] ?? colors[2];
+      if (!color || f === frames - 1) continue;
+      const size = k % 2 === 0 && f < 6 ? 2 : 1;
+      cell.rect(x - size, y, size * 2 + 1, 1, color);
+      cell.rect(x, y - size, 1, size * 2 + 1, color);
+    }
+    if (f < 3) cell.circle(16, 18, 2 + f, hex('#e8ffe0'));
+    sheet.blit(cell, f * A, 0);
+  }
+  sheet.save(join(ROOT, 'assets', 'animations', 'sparkle.png'));
+}
+
+function drawSlash(): void {
+  const frames = 6;
+  const sheet = new Canvas(A * frames, A);
+  for (let f = 0; f < frames; f++) {
+    const cell = new Canvas(A, A);
+    // The blade's trail grows across, then thins and fades.
+    const reach = Math.min(1, (f + 1) / 3);
+    const x1 = Math.round(4 + 24 * reach);
+    const y1 = Math.round(4 + 24 * reach);
+    const width = f < 3 ? 3 : f < 5 ? 2 : 1;
+    const start = f < 3 ? 0 : (f - 2) * 6;
+    line(cell, 4 + start, 4 + start, x1, y1, hex(f < 4 ? '#ffffff' : '#c8d4ff'), width);
+    if (f >= 1 && f <= 3) line(cell, 6 + start, 3 + start, x1 + 1, y1 - 2, hex('#9ab0ff'));
+    sheet.blit(cell, f * A, 0);
+  }
+  sheet.save(join(ROOT, 'assets', 'animations', 'slash.png'));
+}
+
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
 drawChest();
@@ -1058,3 +1239,6 @@ drawHearth();
 drawEnemies();
 drawIconset();
 drawFaces();
+drawBalloons();
+drawSparkle();
+drawSlash();

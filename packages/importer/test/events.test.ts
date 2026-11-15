@@ -168,7 +168,7 @@ describe('importing events', () => {
       'battle',
       'shop',
       'playSound',
-      'comment',
+      'showBalloon',
       'callCommon',
       'changeActor',
       'changeActor',
@@ -231,7 +231,7 @@ describe('importing events', () => {
       canSell: true,
     });
     expect(commands[8]).toEqual({ type: 'playSound', path: 'assets/audio/se/chime.ogg' });
-    expect(commands[9]).toEqual({ type: 'comment', text: 'From MZ, not imported: Show balloon' });
+    expect(commands[9]).toEqual({ type: 'showBalloon', target: 'player', balloon: 0, wait: false });
     expect(commands[10]).toEqual({ type: 'callCommon', common: 'open-gate' });
     expect(commands.slice(11)).toEqual([
       { type: 'changeActor', actor: 'tamsin', character: 'lamplighters-4' },
@@ -308,6 +308,8 @@ describe('importing events', () => {
       { type: 'comment', text: 'From MZ, not imported: Rotate picture' },
       { type: 'erasePicture', number: 1 },
       { type: 'erasePicture', number: 2 },
+      { type: 'showAnimation', target: 'player', animation: 'lantern-glow', wait: true },
+      { type: 'showBalloon', target: 'this', balloon: 3, wait: false },
       { type: 'openSave' },
       { type: 'gameOver' },
       { type: 'returnToTitle' },
@@ -321,7 +323,7 @@ describe('importing events', () => {
   it('reports what each list left out, once', async () => {
     const { messages } = await imported();
     expect(messages('Maps › Hollow › Keeper')).toEqual([
-      "Commands FreeQuest doesn't have, kept as comments: Script, Show balloon.",
+      "Commands FreeQuest doesn't have, kept as comments: Script.",
       "1 branch tests something FreeQuest can't; it now tests the switch “Imported: condition to redo”, which is never on.",
     ]);
   });
@@ -422,6 +424,52 @@ describe('an imported game', () => {
     expect(world.state.getVariable('lanterns-lit')).toBe(2);
     expect(world.party.gold).toBe(50);
     expect(world.state.getFlag('hollow', 'keeper', 'a')).toBe(true);
+  });
+});
+
+describe('animations and balloons', () => {
+  it('makes stand-ins for the animations used, with their length and sounds, and the balloon image', async () => {
+    const { target, result } = await imported();
+    const animations = JSON.parse(await target.readText('data/database/animations.json')) as {
+      entries: { id: string; frames: number; fps: number; sounds: unknown[]; image?: string }[];
+    };
+    // "Never used" isn't brought across.
+    expect(animations.entries.map((a) => a.id)).toEqual(['lantern-glow', 'cut']);
+    expect(animations.entries[0]).toMatchObject({
+      frames: 21,
+      fps: 30,
+      sounds: [{ frame: 15, path: 'assets/audio/se/chime.ogg' }],
+    });
+    expect(animations.entries[0]?.image).toBeUndefined();
+    // "Cut" runs at twice MZ's speed and times nothing: the shortest stand-in.
+    expect(animations.entries[1]).toMatchObject({ frames: 15, sounds: [] });
+    const skills = JSON.parse(await target.readText('data/database/skills.json')) as {
+      entries: { id: string; animation?: string }[];
+    };
+    // Strike's own, and Ember's "normal attack" (Strike's too).
+    expect(skills.entries.filter((s) => s.animation).map((s) => [s.id, s.animation])).toEqual([
+      ['strike', 'cut'],
+      ['ember', 'cut'],
+    ]);
+    const system = JSON.parse(await target.readText('data/database/system.json')) as {
+      balloons?: { image: string; size: number; frames: number; names: string[] };
+    };
+    expect(system.balloons).toMatchObject({
+      image: 'assets/system/balloons.png',
+      size: 48,
+      frames: 8,
+    });
+    expect(system.balloons?.names).toHaveLength(15);
+    expect(target.binaries.has('assets/system/balloons.png')).toBe(true);
+    // The Starter's own animation images aren't copied.
+    expect([...target.binaries.keys()].some((p) => p.startsWith('assets/animations/'))).toBe(false);
+    const messages = result.report.items
+      .filter((i) => i.where === 'Animations')
+      .map((i) => i.message);
+    expect(messages).toEqual([
+      "2 animations are stand-ins: MZ's are Effekseer effects, which FreeQuest can't play. Each keeps its name, length and sounds; give it frames in Database › Animations.",
+      "1 of them flashed the screen or the target; the stand-ins don't.",
+    ]);
   });
 });
 

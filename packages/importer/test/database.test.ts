@@ -29,6 +29,7 @@ async function imported() {
     actorCharacter: () => null,
     enemyImage: () => null,
     usedPlaceholder: () => undefined,
+    animation: (n) => db.animations.id(n),
   });
   const where = (name: string) =>
     report.items.filter((i) => i.where.endsWith(`› ${name}`)).map((i) => i.message);

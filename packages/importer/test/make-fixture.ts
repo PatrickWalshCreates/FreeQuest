@@ -276,6 +276,8 @@ function stagehand() {
     cmd(233, 0, [1, 5]),
     cmd(235, 0, [1]),
     cmd(231, 0, [2, '', 0, 0, 0, 0, 100, 100, 255, 0]),
+    cmd(212, 0, [-1, 1, true]),
+    cmd(213, 0, [0, 4, false]),
     cmd(352, 0),
     cmd(353, 0),
     cmd(354, 0),
@@ -349,6 +351,15 @@ mkdirSync(join(root, 'audio', 'se'), { recursive: true });
 writeFileSync(join(root, 'audio', 'se', 'Chime.ogg'), 'OggS fake sound for tests');
 mkdirSync(join(root, 'audio', 'bgm'), { recursive: true });
 mkdirSync(join(root, 'audio', 'me'), { recursive: true });
+// Balloons (our own: 15 rows of 8 frames of 48 px, each row one flat colour).
+{
+  const png = new PNG({ width: 8 * 48, height: 15 * 48 });
+  for (let y = 0; y < png.height; y++)
+    for (let x = 0; x < png.width; x++)
+      png.data.set([Math.floor(y / 48) * 16, 200, 100, 255], (y * png.width + x) * 4);
+  mkdirSync(join(root, 'img', 'system'), { recursive: true });
+  writeFileSync(join(root, 'img', 'system', 'Balloon.png'), PNG.sync.write(png));
+}
 // A picture (our own: a 4 × 2 gradient).
 {
   const png = new PNG({ width: 4, height: 2 });

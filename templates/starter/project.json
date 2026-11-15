@@ -1,5 +1,5 @@
 {
-  "formatVersion": 8,
+  "formatVersion": 9,
   "id": "my-game",
   "name": "My Game",
   "characters": [
@@ -14,6 +14,7 @@
   ],
   "database": {
     "actors": "data/database/actors.json",
+    "animations": "data/database/animations.json",
     "classes": "data/database/classes.json",
     "commonEvents": "data/database/commonEvents.json",
     "enemies": "data/database/enemies.json",

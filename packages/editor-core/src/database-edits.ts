@@ -36,6 +36,7 @@ export const DATABASE_LABELS: Readonly<Record<DatabaseKind, string>> = {
   enemies: 'Enemies',
   troops: 'Troops',
   commonEvents: 'Common events',
+  animations: 'Animations',
 };
 
 /** Categories the project has no file for yet (they count as empty), in the usual order. */

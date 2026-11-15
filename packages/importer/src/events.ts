@@ -26,6 +26,7 @@ import {
   type VariableOp,
   idFromName,
 } from '@freequest/schema';
+import { MZ_BALLOON_NAMES } from './animations.js';
 import type { AudioFolder, AudioImporter } from './audio.js';
 import { type MzNode, commandTree } from './command-tree.js';
 import type { GraphicsImporter } from './graphics.js';
@@ -50,6 +51,8 @@ export interface EventsContext {
   /** A common event's id, or null. */
   readonly common: (n: number) => string | null;
   readonly textColor: (n: number) => string;
+  /** MZ animation `n`'s id (marking it used), or null. */
+  readonly animation: (n: number) => string | null;
   /** The switch that stands in for tests FreeQuest can't make (declared on first use). */
   readonly redoSwitch: () => string;
 }
@@ -474,6 +477,24 @@ class Converter {
       case 231:
       case 232:
         return this.#picture(code, p);
+      case 212:
+      case 213: {
+        const target = this.#character(int(0));
+        if (!target) return [this.#unsupported(code, `on missing event ${int(0)}`)];
+        const wait = p[2] === true;
+        if (code === 212) {
+          const animation = this.ctx.animation(int(1));
+          return animation
+            ? [{ type: 'showAnimation', target, animation, wait }]
+            : [this.#unsupported(212, `missing animation ${int(1)}`)];
+        }
+        if (int(1) < 1 || int(1) > MZ_BALLOON_NAMES.length) {
+          return [this.#unsupported(213, `balloon ${int(1)}`)];
+        }
+        return (await this.ctx.graphics.balloons(this.scope.where))
+          ? [{ type: 'showBalloon', target, balloon: int(1) - 1, wait }]
+          : [this.#unsupported(213, 'without a balloon image')];
+      }
       case 235:
         return [{ type: 'erasePicture', number: Math.max(1, Math.min(100, int(0))) }];
       case 352:

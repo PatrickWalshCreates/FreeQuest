@@ -3,6 +3,7 @@
 // make itself (yet) comes from a template (the Starter), so the result always
 // opens and plays. project.json is written last, so an interrupted import
 // never looks like a finished project.
+import { AnimationImporter } from './animations.js';
 import {
   MANIFEST_PATH,
   type ProjectFs,
@@ -108,7 +109,10 @@ export async function importMzProject(
     if (image) enemyImages.set(enemy.n, image);
   }
   let placeholderUsed = false;
+  // Animations: stand-ins for the ones skills, items and events use.
+  const animations = new AnimationImporter(db.animations);
   const imported = importDatabase({
+    animation: (n) => animations.use(n),
     db,
     types,
     variables,
@@ -155,6 +159,7 @@ export async function importMzProject(
     mapSize: (mapId) => maps.maps.find((m) => m.data.id === mapId)?.data ?? null,
     common: (n) => (hasCommonEvent(commonRaw, n) ? commonIds.id(n) : null),
     textColor: await graphics.textColors(),
+    animation: (n) => animations.use(n),
     redoSwitch: () => {
       if (!redo) {
         redo = uniqueId('imported-condition-to-redo', gameStateIds);
@@ -191,6 +196,7 @@ export async function importMzProject(
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
   const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
   const pictures = await graphics.finish();
+  const animationEntries = await animations.finish(audio, report);
 
   const written = new Map<string, unknown>([
     [databasePaths.actors, entriesFile(imported.actors)],
@@ -202,6 +208,7 @@ export async function importMzProject(
     [databasePaths.enemies, entriesFile(imported.enemies)],
     [databasePaths.troops, entriesFile(imported.troops)],
     [databasePaths.commonEvents, entriesFile(commonEvents)],
+    [databasePaths.animations, entriesFile(animationEntries)],
     [
       databasePaths.system,
       systemData(types, imported, {
@@ -211,6 +218,7 @@ export async function importMzProject(
           : templateSystem.iconset
             ? { iconset: templateSystem.iconset }
             : {}),
+        ...(pictures.balloons ? { balloons: pictures.balloons } : {}),
       }),
     ],
   ]);
@@ -231,6 +239,9 @@ export async function importMzProject(
   // The template's icons go when the project has its own.
   const templateIcons = (f: string) =>
     pictures.iconset !== null && f === templateSystem.iconset?.image;
+  // The template's animations and balloons belong to its own database: never copied.
+  const templateAnimations = (f: string) =>
+    f.startsWith('assets/animations/') || f === templateSystem.balloons?.image;
   if (maps.maps.length === 0) {
     // The template's maps stay, without their events (which use the template's database).
     for (const ref of manifest.maps)
@@ -249,6 +260,7 @@ export async function importMzProject(
       !replaced(f) &&
       !templateCharacter(f) &&
       !templateIcons(f) &&
+      !templateAnimations(f) &&
       !templateAudio(f),
   );
   const images = [...maps.images, ...pictures.files, ...audio.files];

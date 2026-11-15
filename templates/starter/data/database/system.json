@@ -1,5 +1,5 @@
 {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "attackSkill": "attack",
   "audio": {
     "battleMusic": "assets/audio/battle.wav",
@@ -16,6 +16,12 @@
     },
     "titleMusic": "assets/audio/title.wav",
     "victoryMusic": "assets/audio/victory.wav"
+  },
+  "balloons": {
+    "frames": 6,
+    "image": "assets/system/balloons.png",
+    "names": ["Surprise", "Question", "Music", "Heart", "Anger", "Sweat", "Idea", "Sleep"],
+    "size": 24
   },
   "currency": "G",
   "elements": [

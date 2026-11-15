@@ -234,6 +234,22 @@ starting or ending slowly if you like; tick **Wait until done** to let it finish
 picture** takes it away. Pictures stay when the player changes maps and are kept in saves, until
 erased. Put your images in `assets/pictures` (the Assets panel has a Pictures folder).
 
+### Animations and balloons
+
+**Show balloon** (Screen commands) pops a balloon over the player or an event: surprise, a
+question, a heart, an idea, sleep… Tick **Wait until done** to let it finish before the next
+command. The balloons are rows of one image, set under **Database › System › Balloons** (frame
+size, frames per balloon and a name for each row); new projects have eight.
+
+**Show animation** plays an animation on the player or an event: a sparkle of healing, a sword's
+slash, an explosion. Animations are their own database category, **Database › Animations**: an
+image of frames of the same size (read left to right, then down), how many frames, how many per
+second, and sounds at chosen frames. The editor plays a preview as you change them. An animation
+without an image still plays its sounds and takes its time, so you can time things before
+drawing it.
+
+In battle, a skill or item with an **Animation** plays it on each target before the damage shows.
+
 ### More from If…, Set variable and other commands
 
 - **If…** can also test what only matters at that moment: **a key is held**, which way the
