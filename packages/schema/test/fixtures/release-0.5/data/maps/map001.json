@@ -135,6 +135,25 @@
                       },
                       "speaker": "Elder",
                       "text": "Thank you. Follow the path east."
+                    },
+                    {
+                      "type": "message",
+                      "face": {
+                        "image": "assets/faces/elder.png",
+                        "index": 1
+                      },
+                      "speaker": "Elder",
+                      "text": "Take my old map, so you don’t lose your way."
+                    },
+                    {
+                      "id": "meadow-map",
+                      "type": "changeItems",
+                      "amount": 1,
+                      "kind": "item"
+                    },
+                    {
+                      "type": "message",
+                      "text": "Received the {icon:4}{color:yellow}Elder’s Map{/color}. Read it from the menu (Items)."
                     }
                   ]
                 },

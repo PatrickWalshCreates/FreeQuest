@@ -68,6 +68,16 @@ describe('demo project', () => {
     });
     talk.continue();
     fresh.step(1 / 60, input);
+    // He gives his map.
+    expect(talk.pending).toMatchObject({
+      type: 'message',
+      text: 'Take my old map, so you don’t lose your way.',
+    });
+    talk.continue();
+    fresh.step(1 / 60, input);
+    talk.continue();
+    fresh.step(1 / 60, input);
+    expect(fresh.party.count('item', 'meadow-map')).toBe(1);
 
     expect(fresh.interpreter).toBeNull();
     expect(fresh.state.getSwitch('accepted_request')).toBe(true);

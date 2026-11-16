@@ -169,6 +169,8 @@ describe('demo quest', () => {
     expect(world.interpreterEvent?.id).toBe('elder');
     finish(0);
     expect(world.state.getSwitch('accepted_request')).toBe(true);
+    // He hands over his map, to read from the menu.
+    expect(world.party.count('item', 'meadow-map')).toBe(1);
 
     // Walk to the bridge: the touch event fires on arrival at (15, 5).
     walkTo('up', 11, 5);
@@ -208,6 +210,8 @@ describe('demo quest', () => {
     expect(transcript).toEqual([
       'Elder: Ah, a traveler! Would you check on the old bridge to the east?',
       'Elder: Thank you. Follow the path east.',
+      'Elder: Take my old map, so you don’t lose your way.',
+      'Received the Elder’s Map. Read it from the menu (Items).',
       'The planks creak, but the bridge holds.',
       'A wolf leaps out from under the bridge!',
       'The wolf limps away. The bridge is safe again.',
@@ -228,7 +232,8 @@ describe('demo quest', () => {
     finish(0);
     expect(world.state.getSwitch('accepted_request')).toBe(true);
     expect(transcript).toContain('Elder: Come back if you change your mind.');
-    expect(transcript.at(-1)).toBe('Elder: Thank you. Follow the path east.');
+    expect(transcript).toContain('Elder: Thank you. Follow the path east.');
+    expect(transcript.at(-1)).toBe('Received the Elder’s Map. Read it from the menu (Items).');
   });
 
   it("gives the elder's else branch before the bridge is visited", () => {

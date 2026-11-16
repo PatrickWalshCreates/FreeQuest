@@ -88,6 +88,17 @@ describe('MenuController', () => {
     expect(menu.state.message).toBeNull(); // any key clears the message
   });
 
+  it('reads the elder’s map: the menu closes and its common event is asked for', () => {
+    const { world, menu, tap } = setup();
+    world.party.gain('item', 'meadow-map', 1);
+    tap('confirm'); // Items
+    tap('confirm'); // Elder's Map
+    expect(menu.outcome).toBe('closed');
+    expect(menu.commonEvents).toEqual(['read-map']);
+    // A key item: still carried.
+    expect(world.party.count('item', 'meadow-map')).toBe(1);
+  });
+
   it('casts Heal from the menu, paying MP', () => {
     const { world, menu, tap, hero } = setup();
     world.party.addMember('mira');
