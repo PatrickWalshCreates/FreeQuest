@@ -1,6 +1,6 @@
 {
   "name": "@freequest/importer",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Imports RPG Maker MZ projects into FreeQuest projects. No UI, no Node APIs.",
   "license": "MIT",
   "type": "module",

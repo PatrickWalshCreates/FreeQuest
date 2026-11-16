@@ -243,8 +243,9 @@ describe('useSkill / useItem', () => {
     expect(party.count('item', 'potion')).toBe(0);
     expect(() => useItem(party, hero, item('potion'), [hero], 'menu', ctx())).toThrow(/none left/);
     party.gain('item', 'meadow-map', 1);
-    expect(() => useItem(party, hero, item('meadow-map'), [], 'menu', ctx())).toThrow(
-      /in the menu/,
+    // The elder's map is read from the menu (it runs a common event), never in battle.
+    expect(() => useItem(party, hero, item('meadow-map'), [], 'battle', ctx())).toThrow(
+      /in the battle/,
     );
   });
 });

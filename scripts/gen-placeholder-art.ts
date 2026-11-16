@@ -5,6 +5,8 @@
 //   assets/system/iconset.png      8x4 grid of 16px item, gear, skill and state icons
 //   assets/system/balloons.png     8 balloons (rows) of 6 frames of 24px
 //   assets/animations/*.png        animation frames of 32px in a row (sparkle, slash)
+//   assets/system/title.png        the title screen picture (480x352)
+//   assets/pictures/meadow-map.png the elder's map, shown as a picture
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -1231,6 +1233,139 @@ function drawSlash(): void {
   sheet.save(join(ROOT, 'assets', 'animations', 'slash.png'));
 }
 
+// The title screen: a meadow at dawn under a pale sky, hills, the elder's house and the bridge.
+function drawTitle(): void {
+  const W = 480;
+  const H = 352;
+  const c = new Canvas(W, H);
+  const sky = [hex('#2b3a6b'), hex('#4f5f96'), hex('#8a7fb0'), hex('#d99a8a'), hex('#f2c48a')];
+  for (let y = 0; y < H; y++) {
+    const t = Math.min(1, y / (H * 0.62));
+    const band = Math.min(sky.length - 1, Math.floor(t * sky.length));
+    // Dithered bands: alternate neighbouring colours near each boundary.
+    const next = Math.min(sky.length - 1, band + 1);
+    const frac = t * sky.length - band;
+    for (let x = 0; x < W; x++) {
+      const color = frac > 0.75 && (x + y) % 2 === 0 ? sky[next] : sky[band];
+      if (color) c.set(x, y, color);
+    }
+  }
+  // A low sun and a few stars still out.
+  c.circle(330, 214, 26, hex('#fde6a8'));
+  c.circle(330, 214, 20, hex('#fff4d0'));
+  for (let i = 0; i < 40; i++) {
+    const x = Math.floor(noise(i, 1, 7) * W);
+    const y = Math.floor(noise(i, 2, 7) * 110);
+    c.set(x, y, hex('#e8ecff', 140 + Math.floor(noise(i, 3, 7) * 110)));
+  }
+  // Far hills, near hills, and the meadow.
+  const hill = (base: number, amp: number, freq: number, phase: number, color: RGBA) => {
+    for (let x = 0; x < W; x++) {
+      const top = Math.round(
+        base - amp * Math.sin(x * freq + phase) - amp * 0.5 * Math.sin(x * freq * 2.3),
+      );
+      for (let y = top; y < H; y++) c.set(x, y, color);
+    }
+  };
+  hill(236, 14, 0.012, 1.2, hex('#5d6f8f'));
+  hill(256, 12, 0.017, 0.3, hex('#4f7a52'));
+  hill(276, 8, 0.023, 2.0, hex('#5f9a4e'));
+  for (let i = 0; i < 260; i++) {
+    const x = Math.floor(noise(i, 4, 9) * W);
+    const y = 282 + Math.floor(noise(i, 5, 9) * (H - 282));
+    c.set(x, y, noise(i, 6, 9) < 0.5 ? hex('#7fb85c') : hex('#4f8a40'));
+  }
+  // The elder's house: walls, a dark roof, a lit window.
+  c.rect(92, 236, 54, 34, hex('#b98b5e'));
+  triangle(
+    c,
+    [
+      [84, 238],
+      [154, 238],
+      [119, 208],
+    ],
+    hex('#3f4a72'),
+  );
+  c.rect(124, 246, 10, 10, hex('#f6d27a'));
+  c.rect(102, 252, 12, 18, hex('#5a3a28'));
+  // A path winding down to the front, and the bridge over a stream on the right.
+  for (let y = 270; y < H; y++) {
+    const cx = 108 + Math.round(Math.sin(y * 0.05) * 10 + (y - 270) * 0.6);
+    c.rect(
+      cx - 4 - Math.floor((y - 270) / 14),
+      y,
+      8 + Math.floor((y - 270) / 7),
+      1,
+      hex('#c9a46a'),
+    );
+  }
+  for (let y = 262; y < H; y++)
+    c.rect(392 + Math.round(Math.sin(y * 0.08) * 6), y, 22, 1, hex('#5c8fd6'));
+  c.rect(384, 290, 40, 6, hex('#8a5a34'));
+  c.rect(384, 288, 40, 2, hex('#b07a4a'));
+  // Two trees.
+  for (const [tx, ty] of [
+    [40, 262],
+    [218, 250],
+  ] as const) {
+    c.rect(tx - 2, ty, 4, 14, hex('#5a3a28'));
+    c.circle(tx, ty - 6, 11, hex('#2f6a3a'));
+    c.circle(tx - 3, ty - 9, 5, hex('#3f8a4a'));
+  }
+  c.save(join(ROOT, 'assets', 'system', 'title.png'));
+}
+
+// The elder's hand-drawn map of the meadow, shown as a picture when it's read.
+function drawMeadowMap(): void {
+  const W = 200;
+  const H = 150;
+  const c = new Canvas(W, H);
+  const paper = hex('#e9d9b0');
+  const ink = hex('#5a4630');
+  c.rect(4, 4, W - 8, H - 8, paper);
+  for (let i = 0; i < 400; i++) {
+    const x = 4 + Math.floor(noise(i, 1, 11) * (W - 8));
+    const y = 4 + Math.floor(noise(i, 2, 11) * (H - 8));
+    c.set(x, y, hex('#dccb9e'));
+  }
+  // A ragged edge.
+  for (let x = 4; x < W - 4; x++) {
+    if (noise(x, 3, 11) < 0.4) c.set(x, 4, hex('#000000', 0));
+    if (noise(x, 4, 11) < 0.4) c.set(x, H - 5, hex('#000000', 0));
+  }
+  // The stream and the bridge, the path, the house, trees and the start.
+  for (let y = 10; y < H - 10; y++)
+    c.rect(150 + Math.round(Math.sin(y * 0.1) * 5), y, 6, 1, hex('#6a8ec0'));
+  c.rect(140, 40, 26, 4, ink);
+  line(c, 30, 120, 70, 90, ink);
+  line(c, 70, 90, 120, 92, ink);
+  line(c, 120, 92, 142, 44, ink);
+  line(c, 70, 90, 46, 50, ink);
+  c.rect(36, 36, 18, 12, ink);
+  triangle(
+    c,
+    [
+      [34, 37],
+      [56, 37],
+      [45, 28],
+    ],
+    ink,
+  );
+  for (const [tx, ty] of [
+    [100, 40],
+    [110, 120],
+    [20, 70],
+    [176, 110],
+  ] as const) {
+    c.circle(tx, ty, 4, hex('#5f8a50'));
+  }
+  // An X where the bridge is, and a dot for "you are here".
+  line(c, 166, 24, 174, 32, hex('#b03a2e'), 2);
+  line(c, 174, 24, 166, 32, hex('#b03a2e'), 2);
+  c.circle(70, 90, 3, hex('#b03a2e'));
+  c.save(join(ROOT, 'assets', 'pictures', 'meadow-map.png'));
+}
+
 drawTileset();
 for (const [file, palette] of Object.entries(CHARACTERS)) drawCharacter(file, palette);
 drawChest();
@@ -1242,3 +1377,5 @@ drawFaces();
 drawBalloons();
 drawSparkle();
 drawSlash();
+drawTitle();
+drawMeadowMap();

@@ -9,7 +9,7 @@
 import { MZ_BALLOON_NAMES } from './animations.js';
 import { FileNotFoundError, type ProjectFs, uniqueId } from '@freequest/editor-core';
 import { CHARACTER_FORMAT_VERSION, type CharacterSheet, idFromName } from '@freequest/schema';
-import { type ImageCodec, type RgbaImage, blankImage, copyArea } from './image.js';
+import { type ImageCodec, type RgbaImage, blankImage, copyArea, layerOver } from './image.js';
 import type { ImportReport } from './report.js';
 import { FALLBACK_TEXT_COLORS } from './text.js';
 import type { TileDrawer } from './tilesets.js';
@@ -272,6 +272,33 @@ export class GraphicsImporter {
       const hex = (v: number | undefined) => (v ?? 0).toString(16).padStart(2, '0');
       return `#${hex(skin.data[i])}${hex(skin.data[i + 1])}${hex(skin.data[i + 2])}`;
     };
+  }
+
+  /**
+   * The title screen picture: MZ's background (img/titles1) with its frame
+   * (img/titles2) drawn over it, as one image. Null without a background.
+   */
+  async title(background: string, frame: string): Promise<string | null> {
+    if (!background) return null;
+    const where = 'Title screen';
+    const read = async (path: string): Promise<RgbaImage | null> => {
+      try {
+        return await this.codec.decode(await this.fs.readBytes(path));
+      } catch (error) {
+        if (!(error instanceof FileNotFoundError)) throw error;
+        this.report.missing(where, await this.#missing(path));
+        return null;
+      }
+    };
+    const bottom = await read(`img/titles1/${background}.png`);
+    if (!bottom) return null;
+    const top = frame ? await read(`img/titles2/${frame}.png`) : null;
+    const image = 'assets/system/title.png';
+    this.#out.files.push({
+      path: image,
+      bytes: await this.codec.encode(top ? layerOver(bottom, top) : bottom),
+    });
+    return image;
   }
 
   #balloons: ImportedGraphics['balloons'] | undefined = undefined;

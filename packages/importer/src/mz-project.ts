@@ -42,6 +42,12 @@ export interface MzSystem {
   readonly sideView: boolean;
   /** The player starts transparent (hidden). */
   readonly startHidden: boolean;
+  /** The title screen's background and frame pictures (img/titles1, img/titles2; '' = none). */
+  readonly titleScreen: {
+    readonly background: string;
+    readonly frame: string;
+    readonly showName: boolean;
+  };
 }
 
 export interface MzMapInfo {
@@ -142,6 +148,11 @@ function readSystem(raw: Readonly<Record<string, unknown>>): MzSystem {
     },
     sideView: raw['optSideView'] === true,
     startHidden: raw['optTransparent'] === true,
+    titleScreen: {
+      background: asString(raw['title1Name']).trim(),
+      frame: asString(raw['title2Name']).trim(),
+      showName: raw['optDrawTitle'] !== false,
+    },
     party: asArray(raw['partyMembers'])
       .map((v) => asInt(v))
       .filter((n) => n > 0),

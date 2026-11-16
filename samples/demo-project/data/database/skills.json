@@ -23,7 +23,8 @@
       "target": {
         "select": "one",
         "side": "enemy"
-      }
+      },
+      "tpGain": 10
     },
     {
       "id": "guard",
@@ -141,6 +142,54 @@
       "target": {
         "select": "one",
         "side": "ally"
+      }
+    },
+    {
+      "id": "brave-strike",
+      "name": "Brave Strike",
+      "animation": "slash",
+      "description": "A mighty blow, paid for in TP: attacks and taking hits build it up.",
+      "effects": [
+        {
+          "type": "damage",
+          "critical": true,
+          "element": "attack",
+          "formula": "a.attack * 7 - b.defense * 2",
+          "pool": "hp",
+          "variance": 0.1
+        }
+      ],
+      "hitType": "physical",
+      "icon": 16,
+      "mpCost": 0,
+      "occasion": "battle",
+      "successRate": 1,
+      "target": {
+        "select": "one",
+        "side": "enemy"
+      },
+      "tpCost": 20
+    },
+    {
+      "id": "focus",
+      "name": "Focus",
+      "description": "Gathers strength for spells: magic attack up for 3 turns.",
+      "effects": [
+        {
+          "type": "buff",
+          "direction": "up",
+          "stat": "magicAttack",
+          "turns": 3
+        }
+      ],
+      "hitType": "certain",
+      "icon": 7,
+      "mpCost": 2,
+      "occasion": "battle",
+      "skillType": "magic",
+      "successRate": 1,
+      "target": {
+        "side": "user"
       }
     }
   ]

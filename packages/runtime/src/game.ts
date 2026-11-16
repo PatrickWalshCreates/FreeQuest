@@ -368,6 +368,15 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
   const title = new TitleController(manifest.name, saves);
   const titleView = new TitleView(width, height, theme);
+  // The game's title picture, when it has one (the starry sky shows until it loads).
+  const titleScreen = db.system.titleScreen;
+  if (titleScreen) {
+    loadPixelTexture(project.assetUrl(titleScreen.image)).then(
+      (texture) => titleView.setPicture(texture, titleScreen.showName),
+      (error: unknown) =>
+        console.warn(`Could not load the title picture "${titleScreen.image}"`, error),
+    );
+  }
   app.stage.addChildAt(titleView.container, app.stage.getChildIndex(fadeOverlay));
   let mode: 'title' | 'loading' | 'playing' = 'title';
   let menu: MenuController | null = null;

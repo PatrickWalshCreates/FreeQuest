@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.4.0 released (2026-11-14), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.5.0 (2026-11-15) ready for its by-hand check; 0.4.0 is the latest published. Early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1020,11 +1020,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3) hold
+- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3, 0.5) hold
   the demo's data and a save exactly as that release wrote them (never edit; checksums in
   `editor-core/test/release-formats.test.ts`, which opens each with no problems;
   `.gitattributes` and `.prettierignore` keep the bytes). Core loads each save
-  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps). Change a
+  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
 - Current versions: manifest 9 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;

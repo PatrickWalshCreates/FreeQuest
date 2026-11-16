@@ -1,0 +1,98 @@
+{
+  "formatVersion": 3,
+  "access": {
+    "saving": false
+  },
+  "battleMusic": {
+    "battle": "assets/audio/battle.wav"
+  },
+  "direction": "up",
+  "flags": {
+    "house": {
+      "chest": ["opened"]
+    }
+  },
+  "game": "freequest-demo",
+  "map": "house",
+  "party": {
+    "equipment": {},
+    "gold": 107,
+    "items": {},
+    "looks": {
+      "mira": {
+        "name": "Mira the Bold"
+      }
+    },
+    "members": [
+      {
+        "id": "hero",
+        "equipment": {
+          "body": "leather-vest",
+          "weapon": "bronze-sword"
+        },
+        "exp": 0,
+        "extraSkills": [],
+        "hp": 120,
+        "level": 1,
+        "mp": 10,
+        "states": []
+      },
+      {
+        "id": "mira",
+        "equipment": {
+          "body": "cloth-robe",
+          "weapon": "oak-staff"
+        },
+        "exp": 152,
+        "extraSkills": [],
+        "hp": 152,
+        "level": 3,
+        "mp": 59,
+        "states": []
+      }
+    ],
+    "steps": 0
+  },
+  "pictures": [
+    {
+      "image": "assets/pictures/meadow-map.png",
+      "number": 1,
+      "opacity": 1,
+      "origin": "center",
+      "scaleX": 1,
+      "scaleY": 1,
+      "x": 240,
+      "y": 150
+    }
+  ],
+  "playSeconds": 1234,
+  "savedAt": "2026-11-15T12:00:00.000Z",
+  "screen": {
+    "fade": 0,
+    "tint": {
+      "color": "#203060",
+      "strength": 0.3
+    }
+  },
+  "summary": {
+    "location": "Elder's house",
+    "members": [
+      {
+        "name": "Hero",
+        "level": 1
+      },
+      {
+        "name": "Mira the Bold",
+        "level": 3
+      }
+    ]
+  },
+  "switches": {
+    "accepted_request": true
+  },
+  "variables": {
+    "bridge_visits": 2
+  },
+  "x": 4,
+  "y": 6
+}

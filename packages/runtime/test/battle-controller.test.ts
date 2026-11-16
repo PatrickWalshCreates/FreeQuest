@@ -205,10 +205,11 @@ describe('BattleController', () => {
     expect(ui.state.menu?.options.map((o) => [o.label, o.detail])).toEqual([
       ['Fire', '5 MP'],
       ['Heal', '4 MP'],
+      ['Focus', '2 MP'],
       ['Blizzard', '9 MP'],
     ]);
     mira?.setMp(4);
-    expect(ui.state.menu?.options.map((o) => o.enabled)).toEqual([false, true, false]);
+    expect(ui.state.menu?.options.map((o) => o.enabled)).toEqual([false, true, true, false]);
     tap('confirm'); // Fire is disabled: nothing happens
     expect(ui.state.stage).toBe('skill');
     tap('cancel');

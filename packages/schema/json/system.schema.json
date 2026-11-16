@@ -222,6 +222,22 @@
         },
         "required": ["id", "name"]
       }
+    },
+    "titleScreen": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A picture behind the title screen, scaled to cover the screen (v5).",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "showName": {
+          "type": "boolean"
+        }
+      },
+      "required": ["image", "showName"]
     }
   },
   "required": ["formatVersion", "currency", "elements", "equipmentSlots", "equipmentTypes", "skillTypes"],

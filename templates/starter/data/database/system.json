@@ -109,5 +109,9 @@
       "id": "technique",
       "name": "Technique"
     }
-  ]
+  ],
+  "titleScreen": {
+    "image": "assets/system/title.png",
+    "showName": true
+  }
 }

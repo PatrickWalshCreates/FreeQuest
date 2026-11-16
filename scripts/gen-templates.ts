@@ -50,6 +50,7 @@ copy('assets/characters/villager.png');
 copy('assets/enemies/slime.png');
 copy('assets/system/iconset.png');
 copy('assets/system/balloons.png');
+copy('assets/system/title.png');
 copy('assets/animations');
 copy('assets/audio');
 copy('data/tilesets/overworld.json');

@@ -82,7 +82,8 @@ describe('Actor', () => {
 
   it('levels up through several thresholds at once and learns skills', () => {
     const hero = new Actor(db, 'hero');
-    expect(hero.skills).toEqual([]);
+    // Brave Strike is the warrior's from level 1.
+    expect(hero.skills).toEqual(['brave-strike']);
     const result = hero.gainExp(expForLevel(hero.classEntry.exp, 4));
     expect(result).toEqual({ levelsGained: 3, learnedSkills: ['power-strike'] });
     expect(hero.level).toBe(4);
@@ -109,7 +110,7 @@ describe('Actor', () => {
     mira.changeLevel(6);
     expect(mira.skills).toContain('blizzard');
     mira.changeLevel(2);
-    expect(mira.skills).toEqual(['fire', 'heal']);
+    expect(mira.skills).toEqual(['fire', 'heal', 'focus']);
     expect(mira.mp).toBeLessThanOrEqual(mira.maxMp);
   });
 
@@ -117,7 +118,7 @@ describe('Actor', () => {
     const hero = new Actor(db, 'hero');
     hero.learnSkill('heal');
     hero.changeLevel(1);
-    expect(hero.skills).toEqual(['heal']);
+    expect(hero.skills).toEqual(['brave-strike', 'heal']);
     expect(() => hero.learnSkill('nope')).toThrow(/unknown skill/);
   });
 

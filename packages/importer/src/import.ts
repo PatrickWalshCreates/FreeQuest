@@ -202,6 +202,10 @@ export async function importMzProject(
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
   const troops = await convertTroopEvents(db.troops, imported.troops, events);
   const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
+  const titleImage = await graphics.title(
+    mz.system.titleScreen.background,
+    mz.system.titleScreen.frame,
+  );
   const pictures = await graphics.finish();
   const animationEntries = await animations.finish(audio, report);
 
@@ -226,6 +230,9 @@ export async function importMzProject(
             ? { iconset: templateSystem.iconset }
             : {}),
         ...(pictures.balloons ? { balloons: pictures.balloons } : {}),
+        ...(titleImage
+          ? { titleScreen: { image: titleImage, showName: mz.system.titleScreen.showName } }
+          : {}),
       }),
     ],
   ]);

@@ -72,7 +72,8 @@ describe('MenuController', () => {
     tap('confirm'); // Items
     expect(menu.state.options).toEqual([
       { label: 'Potion', detail: '×2', enabled: true, icon: 0 },
-      { label: "Elder's Map", detail: '×1', enabled: false, icon: 4 }, // key item, never usable
+      // A key item, read from the menu: it runs a common event (no targets needed).
+      { label: "Elder's Map", detail: '×1', enabled: true, icon: 4 },
     ]);
     tap('confirm'); // Potion
     expect(menu.state).toMatchObject({ screen: 'target', title: 'Use Potion on' });

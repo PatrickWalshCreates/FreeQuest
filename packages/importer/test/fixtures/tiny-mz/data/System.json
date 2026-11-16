@@ -229,5 +229,8 @@
       "volume": 90
     }
   ],
-  "optTransparent": true
+  "optDrawTitle": false,
+  "optTransparent": true,
+  "title1Name": "Dawn",
+  "title2Name": "Frame"
 }

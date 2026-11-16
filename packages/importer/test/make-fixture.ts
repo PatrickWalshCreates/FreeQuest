@@ -360,6 +360,21 @@ mkdirSync(join(root, 'audio', 'me'), { recursive: true });
   mkdirSync(join(root, 'img', 'system'), { recursive: true });
   writeFileSync(join(root, 'img', 'system', 'Balloon.png'), PNG.sync.write(png));
 }
+// Title pictures (our own): a plain dawn-coloured background, and a frame with a clear middle.
+{
+  const dawn = new PNG({ width: 8, height: 6 });
+  for (let i = 0; i < 48; i++) dawn.data.set([240, 160, 80, 255], i * 4);
+  const frame = new PNG({ width: 8, height: 6 });
+  for (let y = 0; y < 6; y++)
+    for (let x = 0; x < 8; x++) {
+      const edge = x === 0 || y === 0 || x === 7 || y === 5;
+      frame.data.set(edge ? [20, 20, 60, 255] : [0, 0, 0, 0], (y * 8 + x) * 4);
+    }
+  mkdirSync(join(root, 'img', 'titles1'), { recursive: true });
+  mkdirSync(join(root, 'img', 'titles2'), { recursive: true });
+  writeFileSync(join(root, 'img', 'titles1', 'Dawn.png'), PNG.sync.write(dawn));
+  writeFileSync(join(root, 'img', 'titles2', 'Frame.png'), PNG.sync.write(frame));
+}
 // A picture (our own: a 4 × 2 gradient).
 {
   const png = new PNG({ width: 4, height: 2 });

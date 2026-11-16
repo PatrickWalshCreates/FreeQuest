@@ -23,7 +23,8 @@
       "target": {
         "select": "one",
         "side": "enemy"
-      }
+      },
+      "tpGain": 10
     },
     {
       "id": "guard",

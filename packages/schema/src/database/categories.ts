@@ -76,6 +76,19 @@ export const SystemData = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    titleScreen: Type.Optional(
+      Type.Object(
+        {
+          image: RelativePath,
+          /** Draw the game's name over the picture (off when the picture has it already). */
+          showName: Type.Boolean(),
+        },
+        {
+          additionalProperties: false,
+          description: 'A picture behind the title screen, scaled to cover the screen (v5).',
+        },
+      ),
+    ),
     balloons: Type.Optional(
       Type.Object(
         {

@@ -75,10 +75,14 @@ explains building them yourself.
 - **Maps**: paint tiles (pencil, rectangle, fill, eraser, pick), layers, a walkable overlay, and
   new / duplicate / resize / delete maps with their music and random battles.
 - **Events**: place NPCs, signs and doors (Events tool, V), with pages, conditions and a command
-  list (messages, choices, branches, battles, transfers, shops, move routes…); NPCs can wander,
-  chase the player or walk a route, and pages can run in the background.
-- **Database**: actors, classes, skills, items, equipment, states, enemies, troops and system
-  settings, with formulas checked as you type.
+  list (messages, choices, branches, battles, transfers, shops, move routes, pictures,
+  animations, balloons, screen effects…); NPCs can wander, chase the player or walk a route,
+  and pages can run in the background.
+- **Database**: actors, classes, skills, items, equipment, states, enemies, troops (with battle
+  events), common events, animations and system settings (title picture, sounds, balloons),
+  with formulas checked as you type. Battles have TP, buffs and debuffs.
+- **Import an RPG Maker MZ project**: maps, database, events, pictures and sounds come across
+  into a new project, with a report of anything left to redo.
 - **Play** runs the game with your unsaved changes; **Play from here** starts on any cell.
 - Copy and paste commands, events and database entries, also between projects; pick a door's
   destination on the map.
@@ -132,7 +136,11 @@ live in [`packages/schema/json`](packages/schema/json).
 Done: events and NPCs, database, battles, menus/saves/audio, the desktop editor, web, Windows,
 macOS and Linux exports, the editor workflow (templates, assets, tileset and character editors, copy/paste), and
 gameplay depth (moving NPCs, move routes, background events, shops, icons, options, smarter
-enemies). Released: 0.1.0 (the first public release) and 0.2.0 (event flags, common events, text codes, loops, screen effects). Next: editor comfort (renaming ids, multi-tile stamps, big maps) and the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
+enemies). Released: 0.1.0 (the first public release), 0.2.0 (event flags, common events, text
+codes, loops, screen effects), 0.3.0 (editor comfort: renaming, stamps, big maps, faces, the
+updater), 0.4.0 (importing RPG Maker MZ projects) and 0.5.0 (what MZ games need: message pacing,
+pictures, animations, balloons, richer move routes and event commands, TP, buffs and battle
+events). Next: the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

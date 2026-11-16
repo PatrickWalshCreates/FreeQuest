@@ -322,6 +322,8 @@ and the old file is removed when you save (until then, Undo puts everything back
   frames in each row. Click **+** next to **Characters**, pick the image and the frame size. The
   preview walks all four ways at the player's speed. If your sheet's rows are in another order,
   rearrange them under **Directions**.
+- **Title screen**: in **System**, turn on **Title screen** and choose a picture (any size: it's
+  scaled to fill the screen) and whether the game's name is drawn over it.
 - **Music and sounds**: a map's music is in its settings. Title, battle and menu sounds are in
   **System** (in the database). The **Play music** and **Play sound** commands play them from
   events.

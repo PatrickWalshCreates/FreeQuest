@@ -19,6 +19,34 @@ export function blankImage(width: number, height: number): RgbaImage {
   return { width, height, data: new Uint8Array(width * height * 4) };
 }
 
+/** Draw `top` over `bottom` (same size, or `top` centred on it), blending by alpha. */
+export function layerOver(bottom: RgbaImage, top: RgbaImage): RgbaImage {
+  const out = { width: bottom.width, height: bottom.height, data: new Uint8Array(bottom.data) };
+  const ox = Math.round((bottom.width - top.width) / 2);
+  const oy = Math.round((bottom.height - top.height) / 2);
+  for (let y = 0; y < top.height; y++) {
+    const ty = oy + y;
+    if (ty < 0 || ty >= out.height) continue;
+    for (let x = 0; x < top.width; x++) {
+      const tx = ox + x;
+      if (tx < 0 || tx >= out.width) continue;
+      const s = (y * top.width + x) * 4;
+      const d = (ty * out.width + tx) * 4;
+      const a = (top.data[s + 3] ?? 0) / 255;
+      if (a === 0) continue;
+      const below = (out.data[d + 3] ?? 0) / 255;
+      const alpha = a + below * (1 - a);
+      for (let c = 0; c < 3; c++) {
+        const mixed =
+          ((top.data[s + c] ?? 0) * a + (out.data[d + c] ?? 0) * below * (1 - a)) / alpha;
+        out.data[d + c] = Math.round(mixed);
+      }
+      out.data[d + 3] = Math.round(alpha * 255);
+    }
+  }
+  return out;
+}
+
 /**
  * Copy a `w` × `h` area from `src` at (sx, sy) to `dst` at (dx, dy). Parts
  * outside either image are skipped (they stay transparent).

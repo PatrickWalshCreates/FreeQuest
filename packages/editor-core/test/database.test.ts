@@ -133,6 +133,12 @@ describe('adding a database category a project lacks', () => {
         '{ "type": "message", "text": "Rested." }',
       ),
     );
+    // And the elder's map item runs one: give it no effects.
+    const items = fs.files.get('data/database/items.json') ?? '';
+    fs.files.set(
+      'data/database/items.json',
+      items.replace(/\{\s*"type": "commonEvent",\s*"common": "read-map"\s*\}/, ''),
+    );
     const doc = new ProjectDocument(await openProject(fs));
     expect(doc.project.problems).toEqual([]);
     expect(missingDatabaseKinds(doc)).toEqual(['commonEvents']);

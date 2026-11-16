@@ -16,6 +16,7 @@ const RELEASES = [
   { version: '0.1', checksum: '7ba90859d40fc8cfbaa4ae8759636ae242def54283dc5edd6bd167fdb382ae76' },
   { version: '0.2', checksum: '9ab903a363b1fc9bdf923a64c37e6777954efeda1e680315ca2b0596779c14f1' },
   { version: '0.3', checksum: 'ed24fcedc7274beff0d5ae25ac813fab8076abba7a0cc3c6e6dffde4e3eec5ed' },
+  { version: '0.5', checksum: 'a743f3c5535766fc1087fc320937d69c37f29da3cc7221eb19b9567fefcc1d36' },
 ] as const;
 
 /** One checksum over every file's path and bytes. */

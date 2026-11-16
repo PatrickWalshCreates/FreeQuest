@@ -11,6 +11,29 @@ import {
 } from '../src/index.js';
 import { TINY, codec, memoryCopy, starter } from './helpers.js';
 
+describe('the title screen', () => {
+  it('becomes one picture: the background with its frame over it', async () => {
+    const target = new MemoryFs();
+    await importMzProject(await memoryCopy(TINY), target, {
+      template: await starter(),
+      images: codec,
+    });
+    const system = JSON.parse(await target.readText('data/database/system.json')) as {
+      titleScreen?: unknown;
+    };
+    // The MZ project doesn't draw the game's name over it.
+    expect(system.titleScreen).toEqual({ image: 'assets/system/title.png', showName: false });
+    const bytes = target.binaries.get('assets/system/title.png');
+    if (!bytes) throw new Error('no title picture');
+    const picture = await codec.decode(bytes);
+    const pixel = (x: number, y: number) => [
+      ...picture.data.subarray((y * 8 + x) * 4, (y * 8 + x) * 4 + 4),
+    ];
+    expect(pixel(0, 0)).toEqual([20, 20, 60, 255]);
+    expect(pixel(3, 3)).toEqual([240, 160, 80, 255]);
+  });
+});
+
 describe('reading an MZ project', () => {
   it('reads the settings and the map list in the editor’s order', async () => {
     const report = new ImportReport();

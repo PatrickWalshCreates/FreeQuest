@@ -261,7 +261,8 @@ export class MenuController {
 
   /** Whether a scope could do anything from the menu (ally scopes with a valid member, or the user). */
   private scopeHasTargets(scope: TargetScope): boolean {
-    if (scope.side === 'user') return true;
+    // Uses without targets (an item that runs a common event, say) need nobody.
+    if (scope.side === 'user' || scope.side === 'none') return true;
     if (scope.side !== 'ally') return false;
     return this.party.members.some((m) => canTarget(scope, m));
   }

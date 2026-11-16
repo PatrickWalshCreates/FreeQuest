@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from 'pixi.js';
 import type { UiTheme } from './dialog-view.js';
 import { ListWindow } from './list-window.js';
 import type { TitleUiState } from './title-controller.js';
@@ -9,6 +9,8 @@ export class TitleView {
   private readonly list: ListWindow;
   private readonly heading: Text;
   private readonly message: Text;
+  /** The game's own title picture, over the starry backdrop (once it has loaded). */
+  private readonly picture = new Sprite();
 
   constructor(
     private readonly width: number,
@@ -53,7 +55,28 @@ export class TitleView {
     });
     this.message.anchor.set(0.5, 0);
     this.list = new ListWindow(theme);
-    this.container.addChild(backdrop, this.heading, this.list.container, this.message);
+    this.picture.visible = false;
+    this.container.addChild(
+      backdrop,
+      this.picture,
+      this.heading,
+      this.list.container,
+      this.message,
+    );
+  }
+
+  /**
+   * Show a title picture, scaled to cover the screen (centred, any overflow
+   * cut off), and whether the game's name is drawn over it.
+   */
+  setPicture(texture: Texture, showName: boolean): void {
+    const scale = Math.max(this.width / texture.width, this.height / texture.height);
+    this.picture.texture = texture;
+    this.picture.anchor.set(0.5);
+    this.picture.scale.set(scale);
+    this.picture.position.set(this.width / 2, this.height / 2);
+    this.picture.visible = true;
+    this.heading.visible = showName;
   }
 
   render(state: TitleUiState, gameName: string): void {

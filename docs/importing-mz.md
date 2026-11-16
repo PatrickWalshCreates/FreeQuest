@@ -67,6 +67,8 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   about its length and its sounds at their times, but no image: the report counts them under
   "Animations to draw". Give each an image of frames and it plays where MZ's did, also in
   battle. Flashes aren't brought across.
+- **The title screen**: its background with its frame drawn over it, as one picture, and
+  whether the game's name shows (from 0.5).
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
   each map's music and background sound. Only `.ogg` files are copied (FreeQuest doesn't play
   `.m4a`).

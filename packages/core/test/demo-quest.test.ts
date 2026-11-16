@@ -82,7 +82,15 @@ function play() {
     ['house', parseProjectFile('map', rawHouse)],
   ]);
 
-  /** Fight with the real battle engine: everyone attacks the first enemy standing. */
+  /** What battle events said, and the skills used, in fights. */
+  const battleTalk: string[] = [];
+  const skillsUsed: string[] = [];
+
+  /**
+   * Fight with the real battle engine: everyone attacks the first enemy
+   * standing, with Brave Strike once there's TP for it. Battle events that come
+   * due have their messages noted (the battle screen would show them).
+   */
   const fight = (troop: string, canEscape: boolean): BattleOutcome => {
     const battle = new Battle({
       db: world.db,
@@ -93,9 +101,19 @@ function play() {
       random: seeded(42),
     });
     for (let turn = 0; turn < 100 && battle.phase === 'input'; turn++) {
+      for (const commands of battle.dueEvents('turnStart')) {
+        for (const c of commands) if (c.type === 'message') battleTalk.push(c.text);
+      }
       for (const actor of battle.actorsToCommand()) {
         const target = battle.livingEnemies[0];
-        battle.setAction(actor, { kind: 'skill', skill: 'attack', ...(target ? { target } : {}) });
+        const brave = {
+          kind: 'skill' as const,
+          skill: 'brave-strike',
+          ...(target ? { target } : {}),
+        };
+        const skill = battle.actionProblem(actor, brave) === null ? 'brave-strike' : 'attack';
+        skillsUsed.push(skill);
+        battle.setAction(actor, { kind: 'skill', skill, ...(target ? { target } : {}) });
       }
       battle.runTurn();
     }
@@ -131,12 +149,12 @@ function play() {
     }
   };
 
-  return { world, transcript, battles, walkTo, tap, answer, finish };
+  return { world, transcript, battles, battleTalk, skillsUsed, walkTo, tap, answer, finish };
 }
 
 describe('demo quest', () => {
   it('can be completed from start to finish', () => {
-    const { world, transcript, battles, walkTo, tap, finish } = play();
+    const { world, transcript, battles, battleTalk, walkTo, tap, finish } = play();
     const visits = () => world.state.getVariable('bridge_visits');
 
     // Crossing the bridge before accepting the request does nothing:
@@ -161,6 +179,8 @@ describe('demo quest', () => {
     expect(visits()).toBe(1);
     // The wolf ambush: fought and won at level 1.
     expect(battles).toEqual([{ troop: 'bridge-wolf', outcome: 'win' }]);
+    // Its battle event: the wolf circles on turn 1.
+    expect(battleTalk).toEqual(['The wolf bares its teeth and circles you.']);
     expect(world.state.getSwitch('wolf_defeated')).toBe(true);
 
     // Cross back over it: counted again, but the `== 1` check keeps quiet
@@ -294,6 +314,34 @@ describe('demo quest', () => {
     expect(hero.hp).toBe(hero.maxHp);
     expect(hero.states).toEqual([]);
     expect(transcript.at(-1)).toBe('Everyone is fully rested.');
+  });
+
+  it('reads the elder’s map: its picture fades in for the message, then goes', () => {
+    const { world, finish } = play();
+    // What using the map from the menu does: its common event runs on the map.
+    world.run([{ type: 'callCommon', common: 'read-map' }]);
+    for (let i = 0; i < 60 && world.interpreter?.pending?.type !== 'message'; i++) {
+      world.step(1 / 60, new ActionState());
+    }
+    expect(world.pictures.list).toMatchObject([
+      { number: 1, image: 'assets/pictures/meadow-map.png', opacity: 1 },
+    ]);
+    expect(world.interpreter?.pending).toMatchObject({
+      type: 'message',
+      text: 'The elder’s map: the old bridge is east, past the stream.',
+    });
+    finish();
+    expect(world.pictures.list).toEqual([]);
+  });
+
+  it('builds TP by attacking and spends it on Brave Strike', () => {
+    const { world, skillsUsed, answer } = play();
+    world.run([{ type: 'battle', troop: 'bats', canEscape: true, canLose: true }]);
+    world.step(1 / 60, new ActionState());
+    answer();
+    // Attacks give 10 TP each and taking hits gives more: Brave Strike (20 TP) by turn 3.
+    expect(skillsUsed.slice(0, 2)).toEqual(['attack', 'attack']);
+    expect(skillsUsed).toContain('brave-strike');
   });
 
   it('buys a potion from the peddler', () => {

@@ -105,11 +105,16 @@
       "name": "Elder's Map",
       "consumable": false,
       "description": "A hand-drawn map of the Meadow.",
-      "effects": [],
+      "effects": [
+        {
+          "type": "commonEvent",
+          "common": "read-map"
+        }
+      ],
       "hitType": "certain",
       "icon": 4,
       "key": true,
-      "occasion": "never",
+      "occasion": "menu",
       "price": 0,
       "successRate": 1,
       "target": {

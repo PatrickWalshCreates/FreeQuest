@@ -4,9 +4,21 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
-## Unreleased (0.5.0)
+## 0.5.0 (2026-11-15)
 
 More of what RPG Maker MZ games use, in FreeQuest itself and brought across by the importer.
+
+### The title screen
+
+- A **title picture** (Database › System › Title screen), scaled to fill the screen, with or
+  without the game's name over it. MZ's title background and frame import as one picture.
+
+### The demo and Starter
+
+- A title picture of the meadow at dawn; attacks build TP for the hero's **Brave Strike**; Mira
+  can **Focus** (magic attack up); the elder's map can be read from the menu (a picture, through
+  a common event); the elder is surprised to see you; resting sparkles; the bridge wolf circles
+  you before it fights. The Starter has the title, the balloons and the two animations.
 
 ### Messages
 
