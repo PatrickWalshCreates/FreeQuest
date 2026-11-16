@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.5.0 (2026-11-15) ready for its by-hand check; 0.4.0 is the latest published. Early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.5.0 (2026-11-16) built as a draft release, waiting for its by-hand check; 0.4.0 is the latest published. Early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -296,6 +296,11 @@ Never the other way.
   (48 px, 8 frames, `MZ_BALLOON_NAMES`) on first use; the template's animations and balloon
   image are never copied. Demo/Starter art: `balloons.png` (8 kinds, 24 px), `sparkle.png`,
   `slash.png`; the elder is surprised, Rest sparkles.
+- **Title screen picture** (system v5 `titleScreen`: `image`, `showName`): `TitleView.setPicture`
+  scales it to cover the screen over the starry backdrop (which shows until it loads); the
+  importer layers MZ's `title1Name` / `title2Name` into `assets/system/title.png`
+  (`layerOver`) and keeps `optDrawTitle`. The menu allows uses with no targets (side `none`),
+  for items that only run a common event.
 - **Battles of M14 step 7** (database v5; `core/test/battle-extras.test.ts`): `Battler` has
   `tp` (0–`MAX_TP` 100, battle-only, `resetBattleState` at each battle's start and end) and
   buffs (`addBuff(stat, ±1, turns)`, levels ±`MAX_BUFF` 2, each `BUFF_STEP` 25% in `stat()`,
@@ -1365,8 +1370,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      (pages on turns, HP and switches, with their own commands)~~ (done; Rhapsody's 34 troop
      events, 48 TP gains and 16 common-event effects, Wolf's Gang's 22 TP costs come across,
      and neither summary lists a battle item; the wolf's battle event seen in the dev player)
-  8. A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
-     the 0.5 formats frozen, and a 0.5.0 release through the checklist.
+  8. ~~A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
+     the 0.5 formats frozen, and a 0.5.0 release through the checklist~~ (built and tagged; the
+     by-hand check of the downloaded build and publishing are next. The title picture, the TP
+     bar, battle events and pictures seen in the dev player)
   - Formats: map 9, database 5, save 3, manifest 9 (the animations category), each with a migration; 0.1–0.3
     frozen projects and saves keep opening (0.4 changed no format).
   - Not in M14: labels and jumps, scripts and plugins (never JavaScript; the plugin API is

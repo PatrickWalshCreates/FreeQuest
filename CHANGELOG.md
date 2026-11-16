@@ -4,7 +4,7 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
-## 0.5.0 (2026-11-15)
+## 0.5.0 (2026-11-16)
 
 More of what RPG Maker MZ games use, in FreeQuest itself and brought across by the importer.
 
