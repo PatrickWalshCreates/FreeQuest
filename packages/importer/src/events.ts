@@ -22,9 +22,12 @@ import {
   type MoveStep,
   type RouteDirection,
   type ShopGood,
+  type TroopEntry,
+  type TroopEvent,
   type TurnDirection,
   type VariableOp,
   idFromName,
+  mapCommands,
 } from '@freequest/schema';
 import { MZ_BALLOON_NAMES } from './animations.js';
 import type { AudioFolder, AudioImporter } from './audio.js';
@@ -32,7 +35,7 @@ import { type MzNode, commandTree } from './command-tree.js';
 import type { GraphicsImporter } from './graphics.js';
 import type { NumberedIds } from './ids.js';
 import { asArray, asInt, asRecord, asString, isRecord, type JsonRecord } from './json.js';
-import type { MzDatabase } from './mz-lists.js';
+import type { MzDatabase, MzList } from './mz-lists.js';
 import type { ImportReport, ReportTopic } from './report.js';
 import { convertText } from './text.js';
 import type { TileDrawer } from './tilesets.js';
@@ -1201,6 +1204,107 @@ export async function convertCommonEvents(
       ...(trigger !== 'call' ? { switch: ctx.switches.id(asInt(entry['switchId'], 1)) } : {}),
       commands,
     });
+  }
+  return out;
+}
+
+/** Commands that can't run in a battle event (FreeQuest's checks refuse them there). */
+const NOT_IN_BATTLE = new Set<Command['type']>([
+  'transfer',
+  'battle',
+  'shop',
+  'openSave',
+  'returnToTitle',
+  'gameOver',
+  'moveRoute',
+  'placeEvent',
+  'scrollMap',
+]);
+
+/**
+ * Troops' battle events: each MZ troop page with commands becomes a battle
+ * event (conditions, span, commands). MZ counts turns from 0 before the first
+ * one; FreeQuest's turn 1 is that one, so turn A becomes from A + 1.
+ */
+export async function convertTroopEvents(
+  troops: MzList,
+  imported: readonly TroopEntry[],
+  ctx: EventsContext,
+): Promise<TroopEntry[]> {
+  const out: TroopEntry[] = [];
+  for (const troop of imported) {
+    const source = [...troops].find((t) => t.id === troop.id);
+    if (!source) {
+      out.push(troop);
+      continue;
+    }
+    // Enemy positions among the members that came across.
+    const kept: number[] = [];
+    asArray(source.entry['members']).forEach((raw, i) => {
+      if (ctx.db.enemies.id(asInt(asRecord(raw)['enemyId']))) kept.push(i);
+    });
+    const events: TroopEvent[] = [];
+    const pages = asArray(source.entry['pages']).map(asRecord);
+    for (const [p, page] of pages.entries()) {
+      if (asArray(page['list']).length <= 1) continue;
+      const where = `Troops › ${source.name} › Battle event ${p + 1}`;
+      const c = asRecord(page['conditions']);
+      const conditions: TroopEvent['conditions'] = {};
+      if (c['turnValid'] === true) {
+        conditions.turn = {
+          from: Math.max(0, asInt(c['turnA'])) + 1,
+          every: Math.max(0, asInt(c['turnB'])),
+        };
+      }
+      if (c['turnEnding'] === true) conditions.turnEnd = true;
+      if (c['enemyValid'] === true) {
+        const enemy = kept.indexOf(asInt(c['enemyIndex']));
+        if (enemy >= 0) {
+          conditions.enemyHp = {
+            enemy,
+            below: Math.max(0, Math.min(100, asInt(c['enemyHp'], 50))),
+          };
+        }
+      }
+      if (c['actorValid'] === true) {
+        const actor = ctx.db.actors.id(asInt(c['actorId']));
+        if (actor) {
+          conditions.actorHp = {
+            actor,
+            below: Math.max(0, Math.min(100, asInt(c['actorHp'], 50))),
+          };
+        }
+      }
+      if (c['switchValid'] === true) conditions.switch = ctx.switches.id(asInt(c['switchId'], 1));
+      // A page with no conditions never runs, in MZ as in FreeQuest: kept as it is.
+      const commands = await convertList(page['list'], ctx, {
+        where,
+        event: () => null,
+        drawer: null,
+      });
+      let refused = 0;
+      const allowed = mapCommands(commands, (command) => {
+        if (!NOT_IN_BATTLE.has(command.type)) return command;
+        refused++;
+        return {
+          type: 'comment',
+          text: `From MZ, not imported: ${command.type} (can't run in a battle)`,
+        };
+      });
+      if (refused > 0) {
+        ctx.report.changed(
+          where,
+          `${refused} ${refused === 1 ? 'command needs' : 'commands need'} the map (a transfer, a route…), which a battle event can't use; kept as comments.`,
+          [{ name: 'Map commands in battle events', count: refused }],
+        );
+      }
+      events.push({
+        conditions,
+        span: (['battle', 'turn', 'moment'] as const)[asInt(page['span'])] ?? 'battle',
+        commands: allowed,
+      });
+    }
+    out.push(events.length > 0 ? { ...troop, events } : troop);
   }
   return out;
 }

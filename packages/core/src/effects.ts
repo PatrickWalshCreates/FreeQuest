@@ -3,6 +3,7 @@ import {
   type Effect,
   type ItemEntry,
   type SkillEntry,
+  type StatKey,
   type TargetScope,
 } from '@freequest/schema';
 import { Actor } from './actor.js';
@@ -21,7 +22,12 @@ export interface UseContext {
   readonly state: GameState;
   /** Uniform random number in [0, 1). Inject a fixed one in tests. */
   readonly random: () => number;
+  /** In a battle: HP damage charges TP, and uses give their TP. */
+  readonly inBattle?: boolean;
 }
+
+/** TP gained by taking damage: this much for losing all of one's HP (in proportion). */
+export const TP_FROM_DAMAGE = 50;
 
 /** What happened to one target. Positive damage hurts; negative heals. */
 export interface TargetResult {
@@ -33,6 +39,10 @@ export interface TargetResult {
   readonly addedStates: readonly string[];
   readonly removedStates: readonly string[];
   readonly learnedSkills: readonly string[];
+  /** Stats raised (1) or lowered (−1) a level. */
+  readonly buffs: readonly { readonly stat: StatKey; readonly change: 1 | -1 }[];
+  /** TP the target gained (or lost) from the effects. */
+  readonly tpChange: number;
 }
 
 /** Whether a battler is a valid target for a scope (knocked-out allies only for `dead` scopes). */
@@ -111,6 +121,8 @@ export function applyUsable(
       addedStates: [] as string[],
       removedStates: [] as string[],
       learnedSkills: [] as string[],
+      buffs: [] as { stat: StatKey; change: 1 | -1 }[],
+      tpChange: 0,
     };
     if (ctx.random() >= hitChance(usable, user, target)) return { ...result, missed: true };
 
@@ -137,6 +149,12 @@ export function applyUsable(
             const wasKnockedOut = target.isKnockedOut;
             target.setHp(before - damage);
             result.hpDamage += before - target.hp;
+            // Being hurt charges TP, in proportion to the share of HP lost.
+            if (ctx.inBattle && before > target.hp && !target.isKnockedOut) {
+              target.setTp(
+                target.tp + Math.floor((TP_FROM_DAMAGE * (before - target.hp)) / target.maxHp),
+              );
+            }
             if (!wasKnockedOut && target.isKnockedOut) {
               const ko = target.states.find((s) => target.stateEntry(s.id).knockout);
               if (ko) result.addedStates.push(ko.id);
@@ -174,6 +192,21 @@ export function applyUsable(
             target.removeState(effect.state);
             result.removedStates.push(effect.state);
           }
+          break;
+        case 'buff': {
+          const change = effect.direction === 'up' ? 1 : -1;
+          target.addBuff(effect.stat, change, effect.turns);
+          result.buffs.push({ stat: effect.stat, change });
+          break;
+        }
+        case 'gainTp': {
+          const before = target.tp;
+          target.setTp(before + effect.amount);
+          result.tpChange += target.tp - before;
+          break;
+        }
+        case 'commonEvent':
+          // Runs once the use is over (see `commonEventsOf`), not per target.
           break;
         case 'learnSkill':
           if (target instanceof Actor && !target.hasSkill(effect.skill)) {
@@ -213,6 +246,7 @@ export function skillProblem(
   if (!occasionAllows(skill.occasion, situation)) return `can't be used in the ${situation}`;
   if (user instanceof Actor && !user.hasSkill(skill.id)) return `${user.name} doesn't know it`;
   if (user.mp < skill.mpCost) return 'not enough MP';
+  if ((skill.tpCost ?? 0) > user.tp) return 'not enough TP';
   if (!user.canAct) return `${user.name} can't act`;
   return null;
 }
@@ -235,7 +269,38 @@ export function useSkill(
   const problem = skillProblem(user, skill, situation);
   if (problem) throw new Error(`cannot use ${skill.name}: ${problem}`);
   user.setMp(user.mp - skill.mpCost);
-  return applyUsable(skill, user, targets, ctx);
+  user.setTp(user.tp - (skill.tpCost ?? 0));
+  return applyRepeated(skill, user, targets, ctx);
+}
+
+/**
+ * Apply a use as many times as it `repeats` (each time on the targets still
+ * valid), then give the user its TP in battle.
+ */
+function applyRepeated(
+  usable: Usable,
+  user: Battler,
+  targets: readonly Battler[],
+  ctx: UseContext,
+): TargetResult[] {
+  const results: TargetResult[] = [];
+  for (let i = 0; i < (usable.repeats ?? 1); i++) {
+    const now = i === 0 ? targets : targets.filter((t) => canTarget(usable.target, t));
+    if (now.length === 0) break;
+    results.push(...applyUsable(usable, user, now, ctx));
+  }
+  if (ctx.inBattle && usable.tpGain) user.setTp(user.tp + usable.tpGain);
+  return results;
+}
+
+/**
+ * The common events a use runs once it's over: its commonEvent effects,
+ * unless it missed every target.
+ */
+export function commonEventsOf(usable: Usable, results: readonly TargetResult[]): string[] {
+  // Missing everyone means it didn't happen (a use with no targets still does).
+  if (results.length > 0 && results.every((r) => r.missed)) return [];
+  return usable.effects.flatMap((e) => (e.type === 'commonEvent' ? [e.common] : []));
 }
 
 /** Consume (if consumable) and apply an item. Throws if it can't be used. */
@@ -250,5 +315,5 @@ export function useItem(
   const problem = itemProblem(party, item, situation);
   if (problem) throw new Error(`cannot use ${item.name}: ${problem}`);
   if (item.consumable) party.gain('item', item.id, -1);
-  return applyUsable(item, user, targets, ctx);
+  return applyRepeated(item, user, targets, ctx);
 }

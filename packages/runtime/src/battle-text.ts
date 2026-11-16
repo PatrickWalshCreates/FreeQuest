@@ -1,8 +1,21 @@
 // Battle log text. Free of DOM and PixiJS so it can be tested in Node.
 import type { BattleEvent, Battler, DatabaseIndex } from '@freequest/core';
 import { Actor } from '@freequest/core';
+import type { StatKey } from '@freequest/schema';
 
 const stateName = (db: DatabaseIndex, id: string) => db.states.find(id)?.name ?? id;
+
+/** Stats as the log says them. */
+const STAT_WORDS: Readonly<Record<StatKey, string>> = {
+  maxHp: 'max HP',
+  maxMp: 'max MP',
+  attack: 'attack',
+  defense: 'defense',
+  magicAttack: 'magic attack',
+  magicDefense: 'magic defense',
+  agility: 'agility',
+  luck: 'luck',
+};
 
 /** The lines of battle log an event produces (none for bookkeeping events). */
 export function describeEvent(event: BattleEvent, db: DatabaseIndex): string[] {
@@ -32,6 +45,11 @@ export function describeEvent(event: BattleEvent, db: DatabaseIndex): string[] {
       ];
     case 'stateExpired':
       return [`${event.battler.name} is no longer affected by ${stateName(db, event.state)}.`];
+    case 'buffExpired':
+      return [`${event.battler.name}'s ${STAT_WORDS[event.stat]} is back to normal.`];
+    case 'commonEvent':
+      // Its commands run in the battle; they speak for themselves.
+      return [];
     case 'escape':
       return [event.success ? 'The party escaped!' : "Couldn't escape!"];
     case 'victory': {
@@ -74,7 +92,9 @@ function describeHit(
     result.mpDamage === 0 &&
     result.addedStates.length === 0 &&
     result.removedStates.length === 0 &&
-    result.learnedSkills.length === 0
+    result.learnedSkills.length === 0 &&
+    result.buffs.length === 0 &&
+    result.tpChange === 0
   ) {
     lines.push(`${name} takes no damage.`);
   }
@@ -88,6 +108,11 @@ function describeHit(
   for (const state of result.removedStates) {
     lines.push(`${name} is no longer affected by ${stateName(db, state)}.`);
   }
+  for (const buff of result.buffs) {
+    lines.push(`${name}'s ${STAT_WORDS[buff.stat]} ${buff.change > 0 ? 'rises' : 'falls'}.`);
+  }
+  if (result.tpChange > 0) lines.push(`${name} gains ${result.tpChange} TP.`);
+  else if (result.tpChange < 0) lines.push(`${name} loses ${-result.tpChange} TP.`);
   for (const skill of result.learnedSkills) {
     lines.push(`${name} learned ${db.skills.find(skill)?.name ?? skill}!`);
   }

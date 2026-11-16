@@ -126,7 +126,7 @@ export function checkDatabase(
   const states = ids(db.states, 'states');
   const enemies = ids(db.enemies, 'enemies');
   ids(db.troops, 'troops');
-  ids(db.commonEvents, 'commonEvents');
+  const commonEvents = ids(db.commonEvents, 'commonEvents');
   const animations = ids(db.animations, 'animations');
 
   const need = (set: Set<string>, id: string, kind: string, where: string) => {
@@ -159,6 +159,7 @@ export function checkDatabase(
         need(elements, e.element, 'element', at);
       }
       if (e.type === 'addState' || e.type === 'removeState') need(states, e.state, 'state', at);
+      if (e.type === 'commonEvent') need(commonEvents, e.common, 'common event', at);
       if (e.type === 'learnSkill') need(skills, e.skill, 'skill', at);
     });
   };
@@ -252,6 +253,16 @@ export function checkDatabase(
 
   for (const t of db.troops) {
     t.enemies.forEach((id, i) => need(enemies, id, 'enemy', `troops "${t.id}" enemies[${i}]`));
+    t.events?.forEach((page, p) => {
+      const where = `troops "${t.id}" events[${p}]`;
+      const { actorHp, enemyHp } = page.conditions;
+      if (actorHp) need(actors, actorHp.actor, 'actor', `${where} actorHp`);
+      if (enemyHp && enemyHp.enemy >= t.enemies.length) {
+        problems.push(
+          `${where} enemyHp: the troop has no enemy ${enemyHp.enemy} (they're numbered from 0)`,
+        );
+      }
+    });
   }
 
   if (context.manifest) {

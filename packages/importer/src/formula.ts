@@ -16,6 +16,7 @@ const SUBJECT_KEYS: Readonly<Record<string, string>> = {
   luk: 'luck',
   hp: 'hp',
   mp: 'mp',
+  tp: 'tp',
   level: 'level',
 };
 

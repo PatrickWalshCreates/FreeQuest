@@ -161,6 +161,10 @@ const Usable = {
   effects: Type.Array(Effect),
   /** Played on each target in battle (v5). */
   animation: Type.Optional(Id),
+  /** TP the user gains each time, in battle (v5). */
+  tpGain: Type.Optional(Type.Integer({ minimum: 0, maximum: 100 })),
+  /** Hits each target this many times (v5). */
+  repeats: Type.Optional(Type.Integer({ minimum: 1, maximum: 9 })),
 };
 
 export const SkillEntry = Type.Object(
@@ -168,6 +172,8 @@ export const SkillEntry = Type.Object(
     ...Listed,
     skillType: Type.Optional(Id),
     mpCost: NonNegativeInt,
+    /** TP it costs, in battle (v5): TP runs 0 to 100, from 0 each battle. */
+    tpCost: Type.Optional(Type.Integer({ minimum: 0, maximum: 100 })),
     ...Usable,
   },
   { additionalProperties: false },
@@ -296,11 +302,56 @@ export const EnemyEntry = Type.Object(
 export type EnemyEntry = Static<typeof EnemyEntry>;
 
 /** A group of enemies fought together. */
+/**
+ * A troop's battle event (v5): commands that run during its battles when
+ * every given condition holds, checked as each turn starts (or, with
+ * `turnEnd`, as it ends). A page with no conditions never runs.
+ */
+export const TroopEvent = Type.Object(
+  {
+    conditions: Type.Object(
+      {
+        /** The turn starting (or ending): from turn N, then every M (0 = only that turn). */
+        turn: Type.Optional(
+          Type.Object(
+            { from: PositiveInt, every: NonNegativeInt },
+            { additionalProperties: false },
+          ),
+        ),
+        /** Checked as the turn ends instead of as it starts. */
+        turnEnd: Type.Optional(Type.Boolean()),
+        /** An enemy of the troop (0 = the first, left) at or below this percent of its HP. */
+        enemyHp: Type.Optional(
+          Type.Object(
+            { enemy: NonNegativeInt, below: Type.Integer({ minimum: 0, maximum: 100 }) },
+            { additionalProperties: false },
+          ),
+        ),
+        /** A party member in the battle at or below this percent of their HP. */
+        actorHp: Type.Optional(
+          Type.Object(
+            { actor: Id, below: Type.Integer({ minimum: 0, maximum: 100 }) },
+            { additionalProperties: false },
+          ),
+        ),
+        switch: Type.Optional(Id),
+      },
+      { additionalProperties: false },
+    ),
+    /** How often it runs: once a battle, once a turn, or every time it's checked and holds. */
+    span: Type.Union([Type.Literal('battle'), Type.Literal('turn'), Type.Literal('moment')]),
+    commands: Type.Array(Command),
+  },
+  { additionalProperties: false },
+);
+export type TroopEvent = Static<typeof TroopEvent>;
+
 export const TroopEntry = Type.Object(
   {
     id: Id,
     name: Type.String({ minLength: 1 }),
     enemies: Type.Array(Id, { minItems: 1, maxItems: 8, description: 'Enemy ids, left to right.' }),
+    events: Type.Optional(Type.Array(TroopEvent)),
   },
   { additionalProperties: false },
 );

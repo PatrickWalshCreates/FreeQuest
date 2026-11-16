@@ -1,7 +1,7 @@
 // Turning a project into the files a finished game needs: every data file,
 // and exactly the images and sounds the data refers to, checked first so an
 // export never ships a game that fails to start.
-import { type MoveStep, SOUND_KEYS, walkCommands } from '@freequest/schema';
+import { type Command, type MoveStep, SOUND_KEYS, walkCommands } from '@freequest/schema';
 import { MANIFEST_PATH, type OpenedProject, type Problem, allFiles } from './open-project.js';
 import type { ProjectFs } from './project-fs.js';
 import { utf8Length } from './utf8.js';
@@ -33,6 +33,29 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
   const addStepSounds = (steps: readonly MoveStep[], at: string) => {
     for (const step of steps) if (step.type === 'sound') add(step.path, 'audio', at);
   };
+  // Every file a command list's commands play or show.
+  const addCommands = (commands: readonly Command[], at: string) =>
+    walkCommands(commands, (command) => {
+      switch (command.type) {
+        case 'playMusic':
+        case 'playBackgroundSound':
+        case 'changeBattleMusic':
+          add(command.path, 'audio', at);
+          break;
+        case 'playSound':
+          add(command.path, 'audio', at);
+          break;
+        case 'message':
+          add(command.face?.image, 'image', at);
+          break;
+        case 'showPicture':
+          add(command.image, 'image', at);
+          break;
+        case 'moveRoute':
+          addStepSounds(command.steps, at);
+          break;
+      }
+    });
   for (const [id, file] of project.tilesets) add(file.data?.image, 'image', `tileset ${id}`);
   for (const [id, file] of project.characters) add(file.data?.image, 'image', `character ${id}`);
   for (const [id, file] of project.maps) {
@@ -43,18 +66,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     add(map.backgroundSound, 'audio', `${where}: background sound`);
     for (const event of map.events) {
       event.pages.forEach((page, i) =>
-        walkCommands(page.commands, (command) => {
-          const at = `${where}, event ${event.name} (page ${i + 1})`;
-          if (command.type === 'playMusic') add(command.path, 'audio', at);
-          if (command.type === 'playSound') add(command.path, 'audio', at);
-          if (command.type === 'playBackgroundSound' || command.type === 'changeBattleMusic') {
-            add(command.path, 'audio', at);
-          }
-          if (command.type === 'message') add(command.face?.image, 'image', at);
-          if (command.type === 'showPicture') add(command.image, 'image', at);
-          if (command.type === 'showPicture') add(command.image, 'image', at);
-          if (command.type === 'moveRoute') addStepSounds(command.steps, at);
-        }),
+        addCommands(page.commands, `${where}, event ${event.name} (page ${i + 1})`),
       );
       event.pages.forEach((page, i) => {
         if (page.movement?.type === 'route') {
@@ -82,16 +94,12 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     add(enemy.image, 'image', `enemy ${enemy.name}`);
   }
   for (const common of project.database.commonEvents?.data?.entries ?? []) {
-    walkCommands(common.commands, (command) => {
-      const at = `common event ${common.name}`;
-      if (command.type === 'playMusic') add(command.path, 'audio', at);
-      if (command.type === 'playSound') add(command.path, 'audio', at);
-      if (command.type === 'playBackgroundSound' || command.type === 'changeBattleMusic') {
-        add(command.path, 'audio', at);
-      }
-      if (command.type === 'message') add(command.face?.image, 'image', at);
-      if (command.type === 'moveRoute') addStepSounds(command.steps, at);
-    });
+    addCommands(common.commands, `common event ${common.name}`);
+  }
+  for (const troop of project.database.troops?.data?.entries ?? []) {
+    troop.events?.forEach((page, i) =>
+      addCommands(page.commands, `troop ${troop.name} (battle event ${i + 1})`),
+    );
   }
   return new Map([...found].sort(([a], [b]) => a.localeCompare(b)));
 }

@@ -9,12 +9,21 @@
     "name": "Moth*2",
     "pages": [
       {
-        "conditions": {},
+        "conditions": {
+          "enemyHp": 50,
+          "enemyIndex": 0,
+          "enemyValid": true,
+          "turnA": 0,
+          "turnB": 2,
+          "turnValid": true
+        },
         "list": [
           { "code": 101, "indent": 0, "parameters": ["", 0, 0, 2, ""] },
+          { "code": 401, "indent": 0, "parameters": ["The moths flutter."] },
+          { "code": 201, "indent": 0, "parameters": [0, 1, 2, 2, 2, 0] },
           { "code": 0, "indent": 0, "parameters": [] }
         ],
-        "span": 0
+        "span": 1
       }
     ]
   },

@@ -1,4 +1,11 @@
-import type { Actor, Battle, BattleEvent, Battler, Enemy } from '@freequest/core';
+import {
+  type Actor,
+  type Battle,
+  type BattleEvent,
+  type Battler,
+  type Enemy,
+  MAX_TP,
+} from '@freequest/core';
 import { Container, Graphics, Sprite, Text, TextStyle, type Texture } from 'pixi.js';
 import type { BattleUiState } from './battle-controller.js';
 import { DEFAULT_UI_THEME, type UiTheme, drawWindow } from './dialog-view.js';
@@ -210,6 +217,7 @@ export class BattleView {
         a.mp,
         a.maxHp,
         a.maxMp,
+        a.tp,
         a.states.map((s) => s.id),
         a === state.actor || a === state.target,
       ]),
@@ -234,11 +242,18 @@ export class BattleView {
       const name = new Text({ text: actor.name, style: this.style });
       name.alpha = actor.isKnockedOut ? 0.45 : 1;
       row.addChild(name);
-      const barW = Math.floor((w - theme.padding * 2 - 70) / 2) - 6;
+      // HP and MP, and TP when the game uses it.
+      const bars = this.battle.usesTp ? 3 : 2;
+      const barW = Math.floor((w - theme.padding * 2 - 70) / bars) - 6;
       row.addChild(this.bar(70, 3, barW, actor.hp, actor.maxHp, 0x6fd06a, `${actor.hp}`));
       row.addChild(
         this.bar(70 + barW + 12, 3, barW, actor.mp, actor.maxMp, 0x6aa8f0, `${actor.mp}`),
       );
+      if (bars === 3) {
+        row.addChild(
+          this.bar(70 + (barW + 12) * 2, 3, barW, actor.tp, MAX_TP, 0xf0c060, `${actor.tp}`),
+        );
+      }
       row.addChild(this.stateMarks(actor, w - theme.padding * 2));
       this.statusLayer.addChild(row);
     });

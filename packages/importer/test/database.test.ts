@@ -30,6 +30,7 @@ async function imported() {
     enemyImage: () => null,
     usedPlaceholder: () => undefined,
     animation: (n) => db.animations.id(n),
+    common: (n) => (n === 1 ? 'open-gate' : null),
   });
   const where = (name: string) =>
     report.items.filter((i) => i.where.endsWith(`› ${name}`)).map((i) => i.message);
@@ -84,7 +85,9 @@ describe('translating damage formulas', () => {
       ok: false,
       reason: /Math\.random/,
     });
-    expect(translateFormula('a.tp * 2', v)).toMatchObject({ ok: false, reason: /a\.tp/ });
+    expect(translateFormula('a.hit * 2', v)).toMatchObject({ ok: false, reason: /a\.hit/ });
+    // TP is FreeQuest's too (from 0.5).
+    expect(translateFormula('a.tp * 2', v)).toEqual({ ok: true, formula: 'a.tp * 2' });
     expect(translateFormula('mhp * 2', v)).toMatchObject({
       ok: false,
       reason: /unknown name "mhp"/,
@@ -160,6 +163,8 @@ describe('importing the database', () => {
       description: 'A burst of flame.',
       skillType: 'spells',
       mpCost: 6,
+      tpCost: 5,
+      repeats: 2,
       target: { side: 'enemy', select: 'all' },
       effects: [
         {
@@ -168,9 +173,11 @@ describe('importing the database', () => {
           formula: 'floor(100 + a.magicAttack * 2 - b.magicDefense) + v["lanterns-lit"] * 3',
         },
         { type: 'addState', state: 'ember-sickness', chance: 0.25 },
+        { type: 'buff', stat: 'attack', direction: 'up', turns: 3 },
       ],
     });
-    expect(where('Ember').join('\n')).toMatch(/TP[\s\S]*buffs[\s\S]*2 times/);
+    // TP, the buff and the second hit all come across now (0.5).
+    expect(where('Ember').join('\n')).not.toMatch(/TP|buffs|times/);
     expect(find(result.skills, 'mend')).toMatchObject({
       target: { side: 'ally', select: 'all' },
       effects: [{ type: 'recover', pool: 'hp', formula: 'a.attack * 4 - b.defense * 2' }],
@@ -196,7 +203,10 @@ describe('importing the database', () => {
       occasion: 'never',
     });
     expect(find(result.items, 'gate-key')).not.toHaveProperty('icon');
-    expect(where('Odd stone').join('\n')).toMatch(/hidden item[\s\S]*calling a common event/);
+    expect(where('Odd stone').join('\n')).toMatch(/hidden item/);
+    expect(find(result.items, 'odd-stone').effects).toEqual([
+      { type: 'commonEvent', common: 'open-gate' },
+    ]);
   });
 
   it('imports weapons and armors as equipment', async () => {
@@ -310,7 +320,7 @@ describe('importing the database', () => {
       { id: 'moth-2', name: 'Moth*2', enemies: ['moth', 'moth'] },
       { id: 'shade', name: 'Shade', enemies: ['shade'] },
     ]);
-    expect(where('Moth*2').join('\n')).toMatch(/partway[\s\S]*battle events/);
+    expect(where('Moth*2').join('\n')).toMatch(/partway/);
     expect(where('Shade')).toEqual(['It had no usable actions; it attacks.']);
     expect(report.items.find((i) => i.where === 'Troops › Empty')?.level).toBe('note');
   });

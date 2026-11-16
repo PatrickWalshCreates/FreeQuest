@@ -9,12 +9,15 @@ import {
   type BattlePhase,
   type Battler,
   type DatabaseIndex,
+  type EventContext,
   type InputState,
+  Interpreter,
   animationSounds,
   canTarget,
 } from '@freequest/core';
 import {
   type AnimationEntry,
+  type Command,
   type ItemEntry,
   type SkillEntry,
   animationSeconds,
@@ -37,7 +40,16 @@ export interface BattleMenu {
   readonly cursor: number;
 }
 
-export type BattleStage = 'party' | 'actor' | 'skill' | 'item' | 'target' | 'playback' | 'finished';
+export type BattleStage =
+  | 'party'
+  | 'actor'
+  | 'skill'
+  | 'item'
+  | 'target'
+  | 'playback'
+  /** A troop's battle event or a common event is running (messages show in the message box). */
+  | 'event'
+  | 'finished';
 
 /** Everything the view needs to draw one frame. */
 export interface BattleUiState {
@@ -62,20 +74,30 @@ export interface BattleAnimation {
   readonly elapsed: number;
 }
 
-interface Line {
-  readonly text: string;
-  readonly event: BattleEvent | null;
-  /** Results stay up until confirmed rather than advancing on a timer. */
-  readonly hold: boolean;
-  /** The animation that plays while this line is up (a hit's first line). */
-  readonly animation?: AnimationEntry;
-}
+/**
+ * What playback works through: log lines, commands to run (a troop's battle
+ * event, a common event), and points where the troop's events are checked.
+ */
+type Line =
+  | {
+      readonly kind: 'line';
+      readonly text: string;
+      readonly event: BattleEvent | null;
+      /** Results stay up until confirmed rather than advancing on a timer. */
+      readonly hold: boolean;
+      /** The animation that plays while this line is up (a hit's first line). */
+      readonly animation?: AnimationEntry;
+    }
+  | { readonly kind: 'run'; readonly commands: readonly Command[] }
+  | { readonly kind: 'check'; readonly moment: 'turnStart' | 'turnEnd' };
 
 type Pending = { kind: 'skill'; entry: SkillEntry } | { kind: 'item'; entry: ItemEntry };
 
 export interface BattleControllerOptions {
   /** Seconds each log line stays up before advancing on its own. */
   lineSeconds?: number;
+  /** What battle events and common events run with (the game's state and party). Without it they're skipped. */
+  events?: EventContext;
 }
 
 const ACTOR_COMMANDS = ['Attack', 'Skill', 'Guard', 'Item'] as const;
@@ -95,6 +117,11 @@ export class BattleController {
   private readonly sounds: string[] = [];
   private finalOutcome: BattleOutcome | null = null;
   private readonly lineSeconds: number;
+  private readonly events: EventContext | null;
+  /** The battle event or common event running now. */
+  private running: Interpreter | null = null;
+  /** The turn whose start the troop's events were last checked for. */
+  private checkedTurn = -1;
 
   constructor(
     private readonly battle: Battle,
@@ -102,10 +129,12 @@ export class BattleController {
     options: BattleControllerOptions = {},
   ) {
     this.lineSeconds = options.lineSeconds ?? 0.9;
+    this.events = options.events ?? null;
     const names = battle.enemies.map((e) => e.name);
     const who =
       names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
     this.queue.push({
+      kind: 'line',
       text: `${who} ${names.length === 1 ? 'appears' : 'appear'}!`,
       event: null,
       hold: false,
@@ -114,7 +143,8 @@ export class BattleController {
   }
 
   get state(): BattleUiState {
-    const line = this.stage === 'playback' ? (this.queue[0] ?? null) : null;
+    const front = this.stage === 'playback' ? (this.queue[0] ?? null) : null;
+    const line = front?.kind === 'line' ? front : null;
     return {
       stage: this.stage,
       menu: this.menu(),
@@ -128,6 +158,11 @@ export class BattleController {
           ? { entry: line.animation, target: line.event.result.target, elapsed: this.lineTime }
           : null,
     };
+  }
+
+  /** The battle event (or common event) running, whose messages and choices the game shows. */
+  get eventInterpreter(): Interpreter | null {
+    return this.running;
   }
 
   /** Animation sounds due since the last call, in order. */
@@ -150,6 +185,8 @@ export class BattleController {
     switch (this.stage) {
       case 'playback':
         return this.updatePlayback(dt, input);
+      case 'event':
+        return this.updateEvent(dt);
       case 'target':
         return this.updateTarget(input);
       case 'finished':
@@ -172,17 +209,82 @@ export class BattleController {
           ? this.db.animations.find(event.animation)
           : undefined;
       describeEvent(event, this.db).forEach((text, i) =>
-        this.queue.push({ text, event, hold, ...(i === 0 && animation ? { animation } : {}) }),
+        this.queue.push({
+          kind: 'line',
+          text,
+          event,
+          hold,
+          ...(i === 0 && animation ? { animation } : {}),
+        }),
       );
+      if (event.type === 'commonEvent') {
+        this.queue.push({ kind: 'run', commands: this.db.commonEvents.get(event.common).commands });
+      }
     }
     this.stage = 'playback';
     this.lineTime = 0;
+  }
+
+  /** A turn's events, then the troop's turn-end events. */
+  private playTurn(events: readonly BattleEvent[]): void {
+    this.enqueue(events);
+    this.queue.push({ kind: 'check', moment: 'turnEnd' });
+  }
+
+  /** Run a battle event's commands until they finish; their messages and choices wait for the player. */
+  private updateEvent(dt: number): void {
+    const running = this.running;
+    if (!running) {
+      this.stage = 'playback';
+      return;
+    }
+    running.update(dt);
+    const request = running.pending;
+    // Only messages and choices make sense here (the checks keep the rest out of battle events).
+    if (request && request.type !== 'message' && request.type !== 'choice') {
+      if (request.type === 'battle') running.finishBattle('win');
+      else if (request.type !== 'gameOver' && request.type !== 'title') running.continue();
+    }
+    if (!running.isDone && request?.type !== 'gameOver' && request?.type !== 'title') return;
+    this.running = null;
+    this.queue.shift();
+    // The event may have ended the battle (everyone knocked out, say).
+    this.queue.unshift(...this.linesFor(this.battle.checkOutcome()));
+    this.stage = 'playback';
+    this.lineTime = 0;
+  }
+
+  private linesFor(events: readonly BattleEvent[]): Line[] {
+    const saved = this.queue;
+    this.queue = [];
+    this.enqueue(events);
+    const lines = this.queue;
+    this.queue = saved;
+    return lines;
   }
 
   private updatePlayback(dt: number, input: InputState): void {
     const line = this.queue[0];
     if (!line) {
       this.afterPlayback();
+      return;
+    }
+    if (line.kind === 'check') {
+      this.queue.shift();
+      const due = this.battle.dueEvents(line.moment);
+      this.queue.unshift(...due.map((commands) => ({ kind: 'run' as const, commands })));
+      if (this.queue.length === 0) this.afterPlayback();
+      return;
+    }
+    if (line.kind === 'run') {
+      if (!this.events) {
+        this.queue.shift();
+        if (this.queue.length === 0) this.afterPlayback();
+        return;
+      }
+      this.running = new Interpreter(line.commands, { ...this.events, self: null });
+      this.stage = 'event';
+      this.updateEvent(dt);
       return;
     }
     const from = this.lineTime;
@@ -201,6 +303,16 @@ export class BattleController {
 
   private afterPlayback(): void {
     const phase = this.battle.phase;
+    // Before each turn's commands (also the first), the troop's turn-start events.
+    if (phase === 'input' && this.checkedTurn !== this.battle.turn) {
+      this.checkedTurn = this.battle.turn;
+      const due = this.battle.dueEvents('turnStart');
+      if (due.length > 0) {
+        this.queue.push(...due.map((commands) => ({ kind: 'run' as const, commands })));
+        this.stage = 'playback';
+        return;
+      }
+    }
     if (phase === 'input') {
       this.stage = 'party';
       this.cursor = 0;
@@ -253,7 +365,12 @@ export class BattleController {
         return this.skillEntries().map((s) => ({
           label: s.name,
           ...withIcon(s.icon),
-          detail: s.mpCost > 0 ? `${s.mpCost} MP` : '',
+          detail: [
+            s.mpCost > 0 ? `${s.mpCost} MP` : '',
+            (s.tpCost ?? 0) > 0 ? `${s.tpCost} TP` : '',
+          ]
+            .filter(Boolean)
+            .join(' '),
           enabled:
             actor !== null &&
             this.battle.actionProblem(actor, { kind: 'skill', skill: s.id }) === null,
@@ -301,7 +418,7 @@ export class BattleController {
     switch (this.stage) {
       case 'party':
         if (option.label === 'Fight') this.beginCommands();
-        else this.enqueue(this.battle.tryEscape());
+        else this.playTurn(this.battle.tryEscape());
         return;
       case 'actor':
         return this.chooseCommand(option.label);
@@ -322,7 +439,7 @@ export class BattleController {
     this.commandable = this.battle.actorsToCommand();
     this.actorIndex = 0;
     if (this.commandable.length === 0) {
-      this.enqueue(this.battle.runTurn());
+      this.playTurn(this.battle.runTurn());
       return;
     }
     this.stage = 'actor';
@@ -389,7 +506,7 @@ export class BattleController {
     this.pending = null;
     this.actorIndex++;
     if (this.actorIndex >= this.commandable.length) {
-      this.enqueue(this.battle.runTurn());
+      this.playTurn(this.battle.runTurn());
     } else {
       this.stage = 'actor';
       this.cursor = 0;

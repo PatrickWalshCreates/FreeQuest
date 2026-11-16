@@ -1,4 +1,4 @@
-import { type Action, ActionState, Battle, GameState, Party } from '@freequest/core';
+import { type Action, ActionState, Battle, DatabaseIndex, GameState, Party } from '@freequest/core';
 import { describe, expect, it } from 'vitest';
 import { BattleController, type BattleStage } from '../src/battle-controller.js';
 import { describeEvent } from '../src/battle-text.js';
@@ -43,6 +43,85 @@ function setup(troop = 'slimes', options: SetupOptions = {}) {
 }
 
 describe('BattleController', () => {
+  it('runs the troop’s battle events before the party menu, messages waiting for an answer', () => {
+    const data = demoDb().data;
+    const eventsDb = new DatabaseIndex({
+      ...data,
+      troops: data.troops.map((t) =>
+        t.id === 'slimes'
+          ? {
+              ...t,
+              events: [
+                {
+                  conditions: { turn: { from: 1, every: 0 } },
+                  span: 'battle' as const,
+                  commands: [
+                    { type: 'message' as const, text: 'The slimes wobble.' },
+                    { type: 'changeGold' as const, amount: 5 },
+                  ],
+                },
+              ],
+            }
+          : t,
+      ),
+    });
+    const party = Party.start(eventsDb, { party: ['hero'], gold: 0 });
+    const state = new GameState();
+    const battle = new Battle({
+      db: eventsDb,
+      party,
+      troop: 'slimes',
+      state,
+      canEscape: true,
+      random: () => 0.5,
+    });
+    const ui = new BattleController(battle, eventsDb, {
+      lineSeconds: 0.1,
+      events: { state, party },
+    });
+    const input = new ActionState();
+    for (let i = 0; i < 20 && ui.state.stage === 'playback'; i++) ui.update(1 / 60, input);
+    expect(ui.state.stage).toBe('event');
+    expect(ui.eventInterpreter?.pending).toMatchObject({
+      type: 'message',
+      text: 'The slimes wobble.',
+    });
+    // Nothing moves on until the message is answered (the game's message box does that).
+    for (let i = 0; i < 30; i++) ui.update(1 / 60, input);
+    expect(ui.state.stage).toBe('event');
+    ui.eventInterpreter?.continue();
+    ui.update(1 / 60, input);
+    expect(party.gold).toBe(5);
+    for (let i = 0; i < 5 && ui.state.stage !== 'party'; i++) ui.update(1 / 60, input);
+    expect(ui.state.stage).toBe('party');
+    expect(ui.eventInterpreter).toBeNull();
+  });
+
+  it('describes buffs, TP and wearing off', () => {
+    const party = Party.start(db, { party: ['hero'], gold: 0 });
+    const hero = party.members[0];
+    if (!hero) throw new Error('no hero');
+    const result = {
+      target: hero,
+      missed: false,
+      hpDamage: 0,
+      mpDamage: 0,
+      critical: false,
+      addedStates: [],
+      removedStates: [],
+      learnedSkills: [],
+      buffs: [{ stat: 'attack' as const, change: 1 as const }],
+      tpChange: 10,
+    };
+    expect(describeEvent({ type: 'hit', user: hero, result, animation: null }, db)).toEqual([
+      "Hero's attack rises.",
+      'Hero gains 10 TP.',
+    ]);
+    expect(describeEvent({ type: 'buffExpired', battler: hero, stat: 'defense' }, db)).toEqual([
+      "Hero's defense is back to normal.",
+    ]);
+  });
+
   it('keeps a hit’s line up while its animation plays on the target', () => {
     const party = Party.start(db, { party: ['hero'], gold: 0 });
     const battle = new Battle({
@@ -233,6 +312,8 @@ describe('describeEvent', () => {
       addedStates: ['knockout'],
       removedStates: [],
       learnedSkills: [],
+      buffs: [],
+      tpChange: 0,
     };
     expect(describeEvent({ type: 'hit', user: hero, result: hit, animation: null }, db)).toEqual([
       'Critical hit! Slime A takes 60 damage.',

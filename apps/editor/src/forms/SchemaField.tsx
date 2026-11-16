@@ -79,6 +79,9 @@ const VARIANT_NAMES: Record<string, string> = {
   facing: 'Facing',
   actorState: 'Actor has a state',
   actorName: 'Actor’s name',
+  buff: 'Buff or debuff',
+  gainTp: 'Gain TP',
+  commonEvent: 'Run a common event',
 };
 
 function labelFor(ctx: FormContext, name: string): string {

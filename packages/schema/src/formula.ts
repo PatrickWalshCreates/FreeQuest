@@ -12,7 +12,7 @@
 import { STAT_KEYS } from './database/common.js';
 
 /** Properties readable on `a` and `b`. */
-export const FORMULA_SUBJECT_KEYS: readonly string[] = [...STAT_KEYS, 'hp', 'mp', 'level'];
+export const FORMULA_SUBJECT_KEYS: readonly string[] = [...STAT_KEYS, 'hp', 'mp', 'tp', 'level'];
 
 /** Built-in functions and how many arguments each takes. */
 export const FORMULA_FUNCTIONS = {

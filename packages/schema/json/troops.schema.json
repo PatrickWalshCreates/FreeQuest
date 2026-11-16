@@ -1,5 +1,2378 @@
 {
   "type": "object",
+  "$defs": {
+    "Command": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Show a message box and wait for confirm.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "message"
+            },
+            "face": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "A face beside the text: a face sheet is one row of square faces (its height is their size), and index picks one, from 0 on the left.",
+              "properties": {
+                "image": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "index": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": ["image", "index"]
+            },
+            "speaker": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "text"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Let the player pick one option.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "choice"
+            },
+            "cancel": {
+              "type": "integer",
+              "description": "Option index taken when the player cancels. Omit to disallow cancel.",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "commands": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/Command"
+                    }
+                  }
+                },
+                "required": ["label", "commands"]
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["type", "options"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "if"
+            },
+            "conditions": {
+              "type": "array",
+              "description": "All conditions must hold.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "switch"
+                      },
+                      "switch": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "switch", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "variable"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer"
+                      },
+                      "variable": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "variable", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "gold"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "hasItem"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "includeEquipped": {
+                        "type": "boolean"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "item"
+                          },
+                          {
+                            "type": "string",
+                            "const": "equipment"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "kind", "id"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "inParty"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "actor"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "One of this event's own flags, e.g. a chest's \"opened\".",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "flag"
+                      },
+                      "flag": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "flag", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A key (an input action) is held down.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "held"
+                      },
+                      "action": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "confirm"
+                          },
+                          {
+                            "type": "string",
+                            "const": "cancel"
+                          },
+                          {
+                            "type": "string",
+                            "const": "menu"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "action"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "The player or an event faces a direction.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "facing"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          }
+                        ]
+                      },
+                      "target": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "target", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A party member has a state (or not). Actors outside the party have none.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorState"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "state": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "actor", "state", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "A party member's level, HP or MP (or HP/MP as a percent of the most). Actors outside the party count as 0.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorStat"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "op": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "=="
+                          },
+                          {
+                            "type": "string",
+                            "const": "!="
+                          },
+                          {
+                            "type": "string",
+                            "const": "<"
+                          },
+                          {
+                            "type": "string",
+                            "const": "<="
+                          },
+                          {
+                            "type": "string",
+                            "const": ">"
+                          },
+                          {
+                            "type": "string",
+                            "const": ">="
+                          }
+                        ]
+                      },
+                      "stat": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "level"
+                          },
+                          {
+                            "type": "string",
+                            "const": "hp"
+                          },
+                          {
+                            "type": "string",
+                            "const": "mp"
+                          },
+                          {
+                            "type": "string",
+                            "const": "hpPercent"
+                          },
+                          {
+                            "type": "string",
+                            "const": "mpPercent"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "actor", "stat", "op", "value"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "An actor's name is this (as changed by events).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "actorName"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "actor": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "actor", "name"]
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "then": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "else": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            }
+          },
+          "required": ["type", "conditions", "then"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setSwitch"
+            },
+            "switch": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "switch", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Turn one of an event's own flags on or off (kept in saves).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setFlag"
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "flag": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "flag", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setVariable"
+            },
+            "op": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "set"
+                },
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "sub"
+                },
+                {
+                  "type": "string",
+                  "const": "mul"
+                },
+                {
+                  "type": "string",
+                  "const": "div"
+                },
+                {
+                  "type": "string",
+                  "const": "mod"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "A random whole number from min to max (v9).",
+                  "properties": {
+                    "random": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "max": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["min", "max"]
+                    }
+                  },
+                  "required": ["random"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "game": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "gold"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "steps"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "playTime"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "partySize"
+                            }
+                          },
+                          "required": ["type"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "itemCount"
+                            },
+                            "kind": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "item"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "equipment"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "kind", "id"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "A party member’s stat (0 outside the party).",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "actorStat"
+                            },
+                            "actor": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            },
+                            "stat": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "level"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "exp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "hp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "mp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "maxHp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "maxMp"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "attack"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "defense"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "magicAttack"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "magicDefense"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "agility"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "luck"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "actor", "stat"]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "Where the player or an event stands.",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "position"
+                            },
+                            "axis": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "x"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "y"
+                                }
+                              ]
+                            },
+                            "target": {
+                              "type": "string",
+                              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                            }
+                          },
+                          "required": ["type", "target", "axis"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["game"]
+                }
+              ]
+            },
+            "variable": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "variable", "op", "value"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move the player to another map or tile.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "transfer"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "up"
+                }
+              ]
+            },
+            "map": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "x": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["type", "map", "x", "y"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "wait"
+            },
+            "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["type", "seconds"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Negative amounts take gold away.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeGold"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Negative amounts take items away.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": {
+              "type": "string",
+              "const": "changeItems"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "item"
+                },
+                {
+                  "type": "string",
+                  "const": "equipment"
+                }
+              ]
+            }
+          },
+          "required": ["type", "kind", "id", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeParty"
+            },
+            "action": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "remove"
+                }
+              ]
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "action", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gainExp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Full HP/MP and clear states (e.g. an inn).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "recoverAll"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Fight a troop, then branch on the outcome.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "battle"
+            },
+            "canEscape": {
+              "type": "boolean"
+            },
+            "canLose": {
+              "type": "boolean"
+            },
+            "onEscape": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onLose": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "onWin": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            },
+            "troop": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "troop", "canEscape", "canLose"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playMusic"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playSound"
+            },
+            "path": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Walk the player or an event along a route.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "moveRoute"
+            },
+            "repeat": {
+              "type": "boolean"
+            },
+            "skipBlocked": {
+              "type": "boolean"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk one tile.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "move"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "forward"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "backward"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down-left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "down-right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up-left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up-right"
+                          }
+                        ],
+                        "description": "forward: the way the character faces; backward: away from it, still facing it; the four diagonals move one tile both ways (v9); the player ones are worked out at the time."
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Face a direction without moving.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "turn"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": "down"
+                          },
+                          {
+                            "type": "string",
+                            "const": "left"
+                          },
+                          {
+                            "type": "string",
+                            "const": "right"
+                          },
+                          {
+                            "type": "string",
+                            "const": "up"
+                          },
+                          {
+                            "type": "string",
+                            "const": "around"
+                          },
+                          {
+                            "type": "string",
+                            "const": "clockwise"
+                          },
+                          {
+                            "type": "string",
+                            "const": "counterclockwise"
+                          },
+                          {
+                            "type": "string",
+                            "const": "random"
+                          },
+                          {
+                            "type": "string",
+                            "const": "toward-player"
+                          },
+                          {
+                            "type": "string",
+                            "const": "away-from-player"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["type", "direction"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Stand still.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "wait"
+                      },
+                      "seconds": {
+                        "type": "number",
+                        "maximum": 60,
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["type", "seconds"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk faster or slower from here on.",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "speed"
+                      },
+                      "speed": {
+                        "type": "number",
+                        "description": "Tiles per second.",
+                        "exclusiveMinimum": 0,
+                        "maximum": 16
+                      }
+                    },
+                    "required": ["type", "speed"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Jump to a tile nearby, or on the spot (0, 0) (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "jump"
+                      },
+                      "x": {
+                        "type": "integer",
+                        "description": "Tiles to the right (left if negative).",
+                        "maximum": 8,
+                        "minimum": -8
+                      },
+                      "y": {
+                        "type": "integer",
+                        "description": "Tiles down (up if negative).",
+                        "maximum": 8,
+                        "minimum": -8
+                      }
+                    },
+                    "required": ["type", "x", "y"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Look like another character from here on (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "character"
+                      },
+                      "character": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      }
+                    },
+                    "required": ["type", "character"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Walk through walls and characters, or stop doing so (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "through"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Keep facing one way while moving and turning, or stop (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "fixFacing"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Animate the legs while walking (on by default) (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "walkAnimation"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Keep stepping in place even when standing (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "stepAnimation"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Become invisible (still there), or visible again (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "hidden"
+                      },
+                      "on": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "on"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Play a sound (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "sound"
+                      },
+                      "path": {
+                        "type": "string",
+                        "description": "Path relative to the project root, using \"/\" separators.",
+                        "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                      }
+                    },
+                    "required": ["type", "path"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Turn a switch on or off (v9).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "switch"
+                      },
+                      "switch": {
+                        "type": "string",
+                        "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "value": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["type", "switch", "value"]
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "target", "steps", "repeat", "skipBlocked", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Open a shop to buy (and sell) goods.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "shop"
+            },
+            "canSell": {
+              "type": "boolean"
+            },
+            "goods": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "item"
+                      },
+                      {
+                        "type": "string",
+                        "const": "equipment"
+                      }
+                    ]
+                  },
+                  "price": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["kind", "id"]
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["type", "goods", "canSell"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Fade the screen to black (out) or back (in). It stays black until faded in.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "fadeScreen"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "to": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "out"
+                },
+                {
+                  "type": "string",
+                  "const": "in"
+                }
+              ]
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "to", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Tint the screen a colour (e.g. dusk), until tinted again. Kept in saves.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "tintScreen"
+            },
+            "color": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "strength": {
+              "type": "number",
+              "description": "0 = no tint, 1 = all that colour.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "color", "strength", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Flash the screen a colour, fading away.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "flashScreen"
+            },
+            "color": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "color", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Shake the screen side to side.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "shakeScreen"
+            },
+            "power": {
+              "type": "integer",
+              "description": "How far it shakes, in pixels.",
+              "maximum": 20,
+              "minimum": 1
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "power", "seconds", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Hide an event (as if it had no page) or show it again, until the map loads again.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "hideEvent"
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "hidden"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Hide the player (they are still there and can move) or show them again (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "hidePlayer"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "hidden"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give an actor another character or name for the rest of the game, in or out of the party (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeActor"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "character": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "actor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Put an event on a tile at once (until the map loads again). A spot outside the map is ignored (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "placeEvent"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "up"
+                }
+              ]
+            },
+            "event": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "x", "y"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move the view away from the player (the edges of the map still stop it), or back. Until the map changes (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "scrollMap"
+            },
+            "direction": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "up"
+                },
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "back"
+                }
+              ]
+            },
+            "speed": {
+              "type": "number",
+              "maximum": 32,
+              "minimum": 0.5
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            },
+            "tiles": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 0
+            }
+          },
+          "required": ["type", "direction", "tiles", "speed", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "End the game: the game over screen (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gameOver"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "End the game and go back to the title (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "returnToTitle"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Let the player save (even if saving is off). The save starts after this event, as if it had finished (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "openSave"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Allow or stop opening the menu, or saving from it. Kept in saves (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "setAccess"
+            },
+            "allowed": {
+              "type": "boolean"
+            },
+            "what": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "menu"
+                },
+                {
+                  "type": "string",
+                  "const": "saving"
+                }
+              ]
+            }
+          },
+          "required": ["type", "what", "allowed"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Change the music of battles or of winning one. Kept in saves (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeBattleMusic"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "which": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "battle"
+                },
+                {
+                  "type": "string",
+                  "const": "victory"
+                }
+              ]
+            }
+          },
+          "required": ["type", "which", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A sound that loops beside the music (rain, wind, a crowd) (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "playBackgroundSound"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "path"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give or take HP (negative takes) from one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeHp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "canKnockOut": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "amount", "canKnockOut"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Give or take MP (negative takes) from one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeMp"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "amount"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Add or remove a state for one member or everyone (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeState"
+            },
+            "action": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "add"
+                },
+                {
+                  "type": "string",
+                  "const": "remove"
+                }
+              ]
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "state": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "action", "state"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Show an image over the map at a screen position (replacing the picture with that number). Pictures stay across maps and in saves until erased (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showPicture"
+            },
+            "image": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 = invisible, 1 = solid.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "origin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "top-left"
+                },
+                {
+                  "type": "string",
+                  "const": "center"
+                }
+              ]
+            },
+            "scaleX": {
+              "type": "integer",
+              "description": "Width, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "scaleY": {
+              "type": "integer",
+              "description": "Height, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "number", "image", "origin", "x", "y", "scaleX", "scaleY", "opacity"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Move, resize or fade a picture over time (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "movePicture"
+            },
+            "easing": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "linear"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-in"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-out"
+                },
+                {
+                  "type": "string",
+                  "const": "ease-in-out"
+                }
+              ]
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 = invisible, 1 = solid.",
+              "maximum": 1,
+              "minimum": 0
+            },
+            "origin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "top-left"
+                },
+                {
+                  "type": "string",
+                  "const": "center"
+                }
+              ]
+            },
+            "scaleX": {
+              "type": "integer",
+              "description": "Width, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "scaleY": {
+              "type": "integer",
+              "description": "Height, in percent.",
+              "maximum": 2000,
+              "minimum": 0
+            },
+            "seconds": {
+              "type": "number",
+              "maximum": 60,
+              "minimum": 0
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "variable": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["variable"]
+                }
+              ]
+            }
+          },
+          "required": ["type", "number", "origin", "x", "y", "scaleX", "scaleY", "opacity", "seconds", "easing", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Play an animation on the player or an event (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showAnimation"
+            },
+            "animation": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "target", "animation", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Show a balloon (!, ?, a heart…) over the player or an event (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "showBalloon"
+            },
+            "balloon": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "target": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait until it has finished."
+            }
+          },
+          "required": ["type", "target", "balloon", "wait"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Take a picture away (v9).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "erasePicture"
+            },
+            "number": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1
+            }
+          },
+          "required": ["type", "number"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Repeat these commands until a Break loop (or Exit event) inside them.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "loop"
+            },
+            "commands": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Command"
+              }
+            }
+          },
+          "required": ["type", "commands"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Leave the loop this is in.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "break"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Stop the event here (also from inside a common event it called).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "exitEvent"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Run a common event’s commands, then carry on here.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "callCommon"
+            },
+            "common": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": ["type", "common"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Note for authors. Does nothing.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "comment"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "text"]
+        }
+      ]
+    }
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
@@ -32,6 +2405,100 @@
             },
             "maxItems": 8,
             "minItems": 1
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "conditions": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "actorHp": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "actor": {
+                          "type": "string",
+                          "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                        },
+                        "below": {
+                          "type": "integer",
+                          "maximum": 100,
+                          "minimum": 0
+                        }
+                      },
+                      "required": ["actor", "below"]
+                    },
+                    "enemyHp": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "below": {
+                          "type": "integer",
+                          "maximum": 100,
+                          "minimum": 0
+                        },
+                        "enemy": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": ["enemy", "below"]
+                    },
+                    "switch": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "turn": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "every": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "from": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": ["from", "every"]
+                    },
+                    "turnEnd": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "span": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "battle"
+                    },
+                    {
+                      "type": "string",
+                      "const": "turn"
+                    },
+                    {
+                      "type": "string",
+                      "const": "moment"
+                    }
+                  ]
+                },
+                "commands": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Command"
+                  }
+                }
+              },
+              "required": ["conditions", "span", "commands"]
+            }
           }
         },
         "required": ["id", "name", "enemies"]

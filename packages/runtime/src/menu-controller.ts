@@ -9,6 +9,7 @@ import {
   itemProblem,
   skillProblem,
   useItem,
+  commonEventsOf,
   useSkill,
 } from '@freequest/core';
 import type { ItemEntry, SkillEntry, TargetScope } from '@freequest/schema';
@@ -83,6 +84,8 @@ export class MenuController {
   private readonly stack: Screen[];
   private feedback: string | null = null;
   private result: MenuOutcome | null = null;
+  /** Common events items and skills used here asked for, to run once the menu closes. */
+  readonly commonEvents: string[] = [];
   private readonly world: World;
   private readonly random: () => number;
 
@@ -201,7 +204,12 @@ export class MenuController {
         return this.menuSkills(actor).map((s) => ({
           label: s.name,
           ...withIcon(s.icon),
-          detail: s.mpCost > 0 ? `${s.mpCost} MP` : '',
+          detail: [
+            s.mpCost > 0 ? `${s.mpCost} MP` : '',
+            (s.tpCost ?? 0) > 0 ? `${s.tpCost} TP` : '',
+          ]
+            .filter(Boolean)
+            .join(' '),
           enabled: skillProblem(actor, s, 'menu') === null && this.scopeHasTargets(s.target),
         }));
       }
@@ -392,6 +400,13 @@ export class MenuController {
             : [];
     } catch (error) {
       this.feedback = error instanceof Error ? error.message : String(error);
+      return;
+    }
+    // A common event runs on the map once the menu has closed.
+    const commons = commonEventsOf(use.entry, results);
+    if (commons.length > 0) {
+      this.commonEvents.push(...commons);
+      this.result = 'closed';
       return;
     }
     const user = use.kind === 'skill' ? use.user : leader;

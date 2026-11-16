@@ -55,6 +55,22 @@ More of what RPG Maker MZ games use, in FreeQuest itself and brought across by t
   animation, Show balloon (with the project's balloon image) and skills' and items' animations
   import as these.
 
+### Battles
+
+- **TP**: from 0 to 100, starting at 0 each battle, gained by taking damage and from skills
+  and items (**TP gained by the user**, a **Gain TP** effect); skills can have a **TP cost**.
+  Shown in battle when the game uses it; formulas read it as `a.tp`.
+- **Buffs and debuffs**: an effect that raises or lowers a stat 25% for some turns, two levels
+  each way. **Hits**: skills and items that land several times for one cost.
+- **Run a common event** as an effect of a skill or item, in battle or from the menu.
+- **Battle events** for troops: commands that run during their battles on a turn, an enemy's or
+  party member's HP, or a switch, once a battle, once a turn or every time; messages and
+  choices show over the battle.
+- In battle, a knocked-out enemy now fades when the blow that felled it is shown, not as the
+  turn begins.
+- MZ's TP costs and gains, buffs, debuffs, gaining TP, repeated hits, common-event effects and
+  troop pages import as these.
+
 ### Event commands
 
 - **Set variable** to a **random number** or **game data**: gold, steps, play time, party size,

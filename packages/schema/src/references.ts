@@ -308,6 +308,44 @@ export function checkCommonEventReferences(ctx: ReferenceContext): string[] {
   return problems;
 }
 
+/** Commands a battle event can't run (they need the map, or end the battle some other way). */
+const NOT_IN_BATTLE = new Set<Command['type']>([
+  'transfer',
+  'battle',
+  'shop',
+  'openSave',
+  'returnToTitle',
+  'gameOver',
+  'moveRoute',
+  'placeEvent',
+  'scrollMap',
+]);
+
+/**
+ * References made by troops' battle events: their switches and commands, and
+ * commands that can't run in a battle.
+ */
+export function checkTroopEventReferences(ctx: ReferenceContext): string[] {
+  const problems: string[] = [];
+  const { checkSwitch, checkCommands } = makeChecks(ctx, problems);
+  for (const troop of ctx.database?.troops ?? []) {
+    troop.events?.forEach((page, p) => {
+      const where = `troops "${troop.id}" events[${p}]`;
+      if (page.conditions.switch !== undefined) checkSwitch(where, page.conditions.switch);
+      checkCommands(page.commands, where);
+      walkCommands(page.commands, (command, path) => {
+        if (NOT_IN_BATTLE.has(command.type)) {
+          problems.push(`${where}.${path}: ${command.type} can't run in a battle event`);
+        }
+      });
+      for (const at of strayBreaks(page.commands)) {
+        problems.push(`${where}.${at}: Break loop isn't inside a loop`);
+      }
+    });
+  }
+  return problems;
+}
+
 /** Common events that end up calling themselves, which would never finish. */
 function commonEventCycles(
   commons: readonly { readonly id: string; readonly commands: readonly Command[] }[],
@@ -349,5 +387,6 @@ export function checkReferences(project: ProjectData): string[] {
     ...checkManifestReferences(project),
     ...[...project.maps.values()].flatMap((map) => checkMapReferences(map, project)),
     ...checkCommonEventReferences(project),
+    ...checkTroopEventReferences(project),
   ];
 }

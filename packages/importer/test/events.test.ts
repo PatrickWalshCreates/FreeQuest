@@ -427,6 +427,30 @@ describe('an imported game', () => {
   });
 });
 
+describe('troop battle events', () => {
+  it('come across with their conditions, span and commands; map commands become comments', async () => {
+    const { target, messages } = await imported();
+    const troops = JSON.parse(await target.readText('data/database/troops.json')) as {
+      entries: { name: string; events?: unknown[] }[];
+    };
+    const moths = troops.entries.find((t) => t.name === 'Moth*2');
+    expect(moths?.events).toEqual([
+      {
+        // MZ's turn 0 is FreeQuest's turn 1.
+        conditions: { turn: { from: 1, every: 2 }, enemyHp: { enemy: 0, below: 50 } },
+        span: 'turn',
+        commands: [
+          { type: 'message', text: 'The moths flutter.' },
+          { type: 'comment', text: "From MZ, not imported: transfer (can't run in a battle)" },
+        ],
+      },
+    ]);
+    expect(messages('Troops › Moth*2 › Battle event 1')).toEqual([
+      "1 command needs the map (a transfer, a route…), which a battle event can't use; kept as comments.",
+    ]);
+  });
+});
+
 describe('animations and balloons', () => {
   it('makes stand-ins for the animations used, with their length and sounds, and the balloon image', async () => {
     const { target, result } = await imported();

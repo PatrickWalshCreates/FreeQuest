@@ -1,10 +1,11 @@
-import type { ItemEntry, SkillEntry } from '@freequest/schema';
+import type { Command, ItemEntry, SkillEntry, StatKey, TroopEvent } from '@freequest/schema';
 import type { Actor } from './actor.js';
 import type { Battler } from './battler.js';
 import type { DatabaseIndex } from './database.js';
 import {
   type TargetResult,
   type UseContext,
+  commonEventsOf,
   itemProblem,
   resolveTargets,
   skillProblem,
@@ -54,6 +55,10 @@ export type BattleEvent =
     }
   | { readonly type: 'regen'; readonly battler: Battler; readonly amount: number }
   | { readonly type: 'stateExpired'; readonly battler: Battler; readonly state: string }
+  /** A buff or debuff wore off at the end of a turn. */
+  | { readonly type: 'buffExpired'; readonly battler: Battler; readonly stat: StatKey }
+  /** A skill's or item's common event, to run now (in the battle). */
+  | { readonly type: 'commonEvent'; readonly common: string }
   | { readonly type: 'escape'; readonly success: boolean }
   | {
       readonly type: 'victory';
@@ -102,19 +107,39 @@ export class Battle {
   private readonly chosen = new Map<Actor, BattleAction>();
   private currentPhase: BattlePhase = 'input';
   private turnCount = 0;
+  private readonly state: GameState;
+  private readonly troopEvents: readonly TroopEvent[];
+  /** Troop pages that ran: once a battle (by index), and in which turn they last ran. */
+  private readonly ranInBattle = new Set<number>();
+  private readonly ranInTurn = new Map<number, number>();
   private failedEscapes = 0;
 
   constructor(options: BattleOptions) {
     this.db = options.db;
     this.party = options.party;
     this.random = options.random ?? Math.random;
-    this.ctx = { state: options.state, random: this.random };
+    this.ctx = { state: options.state, random: this.random, inBattle: true };
+    this.state = options.state;
+    this.troopEvents = this.db.troops.get(options.troop).events ?? [];
     this.canEscape = options.canEscape;
     this.actors = options.party.members.slice(0, MAX_BATTLE_MEMBERS);
     this.enemies = createEnemies(this.db, this.db.troops.get(options.troop).enemies);
+    // Every battle starts without TP or buffs.
+    for (const actor of options.party.members) actor.resetBattleState();
     if (this.actors.length === 0) throw new Error('cannot start a battle with an empty party');
     // A party that is already down loses at once.
     if (this.actors.every((a) => a.isKnockedOut)) this.currentPhase = 'lost';
+  }
+
+  /** Whether this game uses TP at all (some skill or item costs, gains or gives it). */
+  get usesTp(): boolean {
+    const usables = [...this.db.skills.all, ...this.db.items.all];
+    return usables.some(
+      (u) =>
+        ('tpCost' in u && (u.tpCost ?? 0) > 0) ||
+        (u.tpGain ?? 0) > 0 ||
+        u.effects.some((e) => e.type === 'gainTp'),
+    );
   }
 
   get phase(): BattlePhase {
@@ -249,6 +274,7 @@ export class Battle {
       const amount = battler.applyRegen();
       if (amount !== 0) events.push({ type: 'regen', battler, amount });
       for (const state of battler.tickTurn()) events.push({ type: 'stateExpired', battler, state });
+      for (const stat of battler.tickBuffs()) events.push({ type: 'buffExpired', battler, stat });
     }
     this.checkEnd(events);
     this.chosen.clear();
@@ -300,6 +326,8 @@ export class Battle {
     }
     const animation = usable.animation ?? null;
     for (const result of results) events.push({ type: 'hit', user, result, animation });
+    for (const common of commonEventsOf(usable, results))
+      events.push({ type: 'commonEvent', common });
   }
 
   /** A confused battler attacks someone at random, friend or foe. */
@@ -320,6 +348,58 @@ export class Battle {
   private randomPick(list: readonly Battler[]): Battler | undefined {
     const living = list.filter((b) => !b.isKnockedOut);
     return living[Math.floor(this.random() * living.length)];
+  }
+
+  /**
+   * The troop's battle events due now: as the coming turn starts (`turnStart`,
+   * also before the first turn) or as the turn just played ends (`turnEnd`).
+   * Each page's span is honoured: once a battle, once a turn, or every time.
+   */
+  dueEvents(moment: 'turnStart' | 'turnEnd'): (readonly Command[])[] {
+    if (this.currentPhase !== 'input') return [];
+    const turn = moment === 'turnStart' ? this.turnCount + 1 : this.turnCount;
+    if (turn < 1) return [];
+    const due: (readonly Command[])[] = [];
+    this.troopEvents.forEach((page, i) => {
+      if ((page.conditions.turnEnd === true) !== (moment === 'turnEnd')) return;
+      if (!this.holds(page, turn)) return;
+      if (page.span === 'battle' && this.ranInBattle.has(i)) return;
+      if (page.span === 'turn' && this.ranInTurn.get(i) === turn) return;
+      this.ranInBattle.add(i);
+      this.ranInTurn.set(i, turn);
+      due.push(page.commands);
+    });
+    return due;
+  }
+
+  private holds(page: TroopEvent, turn: number): boolean {
+    const c = page.conditions;
+    const percent = (b: Battler) => (b.maxHp > 0 ? (b.hp * 100) / b.maxHp : 0);
+    const checks: boolean[] = [];
+    if (c.turn) {
+      const { from, every } = c.turn;
+      checks.push(every === 0 ? turn === from : turn >= from && (turn - from) % every === 0);
+    }
+    if (c.enemyHp) {
+      const enemy = this.enemies[c.enemyHp.enemy];
+      checks.push(!!enemy && !enemy.isKnockedOut && percent(enemy) <= c.enemyHp.below);
+    }
+    if (c.actorHp) {
+      const actorHp = c.actorHp;
+      const actor = this.actors.find((a) => a.id === actorHp.actor);
+      checks.push(!!actor && percent(actor) <= actorHp.below);
+    }
+    if (c.switch !== undefined) checks.push(this.state.getSwitch(c.switch));
+    // A page with no conditions never runs (as nothing says when).
+    return checks.length > 0 && checks.every(Boolean);
+  }
+
+  /** After events changed things (HP, states): the battle's end, if it has come. */
+  checkOutcome(): BattleEvent[] {
+    if (this.currentPhase !== 'input') return [];
+    const events: BattleEvent[] = [];
+    this.checkEnd(events);
+    return events;
   }
 
   /** Detect victory or defeat; on victory hand out rewards. Returns true if the battle ended. */

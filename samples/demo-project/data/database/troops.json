@@ -19,7 +19,25 @@
     {
       "id": "bridge-wolf",
       "name": "Wolf on the bridge",
-      "enemies": ["wolf"]
+      "enemies": ["wolf"],
+      "events": [
+        {
+          "conditions": {
+            "turn": {
+              "every": 0,
+              "from": 1
+            }
+          },
+          "span": "battle",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Wolf",
+              "text": "The wolf bares its teeth and circles you."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

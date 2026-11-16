@@ -80,6 +80,16 @@ const LABELS: Record<string, string> = {
   balloons: 'Balloons over characters',
   size: 'Frame size (px, square)',
   names: 'Names (one per row, top first)',
+  tpCost: 'TP cost (in battle)',
+  tpGain: 'TP gained by the user (in battle)',
+  repeats: 'Hits (times on each target)',
+  turnEnd: 'Checked as the turn ends (not as it starts)',
+  enemyHp: 'An enemy’s HP',
+  actorHp: 'A party member’s HP',
+  enemy: 'Enemy (0 = the first, left)',
+  below: 'At or below (% of the most)',
+  span: 'Runs',
+  events: 'Battle events',
 };
 
 /** Readable choices for fields whose values are words. */
@@ -101,6 +111,11 @@ const CHOICE_LABELS: Record<string, Record<string, string>> = {
     magicDefense: 'Magic defense',
   },
   direction: { back: 'Back to the player' },
+  span: {
+    battle: 'Once a battle',
+    turn: 'Once a turn',
+    moment: 'Every time it’s checked and holds',
+  },
   origin: { 'top-left': 'Top-left corner', center: 'Centre' },
   easing: {
     linear: 'Steady',
@@ -159,6 +174,9 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   frameHeight: 32,
   frames: 8,
   fps: 12,
+  // Buffs last a few turns; HP tests at half.
+  turns: 3,
+  below: 50,
 };
 
 const AUDIO_FIELDS = new Set<string>([

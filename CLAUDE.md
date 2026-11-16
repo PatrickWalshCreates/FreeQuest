@@ -296,6 +296,27 @@ Never the other way.
   (48 px, 8 frames, `MZ_BALLOON_NAMES`) on first use; the template's animations and balloon
   image are never copied. Demo/Starter art: `balloons.png` (8 kinds, 24 px), `sparkle.png`,
   `slash.png`; the elder is surprised, Rest sparkles.
+- **Battles of M14 step 7** (database v5; `core/test/battle-extras.test.ts`): `Battler` has
+  `tp` (0–`MAX_TP` 100, battle-only, `resetBattleState` at each battle's start and end) and
+  buffs (`addBuff(stat, ±1, turns)`, levels ±`MAX_BUFF` 2, each `BUFF_STEP` 25% in `stat()`,
+  `tickBuffs` at turn end → `buffExpired` events). `UseContext.inBattle`: HP damage charges TP
+  (`TP_FROM_DAMAGE` 50 × share of max HP), uses give `tpGain`; skills' `tpCost` is checked and
+  paid (`a.tp` in formulas). Usables' `repeats` (applied to targets still valid), effects
+  `buff`, `gainTp`, `commonEvent` (`commonEventsOf`: once per use unless every target was
+  missed; battle → `commonEvent` event; menu → `MenuController.commonEvents`, the menu closes
+  and the world runs them). `TargetResult` gained `buffs`, `tpChange`. Troops' `events`
+  (`TroopEvent`: conditions turn/turnEnd/enemyHp/actorHp/switch, none = never; span
+  battle/turn/moment; commands): `Battle.dueEvents('turnStart' | 'turnEnd')`,
+  `checkOutcome()`. `BattleController`'s queue holds lines, `run` items (an `Interpreter` in
+  stage `event`, `eventInterpreter` for the game's `DialogController`, drawn over the battle;
+  other requests are skipped) and turn-end `check`s; turn-start events are checked before
+  each turn's menu. `checkTroopEventReferences` (also at game start) refuses map commands
+  (`NOT_IN_BATTLE`). `BattleView` shows TP when `battle.usesTp`; enemies fall when their
+  knockout blow is shown (`felled`). Editor: troops' battle events get `CommandsSection`s.
+  Export scans every command list once (`addCommands`: maps, common events, troop events).
+  Importer: tpCost/tpGain/repeats, effects 13/31/32/44 (`common` lookup in
+  `DatabaseContext`), `convertTroopEvents` (turn A → from A+1, enemy index among kept
+  members, map commands → comments). Demo: the bridge wolf snarls on turn 1.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -1339,10 +1360,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      items get an optional animation), and balloon icons over characters; the importer makes a
      named stand-in per used MZ animation~~ (done; Rhapsody gets 43 stand-ins and its balloons,
      Wolf's Gang 50; seen in the dev player: balloons, the sparkle, the battle slash)
-  7. Battles: TP (gained from damage and actions, skill costs), buffs and debuffs, skills that
+  7. ~~Battles: TP (gained from damage and actions, skill costs), buffs and debuffs, skills that
      hit several times, items and skills that run a common event, and troop battle events
-     (pages on turns, HP and switches, with their own commands) [22 TP skills; 34 troops with
-     events; 16 common-event items].
+     (pages on turns, HP and switches, with their own commands)~~ (done; Rhapsody's 34 troop
+     events, 48 TP gains and 16 common-event effects, Wolf's Gang's 22 TP costs come across,
+     and neither summary lists a battle item; the wolf's battle event seen in the dev player)
   8. A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
      the 0.5 formats frozen, and a 0.5.0 release through the checklist.
   - Formats: map 9, database 5, save 3, manifest 9 (the animations category), each with a migration; 0.1–0.3

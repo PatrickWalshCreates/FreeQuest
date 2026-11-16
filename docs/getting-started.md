@@ -341,6 +341,25 @@ Each enemy action can have **conditions**: its own HP below (or at least) a shar
 the turn number (from turn 2, every 3 turns…), or a state it has. An enemy picks, by rating, among
 the actions whose conditions all hold, so a wolf can save its big attack for when it's hurt.
 
+**TP**, a second resource for special moves: it runs from 0 to 100 and starts at 0 in each
+battle. Party members and enemies gain it by taking damage (half of 100 for losing all their HP,
+in proportion) and from skills and items that give it (**TP gained by the user**, or a **Gain
+TP** effect). A skill's **TP cost** has to be paid like MP. The battle screen shows TP once
+something in the game uses it, and formulas can read it as `a.tp`.
+
+**Buffs and debuffs**: a **Buff or debuff** effect raises or lowers a stat by 25% for some
+turns, stacking to two levels (±50%); using it again renews the turns. They end with the battle.
+**Hits** makes a skill or item land on each target several times for one cost. A **Run a common
+event** effect runs a common event once the skill or item has been used: in battle straight
+away, or on the map once the menu closes.
+
+**Battle events**: a troop's **Events** run commands during its battles: a boss's taunt on turn
+1, help arriving when an enemy is badly hurt, a switch that changes the fight. Each has
+conditions (the turn, an enemy's or party member's HP, a switch; all must hold), checked as each
+turn starts (or ends, with **Checked as the turn ends**), and runs once a battle, once a turn,
+or every time. Its messages and choices show over the battle. Commands that need the map
+(transfers, routes, shops, another battle) can't be used there.
+
 **Icons**: items, skills, equipment and states can have an icon from the game's iconset (set in
 **System**; the templates come with one). Click **Choose…** on an entry's Icon to pick from the
 sheet. Icons show in the game's menus, in battle and in shops.

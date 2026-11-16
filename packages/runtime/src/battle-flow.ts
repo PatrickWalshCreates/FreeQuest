@@ -185,11 +185,11 @@ export class BattleFlow {
       canEscape: source.kind === 'encounter' || source.request.canEscape,
       random: this.random,
     });
-    this.current = new BattleController(
-      battle,
-      this.db,
-      this.lineSeconds === undefined ? {} : { lineSeconds: this.lineSeconds },
-    );
+    this.current = new BattleController(battle, this.db, {
+      ...(this.lineSeconds === undefined ? {} : { lineSeconds: this.lineSeconds }),
+      // Troop events and common events run with the game's own state and party.
+      events: world.eventContext,
+    });
     this.hooks.begin(battle, this.current);
     this.phase = { kind: 'fight', source, elapsed: 0 };
   }

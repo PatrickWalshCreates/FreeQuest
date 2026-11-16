@@ -27,6 +27,42 @@ function unprefixed(fs: MemoryFs, prefix: string): MemoryFs {
 }
 
 describe('assetReferences', () => {
+  it('finds the files common events’ and troops’ battle events play and show', async () => {
+    const fs = await memoryCopy(DEMO);
+    const commons = JSON.parse(await fs.readText('data/database/commonEvents.json')) as {
+      entries: { commands: unknown[] }[];
+    };
+    commons.entries[0]?.commands.push({
+      type: 'showPicture',
+      number: 1,
+      image: 'assets/pictures/title-card.png',
+      origin: 'center',
+      x: 0,
+      y: 0,
+      scaleX: 100,
+      scaleY: 100,
+      opacity: 1,
+    });
+    await fs.writeText('data/database/commonEvents.json', JSON.stringify(commons));
+    const troops = JSON.parse(await fs.readText('data/database/troops.json')) as {
+      entries: { events?: unknown[] }[];
+    };
+    const first = troops.entries[0];
+    if (first) {
+      first.events = [
+        {
+          conditions: { turn: { from: 1, every: 0 } },
+          span: 'battle',
+          commands: [{ type: 'playSound', path: 'assets/audio/roar.wav' }],
+        },
+      ];
+    }
+    await fs.writeText('data/database/troops.json', JSON.stringify(troops));
+    const refs = assetReferences(await openProject(fs));
+    expect(refs.get('assets/pictures/title-card.png')?.usedBy).toEqual(['common event Rest']);
+    expect(refs.get('assets/audio/roar.wav')?.usedBy).toEqual(['troop Slimes (battle event 1)']);
+  });
+
   it('finds every image and sound the demo uses, and where', async () => {
     const { fs, project } = await demo();
     const refs = assetReferences(project);

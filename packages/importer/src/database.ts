@@ -44,6 +44,8 @@ export interface DatabaseContext extends TraitContext {
   readonly usedPlaceholder: () => void;
   /** MZ animation `n`'s id (marking it used), or null. */
   readonly animation: (n: number) => string | null;
+  /** MZ common event `n`'s id, or null when there's no such common event. */
+  readonly common: (n: number) => string | null;
 }
 
 export interface ImportedDatabase {
@@ -263,6 +265,31 @@ function usableEffects(entry: JsonRecord, where: string, ctx: DatabaseContext): 
         else effects.push({ type: 'removeState', state });
         break;
       }
+      case 13:
+        if (Math.round(v1) !== 0) {
+          effects.push({ type: 'gainTp', amount: clamp(Math.round(v1), -100, 100) });
+        }
+        break;
+      case 31:
+      case 32: {
+        const stat = BUFF_STATS[data];
+        if (!stat) left.add(code === 31 ? 'buffs' : 'debuffs');
+        else {
+          effects.push({
+            type: 'buff',
+            stat,
+            direction: code === 31 ? 'up' : 'down',
+            turns: clamp(Math.round(v1) || 1, 1, 99),
+          });
+        }
+        break;
+      }
+      case 44: {
+        const common = ctx.common(data);
+        if (common) effects.push({ type: 'commonEvent', common });
+        else left.add(`calling missing common event ${data}`);
+        break;
+      }
       case 43: {
         const skill = ctx.db.skills.id(data);
         if (skill) effects.push({ type: 'learnSkill', skill });
@@ -279,15 +306,22 @@ function usableEffects(entry: JsonRecord, where: string, ctx: DatabaseContext): 
       `Effects FreeQuest doesn't have: ${[...left].join(', ')}.`,
       [...left].map((name) => ({ name: `Effect: ${name}`, count: 1 })),
     );
-  const repeats = asInt(entry['repeats'], 1);
-  if (repeats > 1) ctx.report.missing(where, `It hit ${repeats} times; FreeQuest hits once.`);
   return effects;
 }
 
+/** MZ's parameter numbers (for buffs) as FreeQuest's stats. */
+const BUFF_STATS: Readonly<Record<number, StatKey>> = {
+  0: 'maxHp',
+  1: 'maxMp',
+  2: 'attack',
+  3: 'defense',
+  4: 'magicAttack',
+  5: 'magicDefense',
+  6: 'agility',
+  7: 'luck',
+};
+
 const EFFECTS: Readonly<Record<number, string>> = {
-  13: 'gaining TP',
-  31: 'buffs',
-  32: 'debuffs',
   33: 'removing buffs',
   34: 'removing debuffs',
   41: 'escaping',
@@ -303,6 +337,8 @@ function usable(entry: JsonRecord, where: string, ctx: DatabaseContext) {
     successRate: clamp(asInt(entry['successRate'], 100) / 100, 0, 1),
     effects: usableEffects(entry, where, ctx),
     ...animationOf(entry, ctx),
+    ...(asInt(entry['tpGain']) > 0 ? { tpGain: clamp(asInt(entry['tpGain']), 0, 100) } : {}),
+    ...(asInt(entry['repeats'], 1) > 1 ? { repeats: clamp(asInt(entry['repeats']), 1, 9) } : {}),
   };
 }
 
@@ -320,14 +356,14 @@ function animationOf(entry: JsonRecord, ctx: DatabaseContext): { animation?: str
 function importSkill(id: string, name: string, s: JsonRecord, ctx: DatabaseContext): SkillEntry {
   const where = `Skills › ${name}`;
   const type = asInt(s['stypeId']);
-  if (asInt(s['tpCost']) > 0)
-    ctx.report.missing(where, 'It cost TP; FreeQuest has no TP, so it costs nothing extra.');
+  const tpCost = clamp(asInt(s['tpCost']), 0, 100);
   return {
     id,
     name,
     ...listed(s),
     ...(type > 0 ? { skillType: ctx.types.skillTypes.id(type) } : {}),
     mpCost: Math.max(0, asInt(s['mpCost'])),
+    ...(tpCost > 0 ? { tpCost } : {}),
     ...usable(s, where, ctx),
   };
 }
@@ -635,12 +671,6 @@ function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseConte
     );
   if (enemies.length > 8)
     ctx.report.changed(where, `It had ${enemies.length} enemies; FreeQuest troops hold 8.`);
-  const events = asArray(t['pages']).some((p) => asArray(asRecord(p)['list']).length > 1);
-  if (events)
-    ctx.report.missing(
-      where,
-      'Its battle events (things that happen during the fight) weren’t imported.',
-    );
   if (enemies.length === 0) {
     ctx.report.note(where, 'It has no enemies, so it was left out.');
     return [];

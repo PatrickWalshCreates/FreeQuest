@@ -26,6 +26,10 @@ export abstract class Battler implements FormulaSubject {
   protected currentHp = 0;
   protected currentMp = 0;
   protected readonly stateList: StateInstance[] = [];
+  /** TP, 0 to MAX_TP: battle-only, from 0 each battle, never saved. */
+  private currentTp = 0;
+  /** Buff (positive) and debuff (negative) levels by stat, with turns left. Battle-only. */
+  private readonly buffList = new Map<StatKey, { level: number; turns: number }>();
 
   constructor(protected readonly db: DatabaseIndex) {}
 
@@ -49,6 +53,7 @@ export abstract class Battler implements FormulaSubject {
       if (m.type === 'statFlat' && m.stat === stat) flat += m.value;
       else if (m.type === 'statRate' && m.stat === stat) rate *= m.value;
     }
+    rate *= 1 + BUFF_STEP * this.buffLevel(stat);
     const value = Math.max(0, Math.round((this.baseStat(stat) + flat) * rate));
     return stat === 'maxHp' ? Math.max(1, value) : value;
   }
@@ -163,6 +168,54 @@ export abstract class Battler implements FormulaSubject {
     return this.countDown('turns');
   }
 
+  get tp(): number {
+    return this.currentTp;
+  }
+
+  /** Set TP (clamped to 0..MAX_TP). */
+  setTp(value: number): void {
+    this.currentTp = clampInt(value, 0, MAX_TP);
+  }
+
+  /** A stat's buff level: −2 to 2 (0 when none). */
+  buffLevel(stat: StatKey): number {
+    return this.buffList.get(stat)?.level ?? 0;
+  }
+
+  /** Buffs and debuffs in effect. */
+  get buffs(): readonly { stat: StatKey; level: number; turns: number }[] {
+    return [...this.buffList].map(([stat, b]) => ({ stat, ...b }));
+  }
+
+  /** Raise (+1) or lower (−1) a stat a level, for `turns` turns (renewed). Returns the new level. */
+  addBuff(stat: StatKey, change: 1 | -1, turns: number): number {
+    const level = Math.max(-MAX_BUFF, Math.min(MAX_BUFF, this.buffLevel(stat) + change));
+    if (level === 0) this.buffList.delete(stat);
+    else this.buffList.set(stat, { level, turns });
+    this.clampPools();
+    return level;
+  }
+
+  /** End of a turn: buffs count down. Returns the stats whose buff wore off. */
+  tickBuffs(): StatKey[] {
+    const ended: StatKey[] = [];
+    for (const [stat, buff] of this.buffList) {
+      if (buff.turns <= 1) {
+        this.buffList.delete(stat);
+        ended.push(stat);
+      } else buff.turns--;
+    }
+    if (ended.length > 0) this.clampPools();
+    return ended;
+  }
+
+  /** A battle starts or ends: no TP, no buffs. */
+  resetBattleState(): void {
+    this.currentTp = 0;
+    this.buffList.clear();
+    this.clampPools();
+  }
+
   /** The player took a step on the map: count down step-limited states. Returns the ids removed. */
   tickStep(): string[] {
     return this.countDown('steps');
@@ -197,8 +250,9 @@ export abstract class Battler implements FormulaSubject {
     return this.currentHp - before;
   }
 
-  /** Remove states that end with the battle. Returns the ids removed. */
+  /** Remove states that end with the battle (and TP and buffs). Returns the state ids removed. */
   onBattleEnd(): string[] {
+    this.resetBattleState();
     const ending = this.stateList.filter((s) => this.stateEntry(s.id).removal.battleEnd);
     for (const s of ending) this.removeState(s.id);
     return ending.map((s) => s.id);
@@ -263,10 +317,18 @@ export abstract class Battler implements FormulaSubject {
   formulaValue(key: string): number {
     if (key === 'hp') return this.hp;
     if (key === 'mp') return this.mp;
+    if (key === 'tp') return this.tp;
     if (key === 'level') return this.level;
     return (STAT_KEYS as readonly string[]).includes(key) ? this.stat(key as StatKey) : 0;
   }
 }
+
+/** The most TP a battler can have. */
+export const MAX_TP = 100;
+/** Each buff level changes a stat by this much (+25% / −25%). */
+export const BUFF_STEP = 0.25;
+/** Buffs stack up to this many levels each way. */
+export const MAX_BUFF = 2;
 
 function clampInt(value: number, min: number, max: number): number {
   return Math.min(Math.max(Math.round(value), min), max);

@@ -372,6 +372,32 @@ function EntriesEditor(props: {
                 )
               }
             />
+            {kind === 'troops' && (
+              <TroopEventCommands
+                key={`events:${entry.id}`}
+                doc={doc}
+                events={
+                  ((entry as { events?: readonly TroopEventData[] }).events ??
+                    []) as readonly TroopEventData[]
+                }
+                ctx={ctx}
+                edit={(label, page, change) =>
+                  edit(label, (d: EntriesData) => {
+                    const current = d.entries.find((e) => e.id === entry.id) as
+                      (Entry & { readonly events?: readonly TroopEventData[] }) | undefined;
+                    const pages = current?.events;
+                    const target = pages?.[page];
+                    if (!current || !pages || !target) return d as never;
+                    return replaceEntry(d, entry.id, {
+                      ...current,
+                      events: pages.map((p, i) =>
+                        i === page ? { ...target, commands: change(target.commands) } : p,
+                      ),
+                    } as Entry) as never;
+                  })
+                }
+              />
+            )}
             {kind === 'animations' && (
               <AnimationPreview doc={doc} entry={entry as unknown as AnimationEntry} />
             )}
@@ -492,19 +518,83 @@ function CommonEventCommands(props: {
   readonly ctx: FormContext;
   readonly edit: (label: string, change: (commands: readonly Command[]) => Command[]) => void;
 }) {
-  const { doc, entry, ctx, edit } = props;
+  return (
+    <CommandsSection
+      {...props}
+      commands={props.entry.commands}
+      title="Commands"
+      hint={
+        <>
+          Called with <strong>Call common event</strong>, these run as part of the calling event
+          (its flags, “this event” in move routes). Autorun and parallel ones run on their own.
+        </>
+      }
+    />
+  );
+}
+
+type TroopEventData = { readonly commands: readonly Command[] } & Record<string, unknown>;
+
+/** The commands of each of a troop's battle events (their conditions are in the form above). */
+function TroopEventCommands(props: {
+  readonly doc: ProjectDocument;
+  readonly events: readonly TroopEventData[];
+  readonly ctx: FormContext;
+  readonly edit: (
+    label: string,
+    page: number,
+    change: (commands: readonly Command[]) => Command[],
+  ) => void;
+}) {
+  const { events, edit } = props;
+  if (events.length === 0) {
+    return (
+      <p className="hint">
+        Add battle events under <strong>Events</strong> above: commands that run during this troop’s
+        battles (a boss’s taunt on turn 1, help arriving when an enemy is hurt).
+      </p>
+    );
+  }
+  return (
+    <>
+      {events.map((page, i) => (
+        <CommandsSection
+          key={i}
+          doc={props.doc}
+          ctx={props.ctx}
+          commands={page.commands}
+          title={`Battle event ${i + 1}: commands`}
+          hint={
+            <>
+              Messages and choices show over the battle. Moving characters, transfers, shops and
+              starting another battle can’t run here.
+            </>
+          }
+          edit={(label, change) => edit(label, i, change)}
+        />
+      ))}
+    </>
+  );
+}
+
+function CommandsSection(props: {
+  readonly doc: ProjectDocument;
+  readonly commands: readonly Command[];
+  readonly ctx: FormContext;
+  readonly title: string;
+  readonly hint: React.ReactNode;
+  readonly edit: (label: string, change: (commands: readonly Command[]) => Command[]) => void;
+}) {
+  const { doc, ctx, edit } = props;
   const project = doc.project;
   const names = useMemo(() => projectNames(project), [project]);
   const actions = useMemo(() => listActions(edit), [edit]);
   return (
     <section className="db-commands">
-      <h2>Commands</h2>
-      <p className="hint">
-        Called with <strong>Call common event</strong>, these run as part of the calling event (its
-        flags, “this event” in move routes). Autorun and parallel ones run on their own.
-      </p>
+      <h2>{props.title}</h2>
+      <p className="hint">{props.hint}</p>
       <CommandList
-        commands={entry.commands}
+        commands={props.commands}
         ctx={ctx}
         names={names}
         actions={actions}

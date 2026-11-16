@@ -159,6 +159,105 @@
                     }
                   },
                   "required": ["type", "skill"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Raise or lower a stat by 25% for some turns, in battle (v5).",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "buff"
+                    },
+                    "direction": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "up"
+                        },
+                        {
+                          "type": "string",
+                          "const": "down"
+                        }
+                      ]
+                    },
+                    "stat": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "maxHp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "maxMp"
+                        },
+                        {
+                          "type": "string",
+                          "const": "attack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "defense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicAttack"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicDefense"
+                        },
+                        {
+                          "type": "string",
+                          "const": "agility"
+                        },
+                        {
+                          "type": "string",
+                          "const": "luck"
+                        }
+                      ]
+                    },
+                    "turns": {
+                      "type": "integer",
+                      "maximum": 99,
+                      "minimum": 1
+                    }
+                  },
+                  "required": ["type", "stat", "direction", "turns"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Give (or take) the target TP, in battle (v5).",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "gainTp"
+                    },
+                    "amount": {
+                      "type": "integer",
+                      "maximum": 100,
+                      "minimum": -100
+                    }
+                  },
+                  "required": ["type", "amount"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Run a common event once the skill or item has been used (in battle, or after the menu closes) (v5).",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "commonEvent"
+                    },
+                    "common": {
+                      "type": "string",
+                      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "required": ["type", "common"]
                 }
               ]
             }
@@ -212,6 +311,11 @@
           "price": {
             "type": "integer",
             "minimum": 0
+          },
+          "repeats": {
+            "type": "integer",
+            "maximum": 9,
+            "minimum": 1
           },
           "successRate": {
             "type": "number",
@@ -296,6 +400,11 @@
                 "required": ["side", "select", "count"]
               }
             ]
+          },
+          "tpGain": {
+            "type": "integer",
+            "maximum": 100,
+            "minimum": 0
           }
         },
         "required": ["id", "name", "price", "key", "consumable", "occasion", "target", "hitType", "successRate", "effects"]

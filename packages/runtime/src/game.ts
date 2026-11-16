@@ -223,12 +223,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       scene.visible = false;
       dialogView.container.visible = false;
       app.stage.addChildAt(battleView.container, app.stage.getChildIndex(fadeOverlay));
+      // Battle events' messages show in the message box, over the battle.
+      app.stage.addChildAt(dialogView.container, app.stage.getChildIndex(fadeOverlay));
     },
     end() {
       battleView?.destroy();
       battleView = null;
       scene.visible = true;
       dialogView.container.visible = true;
+      // Back under the menus, just over the map.
+      app.stage.addChildAt(dialogView.container, app.stage.getChildIndex(screenEffects) + 1);
     },
     gameOver() {
       gameOverScreen.visible = true;
@@ -544,7 +548,12 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
           menu.update(input);
           if (menu.outcome === 'quit') toTitle();
           else if (menu.outcome === 'closed') {
+            const commons = menu.commonEvents;
             closeMenu();
+            // An item's or skill's common event runs now, on the map.
+            if (commons.length > 0 && !world.interpreter) {
+              world.run(commons.flatMap((id) => [{ type: 'callCommon' as const, common: id }]));
+            }
             // An event's save screen: the event carries on.
             if (world.interpreter?.pending?.type === 'save') world.interpreter.continue();
           } else if (menu.outcome === 'options') openOptions();
@@ -568,6 +577,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         } else {
           // Battles, dialog and transfers first: they consume the input and
           // answer the running event's requests before the world steps.
+          // A battle event's message or choice answers before the battle steps.
+          if (battles.active)
+            dialog.update(dt, input, battles.controller?.eventInterpreter ?? null);
           battles.update(dt, world, input);
           if (!battles.active) {
             dialog.update(dt, input, world.interpreter);
@@ -597,7 +609,10 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     }
     if (optionsScreen && optionsView) optionsView.render(optionsScreen.state);
     const controller = battles.controller;
-    if (battleView && controller) battleView.render(controller.state, elapsed);
+    if (battleView && controller) {
+      battleView.render(controller.state, elapsed);
+      dialogView.container.visible = controller.eventInterpreter !== null;
+    }
     fadeOverlay.alpha = Math.max(transfer.fade, battles.fade);
     battleSounds();
     audio.setMusic(musicFor(musicScene(), db.system.audio, world.music, world.battleMusic));

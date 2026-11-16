@@ -14,6 +14,7 @@ import {
   checkDatabase,
   checkManifestReferences,
   checkCommonEventReferences,
+  checkTroopEventReferences,
   checkMapReferences,
   checkCharacterShape,
   checkMapShape,
@@ -164,6 +165,11 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
   const commonProblems = checkCommonEventReferences(context);
   if (commonProblems.length > 0) {
     throw new ProjectFileError(manifest.database?.commonEvents ?? 'commonEvents', commonProblems);
+  }
+  // Troops' battle events too: any battle can start from anywhere.
+  const troopProblems = checkTroopEventReferences(context);
+  if (troopProblems.length > 0) {
+    throw new ProjectFileError(manifest.database?.troops ?? 'troops', troopProblems);
   }
   // The start map is needed immediately; loading it here also bounds-checks the start position.
   await loadMap(manifest.start.map);

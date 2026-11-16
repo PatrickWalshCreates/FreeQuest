@@ -27,7 +27,12 @@ import type { ImageCodec } from './image.js';
 import { GraphicsImporter } from './graphics.js';
 import { importMaps } from './import-maps.js';
 import { AudioImporter } from './audio.js';
-import { type EventsContext, convertCommonEvents, convertMapEvents } from './events.js';
+import {
+  type EventsContext,
+  convertCommonEvents,
+  convertMapEvents,
+  convertTroopEvents,
+} from './events.js';
 import { asArray, asInt, asRecord, asString, isRecord } from './json.js';
 import { systemAudio } from './system-audio.js';
 import { readMzDatabase } from './mz-lists.js';
@@ -108,11 +113,18 @@ export async function importMzProject(
     );
     if (image) enemyImages.set(enemy.n, image);
   }
+  const commonRaw = await readMzJson(source, 'data/CommonEvents.json');
+  const commonIds = new NumberedIds(
+    asArray(commonRaw).map((e, n) => (n > 0 && isRecord(e) ? asString(e['name']).trim() : '')),
+    'common',
+    new Set(),
+  );
   let placeholderUsed = false;
   // Animations: stand-ins for the ones skills, items and events use.
   const animations = new AnimationImporter(db.animations);
   const imported = importDatabase({
     animation: (n) => animations.use(n),
+    common: (n) => (hasCommonEvent(commonRaw, n) ? commonIds.id(n) : null),
     db,
     types,
     variables,
@@ -138,12 +150,6 @@ export async function importMzProject(
   const maps = await importMaps(source, mz, db, report, options.images);
 
   // Events, once every map exists (transfers need their targets).
-  const commonRaw = await readMzJson(source, 'data/CommonEvents.json');
-  const commonIds = new NumberedIds(
-    asArray(commonRaw).map((e, n) => (n > 0 && isRecord(e) ? asString(e['name']).trim() : '')),
-    'common',
-    new Set(),
-  );
   const extraSwitches: FlagDeclaration[] = [];
   const audio = new AudioImporter(source, report);
   let redo: string | null = null;
@@ -194,6 +200,7 @@ export async function importMzProject(
     };
   }
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
+  const troops = await convertTroopEvents(db.troops, imported.troops, events);
   const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
   const pictures = await graphics.finish();
   const animationEntries = await animations.finish(audio, report);
@@ -206,7 +213,7 @@ export async function importMzProject(
     [databasePaths.equipment, entriesFile(imported.equipment)],
     [databasePaths.states, entriesFile(imported.states)],
     [databasePaths.enemies, entriesFile(imported.enemies)],
-    [databasePaths.troops, entriesFile(imported.troops)],
+    [databasePaths.troops, entriesFile(troops)],
     [databasePaths.commonEvents, entriesFile(commonEvents)],
     [databasePaths.animations, entriesFile(animationEntries)],
     [
