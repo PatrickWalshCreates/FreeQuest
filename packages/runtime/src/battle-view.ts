@@ -22,6 +22,8 @@ interface EnemySprite {
   /** Seconds since knocked out (for the fade), or null while standing. */
   fadeAge: number | null;
   flash: number;
+  /** The blow that knocks it out has been shown (the battle is worked out before it's shown). */
+  felled: boolean;
 }
 
 /**
@@ -113,7 +115,7 @@ export class BattleView {
       }
       display.position.set(Math.round(((i + 1) * this.width) / (count + 1)), groundY);
       this.enemyLayer.addChild(display);
-      this.enemySprites.push({ enemy, display, fadeAge: null, flash: 0 });
+      this.enemySprites.push({ enemy, display, fadeAge: null, flash: 0, felled: false });
     });
   }
 
@@ -130,12 +132,17 @@ export class BattleView {
         if (state.animation) this.pendingHit = state.event;
         else this.onHit(state.event);
       }
+      // Poison and the like can knock out at the end of a turn.
+      const event = state.event;
+      if (event?.type === 'regen') this.fell(event.battler);
     }
     const playing = state.animation;
     if (this.pendingHit && (!playing || playing.elapsed >= animationSeconds(playing.entry))) {
       this.onHit(this.pendingHit);
       this.pendingHit = null;
     }
+    // Once the turn's lines are over, anything knocked out falls.
+    if (state.stage !== 'playback') for (const s of this.enemySprites) s.felled = true;
     this.renderEnemies(dt);
     this.renderLog(state.line);
     this.renderStatus(state);
@@ -161,10 +168,12 @@ export class BattleView {
 
   private renderEnemies(dt: number): void {
     for (const s of this.enemySprites) {
-      // An enemy still being hit (its animation playing) falls once the hit lands.
-      const beingHit = this.pendingHit?.result.target === s.enemy;
-      if (s.enemy.isKnockedOut && s.fadeAge === null && !beingHit) s.fadeAge = 0;
-      if (!s.enemy.isKnockedOut) s.fadeAge = null;
+      // It falls once the blow that knocked it out has been shown.
+      if (s.enemy.isKnockedOut && s.fadeAge === null && s.felled) s.fadeAge = 0;
+      if (!s.enemy.isKnockedOut) {
+        s.fadeAge = null;
+        s.felled = false;
+      }
       if (s.fadeAge !== null) s.fadeAge += dt;
       s.flash = Math.max(0, s.flash - dt);
       const fade = s.fadeAge === null ? 1 : Math.max(0, 1 - s.fadeAge / FADE_SECONDS);
@@ -365,8 +374,18 @@ export class BattleView {
       .fill(this.theme.speakerColor);
   }
 
+  /** A blow to this battler has been shown: if it's knocked out, it can fall now. */
+  private fell(battler: Battler): void {
+    const sprite = this.enemySprites.find((s) => s.enemy === battler);
+    if (sprite) sprite.felled = true;
+  }
+
   private onHit(event: Extract<BattleEvent, { type: 'hit' }>): void {
     const { result } = event;
+    // Only the hit that knocked it out lets it fall (it may be hit more than once a turn).
+    if (result.addedStates.some((id) => result.target.stateEntry(id).knockout)) {
+      this.fell(result.target);
+    }
     const position = this.positionOf(result.target);
     if (!position) return;
     const sprite = this.enemySprites.find((s) => s.enemy === result.target);
