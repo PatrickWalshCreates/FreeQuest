@@ -1576,6 +1576,59 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Not in M15: plugins in the editor (custom panels, tools), a plugin registry or downloads,
     plugin dependencies, replacing built-in screens (menu, battle) from plugins (maybe later,
     through dedicated hooks).
+- **M16 (planned)** A plugin catalog, to release as 0.7.0. 0.6.0 gave games plugins; now
+  people need somewhere to find them and share their own. The site is static (GitHub Pages),
+  so nobody uploads to it: the catalog is a folder in this repo, added to by pull request and
+  read before it's offered, since a plugin is code that runs in players' games.
+  - **Design** (decided now, refined in step 1):
+    - `catalog/plugins/<id>/`: the plugin folder exactly as the editor adds it (`plugin.json`,
+      one script, its own files), plus `README.md` (what it does and how to use it, our
+      Markdown subset) and optionally `screenshot.png`. `plugin.json`'s `author` is required
+      here. Everything in the catalog is MIT, like the repo.
+    - The catalog is the one source: the demo's and the Starter's Weather and HUD are copied
+      from it by a script (`pnpm gen:plugins` or part of `gen:templates`), so they never drift.
+    - `pnpm check` checks the catalog (`checkPluginShape`, README present, author, the script
+      present, size limits) and runs every catalog plugin in a World with a fake canvas: setup,
+      game start, steps, a draw, and every command with its defaults, without errors.
+    - The site gets a **Plugins** page: a card per plugin (name, author, version, what it does,
+      screenshot) and a page each (its README, its settings and commands as tables generated
+      from `plugin.json`, the API version it needs, **Download (.zip)**). Zips are made at site
+      build by our own small zip writer (deterministic: fixed dates, sorted entries).
+    - Sharing: a submission guide (`docs/sharing-plugins.md`: the checklist, how to open the
+      pull request) and a pull request template for plugins; a GitHub Discussions "Plugins"
+      category for plugins people host themselves, linked from the site and marked as not
+      reviewed. Discussions is off for the repo now: turning it on is the user's call.
+    - The editor: **Add a plugin from a .zip…** beside the folder button (editor-core reads
+      zips with an injected inflate, like PNGs: the browser's `DecompressionStream`, Node's
+      zlib), and **Find plugins** opens the site's Plugins page.
+    - New plugins may need more of the game than API 1 gives (a minimap needs the map's
+      walkable cells). Additions go in API 2 (`PLUGIN_API_VERSION` 2); API 1 plugins keep
+      working, and a plugin declaring 2 is refused by 0.6 with its clear "needs a newer
+      FreeQuest" message.
+  - Steps:
+  1. Catalog format and checks: `catalog/plugins/`, Weather and HUD moved there with READMEs,
+     copied into the demo and Starter by script, the catalog check and smoke tests in `pnpm
+check` and CI.
+  2. Zips: our own zip writer (site) and reader (editor-core, injected inflate), tested both
+     ways; the editor's "Add a plugin from a .zip…" and "Find plugins".
+  3. The site's Plugins page and one page per plugin, with downloads; linked from the landing
+     page, the guides and the editor.
+  4. API 2: what the new plugins need (decide in the step; likely `game.map.isWalkable(x, y)`,
+     the map's events with their positions, `game.playSeconds`, steps walked), documented in
+     `docs/plugins.md` with which version added what; the editor shows a plugin's API version.
+  5. New catalog plugins, each with a README, a screenshot and tests: **Day and night** (the
+     screen tints with play time or a variable), **Fog and cloud shadows** (drifting layers
+     over the map), **Step counter** (steps into a variable, for "walk 100 steps" quests),
+     **Quest tracker** (a line of text on screen, set by a command), **Minimap** (the area
+     around the player in a corner, walls and the player's dot).
+  6. Sharing: `docs/sharing-plugins.md`, the pull request template, CONTRIBUTING; Discussions
+     if the user turns it on.
+  7. Demo, Starter, guides, CHANGELOG, and a 0.7.0 release through the checklist.
+  - Formats: none expected (the API version is the plugin's own field); if one changes, it
+    gets a migration and 0.7 is frozen.
+  - Not in M16: uploading from the site or the editor, ratings or comments on the site,
+    automatic plugin updates, a catalog inside the editor (it opens the site instead),
+    plugins from outside the catalog listed on the site.
 - **Later**: candidates, in no fixed order: the deferred items above, MZ traits not yet
   covered (counterattack, magic reflection, party abilities), Developer ID / Windows signing.
 
