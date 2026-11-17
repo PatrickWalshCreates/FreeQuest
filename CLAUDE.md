@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.5.0 (2026-11-16) built as a draft release, waiting for its by-hand check; 0.4.0 is the latest published. Early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.5.0 released (2026-11-16), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1328,7 +1328,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Not in M13: MZ's JavaScript plugins (FreeQuest has no plugin API yet), animations, battle
     backgrounds, side-view battlers, vehicles, MV projects (close to MZ; maybe later), exporting
     back to MZ.
-- **M14 (in progress)** What MZ games need, released as 0.5.0. Importing the user's two MZ
+- **M14 (done)** What MZ games need, released as 0.5.0. Importing the user's two MZ
   sample games (M13) measured what FreeQuest lacks; this milestone adds what real games use
   most, in that order, each as a FreeQuest feature of its own (editor, runtime, tests, guide)
   that the importer then brings across. Behaviour may match MZ's; the design, names and code
@@ -1371,9 +1371,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      events, 48 TP gains and 16 common-event effects, Wolf's Gang's 22 TP costs come across,
      and neither summary lists a battle item; the wolf's battle event seen in the dev player)
   8. ~~A title screen picture (system.json), demo/Starter/guides for all of it, the quest test,
-     the 0.5 formats frozen, and a 0.5.0 release through the checklist~~ (built and tagged; the
-     by-hand check of the downloaded build and publishing are next. The title picture, the TP
-     bar, battle events and pictures seen in the dev player)
+     the 0.5 formats frozen, and a 0.5.0 release through the checklist~~ (done; the user's
+     by-hand check found the elder never gave his map: he now does, and the draft was rebuilt
+     (GitHub's Apple Silicon runners were unavailable for hours, so it took several re-runs).
+     Checked again by hand and played through in the dev player, published 2026-11-16;
+     `latest.json` names 0.5.0)
   - Formats: map 9, database 5, save 3, manifest 9 (the animations category), each with a migration; 0.1–0.3
     frozen projects and saves keep opening (0.4 changed no format).
   - Not in M14: labels and jumps, scripts and plugins (never JavaScript; the plugin API is
