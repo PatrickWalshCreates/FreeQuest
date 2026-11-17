@@ -17,7 +17,14 @@ import {
   replaceCommand,
   sliceCommands,
 } from '@freequest/editor-core';
-import type { Command, CommandType } from '@freequest/schema';
+import {
+  type Command,
+  type CommandType,
+  type PluginCommand as PluginCommandDeclaration,
+  type PluginDeclaration,
+} from '@freequest/schema';
+import { PluginCommandDialog } from '../plugins/PluginCommandDialog.js';
+import { pluginStartValues } from '../plugins/PluginParamFields.js';
 import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import type { FormContext } from '../forms/SchemaField.js';
 import { ValueDialog } from './ValueDialog.js';
@@ -168,6 +175,19 @@ export function CommandList({ commands, ctx, names, actions, extra }: Props) {
     }
     setEditing({ mode: 'add', slot, command });
   };
+  /** A plugin's command, with every argument at its default; no dialog when it has none. */
+  const addPluginCommand = (plugin: PluginDeclaration, declared: PluginCommandDeclaration) => {
+    setMenu(false);
+    const command: Command = {
+      type: 'plugin',
+      plugin: plugin.id,
+      command: declared.id,
+      args: pluginStartValues(ctx, declared.params),
+    };
+    if (declared.params.length === 0) actions.insert(slot, [command], 'Add command');
+    else setEditing({ mode: 'add', slot, command });
+  };
+  const plugins = (ctx.plugins?.() ?? []).filter((p) => p.declaration.commands.length > 0);
   const edit = () => current && setEditing({ mode: 'edit', slot, command: current });
   const remove = () => {
     if (run.count === 0) return;
@@ -198,6 +218,24 @@ export function CommandList({ commands, ctx, names, actions, extra }: Props) {
                   {group.types.map((type) => (
                     <button key={type} role="menuitem" onClick={() => add(type)}>
                       {COMMAND_NAMES[type]}
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {plugins.map(({ declaration, enabled }) => (
+                <div key={`plugin:${declaration.id}`} className="menu-group">
+                  <div className="menu-heading">
+                    {declaration.name}
+                    {enabled ? '' : ' (turned off)'}
+                  </div>
+                  {declaration.commands.map((declared) => (
+                    <button
+                      key={declared.id}
+                      role="menuitem"
+                      title={declared.description}
+                      onClick={() => addPluginCommand(declaration, declared)}
+                    >
+                      {declared.label}
                     </button>
                   ))}
                 </div>
@@ -322,7 +360,22 @@ export function CommandList({ commands, ctx, names, actions, extra }: Props) {
           );
         })}
       </ol>
-      {editing && (
+      {editing?.command.type === 'plugin' && (
+        <PluginCommandDialog
+          command={editing.command}
+          ctx={ctx}
+          okLabel={editing.mode === 'add' ? 'Add' : 'Save'}
+          onClose={() => setEditing(null)}
+          onOk={(command) => {
+            if (editing.mode === 'add') {
+              actions.insert(editing.slot, [command], 'Add command');
+              setSelected({ path: editing.slot.path, index: editing.slot.index + 1 });
+            } else actions.replace(editing.slot, command);
+            setEditing(null);
+          }}
+        />
+      )}
+      {editing && editing.command.type !== 'plugin' && (
         <ValueDialog
           title={`${editing.mode === 'add' ? 'Add' : 'Edit'}: ${COMMAND_NAMES[editing.command.type]}`}
           schema={COMMAND_SCHEMAS.get(editing.command.type) ?? {}}

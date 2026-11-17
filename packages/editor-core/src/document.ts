@@ -1,3 +1,4 @@
+import { settlePluginFolders } from './plugin-edits.js';
 import { AssetLibrary } from './assets.js';
 import {
   DATABASE_KINDS,
@@ -383,6 +384,8 @@ export class ProjectDocument {
     }
     // Assets renamed or moved since the last save: drop the copies nothing uses now.
     await this.assets.settle(this.project);
+    // Plugins removed from the project: the rest of their folders goes with their plugin.json.
+    await settlePluginFolders(this.fs, this.project.manifest.data, removed);
     return { written, removed, backup };
   }
 

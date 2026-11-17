@@ -12,11 +12,17 @@ import {
   variantIndex,
   variantLabel,
 } from '@freequest/editor-core';
+import type { PluginDeclaration } from '@freequest/schema';
 import { type ReactNode, useId } from 'react';
 
 export interface RefOption {
   readonly value: string;
   readonly label: string;
+}
+
+export interface ProjectPlugin {
+  readonly declaration: PluginDeclaration;
+  readonly enabled: boolean;
 }
 
 export interface FormContext {
@@ -44,6 +50,10 @@ export interface FormContext {
    * that won't parse). `parent` is the object holding the field.
    */
   check?(field: string, value: unknown, parent?: Readonly<Record<string, unknown>>): string | null;
+  /** Files under assets/ (all of them, or under `folder`), for plugin asset parameters. */
+  assets?(folder: string | undefined): readonly RefOption[];
+  /** The project's plugins, in order, for plugin commands and their dialogs. */
+  plugins?(): readonly ProjectPlugin[];
   /** A custom control for a field (e.g. a route's steps), or undefined for the generated one. */
   render?(field: string, value: unknown, onChange: (value: unknown) => void): ReactNode | undefined;
 }

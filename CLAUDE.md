@@ -474,7 +474,28 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   argument name; settings as "Project settings › Plugins › <name>"), renames rewrite them
   (plugin ids themselves aren't renamable), `assetReferences` includes asset values (audio by
   extension), and exports copy an enabled plugin's whole folder (a turned-off one ships only
-  `plugin.json`). The editor's add menu doesn't offer `plugin` yet (step 5: per plugin).
+  `plugin.json`).
+- **Plugins in the editor** (M15 step 5; editor-core `plugin-edits.ts`, tested): `addPlugin(doc,
+files)` takes a folder's files (`readPluginFolder`: needs plugin.json, valid and
+  `checkPluginShape`-clean, its `entry` present, at most `MAX_PLUGIN_FILES` 500 /
+  `MAX_PLUGIN_BYTES` 50 MB, hidden files skipped; `pluginSourceFiles(fs)` reads a picked
+  folder), writes all but plugin.json into `plugins/<id>/` at once and creates the declaration
+  file + manifest entry (on, last) as one undo step; an id already listed is refused. Manifest
+  helpers `setPluginEnabled`, `movePlugin` (start order), `setPluginSetting` (undefined = back
+  to the default; empty `settings` dropped). `removePlugin` removes the listing and plugin.json
+  (undoable); the save that deletes plugin.json deletes the rest of an unlisted plugin's folder
+  (`settlePluginFolders`, from `ProjectDocument.save`), so undo after that save brings back a
+  declaration without its script (a problem). UI: `PluginsSection.tsx` in Project settings
+  (on/off, ↑↓, Settings, Used by, Remove… with the uses in the warning; Add a plugin folder:
+  the system dialog on desktop, an `<input webkitdirectory>` in the browser);
+  `plugins/PluginParamFields.tsx` draws any `PluginParam` list (reference dropdowns through
+  `FormContext.refs` by kind, `FormContext.assets(folder)`, problems from `checkPluginValues`
+  per field), shared by settings and `PluginCommandDialog.tsx`. The command list's add menu has
+  a group per plugin with commands (turned-off ones marked); a new command starts from
+  `pluginStartValues` (defaults, required references at the first choice), one without
+  parameters is added without a dialog; a command whose plugin or command is gone opens a
+  dialog that says so. `FormContext.plugins()` / `projectNames().pluginCommand` come from the
+  project.
 - **Plugin API** (M15 step 2, `core/plugin.ts`, tested in `core/test/plugin.test.ts`): a
   script default-exports `{ setup(api) }` (`definePlugin` types it). `PluginApi`: `apiVersion`,
   `id`, `settings` (resolved), `onGameStart`, `onMapLoaded`, `onStep(game, dt)`,
@@ -1514,9 +1535,12 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      Chromium (headless Edge, dev and the production frame) and in WebKit (a WKWebView over
      `tauri://` with the app's CSP, which showed WebKit's `'self'` difference). The real
      desktop app is for the release's by-hand check)
-  5. Editor: a Plugins section in Project settings (add a plugin folder: copied into the
+  5. ~~Editor: a Plugins section in Project settings (add a plugin folder: copied into the
      project; enable, disable, order, settings form from its declaration; remove, refused or
-     warned while commands use it), the `plugin` command's dialog built from its parameters.
+     warned while commands use it), the `plugin` command's dialog built from its parameters.~~
+     (done; removal warns with the uses. Tried in browser mode with a throwaway weather
+     plugin: added, settings checked live, its command added to Rest, removed with the
+     warning, and the orphaned command's dialog)
   6. Exports and the importer: web, Mac, Windows, Linux exports run plugins (CSPs checked); the
      CLI `check` checks them; the MZ importer lists the MZ plugins a game used and turns plugin
      commands into comments naming them (already comments, now grouped in the report).

@@ -138,6 +138,8 @@ const COMMON_TRIGGERS: Record<string, string> = {
 export interface ProjectLists {
   /** Audio files in the project, for music and sound fields. */
   readonly audio: readonly string[];
+  /** Every file under assets/, for plugin asset parameters. */
+  readonly assets?: readonly string[];
   /** Image files, for enemy pictures and the iconset. */
   readonly images?: readonly string[];
   /** Events on the map being edited, for move route targets. */
@@ -272,8 +274,17 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
         return AUDIO_FIELDS.has(field) ? audio : null;
     }
   };
+  const plugins = (m.plugins ?? []).flatMap((ref) => {
+    const declaration = project.plugins.get(ref.id)?.data;
+    return declaration ? [{ declaration, enabled: ref.enabled }] : [];
+  });
   return {
     refs,
+    assets: (folder) => {
+      const prefix = folder ? `${folder.replace(/\/+$/, '')}/` : 'assets/';
+      return files((lists.assets ?? []).filter((p) => p.startsWith(prefix)));
+    },
+    plugins: () => plugins,
     multiline: (field) => field === 'text' || field === 'description',
     choiceLabel: (field, value) =>
       field === 'trigger'
@@ -331,5 +342,10 @@ export function projectNames(
     state: (id) => find(entries('states'), id),
     animation: (id) => find(entries('animations'), id),
     balloon: (row) => project.database.system?.data?.balloons?.names[row] ?? `#${row}`,
+    pluginCommand: (plugin, command) => {
+      const declaration = project.plugins.get(plugin)?.data;
+      const label = declaration?.commands.find((c) => c.id === command)?.label;
+      return declaration && label ? `${declaration.name}: ${label}` : undefined;
+    },
   };
 }

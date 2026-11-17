@@ -275,3 +275,16 @@ export async function devMzProjects(): Promise<{ fs: ProjectFs; label: string }[
     label: `mz-projects/${name}`,
   }));
 }
+
+/** A plugin folder to add to a project (desktop: the system folder dialog). Null when cancelled. */
+export async function pickPluginFolder(): Promise<ProjectFs | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const picked = await open({
+    directory: true,
+    recursive: true,
+    title: 'Choose a plugin folder (the one with plugin.json)',
+  });
+  if (typeof picked !== 'string') return null;
+  const { TauriFs } = await import('./fs/tauri-fs.js');
+  return new TauriFs(picked);
+}

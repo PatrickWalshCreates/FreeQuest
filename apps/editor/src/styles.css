@@ -2410,3 +2410,54 @@ h2.with-actions button {
   image-rendering: pixelated;
   border-radius: 4px;
 }
+
+/* Project settings › Plugins. */
+.plugins {
+  margin-top: 24px;
+  max-width: 640px;
+}
+
+.plugins h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.plugins > ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.plugins li.plugin {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.plugins li.plugin.off strong {
+  color: var(--muted);
+}
+
+.plugins .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plugins .plugin-on {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plugins .hint,
+.plugins .error {
+  margin: 4px 0;
+}
+
+.plugins .used-by {
+  margin: 4px 0 6px 12px;
+  color: var(--muted);
+}

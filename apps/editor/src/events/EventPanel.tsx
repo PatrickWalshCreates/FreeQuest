@@ -301,7 +301,7 @@ function EventEditor(props: {
   const [pageIndex, setPageIndex] = useState(0);
   const page = event.pages[Math.min(pageIndex, event.pages.length - 1)] ?? event.pages[0];
   const shownPage = Math.min(pageIndex, event.pages.length - 1);
-  const { audio, images = [] } = useProjectLists(doc);
+  const { audio, images = [], assets } = useProjectLists(doc);
   const project = doc.project;
   // The map's data from its file (its id may differ from the file name after a rename).
   const mapData = doc.file(path)?.data as GameMap | undefined;
@@ -312,7 +312,13 @@ function EventEditor(props: {
   const flags = useMemo(() => (mapData ? mapFlagNames(mapData) : []), [mapData]);
   const ctx = useMemo(
     () => ({
-      ...projectFormContext(project, { audio, images, events: mapEvents, flags }),
+      ...projectFormContext(project, {
+        audio,
+        images,
+        ...(assets ? { assets } : {}),
+        events: mapEvents,
+        flags,
+      }),
       render: (field: string, value: unknown, onChange: (v: unknown) => void) =>
         field === 'face' ? (
           <FaceField
@@ -333,7 +339,7 @@ function EventEditor(props: {
           />
         ) : undefined,
     }),
-    [doc, project, audio, images, mapEvents, flags],
+    [doc, project, audio, images, assets, mapEvents, flags],
   );
   const names = useMemo(() => projectNames(project, mapEvents), [project, mapEvents]);
 

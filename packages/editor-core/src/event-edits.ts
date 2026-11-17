@@ -361,7 +361,7 @@ export interface NameLookup {
   /** A balloon's name by its row; "#n" without one. */
   balloon?(row: number): string;
   /** A plugin command's name ("Weather: Start rain"); "plugin › command" ids without one. */
-  pluginCommand?(plugin: string, command: string): string;
+  pluginCommand?(plugin: string, command: string): string | undefined;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */

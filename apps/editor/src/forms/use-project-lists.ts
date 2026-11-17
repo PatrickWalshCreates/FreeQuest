@@ -11,6 +11,10 @@ export function useProjectLists(doc: ProjectDocument): ProjectLists {
   const paths = useAssetPaths(doc);
   return useMemo(() => {
     const all = paths ?? [];
-    return { audio: all.filter((p) => AUDIO.test(p)), images: all.filter((p) => IMAGE.test(p)) };
+    return {
+      audio: all.filter((p) => AUDIO.test(p)),
+      images: all.filter((p) => IMAGE.test(p)),
+      assets: all,
+    };
   }, [paths]);
 }
