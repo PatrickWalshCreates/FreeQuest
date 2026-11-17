@@ -141,7 +141,7 @@ enemies). Released: 0.1.0 (the first public release), 0.2.0 (event flags, common
 codes, loops, screen effects), 0.3.0 (editor comfort: renaming, stamps, big maps, faces, the
 updater), 0.4.0 (importing RPG Maker MZ projects) and 0.5.0 (what MZ games need: message pacing,
 pictures, animations, balloons, richer move routes and event commands, TP, buffs and battle
-events). Next: the plugin API. See [CLAUDE.md](CLAUDE.md) for details.
+events). Next: the plugin API (M15, planned for 0.6.0). See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

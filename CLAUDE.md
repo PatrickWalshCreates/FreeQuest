@@ -1382,7 +1382,66 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     its own milestone), weather, vehicles, movies, side-view battlers, map regions, wall
     shadows, the MZ traits not listed above (counterattack, magic reflection, party
     abilities…: next, if the samples' use holds up in other games).
-- **Later**: candidates, in no fixed order: the deferred items above, the plugin API.
+- **M15 (planned)** The plugin API, to release as 0.6.0. M14 left weather, scripts, MZ
+  plugins and one-off battle rules out on purpose: instead of growing the engine for each, game
+  makers get a typed, hook-based way to add them. Plugins are JavaScript run by the game, never
+  by formulas (formulas stay our own language) and never by the editor.
+  - **Design** (decided now, refined in step 1):
+    - A plugin is a folder in the project, `plugins/<id>/`, with `plugin.json` (format
+      version, id, name, version, description, `apiVersion`, `entry` (one ES module), its
+      `settings` and `commands`, each with parameters declared as plain data in a small subset
+      of JSON Schema) and its script. Everything the editor needs (names, command forms,
+      checks) is in `plugin.json`, so **the editor never runs plugin code**; only the game does
+      (playtests, exports).
+    - The project lists plugins it uses (manifest v10 `plugins`: id, enabled, settings
+      values); a new map/common-event command `plugin` (map v10: plugin, command, args) runs a
+      plugin's command, its args checked against the declared parameters like any command.
+    - The script default-exports `definePlugin({ setup(api) { … } })`. `api` is versioned and
+      the only way in: lifecycle hooks (game start, map loaded, after each logic step), command
+      handlers (get their args and a context; may return a "finished" check the interpreter
+      waits on, like screen effects), read/write of switches and variables, sounds, a drawing
+      layer over the map (PixiJS container, runtime side), and a plugin's own saved data (save
+      v4 `plugins`: id → JSON). Core stays PixiJS-free: core hooks in core, drawing in runtime.
+      Plugins never patch engine classes or globals (the old stub in `core/plugin.ts` goes).
+    - Our own design, not MZ's (no parameters in script comments, no global plugin manager):
+      clean-room as always.
+    - **Safety**: the desktop editor's window can read and write files. Playtests with plugins
+      run in a sandboxed iframe (opaque origin, the project snapshot passed in by
+      `postMessage`), proven in step 4 not to reach Tauri's IPC or the dev server's file
+      endpoints. A project opened with plugins asks once before Play runs them ("This project
+      runs code from …"). Exported games run them as they run the game itself.
+  - Steps:
+  1. Format and checks: `plugin.json` schema, manifest v10 `plugins`, map v10 `plugin`
+     command with args checked against its declaration (unknown plugin/command/parameter =
+     problem), editor-core reads plugins in `openProject`, the reference index and renames
+     know them, export copies enabled plugins' folders. Nothing runs yet.
+  2. The game side: `definePlugin` and the versioned `api` types (exported for plugin
+     authors), the runtime loads enabled plugins' modules at start (dynamic import from
+     `assetUrl`; desktop player CSP allows scripts from the asset protocol), lifecycle hooks
+     and commands through the interpreter, a failing plugin reported clearly (which plugin,
+     which hook) instead of a blank game. Tested in Node with fake plugins.
+  3. Drawing and saving: the map layer (under dialogs, over pictures? decide), plugin data in
+     saves (save v4), plugin settings values passed to `setup`.
+  4. Sandboxed playtests: the editor's Play runs the game in a sandboxed iframe; tests and a
+     desktop check that plugin code can't call Tauri or the dev server's writes. The trust
+     prompt.
+  5. Editor: a Plugins section in Project settings (add a plugin folder: copied into the
+     project; enable, disable, order, settings form from its declaration; remove, refused or
+     warned while commands use it), the `plugin` command's dialog built from its parameters.
+  6. Exports and the importer: web, Mac, Windows, Linux exports run plugins (CSPs checked); the
+     CLI `check` checks them; the MZ importer lists the MZ plugins a game used and turns plugin
+     commands into comments naming them (already comments, now grouped in the report).
+  7. Two example plugins of our own (weather: rain/snow on a map; a HUD showing gold or a
+     variable), the demo uses weather in one place, `docs/plugins.md` (writing one, the api
+     reference, safety), Starter, guides, the quest test, freeze the 0.6 formats, and a 0.6.0
+     release through the checklist.
+  - Formats: manifest 10, map 10, save 4, plus `plugin.json` 1; each with a migration, the
+    frozen 0.1–0.5 projects and saves keep opening.
+  - Not in M15: plugins in the editor (custom panels, tools), a plugin registry or downloads,
+    plugin dependencies, replacing built-in screens (menu, battle) from plugins (maybe later,
+    through dedicated hooks).
+- **Later**: candidates, in no fixed order: the deferred items above, MZ traits not yet
+  covered (counterattack, magic reflection, party abilities), Developer ID / Windows signing.
 
 ## Known gaps / notes for next milestones
 
