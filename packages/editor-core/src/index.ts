@@ -7,6 +7,8 @@ export * from './viewport.js';
 export * from './tools.js';
 export * from './map-ops.js';
 export * from './playtest.js';
+export * from './playtest-bridge.js';
+export * from './plugin-trust.js';
 export * from './schema-form.js';
 export * from './event-edits.js';
 export * from './database-edits.js';

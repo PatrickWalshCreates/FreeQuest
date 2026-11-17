@@ -7,6 +7,8 @@ import { allFiles } from './open-project.js';
 export interface PlaytestSource {
   readJson(path: string): Promise<unknown>;
   assetUrl(path: string): Promise<string>;
+  /** An asset's bytes (the sandboxed playtest frame makes its own URLs from them). */
+  readBytes(path: string): Promise<Uint8Array>;
 }
 
 /**
@@ -32,5 +34,6 @@ export function playtestSource(doc: ProjectDocument): PlaytestSource {
       }
     },
     assetUrl: (path) => doc.fs.assetUrl(path),
+    readBytes: (path) => doc.fs.readBytes(path),
   };
 }

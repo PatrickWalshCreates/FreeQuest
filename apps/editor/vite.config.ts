@@ -2,12 +2,14 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defaultClientConditions, defineConfig } from 'vite';
 import { devFsPlugin } from './dev-fs-plugin.js';
+import { playtestFramePlugin } from './playtest-frame-plugin.js';
 import { releasePlayerPlugin } from './release-player-plugin.js';
 import { templatesPlugin } from './templates-plugin.js';
 
 export default defineConfig({
   plugins: [
     react(),
+    playtestFramePlugin(),
     devFsPlugin({
       samples: fileURLToPath(new URL('../../samples', import.meta.url)),
       // Browser-mode exports land here (git-ignored).

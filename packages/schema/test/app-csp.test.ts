@@ -30,6 +30,19 @@ describe('desktop content security policies', () => {
     }
   });
 
+  it('lets the editor’s sandboxed playtest frame import plugin scripts from blob: URLs', () => {
+    // The frame makes blob URLs of the scripts the editor sends it (M15 step 4);
+    // the app's policy applies to the frame's page too. Its own scripts come from
+    // the app, which WebKit doesn't count as 'self' in the frame's opaque origin,
+    // so the app's origins (macOS/Linux, Windows) are named.
+    expect(csp('editor').get('script-src')).toEqual([
+      "'self'",
+      'tauri://localhost',
+      'http://tauri.localhost',
+      'blob:',
+    ]);
+  });
+
   it('lets the desktop player fetch, show and run its game through the asset protocol', () => {
     const player = csp('player-desktop');
     // script-src: plugins' scripts are imported from the game folder (M15).

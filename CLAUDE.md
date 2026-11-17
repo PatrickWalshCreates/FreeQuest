@@ -493,7 +493,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   order, a failed import reported and left out; `startGame` `plugins` (default on) and
   `onPluginError` (default: console + `showPluginNotice`, a closable notice over the game);
   `play()` starts the host for each new world. The desktop player's CSP has `script-src` for
-  the asset protocol. Editor playtests pass `plugins: false` until step 4's sandbox.
+  the asset protocol.
 - **Plugin data and drawing** (M15 step 3): `PluginGame.getData` / `setData` keep a plugin's
   own plain JSON (copied in and out; non-JSON, NaN, class instances or more than
   `MAX_PLUGIN_DATA` characters refused) in `World.pluginData`, saved as save v4 `plugins`
@@ -640,6 +640,35 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   runs the game in an overlay with `MemoryStorage` saves (discarded), the debug panel on, and the
   editor's shortcuts off; Stop or Cmd/Ctrl+. ends it (Escape is the game's menu key). "Play from
   here" picks a cell and uses `startGame`'s `start` + `skipTitle`.
+- **Sandboxed playtests** (M15 step 4): the game runs in `<iframe sandbox="allow-scripts">`
+  (opaque origin: no editor window, storage, cookies, Tauri or dev-server access), page
+  `/playtest/index.html` from `playtest-frame-plugin.ts`, code `src/playtest/frame.ts`. The
+  frame gets the project only by message (editor-core `playtest-bridge.ts`, tested): it asks
+  (`PlaytestClient`: `json` / `bytes`, `PLAYTEST_PROTOCOL`), the editor answers from the
+  snapshot (`PlaytestHost`: project paths only, JSON only `.json`, bytes only under assets/ and
+  plugins/; `readFrameMessage` checks every message, the frame is untrusted) and the frame makes
+  its own blob URLs (`mimeTypeFor`, so plugin scripts import). Messages: ready → start
+  (options: `start`, `plugins`), request/reply, started, failed (shown as the start error),
+  stop (Cmd/Ctrl+. inside the frame). Script loading: an opaque origin's module scripts need
+  CORS, which Tauri's protocol grants only to the app's origin, so the build bundles the frame
+  as one classic IIFE script (`dist/playtest/frame.js`, a nested Vite build in `closeBundle`);
+  `vite dev` serves the TS as modules and sends `Access-Control-Allow-Origin: null` for the
+  frame's script requests only. WebKit doesn't count the app as `'self'` in an opaque origin,
+  so the editor's CSP and the frame's meta CSP name `tauri://localhost http://tauri.localhost`
+  (`APP_ORIGINS`; dev: the server's own origin); the frame's CSP allows no network but `blob:`.
+  Tauri's IPC needs its invoke key, which only the main frame's scripts get, so the frame
+  can't call it (WebKit still exposes `webkit.messageHandlers` to frames: that key is the
+  guard). The dev server's `/__freequest` endpoints refuse requests from other origins
+  (`isForeignRequest`: `Sec-Fetch-Site` cross-site/same-site, or an `Origin` that isn't the
+  host, e.g. "null"). Trust prompt (`plugin-trust.ts`, `PluginTrustDialog.tsx`): before Play
+  runs turned-on plugins the user hasn't agreed to for this project location (`fs.label`),
+  it asks: Run plugins (remembered per location and plugin id, localStorage
+  `TRUSTED_PLUGINS_KEY`, 50 projects), Play without plugins (this time only), Cancel.
+- Browser-pane note: the pane refuses loads from opaque origins (`ERR_BLOCKED_BY_CLIENT`), so a
+  playtest shows a blank frame there. Drive a headless Microsoft Edge over CDP instead
+  (`--headless=new --remote-debugging-port=… --user-data-dir=<scratchpad>`, Node's
+  `WebSocket`); for WebKit, a small Swift `WKWebView` host with a `tauri` scheme handler
+  serving the built `dist/` (as checked in step 4).
 - **Canvas scale** (`runtime/src/scale.ts`, tested): whole steps only (crisp pixels), with
   `SCALE_SLACK` (2 px) of allowed overshoot so a hair-too-small space doesn't halve the picture.
 - **Two PixiJS apps on one page**: never `app.destroy(true)` — `true` releases PixiJS's global
@@ -1478,9 +1507,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      saves (save v4).~~ (done; a Canvas 2D per plugin rather than PixiJS objects, over
      pictures and under screen effects. Tried in the dev player with a throwaway rain plugin:
      rain and a tint over the map, a marker on its tile, its data in the save)
-  4. Sandboxed playtests: the editor's Play runs the game in a sandboxed iframe; tests and a
+  4. ~~Sandboxed playtests: the editor's Play runs the game in a sandboxed iframe; tests and a
      desktop check that plugin code can't call Tauri or the dev server's writes. The trust
-     prompt.
+     prompt.~~ (done; a probe plugin tried to reach Tauri, the editor's window, storage, the
+     dev server's files, IPC, the internet, the top window and popups: all blocked, in
+     Chromium (headless Edge, dev and the production frame) and in WebKit (a WKWebView over
+     `tauri://` with the app's CSP, which showed WebKit's `'self'` difference). The real
+     desktop app is for the release's by-hand check)
   5. Editor: a Plugins section in Project settings (add a plugin folder: copied into the
      project; enable, disable, order, settings form from its declaration; remove, refused or
      warned while commands use it), the `plugin` command's dialog built from its parameters.

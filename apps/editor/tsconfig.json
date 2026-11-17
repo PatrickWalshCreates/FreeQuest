@@ -10,6 +10,7 @@
     "src",
     "vite.config.ts",
     "dev-fs-plugin.ts",
+    "playtest-frame-plugin.ts",
     "release-player-plugin.ts",
     "templates-plugin.ts"
   ]

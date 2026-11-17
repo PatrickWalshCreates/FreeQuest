@@ -9,7 +9,9 @@
 //   DELETE /__freequest/<area>/fs/<folder>/<path>      → delete the file
 //   GET    /__freequest/<area>/list/<folder>[/<dir>]   → ["<dir>/a.png", ...] (recursive,
 //                                                        relative to <folder>)
-// Every path is confined to its area's folder.
+// Every path is confined to its area's folder, and only the editor's own page
+// may use any of it: requests from other origins (another site, the sandboxed
+// playtest frame, whose origin is "null") are refused (`isForeignRequest`).
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -39,6 +41,20 @@ export function resolveInside(root: string, relative: string, minSegments = 2): 
   return full.startsWith(root + sep) ? full : null;
 }
 
+/**
+ * True for a request that didn't come from a page of this server: a browser
+ * marks those with `Sec-Fetch-Site` (cross-site, same-site) or an `Origin`
+ * that isn't this host's ("null" from a sandboxed frame). Requests without
+ * those headers (curl, scripts, the address bar) are allowed: they come from
+ * this machine's user, not a web page.
+ */
+export function isForeignRequest(headers: IncomingMessage['headers']): boolean {
+  const site = headers['sec-fetch-site'];
+  if (site !== undefined && site !== 'same-origin' && site !== 'none') return true;
+  const origin = headers.origin;
+  return origin !== undefined && origin !== `http://${headers.host ?? ''}`;
+}
+
 function body(request: IncomingMessage): Promise<Buffer> {
   return new Promise((done, fail) => {
     const chunks: Buffer[] = [];
@@ -60,6 +76,7 @@ export function devFsPlugin(areas: Readonly<Record<string, string>>): Plugin {
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use('/__freequest', (request, response) => {
+        if (isForeignRequest(request.headers)) return reply(response, 403, 'not from the editor');
         void (async () => {
           const url = new URL(request.url ?? '/', 'http://localhost');
           if (url.pathname === '/mz-projects' && request.method === 'GET') {

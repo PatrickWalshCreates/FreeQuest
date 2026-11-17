@@ -13,7 +13,10 @@ import {
   mapPath,
   mapUsages,
   type PlaytestSource,
+  type PluginToTrust,
+  enabledPlugins,
   playtestSource,
+  untrustedPlugins,
   DATABASE_LABELS,
   createDatabaseFile,
   missingDatabaseKinds,
@@ -40,6 +43,7 @@ import { ExportDialog } from './ExportDialog.js';
 import { MapEditor } from './map/MapEditor.js';
 import { NewMapDialog } from './map/NewMapDialog.js';
 import { Playtest, type PlaytestStart } from './Playtest.js';
+import { PluginTrustDialog, loadTrustedPlugins, rememberTrust } from './PluginTrustDialog.js';
 import { confirmAction, guardWindowClose } from './platform.js';
 import { summarize } from './summary.js';
 import { NewTilesetDialog } from './tileset/NewTilesetDialog.js';
@@ -96,10 +100,18 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
   const [playtest, setPlaytest] = useState<{
     readonly source: PlaytestSource;
     readonly start: PlaytestStart | null;
+    readonly plugins: boolean;
+  } | null>(null);
+  // Play asked to run plugins the user hasn't agreed to yet for this project.
+  const [askTrust, setAskTrust] = useState<{
+    readonly start: PlaytestStart | null;
+    readonly plugins: readonly PluginToTrust[];
   } | null>(null);
   const play = (start: PlaytestStart | null = null) => {
     doc.endCoalescing();
-    setPlaytest({ source: playtestSource(doc), start });
+    const toAsk = untrustedPlugins(loadTrustedPlugins(), doc.fs.label, enabledPlugins(doc.project));
+    if (toAsk.length > 0) setAskTrust({ start, plugins: toAsk });
+    else setPlaytest({ source: playtestSource(doc), start, plugins: true });
   };
   const setStatus = (next: Omit<Status, 'version'> | null) =>
     setStatusState(next && { ...next, version: doc.version });
@@ -463,7 +475,24 @@ export function ProjectView({ doc, onClose, onReload }: Props) {
           gameName={project.manifest.data.name}
           source={playtest.source}
           start={playtest.start}
+          plugins={playtest.plugins}
           onClose={() => setPlaytest(null)}
+        />
+      )}
+
+      {askTrust && (
+        <PluginTrustDialog
+          plugins={askTrust.plugins}
+          onCancel={() => setAskTrust(null)}
+          onAnswer={(run) => {
+            if (run)
+              rememberTrust(
+                doc.fs.label,
+                askTrust.plugins.map((p) => p.id),
+              );
+            setAskTrust(null);
+            setPlaytest({ source: playtestSource(doc), start: askTrust.start, plugins: run });
+          }}
         />
       )}
 

@@ -1,5 +1,10 @@
-import type { PlaytestSource } from '@freequest/editor-core';
-import { type Game, MemoryStorage, startGame } from '@freequest/runtime';
+import {
+  type HostMessage,
+  PLAYTEST_PROTOCOL,
+  PlaytestHost,
+  type PlaytestSource,
+  readFrameMessage,
+} from '@freequest/editor-core';
 import { useEffect, useRef, useState } from 'react';
 import { MOD } from './keys.js';
 
@@ -16,17 +21,23 @@ interface Props {
   readonly source: PlaytestSource;
   /** Start here instead of at the title screen. */
   readonly start: PlaytestStart | null;
+  /** Run the project's enabled plugins (the user agreed to). */
+  readonly plugins: boolean;
   readonly onClose: () => void;
 }
 
+/** The sandboxed frame's page (playtest-frame-plugin.ts). */
+const FRAME_URL = `${import.meta.env.BASE_URL}playtest/index.html`;
+
 /**
  * Runs the game over the editor, on a snapshot of the unsaved document.
- * Saves made while playtesting live in memory and vanish when it closes,
- * so they never mix with real save files.
+ * The game runs in a sandboxed iframe (an opaque origin: no access to the
+ * editor, its files or Tauri), so plugins can run in playtests; it asks for
+ * the project's files by message (`PlaytestHost`). Saves made while
+ * playtesting live in memory and vanish when it closes.
  */
-export function Playtest({ gameName, source, start, onClose }: Props) {
-  const host = useRef<HTMLDivElement>(null);
-  const shell = useRef<HTMLDivElement>(null);
+export function Playtest({ gameName, source, start, plugins, onClose }: Props) {
+  const frame = useRef<HTMLIFrameElement>(null);
   const [error, setError] = useState<string | null>(null);
   const close = useRef(onClose);
   useEffect(() => {
@@ -34,52 +45,71 @@ export function Playtest({ gameName, source, start, onClose }: Props) {
   });
 
   useEffect(() => {
-    const parent = host.current;
-    if (!parent) return;
-    shell.current?.focus();
-    let alive = true;
-    let game: Game | null = null;
-    startGame({
-      parent,
-      project: source,
-      debug: true,
-      saveStorage: new MemoryStorage(),
-      // Plugins run in playtests once they run sandboxed, away from the editor's
-      // file access (M15 step 4). Until then their commands do nothing here.
-      plugins: false,
-      ...(start ? { start: { map: start.map, x: start.x, y: start.y }, skipTitle: true } : {}),
-    }).then(
-      (started) => {
-        if (alive) game = started;
-        else started.destroy();
-      },
-      (e: unknown) => {
-        if (alive) setError(e instanceof Error ? e.message : String(e));
-      },
-    );
-    // Cmd/Ctrl+. stops (Escape belongs to the game: it opens the menu).
+    const host = new PlaytestHost(source);
+    let sentStart = false;
+    const send = (target: Window, message: HostMessage) => {
+      const value = message.type === 'reply' && message.ok ? message.value : null;
+      const bytes =
+        value && typeof value === 'object' && 'bytes' in value && value.bytes instanceof ArrayBuffer
+          ? [value.bytes]
+          : [];
+      // The frame's origin is opaque ("null"), so "*" is the only target that reaches it.
+      target.postMessage(message, '*', bytes);
+    };
+    const onMessage = (event: MessageEvent) => {
+      const target = frame.current?.contentWindow;
+      if (!target || event.source !== target) return;
+      const message = readFrameMessage(event.data);
+      if (!message) return;
+      switch (message.type) {
+        case 'ready':
+          if (sentStart) return;
+          sentStart = true;
+          send(target, {
+            protocol: PLAYTEST_PROTOCOL,
+            type: 'start',
+            options: { start: start && { map: start.map, x: start.x, y: start.y }, plugins },
+          });
+          frame.current?.focus();
+          return;
+        case 'request':
+          void host.answer(message).then((reply) => send(target, reply));
+          return;
+        case 'failed':
+          setError(message.message);
+          return;
+        case 'stop':
+          close.current();
+          return;
+        case 'started':
+          return;
+      }
+    };
+    // Cmd/Ctrl+. stops (Escape belongs to the game: it opens the menu). The frame
+    // forwards the same keys while it has the keyboard.
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === '.') {
         event.preventDefault();
         close.current();
       }
     };
+    window.addEventListener('message', onMessage);
     window.addEventListener('keydown', onKey);
     return () => {
-      alive = false;
+      window.removeEventListener('message', onMessage);
       window.removeEventListener('keydown', onKey);
-      game?.destroy();
     };
-  }, [source, start]);
+  }, [source, start, plugins]);
 
   return (
-    <div className="playtest" ref={shell} tabIndex={-1} role="dialog" aria-label="Playtest">
+    <div className="playtest" role="dialog" aria-label="Playtest">
       <header>
         <strong>Playtest</strong>
         <span className="muted">
           {gameName} ·{' '}
           {start ? `from ${start.label} (${start.x}, ${start.y})` : 'from the title screen'} ·
           unsaved changes included · saves are discarded
+          {plugins ? '' : ' · plugins off'}
         </span>
         <span className="spacer" />
         <span className="muted keys">Arrows move · Enter talks · Esc menu · F9 debug</span>
@@ -94,7 +124,17 @@ export function Playtest({ gameName, source, start, onClose }: Props) {
           <p className="muted">Fix the problems listed in the editor, then try again.</p>
         </div>
       ) : (
-        <div className="playtest-game" ref={host} />
+        <iframe
+          ref={frame}
+          className="playtest-game"
+          title="Playtest"
+          src={FRAME_URL}
+          // Scripts only: an opaque origin, no same-origin access, no popups,
+          // forms, top navigation or modals.
+          sandbox="allow-scripts"
+          allow="autoplay"
+          referrerPolicy="no-referrer"
+        />
       )}
     </div>
   );
