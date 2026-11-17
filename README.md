@@ -4,12 +4,13 @@ FreeQuest is a free, open-source (MIT) toolkit for making classic 2D role-playin
 alternative to RPG Maker MZ, created by Patrick Walsh. It is a clean-room implementation: no RPG
 Maker code, assets or UI are used.
 
-> **Status: 0.4, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
+> **Status: 0.5, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
 > characters, assets) and exports games for the web, Windows, macOS and Linux. Games have tile maps, NPCs who
 > wander, chase or follow routes, events (messages, choices, switches, variables, branches, map
-> transfers, background events), shops, a full RPG database with a safe formula language and
-> icons, turn-based battles with enemies that pick moves by situation, an in-game menu, save
-> slots, an options screen (volume, keys), and music and sound. File formats may still change
+> transfers, background events), pictures, animations and balloons, shops, a full RPG database
+> with a safe formula language and icons, turn-based battles with TP, buffs, battle events and
+> enemies that pick moves by situation, a title picture, an in-game menu, save slots, an
+> options screen (volume, keys), and music and sound. File formats may still change
 > (older projects are upgraded automatically). Coming from RPG Maker MZ? The editor imports
 > MZ projects: see [Importing from RPG Maker MZ](docs/importing-mz.md).
 
