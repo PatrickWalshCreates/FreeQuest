@@ -250,3 +250,10 @@ describe('plugin reference kinds', () => {
     }
   });
 });
+
+describe('saves with plugin data', () => {
+  it('come from save v3 unchanged (additive)', () => {
+    const v3 = { formatVersion: 3, game: 'g' };
+    expect(migrate('save', v3)).toEqual({ formatVersion: 4, game: 'g' });
+  });
+});

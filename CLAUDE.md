@@ -494,6 +494,20 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   `onPluginError` (default: console + `showPluginNotice`, a closable notice over the game);
   `play()` starts the host for each new world. The desktop player's CSP has `script-src` for
   the asset protocol. Editor playtests pass `plugins: false` until step 4's sandbox.
+- **Plugin data and drawing** (M15 step 3): `PluginGame.getData` / `setData` keep a plugin's
+  own plain JSON (copied in and out; non-JSON, NaN, class instances or more than
+  `MAX_PLUGIN_DATA` characters refused) in `World.pluginData`, saved as save v4 `plugins`
+  (id → data, kept for plugins no longer in the project) and restored by `fromSave`; a new
+  game has none. Drawing is the runtime's addition to the api (`PluginHost`'s `extend`
+  argument; `GamePluginApi` = `PluginApi` + `onDraw`): `plugin-drawing.ts` (`PluginDrawing`,
+  PixiJS-free, tested: hooks registered in setup, run through `host.guarded(plugin, 'draw',
+…)` with save/restore around each) and `plugin-layer.ts` (`PluginLayer`: one screen-sized
+  canvas + sprite per drawing plugin, cleared and redrawn every rendered frame, texture
+  updated, a failed plugin's canvas hidden). Frames carry `context` (Canvas 2D, so plugins
+  never depend on PixiJS), `width`/`height` (internal pixels), `camera` (map pixel at the
+  top-left, shake included), tile size, `seconds`, `game`. The layer sits over the map and
+  pictures, under screen effects and windows, and like pictures shows only while the map
+  plays (not on the title, in battles).
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
   `src/index.ts`. Vite, Vitest and `tsc --noEmit` use it (`customConditions`); `tsconfig.build.json`
   disables it so published `dist/` resolves dependencies' `dist/`.
@@ -1076,7 +1090,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
   `backgroundSound`, pictures; v10: the `plugin` command), tileset 1, character 1, plugin 1, every database file 5 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
-  animations, skills'/items' `animation`, system `balloons`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`). Additive bumps migrate as no-ops.
+  animations, skills'/items' `animation`, system `balloons`), save 4 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1460,8 +1474,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      reach `setup` already. Tried in the dev player with a throwaway plugin: hooks ran, a
      throwing command showed the notice while the event went on. The desktop player's import
      through the asset protocol is tried in step 6)
-  3. Drawing and saving: the map layer (under dialogs, over pictures? decide), plugin data in
-     saves (save v4).
+  3. ~~Drawing and saving: the map layer (under dialogs, over pictures? decide), plugin data in
+     saves (save v4).~~ (done; a Canvas 2D per plugin rather than PixiJS objects, over
+     pictures and under screen effects. Tried in the dev player with a throwaway rain plugin:
+     rain and a tint over the map, a marker on its tile, its data in the save)
   4. Sandboxed playtests: the editor's Play runs the game in a sandboxed iframe; tests and a
      desktop check that plugin code can't call Tauri or the dev server's writes. The trust
      prompt.

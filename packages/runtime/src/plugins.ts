@@ -21,6 +21,7 @@ export async function loadPlugins(
   project: Pick<LoadedProject, 'manifest' | 'plugins' | 'assetUrl'>,
   onError: (error: PluginError) => void,
   importModule: ImportModule = importScript,
+  extend?: (plugin: string) => object,
 ): Promise<PluginHost> {
   const loaded: LoadedPlugin[] = [];
   const failed: { declaration: PluginDeclaration; cause: unknown }[] = [];
@@ -47,7 +48,7 @@ export async function loadPlugins(
       ...(m.ref.settings ? { settings: m.ref.settings } : {}),
     });
   }
-  const host = new PluginHost(loaded, onError);
+  const host = new PluginHost(loaded, onError, extend);
   for (const { declaration, cause } of failed) host.reportLoadFailure(declaration, cause);
   return host;
 }

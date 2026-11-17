@@ -28,7 +28,7 @@ const db = new DatabaseIndex({
 } as never);
 
 const save = {
-  formatVersion: 3,
+  formatVersion: 4,
   game: 'g',
   savedAt: '',
   playSeconds: 1,

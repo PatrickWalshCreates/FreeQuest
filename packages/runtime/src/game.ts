@@ -44,6 +44,8 @@ import { type MapView, createMapView } from './map-view.js';
 import { PictureView } from './picture-view.js';
 import { showPluginNotice } from './plugin-notice.js';
 import { loadPlugins } from './plugins.js';
+import { PluginDrawing } from './plugin-drawing.js';
+import { PluginLayer } from './plugin-layer.js';
 import { AnimationSheets, CharacterEffectViews } from './effect-views.js';
 import { fitScale } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
@@ -102,8 +104,12 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       console.error(error, error.cause);
       showPluginNotice(options.parent, error.message);
     });
+  const drawing = new PluginDrawing();
   const plugins: PluginHost | null =
-    options.plugins === false ? null : await loadPlugins(project, onPluginError);
+    options.plugins === false
+      ? null
+      : await loadPlugins(project, onPluginError, undefined, drawing.extension);
+  drawing.seal();
   const start = options.start;
   const map = start
     ? await project.loadMap(start.map)
@@ -180,6 +186,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const pictureView = new PictureView((path) => loadPixelTexture(project.assetUrl(path)));
   app.stage.addChild(pictureView.container);
   // Events' fades, tints and flashes: over the map, under messages and menus.
+  // Plugins draw over the map and pictures, under screen effects and windows.
+  const pluginLayer = plugins && new PluginLayer(drawing, plugins, width, height);
+  if (pluginLayer) app.stage.addChild(pluginLayer.container);
   const screenEffects = new Graphics({ label: 'screen-effects' });
   app.stage.addChild(screenEffects);
 
@@ -536,6 +545,14 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     shown?.view.update({ x: camera.x, y: camera.y, width, height });
     drawScreenEffects(screenEffects, screen, width, height);
     pictureView.render(world.pictures.list);
+    pluginLayer?.render(world, {
+      width,
+      height,
+      camera: { x: Math.round(camera.x) - screen.shakeX, y: Math.round(camera.y) },
+      tileWidth,
+      tileHeight,
+      seconds: elapsed,
+    });
     effectViews.render(world.effects, db.system.balloons, (target) => {
       if (target !== 'player') return shown?.events.spotOf(target) ?? null;
       const sprite = player.sprite;
@@ -631,6 +648,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
     screenEffects.visible = mode === 'playing';
     // Pictures belong to the map's scene: not over the title or a battle.
     pictureView.container.visible = mode === 'playing' && scene.visible;
+    if (pluginLayer) pluginLayer.container.visible = pictureView.container.visible;
     if (mode === 'title' || mode === 'loading') {
       titleView.render(title.state, manifest.name);
     } else {
@@ -668,6 +686,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       audio.destroy();
       removeDebugPanel();
       resizeObserver.disconnect();
+      pluginLayer?.destroy();
       // Not `destroy(true)`: that also releases PixiJS's global resources and breaks any
       // other PixiJS app on the page (the editor's map canvas behind a playtest).
       app.destroy({ removeView: true }, { children: true });

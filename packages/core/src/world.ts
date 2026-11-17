@@ -86,6 +86,11 @@ export class World {
   readonly effects = new CharacterEffects();
   /** The project's plugins, once `PluginHost.start` binds them to this world. */
   plugins: PluginHost | null = null;
+  /**
+   * Each plugin's own data (plain JSON, by plugin id), kept in saves. Plugins
+   * read and write it through `game.getData` / `setData`.
+   */
+  readonly pluginData = new Map<string, unknown>();
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
   readonly access = { menu: true, saving: true };
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
@@ -304,6 +309,13 @@ export class World {
       ...(Object.keys(access).length > 0 ? { access } : {}),
       ...(this.pictures.list.length > 0 ? { pictures: this.pictures.toData() } : {}),
       ...(Object.keys(this.battleMusic).length > 0 ? { battleMusic: { ...this.battleMusic } } : {}),
+      ...(this.pluginData.size > 0
+        ? {
+            plugins: Object.fromEntries(
+              [...this.pluginData].sort(([a], [b]) => a.localeCompare(b)),
+            ),
+          }
+        : {}),
       party: {
         ...(party.looks ? { looks: party.looks } : {}),
         members: party.members,
@@ -345,6 +357,7 @@ export class World {
     world.access.menu = save.access?.menu ?? true;
     world.access.saving = save.access?.saving ?? true;
     Object.assign(world.battleMusic, save.battleMusic ?? {});
+    for (const [id, data] of Object.entries(save.plugins ?? {})) world.pluginData.set(id, data);
     world.playSeconds = save.playSeconds;
     return world;
   }

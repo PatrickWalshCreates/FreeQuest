@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 3
+      "const": 4
     },
     "access": {
       "type": "object",
@@ -269,6 +269,12 @@
     },
     "playerHidden": {
       "type": "boolean"
+    },
+    "plugins": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {}
+      }
     },
     "savedAt": {
       "type": "string"

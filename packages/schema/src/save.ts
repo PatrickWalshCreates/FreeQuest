@@ -1,7 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, PositiveInt } from './common.js';
 
-export const SAVE_FORMAT_VERSION = 3;
+export const SAVE_FORMAT_VERSION = 4;
 
 const Counts = Type.Record(Type.String(), NonNegativeInt);
 
@@ -92,6 +92,11 @@ export const SaveFile = Type.Object(
         ),
       ),
     ),
+    /**
+     * Each plugin's own data, by plugin id: plain JSON it stored with
+     * `game.setData` (v4). Kept even for plugins the project no longer has.
+     */
+    plugins: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
     /** Battle and victory music changed by events; null = none (v3). */
     battleMusic: Type.Optional(
       Type.Object(

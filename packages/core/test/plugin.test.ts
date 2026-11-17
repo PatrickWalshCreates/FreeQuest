@@ -225,3 +225,70 @@ describe('plugins', () => {
     ]);
   });
 });
+
+describe('plugin data', () => {
+  const keeper = (log: unknown[]) => ({
+    setup(api: PluginApi) {
+      api.onGameStart((game) => log.push(game.getData()));
+      api.command('add', ({ game }) => {
+        const data = (game.getData() as { count: number } | undefined) ?? { count: 0 };
+        data.count++;
+        game.setData(data);
+      });
+    },
+  });
+
+  it('starts empty, is kept in saves and comes back on load', () => {
+    const log: unknown[] = [];
+    const { host, world } = setUp(keeper(log));
+    host.start(world);
+    run(world, [add(), add()]);
+    const save = world.toSave({ game: 'g', playSeconds: 1 });
+    expect(save.plugins).toEqual({ counter: { count: 2 } });
+    const loaded = World.fromSave(save, { manifest, map, tileset, database: demoDb() });
+    host.start(loaded);
+    expect(log).toEqual([undefined, { count: 2 }]);
+    run(loaded, [add()]);
+    expect(loaded.pluginData.get('counter')).toEqual({ count: 3 });
+    // The first game is untouched.
+    expect(world.pluginData.get('counter')).toEqual({ count: 2 });
+  });
+
+  it('is copied in and out, and only plain JSON of a sensible size is stored', () => {
+    const outcomes: string[] = [];
+    const { host, world, errors } = setUp({
+      setup(api: PluginApi) {
+        api.command('add', ({ game }) => {
+          const value = { list: [1, 2] };
+          game.setData(value);
+          value.list.push(3);
+          const read = game.getData() as { list: number[] };
+          read.list.push(4);
+          outcomes.push(JSON.stringify(game.getData()));
+          for (const bad of [new Map(), { when: new Date() }, Number.NaN, 'x'.repeat(200_000)]) {
+            try {
+              game.setData(bad);
+              outcomes.push('stored');
+            } catch (e) {
+              outcomes.push((e as Error).message.split(' (')[0] ?? '');
+            }
+          }
+          game.setData(undefined);
+          outcomes.push(String(game.getData()));
+        });
+      },
+    });
+    host.start(world);
+    run(world, [add()]);
+    expect(errors).toEqual([]);
+    expect(outcomes).toEqual([
+      '{"list":[1,2]}',
+      'setData needs plain JSON data',
+      'setData needs plain JSON data',
+      'setData needs plain JSON data',
+      'setData: data is 200002 characters, more than 100000',
+      'undefined',
+    ]);
+    expect(world.toSave({ game: 'g', playSeconds: 0 }).plugins).toBeUndefined();
+  });
+});

@@ -111,9 +111,11 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
   plugin: [],
   // Save v2: event flags (none were set before). v3: actors' changed looks and
   // names, the player hidden (both optional, so additive).
+  // v4: plugins' data (optional, so additive).
   save: [
     { from: 1, migrate: (d) => ({ ...d, flags: {} }) },
     { from: 2, migrate: (d) => d },
+    { from: 3, migrate: (d) => d },
   ],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
   // Both additive. v4: enemy action conditions (every action gets an empty list).

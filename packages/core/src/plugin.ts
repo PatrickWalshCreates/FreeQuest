@@ -31,6 +31,17 @@ export interface PluginGame {
   setVariable(id: string, value: number): void;
   /** Play a sound under assets/ once. */
   playSound(path: string): void;
+  /**
+   * This plugin's own data in this game (a copy): what it last stored with
+   * `setData`, from this game or the save it was loaded from; undefined in a
+   * new game.
+   */
+  getData(): unknown;
+  /**
+   * Store this plugin's data (plain JSON: objects, arrays, strings, numbers,
+   * booleans, null), kept in saves. Stored as a copy: change it, then store it again.
+   */
+  setData(value: unknown): void;
 }
 
 /** A plugin command being run by an event. */
@@ -132,8 +143,19 @@ export class PluginHost {
   private readonly entries: Entry[] = [];
   private readonly onError: (error: PluginError) => void;
 
-  constructor(plugins: readonly LoadedPlugin[], onError: (error: PluginError) => void) {
+  private readonly extend: ((plugin: string) => object) | undefined;
+
+  /**
+   * `extend` adds members to each plugin's `api` (the runtime's drawing);
+   * they are frozen with it.
+   */
+  constructor(
+    plugins: readonly LoadedPlugin[],
+    onError: (error: PluginError) => void,
+    extend?: (plugin: string) => object,
+  ) {
     this.onError = onError;
+    this.extend = extend;
     for (const plugin of plugins) this.setUp(plugin);
   }
 
@@ -154,27 +176,43 @@ export class PluginHost {
   /** A world starts playing (new game or loaded save): game start, then map loaded. */
   start(world: World): void {
     world.plugins = this;
-    const game = pluginGame(world);
-    for (const entry of this.entries) this.each(entry, 'game start', entry.gameStart, game);
+    for (const entry of this.entries) {
+      this.each(entry, 'game start', entry.gameStart, pluginGame(world, entry.declaration.id));
+    }
     this.mapLoaded(world);
   }
 
   /** The world moved to another map. */
   mapLoaded(world: World): void {
-    const game = pluginGame(world);
-    for (const entry of this.entries) this.each(entry, 'map loaded', entry.mapLoaded, game);
+    for (const entry of this.entries) {
+      this.each(entry, 'map loaded', entry.mapLoaded, pluginGame(world, entry.declaration.id));
+    }
   }
 
   /** After a logic step of the world. */
   afterStep(world: World, dt: number): void {
-    let game: PluginGame | null = null;
     for (const entry of this.entries) {
       if (entry.failed || entry.step.length === 0) continue;
-      game ??= pluginGame(world);
+      const game = pluginGame(world, entry.declaration.id);
       for (const hook of entry.step) {
-        if (!this.guard(entry, 'step', () => hook(game as PluginGame, dt))) break;
+        if (!this.guard(entry, 'step', () => hook(game, dt))) break;
       }
     }
+  }
+
+  /** The game as one plugin sees it (for runtime additions to the API, such as drawing). */
+  gameFor(world: World, plugin: string): PluginGame {
+    return pluginGame(world, plugin);
+  }
+
+  /**
+   * Run code of a plugin's own (a runtime hook such as drawing) the way
+   * hooks run: a throw reports it and switches it off. False when it has
+   * failed (now or before) or isn't loaded.
+   */
+  guarded(plugin: string, hook: string, run: () => void): boolean {
+    const entry = this.entries.find((e) => e.declaration.id === plugin);
+    return entry ? this.guard(entry, hook, run) : false;
   }
 
   /**
@@ -195,7 +233,7 @@ export class PluginHost {
     const call: PluginCommandCall = {
       args: resolvePluginValues(params, args),
       event,
-      game: pluginGame(world),
+      game: pluginGame(world, plugin),
     };
     const where = `command "${command}"`;
     let result: unknown;
@@ -240,6 +278,7 @@ export class PluginHost {
       list.push(hook);
     };
     const api: PluginApi = {
+      ...this.extend?.(declaration.id),
       apiVersion: PLUGIN_API_VERSION,
       id: declaration.id,
       settings: Object.freeze(resolvePluginValues(declaration.settings, settings)),
@@ -299,7 +338,7 @@ export class PluginHost {
 }
 
 /** The game as plugins see it, for one world. */
-function pluginGame(world: World): PluginGame {
+function pluginGame(world: World, plugin: string): PluginGame {
   const map = world.map;
   return {
     map: { id: map.id, name: map.name, width: map.width, height: map.height },
@@ -310,5 +349,44 @@ function pluginGame(world: World): PluginGame {
     getVariable: (id) => world.state.getVariable(id),
     setVariable: (id, value) => world.state.setVariable(id, value),
     playSound: (path) => world.eventContext.audio?.playSound(path),
+    getData: () => copyJson(world.pluginData.get(plugin)),
+    setData: (value) => {
+      if (value === undefined) world.pluginData.delete(plugin);
+      else world.pluginData.set(plugin, copyJson(value, true));
+    },
   };
+}
+
+/** Largest data a plugin may keep in saves (as JSON text). */
+export const MAX_PLUGIN_DATA = 100_000;
+
+/** A deep copy of plain JSON data; `check` refuses anything else (and anything too big). */
+function copyJson(value: unknown, check = false): unknown {
+  if (value === undefined) return undefined;
+  const text = JSON.stringify(value);
+  if (check) {
+    if (text === undefined) throw new Error('setData needs plain JSON data');
+    if (text.length > MAX_PLUGIN_DATA) {
+      throw new Error(`setData: data is ${text.length} characters, more than ${MAX_PLUGIN_DATA}`);
+    }
+    if (!isPlainJson(value)) {
+      throw new Error(
+        'setData needs plain JSON data (objects, arrays, strings, numbers, booleans, null)',
+      );
+    }
+  }
+  return JSON.parse(text) as unknown;
+}
+
+function isPlainJson(value: unknown): boolean {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (Array.isArray(value)) return value.every(isPlainJson);
+  if (typeof value === 'object') {
+    const proto = Object.getPrototypeOf(value) as unknown;
+    return (
+      (proto === Object.prototype || proto === null) && Object.values(value).every(isPlainJson)
+    );
+  }
+  return false;
 }
