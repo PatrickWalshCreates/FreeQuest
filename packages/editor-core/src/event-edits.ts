@@ -360,6 +360,8 @@ export interface NameLookup {
   animation?(id: string): string;
   /** A balloon's name by its row; "#n" without one. */
   balloon?(row: number): string;
+  /** A plugin command's name ("Weather: Start rain"); "plugin › command" ids without one. */
+  pluginCommand?(plugin: string, command: string): string;
 }
 
 /** A lookup that shows ids as they are (for tests and fallbacks). */
@@ -640,6 +642,15 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       const state = names.state?.(command.state) ?? command.state;
       return command.action === 'add' ? `${whom}: add ${state}` : `${whom}: remove ${state}`;
     }
+    case 'plugin': {
+      const name =
+        names.pluginCommand?.(command.plugin, command.command) ??
+        `${command.plugin} › ${command.command}`;
+      const args = Object.entries(command.args)
+        .map(([key, value]) => `${key} ${typeof value === 'string' ? quote(value) : String(value)}`)
+        .join(', ');
+      return args ? `${name} (${args})` : name;
+    }
     case 'comment':
       return `// ${command.text.split('\n')[0] ?? ''}`;
   }
@@ -852,6 +863,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   changeHp: 'Change HP',
   changeMp: 'Change MP',
   changeState: 'Change state',
+  plugin: 'Plugin command',
 };
 
 // Document wrappers ---------------------------------------------------------

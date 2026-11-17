@@ -3,6 +3,7 @@ import { Direction, Id, NonNegativeInt, RelativePath } from './common.js';
 import { IfCondition } from './condition.js';
 import { StatKey } from './database/common.js';
 import { MoveSteps } from './route.js';
+import { PluginValues } from './plugin.js';
 
 const CommandList = Type.Array(Type.Ref('Command'));
 
@@ -619,6 +620,19 @@ export const Command = Type.Cyclic(
         {
           additionalProperties: false,
           description: 'Run a common event’s commands, then carry on here.',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('plugin'),
+          plugin: Id,
+          command: Id,
+          args: PluginValues,
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Run a command a plugin adds (v10). Arguments left out take their declared defaults.',
         },
       ),
       Type.Object(

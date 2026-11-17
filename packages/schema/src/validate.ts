@@ -20,12 +20,14 @@ import { Manifest } from './manifest.js';
 import { GameMap } from './map.js';
 import { type FileKind, migrate } from './migrations.js';
 import { Tileset } from './tileset.js';
+import { PluginDeclaration } from './plugin.js';
 
 export const SCHEMAS = {
   manifest: Manifest,
   tileset: Tileset,
   map: GameMap,
   character: CharacterSheet,
+  plugin: PluginDeclaration,
   save: SaveFile,
   system: SystemData,
   actors: ActorsFile,

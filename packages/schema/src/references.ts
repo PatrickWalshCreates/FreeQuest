@@ -13,6 +13,13 @@ import type { MoveStep } from './route.js';
 import { EMPTY_TILE, type GameMap } from './map.js';
 import { parseTextCodes, textCodeReferences } from './text-codes.js';
 import type { Tileset } from './tileset.js';
+import {
+  type PluginDeclaration,
+  type PluginIdLookup,
+  type PluginValues,
+  checkPluginValues,
+  pluginPath,
+} from './plugin.js';
 
 /** All data files of a project, keyed by id. */
 export interface ProjectData {
@@ -21,6 +28,8 @@ export interface ProjectData {
   readonly maps: ReadonlyMap<string, GameMap>;
   readonly characters: ReadonlyMap<string, CharacterSheet>;
   readonly database?: Database;
+  /** Plugin declarations by id (the plugins the manifest lists). */
+  readonly plugins?: ReadonlyMap<string, PluginDeclaration>;
 }
 
 /**
@@ -35,6 +44,11 @@ export interface ReferenceContext {
   readonly maps?: ReadonlyMap<string, GameMap>;
   /** When given, item, equipment and actor ids used by events are checked too. */
   readonly database?: Database;
+  /**
+   * When given, plugin commands and settings are checked against their
+   * declarations; without it only that the plugin is listed.
+   */
+  readonly plugins?: ReadonlyMap<string, PluginDeclaration>;
 }
 
 function makeChecks(ctx: ReferenceContext, problems: string[]) {
@@ -67,6 +81,37 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
       problems.push(`${where}: unknown ${kind === 'common' ? 'common event' : kind} "${id}"`);
     }
   };
+  /** Whether an id a plugin parameter names exists (database kinds only when the database is known). */
+  const characters = ctx.characters;
+  const exists: PluginIdLookup = (kind, id) => {
+    switch (kind) {
+      case 'switch':
+        return switches.has(id);
+      case 'variable':
+        return variables.has(id);
+      case 'map':
+        return mapIds.has(id);
+      case 'character':
+        return characters.has(id);
+      default: {
+        if (!db) return true;
+        const list = {
+          actor: db.actors,
+          class: db.classes,
+          skill: db.skills,
+          item: db.items,
+          equipment: db.equipment,
+          state: db.states,
+          enemy: db.enemies,
+          troop: db.troops,
+          commonEvent: db.commonEvents,
+          animation: db.animations,
+        }[kind];
+        return list.some((e) => e.id === id);
+      }
+    }
+  };
+  const listedPlugins = new Set((ctx.manifest.plugins ?? []).map((p) => p.id));
   const checkOperand = (where: string, operand: Operand) => {
     if (typeof operand === 'object') checkVariable(where, operand.variable);
   };
@@ -87,6 +132,29 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
     checkVariable,
     checkEntry,
     checkOperand,
+    exists,
+    /** A plugin command: the plugin is listed, and (when declarations are known) its arguments. */
+    checkPluginCommand(where: string, plugin: string, command: string, args: PluginValues) {
+      if (!listedPlugins.has(plugin)) {
+        problems.push(`${where}: uses plugin "${plugin}", which the project doesn't have`);
+        return;
+      }
+      const declaration = ctx.plugins?.get(plugin);
+      if (!declaration) return;
+      const declared = declaration.commands.find((c) => c.id === command);
+      if (!declared) {
+        problems.push(`${where}: plugin "${plugin}" has no command "${command}"`);
+        return;
+      }
+      problems.push(
+        ...checkPluginValues(
+          `${where} (${declaration.name}: ${declared.label})`,
+          declared.params,
+          args,
+          exists,
+        ),
+      );
+    },
     /** Route steps that name a character or a switch (v9). */
     checkSteps(where: string, steps: readonly MoveStep[]) {
       steps.forEach((step, i) => {
@@ -212,6 +280,9 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
             if (command.actor !== undefined) checkEntry(at, 'actor', command.actor);
             checkEntry(at, 'state', command.state);
             break;
+          case 'plugin':
+            checks.checkPluginCommand(at, command.plugin, command.command, command.args);
+            break;
           case 'changeActor':
             checkEntry(at, 'actor', command.actor);
             if (command.character !== undefined && !ctx.characters.has(command.character)) {
@@ -232,7 +303,7 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
 export function checkManifestReferences(ctx: ReferenceContext): string[] {
   const { manifest, characters } = ctx;
   const problems: string[] = [];
-  const { checkTile } = makeChecks(ctx, problems);
+  const { checkTile, exists } = makeChecks(ctx, problems);
   checkTile('project.json start', manifest.start.map, manifest.start.x, manifest.start.y);
   if (!characters.has(manifest.player.character)) {
     problems.push(`project.json player: unknown character "${manifest.player.character}"`);
@@ -245,6 +316,21 @@ export function checkManifestReferences(ctx: ReferenceContext): string[] {
     for (const { id } of list) {
       if (ids.has(id)) problems.push(`project.json: duplicate ${kind} "${id}"`);
       ids.add(id);
+    }
+  }
+  const pluginIds = new Set<string>();
+  for (const ref of manifest.plugins ?? []) {
+    const where = `project.json plugin "${ref.id}"`;
+    if (pluginIds.has(ref.id)) problems.push(`project.json: duplicate plugin "${ref.id}"`);
+    pluginIds.add(ref.id);
+    if (ref.path !== pluginPath(ref.id)) {
+      problems.push(`${where}: should be at ${pluginPath(ref.id)}, not ${ref.path}`);
+    }
+    const declaration = ctx.plugins?.get(ref.id);
+    if (declaration) {
+      problems.push(
+        ...checkPluginValues(`${where} settings`, declaration.settings, ref.settings, exists),
+      );
     }
   }
   return problems;

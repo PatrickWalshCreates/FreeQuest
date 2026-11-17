@@ -1,12 +1,23 @@
 // Turning a project into the files a finished game needs: every data file,
 // and exactly the images and sounds the data refers to, checked first so an
 // export never ships a game that fails to start.
-import { type Command, type MoveStep, SOUND_KEYS, walkCommands } from '@freequest/schema';
+import {
+  type Command,
+  type MoveStep,
+  type PluginParam,
+  type PluginValues,
+  SOUND_KEYS,
+  pluginFolder,
+  walkCommands,
+} from '@freequest/schema';
 import { MANIFEST_PATH, type OpenedProject, type Problem, allFiles } from './open-project.js';
 import type { ProjectFs } from './project-fs.js';
 import { utf8Length } from './utf8.js';
 
 export type AssetKind = 'image' | 'audio';
+
+/** Sound files (a plugin's asset parameter says only "a file": its extension says which kind). */
+const AUDIO_EXTENSION = /\.(wav|ogg|mp3|m4a|flac)$/i;
 
 export interface AssetUse {
   readonly kind: AssetKind;
@@ -29,6 +40,20 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     found.set(path, entry);
   };
 
+  // Files named by plugin values: by the parameter's declared type, an image
+  // or a sound from its extension.
+  const addPluginValues = (
+    params: readonly PluginParam[] | undefined,
+    values: PluginValues | undefined,
+    at: string,
+  ) => {
+    for (const param of params ?? []) {
+      const value = values?.[param.name];
+      if (param.type === 'asset' && typeof value === 'string' && value.startsWith('assets/')) {
+        add(value, AUDIO_EXTENSION.test(value) ? 'audio' : 'image', at);
+      }
+    }
+  };
   // Sounds played by move route steps (v9).
   const addStepSounds = (steps: readonly MoveStep[], at: string) => {
     for (const step of steps) if (step.type === 'sound') add(step.path, 'audio', at);
@@ -54,8 +79,21 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
         case 'moveRoute':
           addStepSounds(command.steps, at);
           break;
+        case 'plugin':
+          addPluginValues(
+            project.plugins
+              .get(command.plugin)
+              ?.data?.commands.find((c) => c.id === command.command)?.params,
+            command.args,
+            at,
+          );
+          break;
       }
     });
+  for (const ref of project.manifest.data.plugins ?? []) {
+    const declaration = project.plugins.get(ref.id)?.data;
+    addPluginValues(declaration?.settings, ref.settings, `plugin ${declaration?.name ?? ref.id}`);
+  }
   for (const [id, file] of project.tilesets) add(file.data?.image, 'image', `tileset ${id}`);
   for (const [id, file] of project.characters) add(file.data?.image, 'image', `character ${id}`);
   for (const [id, file] of project.maps) {
@@ -150,6 +188,17 @@ export async function planExport(project: OpenedProject, fs: ProjectFs): Promise
       continue;
     }
     files.push({ kind: 'data', path: file.path, data: file.data });
+  }
+
+  // Enabled plugins ship their whole folder (script, its images…); a turned-off
+  // one ships only its declaration, which the manifest still lists.
+  for (const ref of project.manifest.data.plugins ?? []) {
+    const declaration = project.plugins.get(ref.id);
+    if (!ref.enabled || !declaration) continue;
+    const folder = pluginFolder(declaration.path);
+    for (const path of await fs.list(folder.slice(0, -1))) {
+      if (path !== declaration.path) files.push({ kind: 'asset', path });
+    }
   }
 
   const assets = assetReferences(project);

@@ -6,7 +6,13 @@
 // Which fields hold which kind of id is decided by field name, the same rule
 // the editor's forms use for their dropdowns (see `refKind`), so a new field
 // with a familiar name is indexed for free. Keep the two in step.
-import { ATTACK_ELEMENT, type DatabaseKind, SOUND_KEYS, parseTextCodes } from '@freequest/schema';
+import {
+  ATTACK_ELEMENT,
+  type DatabaseKind,
+  type PluginParam,
+  SOUND_KEYS,
+  parseTextCodes,
+} from '@freequest/schema';
 import { DATABASE_LABELS } from './database-edits.js';
 import type { OpenedProject } from './open-project.js';
 
@@ -33,7 +39,9 @@ export type RefKind =
   /** An event on a map: ids are "<map id>/<event id>". */
   | 'event'
   /** A file under assets/, by its project path. */
-  | 'asset';
+  | 'asset'
+  /** A plugin the project lists (its commands use it). */
+  | 'plugin';
 
 /** A step into a file's data: an object key or an array index. */
 export type DataPath = readonly (string | number)[];
@@ -119,6 +127,7 @@ const DECLARATIONS = new Set([
   'switches',
   'variables',
   'database',
+  'plugins',
 ]);
 
 const TEXT_CODE_KINDS: Readonly<Record<string, RefKind>> = {
@@ -130,14 +139,53 @@ const TEXT_CODE_KINDS: Readonly<Record<string, RefKind>> = {
 
 type Emit = (ref: Omit<Reference, 'file' | 'where'>, path: DataPath) => void;
 
+/** A plugin command's declared parameters (undefined when the plugin or command is unknown). */
+type PluginParams = (plugin: string, command: string) => readonly PluginParam[] | undefined;
+
+/**
+ * References held by plugin values (a command's args, a plugin's settings),
+ * by what each parameter declares rather than by its name.
+ */
+function emitPluginValues(
+  params: readonly PluginParam[],
+  values: unknown,
+  path: DataPath,
+  emit: Emit,
+): void {
+  if (typeof values !== 'object' || values === null) return;
+  for (const param of params) {
+    const value = (values as Record<string, unknown>)[param.name];
+    if (typeof value !== 'string' || value === '') continue;
+    const here = [...path, param.name];
+    if (param.type === 'reference') emit({ kind: param.kind, id: value, path: here }, here);
+    else if (param.type === 'asset' && value.startsWith('assets/')) {
+      emit({ kind: 'asset', id: value, path: here }, here);
+    }
+  }
+}
+
 /** Visit every reference in a piece of data. `mapId` scopes event ids (`target`, `event`). */
-function walk(value: unknown, path: DataPath, mapId: string | null, emit: Emit): void {
+function walk(
+  value: unknown,
+  path: DataPath,
+  mapId: string | null,
+  emit: Emit,
+  pluginParams: PluginParams,
+): void {
   if (Array.isArray(value)) {
-    value.forEach((item, i) => walk(item, [...path, i], mapId, emit));
+    value.forEach((item, i) => walk(item, [...path, i], mapId, emit, pluginParams));
     return;
   }
   if (typeof value !== 'object' || value === null) return;
   const obj = value as Readonly<Record<string, unknown>>;
+  if (obj['type'] === 'plugin' && typeof obj['plugin'] === 'string') {
+    // A plugin command: its argument names are the plugin's own, never field names to guess from.
+    const here = [...path, 'plugin'];
+    emit({ kind: 'plugin', id: obj['plugin'], path: here }, here);
+    const params = pluginParams(obj['plugin'], String(obj['command']));
+    if (params) emitPluginValues(params, obj['args'], [...path, 'args'], emit);
+    return;
+  }
   const isComment = obj['type'] === 'comment';
   for (const [key, child] of Object.entries(obj)) {
     const here = [...path, key];
@@ -171,7 +219,7 @@ function walk(value: unknown, path: DataPath, mapId: string | null, emit: Emit):
         if (typeof id === 'string')
           emit({ kind: 'equipment', id, path: [...here, slot] }, [...here, slot]);
       }
-    } else walk(child, here, mapId, emit);
+    } else walk(child, here, mapId, emit, pluginParams);
   }
 }
 
@@ -194,16 +242,36 @@ function mapPlace(
 /** Every reference in the project, in project order (manifest, maps, characters, database). */
 export function projectReferences(project: OpenedProject): Reference[] {
   const refs: Reference[] = [];
+  const pluginParams: PluginParams = (plugin, command) =>
+    project.plugins.get(plugin)?.data?.commands.find((c) => c.id === command)?.params;
   const collect = (
     file: string,
     data: unknown,
     mapId: string | null,
     where: (path: DataPath) => string,
-  ) => walk(data, [], mapId, (ref, path) => refs.push({ ...ref, file, where: where(path) }));
+  ) =>
+    walk(
+      data,
+      [],
+      mapId,
+      (ref, path) => refs.push({ ...ref, file, where: where(path) }),
+      pluginParams,
+    );
 
   const manifest = project.manifest.data as unknown as Record<string, unknown>;
   const uses = Object.fromEntries(Object.entries(manifest).filter(([k]) => !DECLARATIONS.has(k)));
   collect(project.manifest.path, uses, null, () => 'Project settings');
+  (project.manifest.data.plugins ?? []).forEach((ref, i) => {
+    const declaration = project.plugins.get(ref.id)?.data;
+    if (!declaration) return;
+    emitPluginValues(declaration.settings, ref.settings, ['plugins', i, 'settings'], (r) =>
+      refs.push({
+        ...r,
+        file: project.manifest.path,
+        where: `Project settings › Plugins › ${declaration.name}`,
+      }),
+    );
+  });
 
   for (const [mapId, file] of project.maps) {
     const map = file.data;

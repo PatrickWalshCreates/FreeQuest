@@ -6,14 +6,17 @@ import { MANIFEST_FORMAT_VERSION } from './manifest.js';
 import { MAP_FORMAT_VERSION } from './map.js';
 import { idFromName } from './common.js';
 import { TILESET_FORMAT_VERSION } from './tileset.js';
+import { PLUGIN_FORMAT_VERSION } from './plugin.js';
 
-export type FileKind = 'manifest' | 'tileset' | 'map' | 'character' | 'save' | DatabaseKind;
+export type FileKind =
+  'manifest' | 'tileset' | 'map' | 'character' | 'plugin' | 'save' | DatabaseKind;
 
 export const CURRENT_FORMAT_VERSION: Record<FileKind, number> = {
   manifest: MANIFEST_FORMAT_VERSION,
   tileset: TILESET_FORMAT_VERSION,
   map: MAP_FORMAT_VERSION,
   character: CHARACTER_FORMAT_VERSION,
+  plugin: PLUGIN_FORMAT_VERSION,
   save: SAVE_FORMAT_VERSION,
   ...(Object.fromEntries(DATABASE_KINDS.map((k) => [k, DATABASE_FORMAT_VERSION])) as Record<
     DatabaseKind,
@@ -79,6 +82,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 7, migrate: (d) => d },
     // v9: the animations database category. Additive.
     { from: 8, migrate: (d) => d },
+    // v10: plugins. Additive.
+    { from: 9, migrate: (d) => d },
   ],
   tileset: [],
   map: [
@@ -99,8 +104,11 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     // v9: changeActor, hidePlayer, route steps, more commands and branch tests,
     // background sounds, pictures, animations and balloons. Additive.
     { from: 8, migrate: (d) => d },
+    // v10: the plugin command. Additive.
+    { from: 9, migrate: (d) => d },
   ],
   character: [],
+  plugin: [],
   // Save v2: event flags (none were set before). v3: actors' changed looks and
   // names, the player hidden (both optional, so additive).
   save: [

@@ -12,6 +12,8 @@ import {
   assembleDatabase,
   checkDatabase,
   checkCharacterShape,
+  checkPluginShape,
+  pluginFolder,
   checkMapShape,
   checkReferences,
   parseProjectFile,
@@ -61,6 +63,8 @@ export interface OpenedProject {
   readonly tilesets: ReadonlyMap<string, ProjectFile<'tileset'>>;
   readonly maps: ReadonlyMap<string, ProjectFile<'map'>>;
   readonly characters: ReadonlyMap<string, ProjectFile<'character'>>;
+  /** Plugin declarations (`plugins/<id>/plugin.json`) the manifest lists, by id. */
+  readonly plugins: ReadonlyMap<string, ProjectFile<'plugin'>>;
   readonly database: { readonly [K in DatabaseKind]?: ProjectFile<K> };
   /** Every problem: each file's own, then cross-file checks. */
   readonly problems: readonly Problem[];
@@ -83,6 +87,7 @@ export function contentProblems(kind: DataFileKind, data: unknown, id: string): 
   }
   if (kind === 'map') problems.push(...checkMapShape(data as FileData<'map'>));
   if (kind === 'character') problems.push(...checkCharacterShape(data as FileData<'character'>));
+  if (kind === 'plugin') problems.push(...checkPluginShape(data as FileData<'plugin'>));
   return problems;
 }
 
@@ -133,7 +138,7 @@ async function readFile<K extends DataFileKind>(
   return { kind, path, id, data, migrated, problems };
 }
 
-function readAll<K extends 'tileset' | 'map' | 'character'>(
+function readAll<K extends 'tileset' | 'map' | 'character' | 'plugin'>(
   fs: ProjectFs,
   kind: K,
   refs: readonly FileRef[],
@@ -158,10 +163,11 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
   }
   const m = manifest.data;
   const manifestFile = { ...manifest, data: m };
-  const [tilesets, maps, characters, databaseFiles] = await Promise.all([
+  const [tilesets, maps, characters, plugins, databaseFiles] = await Promise.all([
     readAll(fs, 'tileset', m.tilesets),
     readAll(fs, 'map', m.maps),
     readAll(fs, 'character', m.characters),
+    readAll(fs, 'plugin', m.plugins ?? []).then((files) => withEntryChecks(fs, files)),
     Promise.all(
       DATABASE_KINDS.flatMap((kind) => {
         const path = m.database?.[kind];
@@ -173,7 +179,7 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
     [K in DatabaseKind]?: ProjectFile<K>;
   };
 
-  const files = { manifest: manifestFile, tilesets, maps, characters, database };
+  const files = { manifest: manifestFile, tilesets, maps, characters, plugins, database };
   const problems = checkProject(files);
 
   return {
@@ -182,24 +188,53 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
     tilesets,
     maps,
     characters,
+    plugins,
     database,
     problems,
   };
 }
 
+/**
+ * A plugin whose script isn't in its folder can't run: say so on its
+ * declaration. (Checked when the project opens; the editor doesn't change
+ * plugin folders while it's open, apart from adding or removing a plugin.)
+ */
+async function withEntryChecks(
+  fs: ProjectFs,
+  files: Map<string, ProjectFile<'plugin'>>,
+): Promise<Map<string, ProjectFile<'plugin'>>> {
+  for (const [id, file] of files) {
+    if (!file.data) continue;
+    const folder = pluginFolder(file.path);
+    const entry = `${folder}${file.data.entry}`;
+    const present = await fs.list(folder.slice(0, -1)).then(
+      (paths) => paths.includes(entry),
+      () => false,
+    );
+    if (!present) {
+      files.set(id, {
+        ...file,
+        problems: [...file.problems, `its script ${file.data.entry} isn't in ${folder}`],
+      });
+    }
+  }
+  return files;
+}
+
 /** The files of a project, grouped by kind (an `OpenedProject` minus its fs and problems). */
 export type ProjectFiles = Pick<
   OpenedProject,
-  'manifest' | 'tilesets' | 'maps' | 'characters' | 'database'
+  'manifest' | 'tilesets' | 'maps' | 'characters' | 'plugins' | 'database'
 >;
 
-/** Every file of a project: manifest, tilesets, maps, characters, then database files. */
+/** Every file of a project: manifest, tilesets, maps, characters, plugins, then database files. */
 export function allFiles(project: ProjectFiles): ProjectFile[] {
   return [
     project.manifest,
     ...project.tilesets.values(),
     ...project.maps.values(),
     ...project.characters.values(),
+    ...project.plugins.values(),
     ...DATABASE_KINDS.flatMap((kind) => {
       const file = project.database[kind];
       return file ? [file as ProjectFile] : [];
@@ -234,6 +269,7 @@ export function checkProject(project: ProjectFiles): Problem[] {
     tilesets: loaded(project.tilesets),
     maps: loaded(project.maps),
     characters: loaded(project.characters),
+    plugins: loaded(project.plugins),
     database: db,
   };
   for (const message of checkReferences(data)) problems.push({ source: 'references', message });

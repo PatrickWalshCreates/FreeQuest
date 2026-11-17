@@ -8,8 +8,9 @@ import {
   PositiveInt,
   RelativePath,
 } from './common.js';
+import { PluginRef } from './plugin.js';
 
-export const MANIFEST_FORMAT_VERSION = 9;
+export const MANIFEST_FORMAT_VERSION = 10;
 
 /** Database categories, each stored in its own file. */
 export const DATABASE_KINDS = [
@@ -121,6 +122,11 @@ export const Manifest = Type.Object(
           additionalProperties: false,
         },
       ),
+    ),
+    plugins: Type.Optional(
+      Type.Array(PluginRef, {
+        description: 'Plugins the project uses, in the order the game starts them (v10).',
+      }),
     ),
     database: Type.Optional(
       Type.Partial(

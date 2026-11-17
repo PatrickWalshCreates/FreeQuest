@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 9
+      "const": 10
     },
     "id": {
       "type": "string",
@@ -138,6 +138,48 @@
         }
       },
       "required": ["character", "speed"]
+    },
+    "plugins": {
+      "type": "array",
+      "description": "Plugins the project uses, in the order the game starts them (v10).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Turned off: the game doesn’t load it and its commands do nothing."
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^plugins/[a-z0-9][a-z0-9_-]*/plugin\\.json$"
+          },
+          "settings": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "required": ["id", "path", "enabled"]
+      }
     },
     "renames": {
       "type": "object",

@@ -1,0 +1,697 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "apiVersion": {
+      "type": "integer",
+      "description": "The FreeQuest plugin API it was written for.",
+      "minimum": 1
+    },
+    "author": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "entry": {
+      "type": "string",
+      "description": "The script the game runs, relative to the plugin folder, e.g. \"main.js\".",
+      "pattern": "^(?!.*(^|/)\\.\\.?(/|$))[A-Za-z0-9_][A-Za-z0-9_./-]*\\.m?js$"
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "boolean"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "label", "type"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "integer"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "integer"
+              },
+              "description": {
+                "type": "string"
+              },
+              "max": {
+                "type": "integer"
+              },
+              "min": {
+                "type": "integer"
+              }
+            },
+            "required": ["name", "label", "type"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "number"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "number"
+              },
+              "description": {
+                "type": "string"
+              },
+              "max": {
+                "type": "number"
+              },
+              "min": {
+                "type": "number"
+              }
+            },
+            "required": ["name", "label", "type"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "string"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "multiline": {
+                "type": "boolean"
+              }
+            },
+            "required": ["name", "label", "type"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "choice"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "value": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["value", "label"]
+                },
+                "minItems": 1
+              }
+            },
+            "required": ["name", "label", "type", "options"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "color"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "default": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "label", "type"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "reference"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "switch"
+                  },
+                  {
+                    "type": "string",
+                    "const": "variable"
+                  },
+                  {
+                    "type": "string",
+                    "const": "map"
+                  },
+                  {
+                    "type": "string",
+                    "const": "character"
+                  },
+                  {
+                    "type": "string",
+                    "const": "actor"
+                  },
+                  {
+                    "type": "string",
+                    "const": "class"
+                  },
+                  {
+                    "type": "string",
+                    "const": "skill"
+                  },
+                  {
+                    "type": "string",
+                    "const": "item"
+                  },
+                  {
+                    "type": "string",
+                    "const": "equipment"
+                  },
+                  {
+                    "type": "string",
+                    "const": "state"
+                  },
+                  {
+                    "type": "string",
+                    "const": "enemy"
+                  },
+                  {
+                    "type": "string",
+                    "const": "troop"
+                  },
+                  {
+                    "type": "string",
+                    "const": "commonEvent"
+                  },
+                  {
+                    "type": "string",
+                    "const": "animation"
+                  }
+                ]
+              },
+              "optional": {
+                "type": "boolean",
+                "description": "It may be left empty (otherwise it must be given)."
+              }
+            },
+            "required": ["name", "label", "type", "kind"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "asset"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "description": "What the editor calls it.",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "folder": {
+                "type": "string",
+                "description": "Where the editor looks for files, e.g. \"assets/pictures\".",
+                "pattern": "^assets(/[^/]+)*$"
+              },
+              "optional": {
+                "type": "boolean"
+              }
+            },
+            "required": ["name", "label", "type"]
+          }
+        ]
+      }
+    },
+    "version": {
+      "type": "string",
+      "description": "The plugin's own version, e.g. 1.0.0.",
+      "minLength": 1
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "boolean"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "boolean"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "integer"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "integer"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "number"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "number"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "max": {
+                      "type": "number"
+                    },
+                    "min": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "multiline": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "choice"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["value", "label"]
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": ["name", "label", "type", "options"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "color"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "default": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}$"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "reference"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "switch"
+                        },
+                        {
+                          "type": "string",
+                          "const": "variable"
+                        },
+                        {
+                          "type": "string",
+                          "const": "map"
+                        },
+                        {
+                          "type": "string",
+                          "const": "character"
+                        },
+                        {
+                          "type": "string",
+                          "const": "actor"
+                        },
+                        {
+                          "type": "string",
+                          "const": "class"
+                        },
+                        {
+                          "type": "string",
+                          "const": "skill"
+                        },
+                        {
+                          "type": "string",
+                          "const": "item"
+                        },
+                        {
+                          "type": "string",
+                          "const": "equipment"
+                        },
+                        {
+                          "type": "string",
+                          "const": "state"
+                        },
+                        {
+                          "type": "string",
+                          "const": "enemy"
+                        },
+                        {
+                          "type": "string",
+                          "const": "troop"
+                        },
+                        {
+                          "type": "string",
+                          "const": "commonEvent"
+                        },
+                        {
+                          "type": "string",
+                          "const": "animation"
+                        }
+                      ]
+                    },
+                    "optional": {
+                      "type": "boolean",
+                      "description": "It may be left empty (otherwise it must be given)."
+                    }
+                  },
+                  "required": ["name", "label", "type", "kind"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "asset"
+                    },
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What the editor calls it.",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "folder": {
+                      "type": "string",
+                      "description": "Where the editor looks for files, e.g. \"assets/pictures\".",
+                      "pattern": "^assets(/[^/]+)*$"
+                    },
+                    "optional": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["name", "label", "type"]
+                }
+              ]
+            }
+          }
+        },
+        "required": ["id", "label", "params"]
+      }
+    }
+  },
+  "required": ["formatVersion", "id", "name", "version", "apiVersion", "entry", "settings", "commands"],
+  "title": "FreeQuest plugin"
+}

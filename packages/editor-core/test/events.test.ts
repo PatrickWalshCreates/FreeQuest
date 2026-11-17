@@ -262,7 +262,8 @@ describe('descriptions', () => {
   it('names every command type in the add menu exactly once', () => {
     const offered = COMMAND_GROUPS.flatMap((g) => g.types);
     expect(new Set(offered).size).toBe(offered.length);
-    expect([...offered].sort()).toEqual([...COMMAND_SCHEMAS.keys()].sort());
+    // Plugin commands are offered per plugin (by what each declares), not as one entry.
+    expect([...offered, 'plugin'].sort()).toEqual([...COMMAND_SCHEMAS.keys()].sort());
     expect(Object.keys(COMMAND_NAMES).sort()).toEqual([...COMMAND_SCHEMAS.keys()].sort());
   });
 });
@@ -302,6 +303,8 @@ describe('schema forms', () => {
         state: 'poison',
         image: 'assets/pictures/sky.png',
         animation: 'sparkle',
+        plugin: 'weather',
+        command: 'rain',
       })[field];
     for (const [type, schema] of COMMAND_SCHEMAS) {
       const command = defaultFor(schema, pick);

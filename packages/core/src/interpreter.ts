@@ -510,6 +510,9 @@ export class Interpreter {
         break;
       case 'comment':
         break;
+      case 'plugin':
+        // Plugins run from M15 step 2; until then their commands do nothing.
+        break;
       default: {
         const unknown: never = command;
         throw new Error(`unknown command ${JSON.stringify(unknown)}`);

@@ -456,6 +456,25 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   Start the dev player with `pnpm dev` from the repo root if a preview config fails to start it.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
+- **Plugins** (M15 step 1, format only; nothing runs yet): `schema/plugin.ts`. A plugin is
+  `plugins/<id>/plugin.json` (file kind `plugin`, format 1: id, name, version, `apiVersion` ≤
+  `PLUGIN_API_VERSION`, `entry` script inside the folder, `settings` and `commands[].params`)
+  plus its files. Parameters are our own small spec (`PluginParam`: boolean, integer, number
+  (min/max), string, choice, color, `reference` (a `kind` of id: switch, variable, map,
+  character, database kinds), `asset` (`folder`, `optional`)), not JSON Schema; values are
+  boolean/number/string (`PluginValues`), missing ones take `pluginParamDefault`
+  (`resolvePluginValues`), `checkPluginValues` checks names, types, ranges, choices and ids,
+  `checkPluginShape` the declaration itself. Manifest v10 `plugins` (`PluginRef`: id, path =
+  `pluginPath(id)`, `enabled`, `settings`), map v10 command `plugin` (plugin, command, args;
+  allowed in battle events; the interpreter skips it until step 2; a turned-off plugin's
+  commands are not a problem). `ReferenceContext.plugins` (declarations): without it only the
+  listing is checked (the runtime loader for now). Editor-core: `OpenedProject.plugins`
+  (read with the manifest's refs; a missing `entry` script is a problem on the declaration,
+  found at open), the reference index (`plugin` kind; values indexed by declared type, never by
+  argument name; settings as "Project settings › Plugins › <name>"), renames rewrite them
+  (plugin ids themselves aren't renamable), `assetReferences` includes asset values (audio by
+  extension), and exports copy an enabled plugin's whole folder (a turned-off one ships only
+  `plugin.json`). The editor's add menu doesn't offer `plugin` yet (step 5: per plugin).
 - **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
   interface exists (`packages/core/src/plugin.ts`); not implemented yet.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
@@ -1032,13 +1051,13 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
-- Current versions: manifest 9 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
+- Current versions: manifest 10 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
   v5: `id`, the permanent game id, migrated from the name with `idFromName`; v6: the
-  `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`; v9: the `animations` category),
-  map 9 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
+  `commonEvents` database category; v7: `renames`, the rename record for saves; v8: `player.hidden`; v9: the `animations` category; v10: `plugins`),
+  map 10 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`, pictures), tileset 1, character 1, every database file 5 (v2: combat modifiers,
+  `backgroundSound`, pictures; v10: the `plugin` command), tileset 1, character 1, plugin 1, every database file 5 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
   animations, skills'/items' `animation`, system `balloons`), save 3 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
@@ -1382,15 +1401,15 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     its own milestone), weather, vehicles, movies, side-view battlers, map regions, wall
     shadows, the MZ traits not listed above (counterattack, magic reflection, party
     abilities…: next, if the samples' use holds up in other games).
-- **M15 (planned)** The plugin API, to release as 0.6.0. M14 left weather, scripts, MZ
+- **M15 (in progress)** The plugin API, to release as 0.6.0. M14 left weather, scripts, MZ
   plugins and one-off battle rules out on purpose: instead of growing the engine for each, game
   makers get a typed, hook-based way to add them. Plugins are JavaScript run by the game, never
   by formulas (formulas stay our own language) and never by the editor.
   - **Design** (decided now, refined in step 1):
     - A plugin is a folder in the project, `plugins/<id>/`, with `plugin.json` (format
       version, id, name, version, description, `apiVersion`, `entry` (one ES module), its
-      `settings` and `commands`, each with parameters declared as plain data in a small subset
-      of JSON Schema) and its script. Everything the editor needs (names, command forms,
+      `settings` and `commands`, each with parameters declared as plain data in our own small
+      parameter spec, not JSON Schema, decided in step 1) and its script. Everything the editor needs (names, command forms,
       checks) is in `plugin.json`, so **the editor never runs plugin code**; only the game does
       (playtests, exports).
     - The project lists plugins it uses (manifest v10 `plugins`: id, enabled, settings
@@ -1411,10 +1430,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
       endpoints. A project opened with plugins asks once before Play runs them ("This project
       runs code from …"). Exported games run them as they run the game itself.
   - Steps:
-  1. Format and checks: `plugin.json` schema, manifest v10 `plugins`, map v10 `plugin`
+  1. ~~Format and checks: `plugin.json` schema, manifest v10 `plugins`, map v10 `plugin`
      command with args checked against its declaration (unknown plugin/command/parameter =
      problem), editor-core reads plugins in `openProject`, the reference index and renames
-     know them, export copies enabled plugins' folders. Nothing runs yet.
+     know them, export copies enabled plugins' folders. Nothing runs yet.~~ (done; tested in
+     schema `plugin.test.ts` and editor-core `plugins.test.ts` on the demo with a plugin added)
   2. The game side: `definePlugin` and the versioned `api` types (exported for plugin
      authors), the runtime loads enabled plugins' modules at start (dynamic import from
      `assetUrl`; desktop player CSP allows scripts from the asset protocol), lifecycle hooks

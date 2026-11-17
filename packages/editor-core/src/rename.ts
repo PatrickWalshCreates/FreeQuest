@@ -15,7 +15,8 @@ import { MANIFEST_PATH, type OpenedProject } from './open-project.js';
 import { type DataPath, type RefKind, type Reference, projectReferences } from './usages.js';
 
 /** What can be renamed (assets are moved instead: M12 step 4). */
-export type RenameKind = Exclude<RefKind, 'asset'>;
+/** Plugin ids are their authors': they aren't renamed in the editor. */
+export type RenameKind = Exclude<RefKind, 'asset' | 'plugin'>;
 
 const ID_RE = new RegExp(ID_PATTERN);
 
@@ -122,7 +123,7 @@ function rewrite(
     if (ref.isKey) {
       out = setAt(out, ref.path.slice(0, -1), (obj) => renameKey(obj, oldValue, newValue));
     } else if (ref.inText) {
-      const code = kind === 'asset' ? undefined : TEXT_CODES[kind];
+      const code = kind === 'asset' || kind === 'plugin' ? undefined : TEXT_CODES[kind];
       if (!code) continue;
       const pattern = new RegExp(`\\{(\\s*${code}\\s*:\\s*)${escapeRe(oldValue)}(\\s*)\\}`, 'g');
       out = setAt(out, ref.path, (text) =>

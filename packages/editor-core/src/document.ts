@@ -455,7 +455,7 @@ export class ProjectDocument {
   private buildView(): OpenedProject {
     const manifest = this.files.get(MANIFEST_PATH) as OpenedProject['manifest'];
     const m = manifest.data;
-    const byRefs = <K extends 'tileset' | 'map' | 'character'>(
+    const byRefs = <K extends 'tileset' | 'map' | 'character' | 'plugin'>(
       refs: readonly { id: string; path: string }[],
     ) =>
       new Map(
@@ -476,6 +476,7 @@ export class ProjectDocument {
       tilesets: byRefs<'tileset'>(m.tilesets),
       maps: byRefs<'map'>(m.maps),
       characters: byRefs<'character'>(m.characters),
+      plugins: byRefs<'plugin'>(m.plugins ?? []),
       database,
     };
     return { fs: this.fs, ...files, problems: checkProject(files) };
