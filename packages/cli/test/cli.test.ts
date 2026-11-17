@@ -93,7 +93,7 @@ describe('freequest check', () => {
   it('reports a clean project', async () => {
     const result = await cli(['check']);
     expect(result.code).toBe(0);
-    expect(result.out).toBe('FreeQuest Demo: no problems (2 maps, 54 files to export).');
+    expect(result.out).toBe('FreeQuest Demo: no problems (2 maps, 58 files to export).');
   });
 
   it('lists problems and fails', async () => {
@@ -118,7 +118,7 @@ describe('freequest export web', () => {
     const result = await cli(['export', 'web', '--out', out]);
     expect(result.code).toBe(0);
     expect(result.out).toMatch(
-      /^Exported FreeQuest Demo for the web to .*\(54 game files, \d+\.\d MB\)\./,
+      /^Exported FreeQuest Demo for the web to .*\(58 game files, \d+\.\d MB\)\./,
     );
     expect(existsSync(join(out, 'index.html'))).toBe(true);
     expect(existsSync(join(out, 'player/main.js'))).toBe(true);
@@ -288,17 +288,19 @@ describe('plugins (M15)', () => {
       settings: [],
       commands: [],
     });
-    for (const id of ['weather', 'clock']) {
+    for (const id of ['rainfall', 'clock']) {
       mkdirSync(join(dir, 'plugins', id), { recursive: true });
       writeFileSync(join(dir, 'plugins', id, 'plugin.json'), JSON.stringify(declaration(id)));
       writeFileSync(join(dir, 'plugins', id, 'main.js'), 'export default { setup() {} };');
     }
-    writeFileSync(join(dir, 'plugins', 'weather', 'drop.png'), 'png');
+    writeFileSync(join(dir, 'plugins', 'rainfall', 'drop.png'), 'png');
     const manifest = JSON.parse(readFileSync(join(dir, 'project.json'), 'utf8')) as {
       plugins?: unknown[];
     };
+    // Beside the demo's own plugins.
     manifest.plugins = [
-      { id: 'weather', path: 'plugins/weather/plugin.json', enabled: true },
+      ...(manifest.plugins ?? []),
+      { id: 'rainfall', path: 'plugins/rainfall/plugin.json', enabled: true },
       { id: 'clock', path: 'plugins/clock/plugin.json', enabled: false },
     ];
     writeFileSync(join(dir, 'project.json'), JSON.stringify(manifest));
@@ -308,10 +310,10 @@ describe('plugins (M15)', () => {
   it('are checked: a missing script is a problem', async () => {
     const dir = withPlugins();
     expect((await cli(['check', dir])).code).toBe(0);
-    rmSync(join(dir, 'plugins', 'weather', 'main.js'));
+    rmSync(join(dir, 'plugins', 'rainfall', 'main.js'));
     const result = await cli(['check', dir]);
     expect(result.code).toBe(1);
-    expect(result.err).toMatch(/plugins\/weather\/plugin\.json: .*main\.js/);
+    expect(result.err).toMatch(/plugins\/rainfall\/plugin\.json: .*main\.js/);
   });
 
   it('ship with every export: an enabled one’s whole folder, a turned-off one’s plugin.json', async () => {
@@ -327,8 +329,8 @@ describe('plugins (M15)', () => {
       const result = await cli(['export', target, dir, '--out', out]);
       expect(result.code, `${target}: ${result.err}`).toBe(0);
       const root = join(out, game);
-      expect(existsSync(join(root, 'plugins/weather/main.js')), target).toBe(true);
-      expect(existsSync(join(root, 'plugins/weather/drop.png')), target).toBe(true);
+      expect(existsSync(join(root, 'plugins/rainfall/main.js')), target).toBe(true);
+      expect(existsSync(join(root, 'plugins/rainfall/drop.png')), target).toBe(true);
       expect(existsSync(join(root, 'plugins/clock/plugin.json')), target).toBe(true);
       expect(existsSync(join(root, 'plugins/clock/main.js')), target).toBe(false);
       expect((await openProject(new NodeFs(root))).problems, target).toEqual([]);

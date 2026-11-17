@@ -6,13 +6,14 @@ import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from '
 import exportingGuide from '../../../docs/exporting.md?raw';
 import gettingStarted from '../../../docs/getting-started.md?raw';
 import importingGuide from '../../../docs/importing-mz.md?raw';
+import pluginsGuide from '../../../docs/plugins.md?raw';
 import { AboutPanel } from './AboutPanel.js';
 import { IN_DESKTOP_APP } from './platform.js';
 import { updates } from './updater.js';
 import { Dialog } from './Dialog.js';
 import { openExternal } from './platform.js';
 
-export type HelpPage = 'getting-started' | 'exporting' | 'importing' | 'about';
+export type HelpPage = 'getting-started' | 'exporting' | 'importing' | 'plugins' | 'about';
 
 const PAGES: readonly { id: HelpPage; label: string; source?: string; file?: string }[] = [
   {
@@ -23,6 +24,7 @@ const PAGES: readonly { id: HelpPage; label: string; source?: string; file?: str
   },
   { id: 'exporting', label: 'Exporting games', source: exportingGuide, file: 'exporting.md' },
   { id: 'importing', label: 'Importing from MZ', source: importingGuide, file: 'importing-mz.md' },
+  { id: 'plugins', label: 'Plugins', source: pluginsGuide, file: 'plugins.md' },
   { id: 'about', label: 'About' },
 ];
 

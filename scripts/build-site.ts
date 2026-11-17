@@ -35,6 +35,7 @@ const GUIDES = [
     page: 'guide/importing-mz.html',
     title: 'Importing from RPG Maker MZ',
   },
+  { file: 'plugins.md', page: 'guide/plugins.html', title: 'Plugins' },
 ];
 
 /** The editor downloads: the release workflow names its files like this. */
@@ -244,6 +245,10 @@ const FEATURES: [string, string][] = [
   [
     'Coming from RPG Maker MZ?',
     'Import your MZ project: maps, database, events, characters, music. What can’t come across is listed, never lost.',
+  ],
+  [
+    'Plugins',
+    'Add what FreeQuest doesn’t do, in JavaScript: weather and an on-screen counter come with it. Playtests run them in a sandbox.',
   ],
   [
     'Share it anywhere',

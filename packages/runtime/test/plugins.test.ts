@@ -25,12 +25,17 @@ async function project(
   plugins: { decl: PluginDeclaration; enabled: boolean; settings?: Record<string, number> }[],
 ): Promise<ProjectSource> {
   const manifest = JSON.parse(await readFile(join(DEMO, 'project.json'), 'utf8')) as Manifest;
-  manifest.plugins = plugins.map(({ decl, enabled, settings }) => ({
-    id: decl.id,
-    path: `plugins/${decl.id}/plugin.json`,
-    enabled,
-    ...(settings ? { settings } : {}),
-  }));
+  // The demo's own plugins stay listed, turned off (their commands are in its maps).
+  const own = (manifest.plugins ?? []).map((ref) => ({ ...ref, enabled: false }));
+  manifest.plugins = [
+    ...own,
+    ...plugins.map(({ decl, enabled, settings }) => ({
+      id: decl.id,
+      path: `plugins/${decl.id}/plugin.json`,
+      enabled,
+      ...(settings ? { settings } : {}),
+    })),
+  ];
   const files = new Map<string, unknown>([['project.json', manifest]]);
   for (const { decl } of plugins) files.set(`plugins/${decl.id}/plugin.json`, decl);
   return {
@@ -49,7 +54,7 @@ describe('loading plugins', () => {
         { decl: declaration('clock'), enabled: false },
       ]),
     );
-    expect([...loaded.plugins.keys()]).toEqual(['rain', 'clock']);
+    expect([...loaded.plugins.keys()]).toEqual(['weather', 'hud', 'rain', 'clock']);
   });
 
   it('refuses a plugin that needs a newer FreeQuest', async () => {

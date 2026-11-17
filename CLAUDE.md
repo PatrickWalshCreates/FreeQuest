@@ -1130,11 +1130,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3, 0.5) hold
+- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3, 0.5, 0.6) hold
   the demo's data and a save exactly as that release wrote them (never edit; checksums in
   `editor-core/test/release-formats.test.ts`, which opens each with no problems;
   `.gitattributes` and `.prettierignore` keep the bytes). Core loads each save
-  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint). Change a
+  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint; `release-0.6-formats.test.ts`: plugins' data, with the plugins in the folder). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
 - Current versions: manifest 10 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
@@ -1559,7 +1559,16 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   7. Two example plugins of our own (weather: rain/snow on a map; a HUD showing gold or a
      variable), the demo uses weather in one place, `docs/plugins.md` (writing one, the api
      reference, safety), Starter, guides, the quest test, freeze the 0.6 formats, and a 0.6.0
-     release through the checklist.
+     release through the checklist. (Done up to the draft: the plugins live in the demo,
+     `samples/demo-project/plugins/{weather,hud}/` (plain JS, one file each, tested for real in
+     `runtime/test/example-plugins.test.ts` with a fake canvas); weather is per map
+     (plugin data `{map, kind, strength}`, eased in `onStep`, shown at once on map load), the
+     HUD shows gold or a variable, `onlyWhile` a switch, hide/show kept in saves. The demo's
+     bridge ambush starts a storm and the win clears it; the HUD (gold) is on. The Starter
+     copies both turned off (`gen-templates.ts`). Tests that add their own plugins use
+     editor-core's `demoWithoutPlugins()`. Guide `docs/plugins.md` in the Help window and
+     the site. 0.6 frozen: `release-0.6/` includes `plugins/`, its save holds both plugins'
+     data. Still to do: the user's by-hand check of the draft, then publishing)
   - Formats: manifest 10, map 10, save 4, plus `plugin.json` 1; each with a migration, the
     frozen 0.1–0.5 projects and saves keep opening.
   - Not in M15: plugins in the editor (custom panels, tools), a plugin registry or downloads,

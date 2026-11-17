@@ -4,13 +4,14 @@ FreeQuest is a free, open-source (MIT) toolkit for making classic 2D role-playin
 alternative to RPG Maker MZ, created by Patrick Walsh. It is a clean-room implementation: no RPG
 Maker code, assets or UI are used.
 
-> **Status: 0.5, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
+> **Status: 0.6, early days.** FreeQuest has a desktop editor (maps, events, database, tilesets,
 > characters, assets) and exports games for the web, Windows, macOS and Linux. Games have tile maps, NPCs who
 > wander, chase or follow routes, events (messages, choices, switches, variables, branches, map
 > transfers, background events), pictures, animations and balloons, shops, a full RPG database
 > with a safe formula language and icons, turn-based battles with TP, buffs, battle events and
 > enemies that pick moves by situation, a title picture, an in-game menu, save slots, an
-> options screen (volume, keys), and music and sound. File formats may still change
+> options screen (volume, keys), music and sound, and plugins (JavaScript, with weather and a
+> HUD as examples). File formats may still change
 > (older projects are upgraded automatically). Coming from RPG Maker MZ? The editor imports
 > MZ projects: see [Importing from RPG Maker MZ](docs/importing-mz.md).
 
@@ -141,7 +142,7 @@ enemies). Released: 0.1.0 (the first public release), 0.2.0 (event flags, common
 codes, loops, screen effects), 0.3.0 (editor comfort: renaming, stamps, big maps, faces, the
 updater), 0.4.0 (importing RPG Maker MZ projects) and 0.5.0 (what MZ games need: message pacing,
 pictures, animations, balloons, richer move routes and event commands, TP, buffs and battle
-events). Next: the plugin API (M15, planned for 0.6.0). See [CLAUDE.md](CLAUDE.md) for details.
+events) and 0.6.0 (plugins). See [CLAUDE.md](CLAUDE.md) for details.
 
 ## License
 

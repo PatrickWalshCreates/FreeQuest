@@ -1,0 +1,30 @@
+{
+  "formatVersion": 5,
+  "entries": [
+    {
+      "id": "slash",
+      "name": "Slash",
+      "fps": 15,
+      "frameHeight": 32,
+      "frameWidth": 32,
+      "frames": 6,
+      "image": "assets/animations/slash.png",
+      "sounds": []
+    },
+    {
+      "id": "sparkle",
+      "name": "Sparkle",
+      "fps": 12,
+      "frameHeight": 32,
+      "frameWidth": 32,
+      "frames": 8,
+      "image": "assets/animations/sparkle.png",
+      "sounds": [
+        {
+          "frame": 0,
+          "path": "assets/audio/sfx-heal.wav"
+        }
+      ]
+    }
+  ]
+}

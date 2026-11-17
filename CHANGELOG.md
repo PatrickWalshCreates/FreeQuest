@@ -4,6 +4,46 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## 0.6.0 (2026-11-17)
+
+Plugins: add to your game what FreeQuest doesn't do by itself, in JavaScript. See the new
+[Plugins](docs/plugins.md) guide.
+
+### Plugins
+
+- A plugin is a folder in the project: `plugin.json` (its name, settings and commands, with
+  their fields described in FreeQuest's own simple format) and one script. The script gets a
+  small, versioned **api**: hooks when a game starts, a map loads and after every step,
+  **commands** for events (which can make the event wait), **drawing** over the map with Canvas
+  2D, the switches, variables, gold and player position, sounds, and its **own data, kept in
+  saves**. A plugin that fails shows a notice naming it and is switched off; the game goes on.
+- **Project settings › Plugins**: add a plugin folder (checked first), turn plugins on and off,
+  set their order, change their settings in a form made from `plugin.json`, see where their
+  commands are used, remove them.
+- Plugin commands are in the event command list's **+ Add** menu, with dialogs made from their
+  parameters. Renaming a switch, an item or an asset updates the plugins that use it.
+- **Safety**: the editor never runs plugin code. Playtests ask before a project's plugins first
+  run, and run them in a sandbox, cut off from the editor, your files and the network. Exported
+  games (web, macOS, Windows, Linux) run their turned-on plugins as part of the game.
+
+### The demo and Starter
+
+- Two example plugins: **Weather** (rain or snow over a map, kept in saves) and **HUD** (the
+  gold or a variable in a corner, optionally only while a switch is on). In the demo a storm
+  comes up when the wolf attacks at the bridge and clears once it's beaten, and the HUD shows
+  the gold. Every new project has both, turned off.
+
+### Importing from RPG Maker MZ
+
+- The report lists the **MZ plugins** the game used (on and off). Their commands are comments
+  naming the plugin and the command, counted per plugin in the report's summary.
+
+### Formats
+
+- Project manifest 10 (the plugins a project uses), maps 10 (the plugin command), saves 4
+  (plugins' data), and the new `plugin.json` 1. Older files are read as before; the editor
+  upgrades them on save.
+
 ## 0.5.0 (2026-11-16)
 
 More of what RPG Maker MZ games use, in FreeQuest itself and brought across by the importer.

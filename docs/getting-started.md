@@ -387,6 +387,13 @@ to know.
 Players can change the music and sound volume and rebind the keys under **Options**, on the title
 screen and in the menu. Their choices are kept with their saves.
 
+## Going further: plugins
+
+Plugins add things FreeQuest doesn't do by itself. Every new project has two to try, turned off:
+**Weather** (rain or snow on a map) and **HUD** (the gold or a variable on screen). Turn them
+on in **Project settings › Plugins**, then add **Start weather** to an event from the **+ Add**
+menu. [Plugins](plugins.md) explains using them safely and writing your own.
+
 ## Keyboard shortcuts
 
 On a Mac, use ⌘ for Ctrl.

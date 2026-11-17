@@ -24,7 +24,7 @@ this on the release build, ideally on a Mac user account that has never run Free
       work (between pages, and web links open in the browser).
 - [ ] **New project** from Starter: choose a folder in the system dialog, the project opens, and
       **Play** runs it (talk to the shopkeeper, buy something).
-- [ ] A project with a plugin (the demo's weather): **Play** asks "Run this project's plugins?";
+- [ ] A project with plugins (the demo): **Play** asks "Run this project's plugins?";
       **Run plugins** runs it in the playtest (and isn't asked again), **Play without plugins**
       plays without it.
 - [ ] Quit and reopen: the project is under **Recent** and opens with one click.
@@ -48,6 +48,9 @@ this on the release build, ideally on a Mac user account that has never run Free
 - [ ] Title screen: music plays after the first key; **Options** changes the volume and a key,
       and both are kept after quitting and reopening.
 - [ ] The quest: the elder, the bridge, the wolf fight (won), the house, Mira joining.
+- [ ] Plugins: rain starts as the wolf appears at the bridge and clears after the fight; the
+      gold box in the top-right corner follows the gold; in the desktop editor, **Play** asks
+      before running them.
 - [ ] The peddler's shop: buy and sell; the farmer wanders; birdsong now and then.
 - [ ] Menu: items, skills, equipment, status, save to a slot; **Continue** loads it.
 

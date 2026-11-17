@@ -1,4 +1,4 @@
-FreeQuest Player (in exported games) 0.5.0
+FreeQuest Player (in exported games) 0.6.0
 
 FreeQuest is free software under the MIT License:
 

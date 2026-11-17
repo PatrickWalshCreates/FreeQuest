@@ -1,0 +1,75 @@
+{
+  "formatVersion": 1,
+  "id": "weather",
+  "name": "Weather",
+  "apiVersion": 1,
+  "description": "Rain or snow over a map, kept in saves. An example plugin that comes with FreeQuest.",
+  "entry": "main.js",
+  "settings": [
+    {
+      "type": "integer",
+      "name": "density",
+      "label": "Density",
+      "default": 5,
+      "description": "How many drops or flakes (1–10).",
+      "max": 10,
+      "min": 1
+    }
+  ],
+  "version": "1.0.0",
+  "commands": [
+    {
+      "id": "start",
+      "label": "Start weather",
+      "description": "Rain or snow on the map the player is on, until stopped. Other maps stay clear.",
+      "params": [
+        {
+          "type": "choice",
+          "name": "kind",
+          "label": "Weather",
+          "options": [
+            {
+              "label": "Rain",
+              "value": "rain"
+            },
+            {
+              "label": "Snow",
+              "value": "snow"
+            }
+          ]
+        },
+        {
+          "type": "number",
+          "name": "strength",
+          "label": "Strength (0.1–1)",
+          "default": 0.7,
+          "max": 1,
+          "min": 0.1
+        },
+        {
+          "type": "number",
+          "name": "seconds",
+          "label": "Fade (seconds)",
+          "default": 1,
+          "max": 10,
+          "min": 0
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "label": "Stop weather",
+      "description": "Clears the weather (on whichever map it was).",
+      "params": [
+        {
+          "type": "number",
+          "name": "seconds",
+          "label": "Fade (seconds)",
+          "default": 1,
+          "max": 10,
+          "min": 0
+        }
+      ]
+    }
+  ]
+}

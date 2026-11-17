@@ -192,7 +192,10 @@ const manifest: Manifest = {
   switches: [],
   variables: [],
   start: { map: 'map001', x: 8, y: 8, direction: 'up', party: ['hero'], gold: 100 },
+  // The example plugins, there to turn on (Project settings › Plugins).
+  plugins: (demo.plugins ?? []).map((ref) => ({ ...ref, enabled: false })),
 };
+for (const ref of manifest.plugins ?? []) copy(ref.path.replace(/plugin\.json$/, ''));
 write('project.json', manifest);
 
 // What the New project dialog says about it (not part of the project).

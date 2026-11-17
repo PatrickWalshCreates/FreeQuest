@@ -9,7 +9,7 @@ import {
   referencesTo,
   renameId,
 } from '../src/index.js';
-import { DEMO, memoryCopy } from './helpers.js';
+import { demoWithoutPlugins } from './helpers.js';
 
 const weather: PluginDeclaration = {
   formatVersion: 1,
@@ -40,7 +40,7 @@ const weather: PluginDeclaration = {
 async function withPlugin(
   options: { enabled?: boolean; script?: boolean } = {},
 ): Promise<MemoryFs> {
-  const fs = await memoryCopy(DEMO);
+  const fs = await demoWithoutPlugins();
   await fs.writeText('plugins/weather/plugin.json', JSON.stringify(weather));
   if (options.script !== false) await fs.writeText('plugins/weather/main.js', 'export default {}');
   await fs.writeBytes('plugins/weather/drop.png', new Uint8Array([1]));

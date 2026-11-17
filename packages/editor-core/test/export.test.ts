@@ -99,8 +99,9 @@ describe('planExport', () => {
     expect(paths).toContain('assets/characters/mage.png');
     expect(paths).not.toContain('assets/unused/old-sketch.png');
     expect(paths).not.toContain('notes.txt');
-    // project.json, 1 tileset, 2 maps, 3 characters, 9 database files.
-    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(21);
+    // The data files the comment once listed (21), plus the two example plugins' plugin.json.
+    expect(plan.files.filter((f) => f.kind === 'data')).toHaveLength(23);
+    expect(paths).toContain('plugins/weather/main.js');
   });
 
   it('blocks on project problems and missing images, warns about missing sounds', async () => {

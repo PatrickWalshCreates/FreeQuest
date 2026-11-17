@@ -307,6 +307,16 @@
                   "text": "The planks creak, but the bridge holds."
                 },
                 {
+                  "type": "plugin",
+                  "args": {
+                    "kind": "rain",
+                    "seconds": 1.5,
+                    "strength": 0.8
+                  },
+                  "command": "start",
+                  "plugin": "weather"
+                },
+                {
                   "type": "shakeScreen",
                   "power": 6,
                   "seconds": 0.5,
@@ -331,6 +341,14 @@
                       "type": "setSwitch",
                       "switch": "wolf_defeated",
                       "value": true
+                    },
+                    {
+                      "type": "plugin",
+                      "args": {
+                        "seconds": 3
+                      },
+                      "command": "stop",
+                      "plugin": "weather"
                     },
                     {
                       "type": "message",

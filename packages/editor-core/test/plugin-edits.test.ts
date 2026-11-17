@@ -16,7 +16,7 @@ import {
   setPluginSetting,
   MemoryFs,
 } from '../src/index.js';
-import { DEMO, memoryCopy } from './helpers.js';
+import { demoWithoutPlugins } from './helpers.js';
 
 const declaration = (id: string): PluginDeclaration => ({
   formatVersion: 1,
@@ -39,7 +39,7 @@ const folder = (id: string, extra: Record<string, string> = {}): PluginSourceFil
   }).map(([path, text]) => ({ path, bytes: encodeUtf8(text) }));
 
 async function demo() {
-  const fs = await memoryCopy(DEMO);
+  const fs = await demoWithoutPlugins();
   return { fs, doc: new ProjectDocument(await openProject(fs)) };
 }
 

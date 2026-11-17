@@ -55,6 +55,18 @@
     "character": "hero",
     "speed": 4
   },
+  "plugins": [
+    {
+      "id": "weather",
+      "enabled": true,
+      "path": "plugins/weather/plugin.json"
+    },
+    {
+      "id": "hud",
+      "enabled": true,
+      "path": "plugins/hud/plugin.json"
+    }
+  ],
   "screen": {
     "height": 352,
     "width": 480

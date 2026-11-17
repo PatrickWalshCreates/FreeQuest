@@ -20,3 +20,29 @@ export async function memoryCopy(root: string): Promise<MemoryFs> {
   }
   return fs;
 }
+
+/**
+ * The demo as it was before it had plugins (M15): its plugins unlisted, their
+ * folders gone and their commands taken out, for tests that add their own.
+ */
+export async function demoWithoutPlugins(): Promise<MemoryFs> {
+  const fs = await memoryCopy(DEMO);
+  const manifest = JSON.parse(await fs.readText('project.json')) as Record<string, unknown>;
+  delete manifest['plugins'];
+  await fs.writeText('project.json', JSON.stringify(manifest));
+  for (const path of await fs.list('plugins')) await fs.remove(path);
+  const strip = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value
+          .filter(
+            (c) => !(c && typeof c === 'object' && (c as { type?: unknown }).type === 'plugin'),
+          )
+          .map(strip)
+      : value && typeof value === 'object'
+        ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, strip(v)]))
+        : value;
+  for (const path of await fs.list('data/maps')) {
+    await fs.writeText(path, JSON.stringify(strip(JSON.parse(await fs.readText(path)))));
+  }
+  return fs;
+}

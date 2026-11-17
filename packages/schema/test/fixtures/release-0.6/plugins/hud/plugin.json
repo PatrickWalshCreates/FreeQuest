@@ -1,0 +1,83 @@
+{
+  "formatVersion": 1,
+  "id": "hud",
+  "name": "HUD",
+  "apiVersion": 1,
+  "description": "A small box in a corner showing the gold or a variable. An example plugin that comes with FreeQuest.",
+  "entry": "main.js",
+  "settings": [
+    {
+      "type": "choice",
+      "name": "what",
+      "label": "Shows",
+      "options": [
+        {
+          "label": "Gold",
+          "value": "gold"
+        },
+        {
+          "label": "A variable",
+          "value": "variable"
+        }
+      ]
+    },
+    {
+      "type": "reference",
+      "name": "variable",
+      "label": "Variable (when it shows one)",
+      "kind": "variable",
+      "optional": true
+    },
+    {
+      "type": "string",
+      "name": "label",
+      "label": "Label",
+      "default": "Gold",
+      "description": "Written before the number."
+    },
+    {
+      "type": "choice",
+      "name": "corner",
+      "label": "Corner",
+      "default": "top-right",
+      "options": [
+        {
+          "label": "Top left",
+          "value": "top-left"
+        },
+        {
+          "label": "Top right",
+          "value": "top-right"
+        },
+        {
+          "label": "Bottom left",
+          "value": "bottom-left"
+        },
+        {
+          "label": "Bottom right",
+          "value": "bottom-right"
+        }
+      ]
+    },
+    {
+      "type": "reference",
+      "name": "onlyWhile",
+      "label": "Only while this switch is on",
+      "kind": "switch",
+      "optional": true
+    }
+  ],
+  "version": "1.0.0",
+  "commands": [
+    {
+      "id": "hide",
+      "label": "Hide the HUD",
+      "params": []
+    },
+    {
+      "id": "show",
+      "label": "Show the HUD",
+      "params": []
+    }
+  ]
+}
