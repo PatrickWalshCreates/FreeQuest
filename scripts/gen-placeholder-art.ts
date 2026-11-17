@@ -7,6 +7,7 @@
 //   assets/animations/*.png        animation frames of 32px in a row (sparkle, slash)
 //   assets/system/title.png        the title screen picture (480x352)
 //   assets/pictures/meadow-map.png the elder's map, shown as a picture
+//   assets/battlebacks/meadow.png  the meadow behind battles (480x352)
 // Output is deterministic, so re-running produces byte-identical files.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -1315,6 +1316,73 @@ function drawTitle(): void {
   c.save(join(ROOT, 'assets', 'system', 'title.png'));
 }
 
+// Behind battles: the meadow by day. Calm and low in contrast, so enemies stand out; the
+// ground starts a little above where they stand (60% down the screen).
+function drawBattleback(): void {
+  const W = 480;
+  const H = 352;
+  const c = new Canvas(W, H);
+  const horizon = Math.round(H * 0.5);
+  const sky = [hex('#5b86c9'), hex('#6f98d4'), hex('#86abdc'), hex('#a3c1e4'), hex('#c3d7ec')];
+  for (let y = 0; y < horizon; y++) {
+    const t = y / horizon;
+    const band = Math.min(sky.length - 1, Math.floor(t * sky.length));
+    const next = Math.min(sky.length - 1, band + 1);
+    const frac = t * sky.length - band;
+    for (let x = 0; x < W; x++) {
+      const color = frac > 0.75 && (x + y) % 2 === 0 ? sky[next] : sky[band];
+      if (color) c.set(x, y, color);
+    }
+  }
+  // Soft clouds: clusters of pale circles.
+  for (const [cx, cy, size] of [
+    [80, 58, 1],
+    [250, 34, 1.4],
+    [410, 76, 0.9],
+  ] as const) {
+    for (let i = 0; i < 6; i++) {
+      const dx = Math.round((noise(i, cx, 3) - 0.5) * 60 * size);
+      const dy = Math.round((noise(i, cy, 4) - 0.5) * 12 * size);
+      c.circle(cx + dx, cy + dy, Math.round((9 + noise(i, 5, 5) * 8) * size), hex('#eef4fb'));
+    }
+  }
+  // Far mountains, a line of trees, then the grass.
+  const ridge = (base: number, amp: number, freq: number, phase: number, color: RGBA) => {
+    for (let x = 0; x < W; x++) {
+      const top = Math.round(
+        base - amp * Math.abs(Math.sin(x * freq + phase)) - amp * 0.4 * Math.sin(x * freq * 3.1),
+      );
+      for (let y = top; y < H; y++) c.set(x, y, color);
+    }
+  };
+  ridge(horizon, 38, 0.011, 0.7, hex('#7f96bf'));
+  ridge(horizon + 6, 20, 0.019, 2.1, hex('#6a86a8'));
+  for (let x = 0; x < W; x += 6) {
+    const r = 6 + Math.floor(noise(x, 7, 6) * 6);
+    c.circle(x, horizon + 12 - Math.floor(noise(x, 8, 6) * 6), r, hex('#3f7046'));
+  }
+  c.rect(0, horizon + 14, W, H - horizon - 14, hex('#5e9a4c'));
+  // Lighter bands of grass toward the front, and tufts.
+  for (let y = horizon + 14; y < H; y++) {
+    if ((y - horizon) % 23 < 9) {
+      for (let x = (y % 2) * 1; x < W; x += 2) c.set(x, y, hex('#67a454'));
+    }
+  }
+  for (let i = 0; i < 420; i++) {
+    const x = Math.floor(noise(i, 9, 11) * W);
+    const y = horizon + 18 + Math.floor(noise(i, 10, 11) * (H - horizon - 18));
+    c.set(x, y, noise(i, 12, 11) < 0.5 ? hex('#7fb85c') : hex('#4f8a40'));
+    c.set(x, y - 1, hex('#7fb85c'));
+  }
+  // A few flowers.
+  for (let i = 0; i < 40; i++) {
+    const x = Math.floor(noise(i, 13, 12) * W);
+    const y = horizon + 30 + Math.floor(noise(i, 14, 12) * (H - horizon - 30));
+    c.set(x, y, noise(i, 15, 12) < 0.5 ? hex('#f3e27a') : hex('#f2f2f2'));
+  }
+  c.save(join(ROOT, 'assets', 'battlebacks', 'meadow.png'));
+}
+
 // The elder's hand-drawn map of the meadow, shown as a picture when it's read.
 function drawMeadowMap(): void {
   const W = 200;
@@ -1379,3 +1447,4 @@ drawSparkle();
 drawSlash();
 drawTitle();
 drawMeadowMap();
+drawBattleback();

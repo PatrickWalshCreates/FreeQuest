@@ -1,3 +1,4 @@
+import { BackgroundPicker } from '../forms/BackgroundPicker.js';
 import { type ProjectDocument, mapUsages } from '@freequest/editor-core';
 import type { Encounters, GameMap } from '@freequest/schema';
 import { useState } from 'react';
@@ -14,10 +15,10 @@ interface Props {
 
 const DEFAULT_ENCOUNTER_STEPS = 30;
 
-/** Map-wide settings: tileset, size, music, background sound, random battles. */
+/** Map-wide settings: tileset, size, music, background sound, battle background, random battles. */
 export function MapSettings({ doc, path, map }: Props) {
   const [resizing, setResizing] = useState(false);
-  const { audio } = useProjectLists(doc);
+  const { audio, images = [] } = useProjectLists(doc);
   const troops = doc.project.database.troops?.data?.entries ?? [];
   const tilesets = [...doc.project.tilesets];
 
@@ -111,6 +112,22 @@ export function MapSettings({ doc, path, map }: Props) {
             </option>
           ))}
         </select>
+      </Field>
+
+      <Field label="Battle background">
+        <BackgroundPicker
+          doc={doc}
+          images={images}
+          value={map.battleBackground}
+          title="The picture behind battles on this map"
+          noneLabel="(the project’s)"
+          onChange={(image) =>
+            change('Change battle background', (m) => {
+              const { battleBackground: _old, ...rest } = m;
+              return image ? { ...rest, battleBackground: image } : rest;
+            })
+          }
+        />
       </Field>
 
       <div className="field">

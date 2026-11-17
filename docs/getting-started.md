@@ -362,6 +362,13 @@ turn starts (or ends, with **Checked as the turn ends**), and runs once a battle
 or every time. Its messages and choices show over the battle. Commands that need the map
 (transfers, routes, shops, another battle) can't be used there.
 
+**Battle backgrounds**: a picture behind battles, scaled to fill the screen. Set the game's in
+**Database › System › Battle background** (the templates use a meadow), a map's own in its
+settings (a cave, a castle), and a battle's own in the **Battle** command. **Change battle
+background** (in the add menu's World group) switches it for the rest of the game, over every
+map's own, until changed back. Import pictures for it into the **Battle backgrounds** folder in
+Assets.
+
 **Icons**: items, skills, equipment and states can have an icon from the game's iconset (set in
 **System**; the templates come with one). Click **Choose…** on an entry's Icon to pick from the
 sheet. Icons show in the game's menus, in battle and in shops.

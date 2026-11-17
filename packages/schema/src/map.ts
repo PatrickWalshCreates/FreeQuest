@@ -2,7 +2,7 @@ import Type, { type Static } from 'typebox';
 import { Id, PositiveInt, RelativePath } from './common.js';
 import { MapEvent } from './event.js';
 
-export const MAP_FORMAT_VERSION = 10;
+export const MAP_FORMAT_VERSION = 11;
 
 /** Random battles while walking on a map. */
 export const Encounters = Type.Object(
@@ -54,6 +54,8 @@ export const GameMap = Type.Object(
     music: Type.Optional(RelativePath),
     /** A sound looping beside the music while on this map (rain, wind; v9). Omit for none. */
     backgroundSound: Type.Optional(RelativePath),
+    /** The picture behind battles on this map, instead of the project's (v11). */
+    battleBackground: Type.Optional(RelativePath),
   },
   { title: 'FreeQuest map', additionalProperties: false },
 );

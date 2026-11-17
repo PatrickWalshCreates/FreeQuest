@@ -23,7 +23,8 @@ function setup(options: { encounters?: boolean; prepare?: () => Promise<void> } 
   }
   const hooks = {
     prepare: vi.fn(options.prepare ?? (() => Promise.resolve())),
-    begin: vi.fn<(battle: Battle, controller: BattleController) => void>(),
+    begin:
+      vi.fn<(battle: Battle, controller: BattleController, background: string | null) => void>(),
     end: vi.fn(),
     gameOver: vi.fn(),
   };
@@ -54,7 +55,7 @@ function setup(options: { encounters?: boolean; prepare?: () => Promise<void> } 
   return { world, flow, hooks, input, tick, flush, fightThrough };
 }
 
-const battleCommand = (canLose: boolean): Command => ({
+const battleCommand = (canLose: boolean): Extract<Command, { type: 'battle' }> => ({
   type: 'battle',
   troop: 'slimes',
   canEscape: false,
@@ -64,12 +65,24 @@ const battleCommand = (canLose: boolean): Command => ({
 });
 
 describe('BattleFlow', () => {
+  it('loads and shows the battle’s background: the command’s own, else the game’s', async () => {
+    const { world, flow, hooks, tick, flush } = setup();
+    world.run([{ ...battleCommand(false), background: 'assets/battlebacks/cave.png' }]);
+    tick(2);
+    expect(flow.active).toBe(true);
+    expect(hooks.prepare).toHaveBeenCalledWith('slimes', 'assets/battlebacks/cave.png');
+    await flush();
+    tick(13);
+    expect(hooks.begin.mock.calls[0]?.[2]).toBe('assets/battlebacks/cave.png');
+  });
+
   it('runs an event battle: fade out, fight, fade back, then the win branch', async () => {
     const { world, flow, hooks, tick, flush, fightThrough } = setup();
     world.run([battleCommand(false)]);
     tick(2); // the world runs the event to its battle request; the flow picks it up
     expect(flow.active).toBe(true);
-    expect(hooks.prepare).toHaveBeenCalledWith('slimes');
+    // The demo's own battle background (Database › System) is loaded with the troop.
+    expect(hooks.prepare).toHaveBeenCalledWith('slimes', 'assets/battlebacks/meadow.png');
     await flush();
     tick(3);
     expect(flow.fade).toBeGreaterThan(0);

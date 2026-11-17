@@ -43,6 +43,7 @@ const keep = (file: string, ids: string[], change: (e: Entry) => Entry = (e) => 
 rmSync(OUT, { recursive: true, force: true });
 
 // Assets: the overworld tiles, the hero, a villager, the slime, icons, balloons, animations,
+// the battle background,
 // and all the (small) audio.
 copy('assets/tilesets/overworld.png');
 copy('assets/characters/hero.png');
@@ -51,6 +52,7 @@ copy('assets/enemies/slime.png');
 copy('assets/system/iconset.png');
 copy('assets/system/balloons.png');
 copy('assets/system/title.png');
+copy('assets/battlebacks/meadow.png');
 copy('assets/animations');
 copy('assets/audio');
 copy('data/tilesets/overworld.json');

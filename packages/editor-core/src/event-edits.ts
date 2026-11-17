@@ -564,8 +564,13 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       const rules = [command.canEscape ? 'can escape' : null, command.canLose ? 'can lose' : null]
         .filter(Boolean)
         .join(', ');
-      return `Battle: ${names.troop(command.troop)}${rules ? ` (${rules})` : ''}`;
+      const background = command.background ? `, in front of ${fileName(command.background)}` : '';
+      return `Battle: ${names.troop(command.troop)}${rules ? ` (${rules})` : ''}${background}`;
     }
+    case 'changeBattleBackground':
+      return command.image === null
+        ? 'Battle background: the map’s or the project’s own'
+        : `Battle background: ${fileName(command.image)}`;
     case 'playMusic':
       return command.path === null ? 'Stop music' : `Play music ${fileName(command.path)}`;
     case 'playSound':
@@ -792,7 +797,15 @@ export const COMMAND_GROUPS: readonly {
   },
   {
     label: 'World',
-    types: ['transfer', 'moveRoute', 'placeEvent', 'hideEvent', 'hidePlayer', 'battle'],
+    types: [
+      'transfer',
+      'moveRoute',
+      'placeEvent',
+      'hideEvent',
+      'hidePlayer',
+      'battle',
+      'changeBattleBackground',
+    ],
   },
   {
     label: 'Screen',
@@ -859,6 +872,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   openSave: 'Open save screen',
   setAccess: 'Menu or saving on/off',
   changeBattleMusic: 'Change battle music',
+  changeBattleBackground: 'Change battle background',
   playBackgroundSound: 'Background sound',
   changeHp: 'Change HP',
   changeMp: 'Change MP',

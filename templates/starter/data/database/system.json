@@ -1,5 +1,5 @@
 {
-  "formatVersion": 5,
+  "formatVersion": 6,
   "attackSkill": "attack",
   "audio": {
     "battleMusic": "assets/audio/battle.wav",
@@ -23,6 +23,7 @@
     "names": ["Surprise", "Question", "Music", "Heart", "Anger", "Sweat", "Idea", "Sleep"],
     "size": 24
   },
+  "battleBackground": "assets/battlebacks/meadow.png",
   "currency": "G",
   "elements": [
     {

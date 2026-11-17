@@ -1143,9 +1143,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   map 10 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`, pictures; v10: the `plugin` command), tileset 1, character 1, plugin 1, every database file 5 (v2: combat modifiers,
+  `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`), tileset 1, character 1, plugin 1, every database file 6 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
-  animations, skills'/items' `animation`, system `balloons`), save 4 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`). Additive bumps migrate as no-ops.
+  animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1582,11 +1582,26 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   is a FreeQuest feature of its own (format, editor, runtime, tests, guide) that the importer
   then brings across; behaviour may match MZ's, the design and names are ours (clean-room).
   - Steps:
-  1. Battle backgrounds: an image behind battles, scaled to cover the screen. The project's
+  1. ~~Battle backgrounds: an image behind battles, scaled to cover the screen. The project's
      default (system.json), a map's own (map settings), a `battle` command's own, and a
      command to change it for the rest of the game (saved). Editor fields with a preview, a
      generated meadow backdrop for the demo, the importer layers MZ's two battleback images
-     into one picture (like the title) and brings Change battle background across.
+     into one picture (like the title) and brings Change battle background across.~~ (done;
+     `World.battleBackgroundFor(own)`: the command's `background`, else `World.battleBackground`
+     (set by `changeBattleBackground` through `EventContext.setBattleBackground`, null = none,
+     save v5), else the map's, else the system's, else null (BattleView's plain backdrop). The
+     battle request carries `background`; `BattleFlow` resolves it and passes it to `prepare`
+     (the game loads and caches the texture; one that fails warns and leaves the plain
+     backdrop) and `begin` (`BattleView`'s last argument, cover-scaled). Export, the reference
+     index (`battleBackground`, `background` fields) and asset moves know them; Assets has a
+     Battle backgrounds folder. Editor: `forms/BackgroundPicker.tsx` (dropdown, battlebacks
+     first, thumbnail) in map settings, System and the battle dialog. Art:
+     `assets/battlebacks/meadow.png` (gen-placeholder-art), the demo's and Starter's default.
+     Importer: `GraphicsImporter.battleback(ground, top)` layers img/battlebacks1 + 2 into
+     `assets/battlebacks/<id>.png`; maps with `specifyBattleback`, command 283, and the
+     project's from System.json's battle-test pair; maps MZ would choose for are counted in
+     one "changed" item; the template's battleback is never copied. Seen in the dev player
+     and the editor)
   2. Troop layouts: each troop member's place on the battle screen (database: x, y), set by
      dragging enemies over the background in the troop editor; troops without places keep the
      automatic row. The importer keeps MZ's positions, scaled to the screen.

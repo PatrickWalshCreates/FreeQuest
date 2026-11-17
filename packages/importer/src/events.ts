@@ -549,6 +549,17 @@ class Converter {
       case 312:
       case 313:
         return this.#actorChange(code, p);
+      case 283: {
+        // Change battle background: MZ's two images (ground, walls or sky), one picture here.
+        const image = await this.ctx.graphics.battleback(
+          asString(p[0]).trim(),
+          asString(p[1]).trim(),
+          this.scope.where,
+        );
+        return image
+          ? [{ type: 'changeBattleBackground', image }]
+          : [this.#unsupported(283, 'pictures that aren’t there')];
+      }
       case 355:
         return [this.#unsupported(355, [asString(p[0]), ...lines].join('\n'))];
       case 357: {

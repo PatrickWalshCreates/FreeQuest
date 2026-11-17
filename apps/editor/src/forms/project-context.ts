@@ -90,6 +90,8 @@ const LABELS: Record<string, string> = {
   below: 'At or below (% of the most)',
   span: 'Runs',
   events: 'Battle events',
+  battleBackground: 'Battle background',
+  background: 'Background (instead of the game’s)',
 };
 
 /** Readable choices for fields whose values are words. */
@@ -257,6 +259,8 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
       case 'skillType':
         return options(system?.skillTypes ?? []);
       case 'image':
+      case 'battleBackground':
+      case 'background':
         return images;
       case 'event':
         return options(lists.events ?? []);

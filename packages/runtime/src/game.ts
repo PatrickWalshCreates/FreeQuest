@@ -230,8 +230,19 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   // Battles: enemy images load when a troop is first fought, then stay cached.
   const enemyTextures = new Map<string, Texture>();
   let battleView: BattleView | null = null;
+  // Battle backgrounds, cached like enemy images; one that can't load leaves the plain backdrop.
+  const backgroundTextures = new Map<string, Texture | null>();
   const battles = new BattleFlow(db, {
-    async prepare(troopId) {
+    async prepare(troopId, background) {
+      if (background !== null && !backgroundTextures.has(background)) {
+        backgroundTextures.set(
+          background,
+          await loadPixelTexture(project.assetUrl(background)).catch((error: unknown) => {
+            console.warn(`Battle background ${background} couldn't be loaded`, error);
+            return null;
+          }),
+        );
+      }
       const enemies = db.troops.get(troopId).enemies.map((id) => db.enemies.get(id));
       await Promise.all(
         enemies.map(async (enemy) => {
@@ -241,7 +252,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         }),
       );
     },
-    begin(battle) {
+    begin(battle, _controller, background) {
       battleView = new BattleView(
         battle,
         width,
@@ -250,6 +261,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         theme,
         icons,
         animationSheets,
+        background === null ? null : (backgroundTextures.get(background) ?? null),
       );
       scene.visible = false;
       dialogView.container.visible = false;

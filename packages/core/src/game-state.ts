@@ -227,6 +227,8 @@ export interface EventContext {
   readonly showAnimation?: (animation: string, target: string) => () => boolean;
   /** Show a balloon (a row of the balloon image) over "player" or an event id. */
   readonly showBalloon?: (balloon: number, target: string) => () => boolean;
+  /** Change the picture behind battles for the rest of the game (null: back to the map's or project's). */
+  readonly setBattleBackground?: (image: string | null) => void;
   /** Turn the menu or saving on or off. */
   readonly setAccess?: (what: 'menu' | 'saving', allowed: boolean) => void;
   /** Seconds played so far. */

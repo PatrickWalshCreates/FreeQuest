@@ -71,6 +71,8 @@ export class BattleView {
     private readonly theme: UiTheme = DEFAULT_UI_THEME,
     private readonly icons: IconSheet = NO_ICONS,
     private readonly sheets: AnimationSheets | null = null,
+    /** The picture behind the battle (scaled to cover the screen); null: the plain backdrop. */
+    background: Texture | null = null,
   ) {
     this.style = new TextStyle({
       fontFamily: theme.fontFamily,
@@ -84,7 +86,7 @@ export class BattleView {
     });
     this.logText = new Text({ text: '', style: this.style });
 
-    this.container.addChild(this.backdrop(), this.enemyLayer);
+    this.container.addChild(this.backdrop(background), this.enemyLayer);
     this.layoutEnemies(enemyTextures);
     this.container.addChild(this.logFrame, this.logText, this.statusFrame, this.statusLayer);
     this.container.addChild(this.menuFrame, this.menuLayer, this.cursor);
@@ -93,7 +95,14 @@ export class BattleView {
     this.animationSprite.visible = false;
   }
 
-  private backdrop(): Graphics {
+  private backdrop(picture: Texture | null): Container {
+    if (picture) {
+      const sprite = new Sprite(picture);
+      sprite.anchor.set(0.5);
+      sprite.scale.set(Math.max(this.width / picture.width, this.height / picture.height));
+      sprite.position.set(this.width / 2, this.height / 2);
+      return sprite;
+    }
     const g = new Graphics();
     const horizon = Math.round(this.height * 0.55);
     const bands: [number, number][] = [

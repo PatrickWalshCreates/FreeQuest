@@ -2461,3 +2461,19 @@ h2.with-actions button {
   margin: 4px 0 6px 12px;
   color: var(--muted);
 }
+
+/* Battle backgrounds: a dropdown and a small preview. */
+.background-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.background-preview {
+  width: 96px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}

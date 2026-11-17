@@ -14,7 +14,7 @@ import { Command } from '../command.js';
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 5;
+export const DATABASE_FORMAT_VERSION = 6;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
@@ -76,6 +76,8 @@ export const SystemData = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    /** A picture behind battles, scaled to cover the screen (v6); maps and battle commands can have their own. */
+    battleBackground: Type.Optional(RelativePath),
     titleScreen: Type.Optional(
       Type.Object(
         {

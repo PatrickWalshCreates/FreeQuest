@@ -13,10 +13,11 @@ import commonEvents from '../../../samples/demo-project/data/database/commonEven
 import animations from '../../../samples/demo-project/data/database/animations.json' with { type: 'json' };
 import { DatabaseIndex } from '../src/index.js';
 
-export function demoDb(): DatabaseIndex {
+/** The demo's database; `systemChanges` replace fields of its system.json (for tests). */
+export function demoDb(systemChanges: Record<string, unknown> = {}): DatabaseIndex {
   return new DatabaseIndex(
     assembleDatabase({
-      system: parseProjectFile('system', system),
+      system: parseProjectFile('system', { ...system, ...systemChanges }),
       actors: parseProjectFile('actors', actors),
       classes: parseProjectFile('classes', classes),
       skills: parseProjectFile('skills', skills),

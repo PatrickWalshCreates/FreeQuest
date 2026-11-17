@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 5
+      "const": 6
     },
     "attackSkill": {
       "type": "string",
@@ -113,6 +113,11 @@
         }
       },
       "required": ["image", "size", "frames", "names"]
+    },
+    "battleBackground": {
+      "type": "string",
+      "description": "Path relative to the project root, using \"/\" separators.",
+      "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
     },
     "currency": {
       "type": "string",

@@ -76,6 +76,12 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
         case 'showPicture':
           add(command.image, 'image', at);
           break;
+        case 'battle':
+          add(command.background, 'image', at);
+          break;
+        case 'changeBattleBackground':
+          add(command.image ?? undefined, 'image', at);
+          break;
         case 'moveRoute':
           addStepSounds(command.steps, at);
           break;
@@ -102,6 +108,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     const where = `map ${map.name || id}`;
     add(map.music, 'audio', `${where}: music`);
     add(map.backgroundSound, 'audio', `${where}: background sound`);
+    add(map.battleBackground, 'image', `${where}: battle background`);
     for (const event of map.events) {
       event.pages.forEach((page, i) =>
         addCommands(page.commands, `${where}, event ${event.name} (page ${i + 1})`),
@@ -124,6 +131,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     add(system.iconset?.image, 'image', 'system iconset');
     add(system.balloons?.image, 'image', 'system balloons');
     add(system.titleScreen?.image, 'image', 'system title screen');
+    add(system.battleBackground, 'image', 'system battle background');
   }
   for (const animation of project.database.animations?.data?.entries ?? []) {
     add(animation.image, 'image', `animation ${animation.name}`);

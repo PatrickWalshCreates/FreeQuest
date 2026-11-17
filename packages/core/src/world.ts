@@ -93,6 +93,8 @@ export class World {
   readonly pluginData = new Map<string, unknown>();
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
   readonly access = { menu: true, saving: true };
+  /** The battle background an event chose (`changeBattleBackground`); null: none chosen. Saved. */
+  battleBackground: string | null = null;
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
   readonly battleMusic: { battle?: string | null; victory?: string | null } = {};
   /** Seconds this game has been played on the map (and in what it opened), for events. */
@@ -268,6 +270,21 @@ export class World {
    * A random encounter the player just walked into (the troop id), handed
    * over once. The player stays put until it is taken.
    */
+  /**
+   * The picture behind a battle: the battle command's own, else the one an
+   * event chose, else the map's, else the project's; null for none (the
+   * runtime's plain backdrop).
+   */
+  battleBackgroundFor(own: string | null = null): string | null {
+    return (
+      own ??
+      this.battleBackground ??
+      this.map.battleBackground ??
+      this.db.system.battleBackground ??
+      null
+    );
+  }
+
   takeEncounter(): string | null {
     const troop = this.pendingEncounter;
     this.pendingEncounter = null;
@@ -309,6 +326,7 @@ export class World {
       ...(Object.keys(access).length > 0 ? { access } : {}),
       ...(this.pictures.list.length > 0 ? { pictures: this.pictures.toData() } : {}),
       ...(Object.keys(this.battleMusic).length > 0 ? { battleMusic: { ...this.battleMusic } } : {}),
+      ...(this.battleBackground !== null ? { battleBackground: this.battleBackground } : {}),
       ...(this.pluginData.size > 0
         ? {
             plugins: Object.fromEntries(
@@ -357,6 +375,7 @@ export class World {
     world.access.menu = save.access?.menu ?? true;
     world.access.saving = save.access?.saving ?? true;
     Object.assign(world.battleMusic, save.battleMusic ?? {});
+    world.battleBackground = save.battleBackground ?? null;
     for (const [id, data] of Object.entries(save.plugins ?? {})) world.pluginData.set(id, data);
     world.playSeconds = save.playSeconds;
     return world;
@@ -683,6 +702,9 @@ export class World {
       },
       setAccess: (what, allowed) => {
         this.access[what] = allowed;
+      },
+      setBattleBackground: (image) => {
+        this.battleBackground = image;
       },
       playSeconds: () => this.playSeconds,
       random: this.random,

@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 4
+      "const": 5
     },
     "access": {
       "type": "object",
@@ -18,6 +18,9 @@
           "type": "boolean"
         }
       }
+    },
+    "battleBackground": {
+      "type": "string"
     },
     "battleMusic": {
       "type": "object",

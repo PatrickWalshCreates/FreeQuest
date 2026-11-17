@@ -77,6 +77,10 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
 
 The report names each one and where it was. The usual ones:
 
+- **Battle backgrounds** come across where MZ names them: the map's own (when the map sets one)
+  and **Change battle background**, each MZ pair of images (ground, then walls or sky) as one
+  picture. Maps that let MZ pick one from the ground under the party use the project's, which
+  is the background MZ tests battles with.
 - **Scripts and MZ plugins**: FreeQuest doesn't run JavaScript written for RPG Maker, so script
   calls and plugin commands stay as comments, naming the plugin and the command. The report
   lists the MZ plugins the game used (from `js/plugins.js`, read but never run) and counts each

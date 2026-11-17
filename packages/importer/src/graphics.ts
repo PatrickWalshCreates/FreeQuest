@@ -301,6 +301,45 @@ export class GraphicsImporter {
     return image;
   }
 
+  readonly #battlebacks = new Map<string, string | null>();
+  readonly #battlebackIds = new Set<string>();
+
+  /**
+   * A battle background: MZ's ground (img/battlebacks1) with its walls or
+   * sky (img/battlebacks2) drawn over it, as one image under
+   * assets/battlebacks/, made once per pair. Null when neither is there
+   * (missing files are reported).
+   */
+  async battleback(ground: string, top: string, where: string): Promise<string | null> {
+    if (ground === '' && top === '') return null;
+    const key = `${ground}\n${top}`;
+    if (this.#battlebacks.has(key)) return this.#battlebacks.get(key) ?? null;
+    const read = async (path: string): Promise<RgbaImage | null> => {
+      try {
+        return await this.codec.decode(await this.fs.readBytes(path));
+      } catch (error) {
+        if (!(error instanceof FileNotFoundError)) throw error;
+        this.report.missing(where, await this.#missing(path));
+        return null;
+      }
+    };
+    const bottom = ground ? await read(`img/battlebacks1/${ground}.png`) : null;
+    const over = top ? await read(`img/battlebacks2/${top}.png`) : null;
+    const image = bottom && over ? layerOver(bottom, over) : (bottom ?? over);
+    let path: string | null = null;
+    if (image) {
+      const id = uniqueId(
+        idFromName([ground, top].filter(Boolean).join(' '), 'battleback'),
+        this.#battlebackIds,
+      );
+      this.#battlebackIds.add(id);
+      path = `assets/battlebacks/${id}.png`;
+      this.#out.files.push({ path, bytes: await this.codec.encode(image) });
+    }
+    this.#battlebacks.set(key, path);
+    return path;
+  }
+
   #balloons: ImportedGraphics['balloons'] | undefined = undefined;
 
   /**

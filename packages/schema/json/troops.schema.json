@@ -1023,6 +1023,11 @@
               "type": "string",
               "const": "battle"
             },
+            "background": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            },
             "canEscape": {
               "type": "boolean"
             },
@@ -1894,6 +1899,30 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Change the picture behind battles for the rest of the game. Kept in saves (v11).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeBattleBackground"
+            },
+            "image": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Path relative to the project root, using \"/\" separators.",
+                  "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "image"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "A sound that loops beside the music (rain, wind, a crowd) (v9).",
           "properties": {
             "type": {
@@ -2418,7 +2447,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 5
+      "const": 6
     },
     "entries": {
       "type": "array",

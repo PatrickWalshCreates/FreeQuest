@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   MANIFEST_FORMAT_VERSION,
+  MAP_FORMAT_VERSION,
+  SAVE_FORMAT_VERSION,
   type Manifest,
   PLUGIN_API_VERSION,
   type PluginDeclaration,
@@ -235,7 +237,7 @@ describe('plugin references', () => {
     const { plugins: _, ...v9 } = { ...manifest, formatVersion: 9 };
     expect(migrate('manifest', v9)).toEqual({ ...v9, formatVersion: 10 });
     const map = { ...mapWith([]), formatVersion: 9 };
-    expect(migrate('map', map)).toEqual({ ...map, formatVersion: 10 });
+    expect(migrate('map', map)).toEqual({ ...map, formatVersion: MAP_FORMAT_VERSION });
   });
 });
 
@@ -254,6 +256,6 @@ describe('plugin reference kinds', () => {
 describe('saves with plugin data', () => {
   it('come from save v3 unchanged (additive)', () => {
     const v3 = { formatVersion: 3, game: 'g' };
-    expect(migrate('save', v3)).toEqual({ formatVersion: 4, game: 'g' });
+    expect(migrate('save', v3)).toEqual({ formatVersion: SAVE_FORMAT_VERSION, game: 'g' });
   });
 });

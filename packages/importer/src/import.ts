@@ -178,6 +178,7 @@ export async function importMzProject(
       return redo;
     },
   };
+  let unspecifiedBattlebacks = 0;
   for (const map of maps.maps) {
     const mapEvents = await convertMapEvents(
       {
@@ -195,16 +196,42 @@ export async function importMzProject(
     const bgs = asString(asRecord(map.raw['bgs'])['name']).trim();
     const backgroundSound =
       map.raw['autoplayBgs'] === true && bgs ? await audio.sound('bgs', bgs, map.where) : null;
+    // The map's own battle background, when MZ's map names one (otherwise MZ picks one from
+    // the ground under the party, which FreeQuest doesn't: the project's is used).
+    const battleBackground =
+      map.raw['specifyBattleback'] === true
+        ? await graphics.battleback(
+            asString(map.raw['battleback1Name']).trim(),
+            asString(map.raw['battleback2Name']).trim(),
+            map.where,
+          )
+        : null;
+    if (map.raw['specifyBattleback'] !== true) unspecifiedBattlebacks++;
     map.data = {
       ...map.data,
       events: mapEvents,
       ...(music ? { music } : {}),
       ...(backgroundSound ? { backgroundSound } : {}),
+      ...(battleBackground ? { battleBackground } : {}),
     };
   }
   const commonEvents = await convertCommonEvents(commonRaw, commonIds, events);
   const troops = await convertTroopEvents(db.troops, imported.troops, events);
   const sounds = await systemAudio(await readMzJson(source, 'data/System.json'), audio);
+  // The project's battle background: the one MZ's editor uses to test battles.
+  const systemRaw = asRecord(await readMzJson(source, 'data/System.json'));
+  const battleBackground = await graphics.battleback(
+    asString(systemRaw['battleback1Name']).trim(),
+    asString(systemRaw['battleback2Name']).trim(),
+    'System',
+  );
+  if (unspecifiedBattlebacks > 0) {
+    report.changed(
+      'Maps',
+      `${unspecifiedBattlebacks} ${unspecifiedBattlebacks === 1 ? 'map lets' : 'maps let'} MZ choose the battle background from the ground; ${unspecifiedBattlebacks === 1 ? 'it uses' : 'they use'} the project's (Database › System), ${battleBackground ? 'the one MZ tests battles with' : 'none yet'}.`,
+      [{ name: 'Battle backgrounds chosen from the ground', count: unspecifiedBattlebacks }],
+    );
+  }
   const titleImage = await graphics.title(
     mz.system.titleScreen.background,
     mz.system.titleScreen.frame,
@@ -236,6 +263,7 @@ export async function importMzProject(
         ...(titleImage
           ? { titleScreen: { image: titleImage, showName: mz.system.titleScreen.showName } }
           : {}),
+        ...(battleBackground ? { battleBackground } : {}),
       }),
     ],
   ]);
@@ -278,6 +306,8 @@ export async function importMzProject(
       !templateCharacter(f) &&
       !templateIcons(f) &&
       !templateAnimations(f) &&
+      // The template's battle background belongs to its own system.json: never copied.
+      !f.startsWith('assets/battlebacks/') &&
       !templateAudio(f),
   );
   const images = [...maps.images, ...pictures.files, ...audio.files];

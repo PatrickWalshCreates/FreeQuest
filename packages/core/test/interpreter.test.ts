@@ -311,7 +311,13 @@ describe('Interpreter battles', () => {
     const state = newState();
     const it = new Interpreter([battle(true, true), say('after')], state);
     it.update(DT);
-    expect(it.pending).toEqual({ type: 'battle', troop: 'slimes', canEscape: true, canLose: true });
+    expect(it.pending).toEqual({
+      type: 'battle',
+      troop: 'slimes',
+      canEscape: true,
+      canLose: true,
+      background: null,
+    });
     expect(() => it.continue()).toThrow(/a battle is pending/);
     it.finishBattle('escape');
     it.update(DT);

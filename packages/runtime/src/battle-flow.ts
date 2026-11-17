@@ -20,17 +20,17 @@ type Source =
 
 type Phase =
   | { kind: 'idle' }
-  | { kind: 'enter'; troop: string; source: Source; elapsed: number }
+  | { kind: 'enter'; troop: string; source: Source; background: string | null; elapsed: number }
   | { kind: 'fight'; source: Source; elapsed: number }
   | { kind: 'leave'; source: Source; outcome: BattleOutcome; elapsed: number }
   | { kind: 'return'; elapsed: number }
   | { kind: 'over' };
 
 export interface BattleFlowHooks {
-  /** Load whatever the battle screen needs for a troop (e.g. enemy images). */
-  prepare(troop: string): Promise<void>;
-  /** Show the battle screen (called while the screen is black). */
-  begin(battle: Battle, controller: BattleController): void;
+  /** Load whatever the battle screen needs: a troop's enemy images, its background (if any). */
+  prepare(troop: string, background: string | null): Promise<void>;
+  /** Show the battle screen (called while the screen is black), in front of `background`. */
+  begin(battle: Battle, controller: BattleController, background: string | null): void;
   /** Remove the battle screen (called while the screen is black). */
   end(): void;
   /** The party lost a battle it wasn't allowed to lose. */
@@ -117,10 +117,12 @@ export class BattleFlow {
     switch (p.kind) {
       case 'idle': {
         const pending = world.interpreter?.pending;
-        if (pending?.type === 'battle')
-          return this.start(pending.troop, { kind: 'event', request: pending });
+        if (pending?.type === 'battle') {
+          const background = world.battleBackgroundFor(pending.background);
+          return this.start(pending.troop, { kind: 'event', request: pending }, background);
+        }
         const troop = world.takeEncounter();
-        if (troop !== null) this.start(troop, { kind: 'encounter' });
+        if (troop !== null) this.start(troop, { kind: 'encounter' }, world.battleBackgroundFor());
         return;
       }
       case 'enter':
@@ -141,7 +143,7 @@ export class BattleFlow {
           return;
         }
         if (!this.ready) return; // hold on black until loaded
-        this.beginBattle(world, p.troop, p.source);
+        this.beginBattle(world, p.troop, p.source, p.background);
         return;
       case 'fight': {
         p.elapsed += dt;
@@ -165,17 +167,22 @@ export class BattleFlow {
     }
   }
 
-  private start(troop: string, source: Source): void {
-    this.phase = { kind: 'enter', troop, source, elapsed: 0 };
+  private start(troop: string, source: Source, background: string | null): void {
+    this.phase = { kind: 'enter', troop, source, background, elapsed: 0 };
     this.ready = false;
     this.failed = null;
-    this.hooks.prepare(troop).then(
+    this.hooks.prepare(troop, background).then(
       () => (this.ready = true),
       (error: unknown) => (this.failed = error ?? new Error('unknown error')),
     );
   }
 
-  private beginBattle(world: World, troop: string, source: Source): void {
+  private beginBattle(
+    world: World,
+    troop: string,
+    source: Source,
+    background: string | null,
+  ): void {
     const battle = new Battle({
       db: this.db,
       party: world.party,
@@ -190,7 +197,7 @@ export class BattleFlow {
       // Troop events and common events run with the game's own state and party.
       events: world.eventContext,
     });
-    this.hooks.begin(battle, this.current);
+    this.hooks.begin(battle, this.current, background);
     this.phase = { kind: 'fight', source, elapsed: 0 };
   }
 

@@ -288,6 +288,8 @@ export const Command = Type.Cyclic(
           onWin: Type.Optional(CommandList),
           onEscape: Type.Optional(CommandList),
           onLose: Type.Optional(CommandList),
+          /** The picture behind this battle, instead of the game's (v11). */
+          background: Type.Optional(RelativePath),
         },
         { additionalProperties: false, description: 'Fight a troop, then branch on the outcome.' },
       ),
@@ -491,6 +493,18 @@ export const Command = Type.Cyclic(
         {
           additionalProperties: false,
           description: 'Change the music of battles or of winning one. Kept in saves (v9).',
+        },
+      ),
+      Type.Object(
+        {
+          type: Type.Literal('changeBattleBackground'),
+          /** null goes back to the map's own, else the project's. */
+          image: Type.Union([RelativePath, Type.Null()]),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Change the picture behind battles for the rest of the game. Kept in saves (v11).',
         },
       ),
       Type.Object(

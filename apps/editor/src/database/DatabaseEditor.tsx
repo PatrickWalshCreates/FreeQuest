@@ -30,6 +30,7 @@ import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
 import { CommandExtras } from '../events/CommandExtras.js';
 import type { AnimationEntry, Command, MessageFace } from '@freequest/schema';
+import { BackgroundPicker } from '../forms/BackgroundPicker.js';
 import { FaceField } from '../events/FaceField.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
 import { useLoaded } from '../map/graphics.js';
@@ -91,6 +92,14 @@ export function DatabaseEditor({ doc, file }: Props) {
             names={project.database.system?.data?.balloons?.names ?? []}
             value={typeof value === 'number' ? value : 0}
             onChange={onChange}
+          />
+        ) : field === 'battleBackground' || field === 'background' ? (
+          <BackgroundPicker
+            doc={doc}
+            images={lists.images ?? []}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            noneLabel={field === 'background' ? '(the game’s)' : '(none: a plain sky and grass)'}
           />
         ) : undefined,
     }),

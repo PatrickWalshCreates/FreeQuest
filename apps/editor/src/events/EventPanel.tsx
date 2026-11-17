@@ -27,6 +27,7 @@ import type {
   MapEvent,
   MessageFace,
 } from '@freequest/schema';
+import { BackgroundPicker } from '../forms/BackgroundPicker.js';
 import { FaceField } from './FaceField.js';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
@@ -336,6 +337,14 @@ function EventEditor(props: {
             names={project.database.system?.data?.balloons?.names ?? []}
             value={typeof value === 'number' ? value : 0}
             onChange={onChange}
+          />
+        ) : field === 'background' ? (
+          <BackgroundPicker
+            doc={doc}
+            images={images}
+            value={typeof value === 'string' ? value : undefined}
+            onChange={onChange}
+            noneLabel="(the map’s or the game’s)"
           />
         ) : undefined,
     }),

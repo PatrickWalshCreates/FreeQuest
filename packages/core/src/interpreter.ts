@@ -38,7 +38,14 @@ export type InterpreterRequest =
     }
   | { type: 'choice'; options: readonly string[]; cancel: number | null }
   | { type: 'transfer'; map: string; x: number; y: number; direction: Direction | null }
-  | { type: 'battle'; troop: string; canEscape: boolean; canLose: boolean }
+  | {
+      type: 'battle';
+      troop: string;
+      canEscape: boolean;
+      canLose: boolean;
+      /** The battle command's own background, if it has one. */
+      background: string | null;
+    }
   /** Answered with `continue()` when the player leaves the shop. */
   | { type: 'shop'; goods: readonly ShopGood[]; canSell: boolean }
   /** Answered with `continue()` when the player leaves the save screen. */
@@ -337,6 +344,7 @@ export class Interpreter {
           troop: command.troop,
           canEscape: command.canEscape,
           canLose: command.canLose,
+          background: command.background ?? null,
         };
         break;
       case 'playMusic':
@@ -469,6 +477,9 @@ export class Interpreter {
         break;
       case 'setAccess':
         this.context.setAccess?.(command.what, command.allowed);
+        break;
+      case 'changeBattleBackground':
+        this.context.setBattleBackground?.(command.image);
         break;
       case 'changeBattleMusic':
         this.context.audio?.setBattleMusic?.(command.which, command.path);
