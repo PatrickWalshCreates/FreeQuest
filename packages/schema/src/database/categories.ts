@@ -366,6 +366,17 @@ export const TroopEntry = Type.Object(
     id: Id,
     name: Type.String({ minLength: 1 }),
     enemies: Type.Array(Id, { minItems: 1, maxItems: 8, description: 'Enemy ids, left to right.' }),
+    /**
+     * Where each enemy stands on the battle screen, in the order of `enemies`:
+     * its feet, in pixels of the game screen (v6). Without it (or when the
+     * counts differ), the enemies stand in an even row.
+     */
+    places: Type.Optional(
+      Type.Array(
+        Type.Object({ x: Type.Integer(), y: Type.Integer() }, { additionalProperties: false }),
+        { maxItems: 8 },
+      ),
+    ),
     events: Type.Optional(Type.Array(TroopEvent)),
   },
   { additionalProperties: false },

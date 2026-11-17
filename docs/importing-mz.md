@@ -77,6 +77,7 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
 
 The report names each one and where it was. The usual ones:
 
+- **Where enemies stand** in each troop comes across as MZ placed them.
 - **Battle backgrounds** come across where MZ names them: the map's own (when the map sets one)
   and **Change battle background**, each MZ pair of images (ground, then walls or sky) as one
   picture. Maps that let MZ pick one from the ground under the party use the project's, which

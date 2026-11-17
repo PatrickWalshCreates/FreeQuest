@@ -29,7 +29,8 @@ import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
 import { CommandExtras } from '../events/CommandExtras.js';
-import type { AnimationEntry, Command, MessageFace } from '@freequest/schema';
+import type { AnimationEntry, Command, MessageFace, TroopEntry } from '@freequest/schema';
+import { TroopLayout } from './TroopLayout.js';
 import { BackgroundPicker } from '../forms/BackgroundPicker.js';
 import { FaceField } from '../events/FaceField.js';
 import { useProjectLists } from '../forms/use-project-lists.js';
@@ -371,7 +372,8 @@ function EntriesEditor(props: {
               key={entry.id}
               schema={entrySchema(kind)}
               value={entry as unknown as Readonly<Record<string, unknown>>}
-              omit={['id']}
+              // A troop's places are set by dragging in its layout below.
+              omit={kind === 'troops' ? ['id', 'places'] : ['id']}
               ctx={ctx}
               onChange={(next) =>
                 edit(
@@ -381,6 +383,29 @@ function EntriesEditor(props: {
                 )
               }
             />
+            {kind === 'troops' && (
+              <TroopLayout
+                doc={doc}
+                enemies={(entry as unknown as TroopEntry).enemies}
+                places={(entry as unknown as TroopEntry).places}
+                onDragEnd={() => doc.endCoalescing()}
+                onChange={(places) =>
+                  edit(
+                    places ? 'Move enemy' : 'Enemies in a row',
+                    (d: EntriesData) => {
+                      const current = d.entries.find((e) => e.id === entry.id);
+                      if (!current) return d as never;
+                      const { places: _old, ...rest } = current as unknown as TroopEntry;
+                      return replaceEntry(d, entry.id, {
+                        ...rest,
+                        ...(places ? { places } : {}),
+                      } as unknown as Entry) as never;
+                    },
+                    places ? `troop-places:${entry.id}` : undefined,
+                  )
+                }
+              />
+            )}
             {kind === 'troops' && (
               <TroopEventCommands
                 key={`events:${entry.id}`}

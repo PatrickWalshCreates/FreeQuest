@@ -253,6 +253,11 @@ export function checkDatabase(
 
   for (const t of db.troops) {
     t.enemies.forEach((id, i) => need(enemies, id, 'enemy', `troops "${t.id}" enemies[${i}]`));
+    if (t.places && t.places.length !== t.enemies.length) {
+      problems.push(
+        `troops "${t.id}" places: ${t.places.length} for ${t.enemies.length} enemies, so they stand in the automatic row (set the places again)`,
+      );
+    }
     t.events?.forEach((page, p) => {
       const where = `troops "${t.id}" events[${p}]`;
       const { actorHp, enemyHp } = page.conditions;

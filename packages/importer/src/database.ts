@@ -656,6 +656,8 @@ function enemyConditions(
 function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseContext): TroopEntry[] {
   const where = `Troops › ${name}`;
   const enemies: string[] = [];
+  // Where each stands: MZ's x, y are the enemy's feet on its screen, which becomes the project's.
+  const places: { x: number; y: number }[] = [];
   let hidden = false;
   for (const raw of asArray(t['members'])) {
     const m = asRecord(raw);
@@ -663,7 +665,10 @@ function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseConte
     if (!enemy) continue;
     if (m['hidden'] === true) hidden = true;
     enemies.push(enemy);
+    places.push({ x: asInt(m['x'], -1), y: asInt(m['y'], -1) });
   }
+  const kept = places.slice(0, 8);
+  const placed = kept.length > 0 && kept.every((p) => p.x >= 0 && p.y >= 0);
   if (hidden)
     ctx.report.changed(
       where,
@@ -675,7 +680,7 @@ function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseConte
     ctx.report.note(where, 'It has no enemies, so it was left out.');
     return [];
   }
-  return [{ id, name, enemies: enemies.slice(0, 8) }];
+  return [{ id, name, enemies: enemies.slice(0, 8), ...(placed ? { places: kept } : {}) }];
 }
 
 // --- System -----------------------------------------------------------------

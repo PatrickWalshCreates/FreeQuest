@@ -355,6 +355,11 @@ turns, stacking to two levels (±50%); using it again renews the turns. They end
 event** effect runs a common event once the skill or item has been used: in battle straight
 away, or on the map once the menu closes.
 
+**Where enemies stand**: a troop's **In battle** picture shows its battle screen with the
+game's battle background. Drag the enemies to where they stand (by their feet): a bat higher
+up, a boss in the middle. Until you move one they stand in an even row, and **Back to an even
+row** returns there. If you add or remove an enemy afterwards, move one again to set them all.
+
 **Battle events**: a troop's **Events** run commands during its battles: a boss's taunt on turn
 1, help arriving when an enemy is badly hurt, a switch that changes the fight. Each has
 conditions (the turn, an enemy's or party member's HP, a switch; all must hold), checked as each

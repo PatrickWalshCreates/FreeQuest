@@ -1145,7 +1145,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
   `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`), tileset 1, character 1, plugin 1, every database file 6 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
-  animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`). Additive bumps migrate as no-ops.
+  animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`, troops' `places`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1602,9 +1602,19 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      project's from System.json's battle-test pair; maps MZ would choose for are counted in
      one "changed" item; the template's battleback is never copied. Seen in the dev player
      and the editor)
-  2. Troop layouts: each troop member's place on the battle screen (database: x, y), set by
+  2. ~~Troop layouts: each troop member's place on the battle screen (database: x, y), set by
      dragging enemies over the background in the troop editor; troops without places keep the
-     automatic row. The importer keeps MZ's positions, scaled to the screen.
+     automatic row. The importer keeps MZ's positions, scaled to the screen.~~ (done; troops'
+     optional `places` [{x, y}] in `enemies` order: the enemy's feet in game-screen pixels
+     (database 6, unreleased, so no extra bump). Core `battle-layout.ts`: `automaticPlaces`
+     (the old even row, 60% down) and `enemyPlaces` (the troop's when there's one per enemy,
+     clamped to the screen, else the row), used by `BattleView` (via `Battle.places`) and the
+     editor; `checkDatabase` reports a count that doesn't match. Editor:
+     `database/TroopLayout.tsx` ("In battle": the screen at the game's size, the system
+     battle background, enemy images placed by their feet, drag = one undo step, "Back to an
+     even row"); `places` is left out of the troop's generated form. Importer: MZ members' x,
+     y kept as they are (MZ's screen size becomes the project's). Demo: the bat swarm and the
+     slime and bat fly at staggered heights, their shadows on the grass; tried by dragging in browser mode and in a dev player battle)
   3. Party formation: Formation in the menu changes the party's order (the leader is who the
      player looks like; the front members fight, the rest wait), a command to allow or forbid
      it, and an event command to move a member to a place. Saved with the party.

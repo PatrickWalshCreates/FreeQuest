@@ -2477,3 +2477,68 @@ h2.with-actions button {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
+
+/* A troop's layout in battle: the battle screen, enemies dragged into place. */
+.troop-layout {
+  margin: 16px 0;
+}
+
+.troop-layout h3 {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+
+.troop-layout .stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  margin: 6px 0;
+  touch-action: none;
+}
+
+.troop-layout .stage.plain {
+  background: linear-gradient(#26345c 0 55%, #2f5a2c 55%);
+}
+
+.troop-enemy {
+  position: absolute;
+  width: 0;
+  height: 0;
+  cursor: grab;
+}
+
+.troop-enemy img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+.troop-placeholder {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border-radius: 4px;
+}
+
+.troop-number {
+  position: absolute;
+  transform: translate(-50%, 2px);
+  font-size: 11px;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  pointer-events: none;
+}

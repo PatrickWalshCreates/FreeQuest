@@ -1,3 +1,4 @@
+import type { TroopPlace } from './battle-layout.js';
 import type { Command, ItemEntry, SkillEntry, StatKey, TroopEvent } from '@freequest/schema';
 import type { Actor } from './actor.js';
 import type { Battler } from './battler.js';
@@ -109,6 +110,8 @@ export class Battle {
   private turnCount = 0;
   private readonly state: GameState;
   private readonly troopEvents: readonly TroopEvent[];
+  /** The troop's places for its enemies (see `enemyPlaces`), if it has them. */
+  readonly places: readonly TroopPlace[] | undefined;
   /** Troop pages that ran: once a battle (by index), and in which turn they last ran. */
   private readonly ranInBattle = new Set<number>();
   private readonly ranInTurn = new Map<number, number>();
@@ -121,6 +124,7 @@ export class Battle {
     this.ctx = { state: options.state, random: this.random, inBattle: true };
     this.state = options.state;
     this.troopEvents = this.db.troops.get(options.troop).events ?? [];
+    this.places = this.db.troops.get(options.troop).places;
     this.canEscape = options.canEscape;
     this.actors = options.party.members.slice(0, MAX_BATTLE_MEMBERS);
     this.enemies = createEnemies(this.db, this.db.troops.get(options.troop).enemies);

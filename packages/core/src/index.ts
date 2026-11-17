@@ -26,3 +26,4 @@ export * from './pictures.js';
 export * from './animations.js';
 export * from './save-renames.js';
 export * from './chunks.js';
+export * from './battle-layout.js';

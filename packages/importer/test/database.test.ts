@@ -317,8 +317,17 @@ describe('importing the database', () => {
       actions: [{ skill: 'strike' }],
     });
     expect(result.troops).toEqual([
-      { id: 'moth-2', name: 'Moth*2', enemies: ['moth', 'moth'] },
-      { id: 'shade', name: 'Shade', enemies: ['shade'] },
+      // MZ's positions (the enemies' feet on its screen) are kept as places.
+      {
+        id: 'moth-2',
+        name: 'Moth*2',
+        enemies: ['moth', 'moth'],
+        places: [
+          { x: 300, y: 400 },
+          { x: 500, y: 400 },
+        ],
+      },
+      { id: 'shade', name: 'Shade', enemies: ['shade'], places: [{ x: 300, y: 400 }] },
     ]);
     expect(where('Moth*2').join('\n')).toMatch(/partway/);
     expect(where('Shade')).toEqual(['It had no usable actions; it attacks.']);

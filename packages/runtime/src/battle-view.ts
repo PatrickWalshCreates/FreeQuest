@@ -1,4 +1,5 @@
 import {
+  enemyPlaces,
   type Actor,
   type Battle,
   type BattleEvent,
@@ -117,8 +118,12 @@ export class BattleView {
   }
 
   private layoutEnemies(textures: ReadonlyMap<string, Texture>): void {
-    const count = this.battle.enemies.length;
-    const groundY = Math.round(this.height * 0.6);
+    const places = enemyPlaces(
+      this.battle.enemies.length,
+      this.width,
+      this.height,
+      this.battle.places,
+    );
     this.battle.enemies.forEach((enemy, i) => {
       const display = new Container();
       const texture = textures.get(enemy.id);
@@ -129,7 +134,8 @@ export class BattleView {
       } else {
         display.addChild(placeholderEnemy());
       }
-      display.position.set(Math.round(((i + 1) * this.width) / (count + 1)), groundY);
+      const place = places[i] ?? { x: this.width / 2, y: Math.round(this.height * 0.6) };
+      display.position.set(place.x, place.y);
       this.enemyLayer.addChild(display);
       this.enemySprites.push({ enemy, display, fadeAge: null, flash: 0, felled: false });
     });
