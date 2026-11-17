@@ -167,7 +167,13 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
     readAll(fs, 'tileset', m.tilesets),
     readAll(fs, 'map', m.maps),
     readAll(fs, 'character', m.characters),
-    readAll(fs, 'plugin', m.plugins ?? []).then((files) => withEntryChecks(fs, files)),
+    readAll(fs, 'plugin', m.plugins ?? []).then((files) =>
+      withEntryChecks(
+        fs,
+        files,
+        new Set((m.plugins ?? []).filter((r) => r.enabled).map((r) => r.id)),
+      ),
+    ),
     Promise.all(
       DATABASE_KINDS.flatMap((kind) => {
         const path = m.database?.[kind];
@@ -195,16 +201,19 @@ export async function openProject(fs: ProjectFs): Promise<OpenedProject> {
 }
 
 /**
- * A plugin whose script isn't in its folder can't run: say so on its
- * declaration. (Checked when the project opens; the editor doesn't change
- * plugin folders while it's open, apart from adding or removing a plugin.)
+ * A turned-on plugin whose script isn't in its folder can't run: say so on
+ * its declaration. Turned-off plugins are never loaded (and exports ship only
+ * their plugin.json), so their scripts aren't checked. (Checked when the
+ * project opens; the editor doesn't change plugin folders while it's open,
+ * apart from adding or removing a plugin.)
  */
 async function withEntryChecks(
   fs: ProjectFs,
   files: Map<string, ProjectFile<'plugin'>>,
+  enabled: ReadonlySet<string>,
 ): Promise<Map<string, ProjectFile<'plugin'>>> {
   for (const [id, file] of files) {
-    if (!file.data) continue;
+    if (!file.data || !enabled.has(id)) continue;
     const folder = pluginFolder(file.path);
     const entry = `${folder}${file.data.entry}`;
     const present = await fs.list(folder.slice(0, -1)).then(

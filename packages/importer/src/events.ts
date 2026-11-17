@@ -273,6 +273,9 @@ const COMMAND_NAMES: Readonly<Record<number, string>> = {
   357: 'Plugin command',
 };
 
+/** How much of a plugin command's arguments its comment shows. */
+const MAX_PLUGIN_DETAIL = 300;
+
 /** Converts command lists, keeping what each left out for one report line. */
 class Converter {
   readonly left = new Leftovers();
@@ -286,6 +289,22 @@ class Converter {
     const out: Command[] = [];
     for (const node of nodes) out.push(...(await this.node(node)));
     return out;
+  }
+
+  /**
+   * A comment standing for a plugin's command, counted per plugin so the
+   * report groups them ("Plugin command (Weather) ×12").
+   */
+  #pluginCommand(plugin: string, detail: string): Command {
+    const shown =
+      detail.length > MAX_PLUGIN_DETAIL ? `${detail.slice(0, MAX_PLUGIN_DETAIL)}…` : detail;
+    this.left.command(
+      plugin ? `Plugin command (${plugin})` : 'Plugin command (one-line, MV style)',
+    );
+    return {
+      type: 'comment',
+      text: `From MZ, not imported: plugin ${plugin ? `${plugin} ` : ''}command: ${shown}`,
+    };
   }
 
   /** A comment standing for MZ command `code` (and noted as left out). */
@@ -532,6 +551,17 @@ class Converter {
         return this.#actorChange(code, p);
       case 355:
         return [this.#unsupported(355, [asString(p[0]), ...lines].join('\n'))];
+      case 357: {
+        // MZ's plugin command: plugin, command, the command's label, its arguments.
+        const args = Object.entries(asRecord(p[3]))
+          .map(([k, v]) => `${k}=${typeof v === 'string' ? v : JSON.stringify(v)}`)
+          .join(', ');
+        const label = asString(p[2]) || asString(p[1]);
+        return [this.#pluginCommand(asString(p[0]).trim(), args ? `${label} (${args})` : label)];
+      }
+      case 356:
+        // The older, one-line plugin command (MV style): no plugin name.
+        return [this.#pluginCommand('', asString(p[0]))];
       default:
         return [this.#unsupported(code)];
     }

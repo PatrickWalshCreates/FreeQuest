@@ -58,6 +58,71 @@ export interface MzMapInfo {
   readonly order: number;
 }
 
+/** A plugin listed in the MZ project's js/plugins.js (read as data, never run). */
+export interface MzPlugin {
+  readonly name: string;
+  readonly on: boolean;
+}
+
+export const MZ_PLUGINS_FILE = 'js/plugins.js';
+
+/**
+ * The plugins js/plugins.js lists, or null without one. The file is a script
+ * that assigns one JSON array (`var $plugins = [...];`): only that array is
+ * read, as JSON. Anything else reads as no plugins, with a note.
+ */
+export async function readMzPlugins(
+  fs: ProjectFs,
+  report: ImportReport,
+): Promise<readonly MzPlugin[] | null> {
+  let text: string;
+  try {
+    text = await fs.readText(MZ_PLUGINS_FILE);
+  } catch (error) {
+    if (error instanceof FileNotFoundError) return null;
+    throw error;
+  }
+  const start = text.indexOf('[', Math.max(0, text.indexOf('$plugins')));
+  const end = text.lastIndexOf(']');
+  let list: unknown;
+  try {
+    list = start >= 0 && end > start ? JSON.parse(text.slice(start, end + 1)) : null;
+  } catch {
+    list = null;
+  }
+  if (!Array.isArray(list)) {
+    report.note(
+      'Plugins',
+      `${MZ_PLUGINS_FILE} couldn't be read, so the plugins the game used aren't listed.`,
+    );
+    return [];
+  }
+  return list.flatMap((entry) => {
+    const record = asRecord(entry);
+    const name = asString(record['name']).trim();
+    return name ? [{ name, on: record['status'] === true }] : [];
+  });
+}
+
+/** Report the MZ plugins a game used: FreeQuest doesn't run them. */
+export function reportMzPlugins(plugins: readonly MzPlugin[], report: ImportReport): void {
+  const on = plugins.filter((p) => p.on).map((p) => p.name);
+  const off = plugins.filter((p) => !p.on).map((p) => p.name);
+  if (on.length === 0 && off.length === 0) return;
+  const parts = [
+    on.length > 0
+      ? `The game used ${on.length} MZ ${on.length === 1 ? 'plugin' : 'plugins'}: ${on.join(', ')}.`
+      : 'The game turned on no MZ plugins.',
+    off.length > 0 ? `Turned off: ${off.join(', ')}.` : '',
+    "FreeQuest doesn't run MZ plugins (JavaScript written for RPG Maker). Their commands are comments in the events, listed as “Plugin command (name)”; a FreeQuest plugin can do what one did.",
+  ];
+  report.missing(
+    'Plugins',
+    parts.filter(Boolean).join(' '),
+    on.length > 0 ? [{ name: 'MZ plugins (turned on)', count: on.length }] : [],
+  );
+}
+
 export interface MzProject {
   readonly system: MzSystem;
   /** Every map the project lists, in the editor's order. */

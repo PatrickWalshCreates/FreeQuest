@@ -86,6 +86,14 @@ offline and keeps saves as files.
   `tar -czf my-quest.tar.gz "My Quest"`), which keeps the program runnable. It needs WebKitGTK
   4.1, which most desktop Linux systems have (`libwebkit2gtk-4.1-0` on Debian and Ubuntu).
 
+## Plugins
+
+A game's turned-on plugins go with every export and run in it, just as in a playtest (but
+without the sandbox: in the exported game they're part of the game). A turned-off plugin ships
+only its `plugin.json`, so its script never leaves your project. The check before exporting
+includes plugins: one whose script is missing, or that needs a newer FreeQuest, stops the
+export.
+
 ## Not yet
 
 Installers for exported games, custom app icons, code signing with a registered developer

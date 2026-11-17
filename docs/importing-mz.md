@@ -77,8 +77,11 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
 
 The report names each one and where it was. The usual ones:
 
-- **Scripts and plugins**: FreeQuest never runs JavaScript, so script calls, plugin commands
-  and plugins stay as comments.
+- **Scripts and MZ plugins**: FreeQuest doesn't run JavaScript written for RPG Maker, so script
+  calls and plugin commands stay as comments, naming the plugin and the command. The report
+  lists the MZ plugins the game used (from `js/plugins.js`, read but never run) and counts each
+  plugin's commands, so you can see what to replace, with a FreeQuest plugin or a feature of
+  FreeQuest's own.
 - **Commands FreeQuest doesn't have**: weather, labels and jumps, swapping two events' places,
   rotating or tinting pictures, and more. They stay as comments saying "From MZ, not
   imported".

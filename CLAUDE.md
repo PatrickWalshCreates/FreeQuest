@@ -469,8 +469,9 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   allowed in battle events; a turned-off plugin's
   commands are not a problem). `ReferenceContext.plugins` (declarations): without it only the
   listing is checked. Editor-core: `OpenedProject.plugins`
-  (read with the manifest's refs; a missing `entry` script is a problem on the declaration,
-  found at open), the reference index (`plugin` kind; values indexed by declared type, never by
+  (read with the manifest's refs; a turned-on plugin's missing `entry` script is a problem on
+  the declaration, found at open; turned-off ones aren't checked, since exports ship only their
+  plugin.json), the reference index (`plugin` kind; values indexed by declared type, never by
   argument name; settings as "Project settings › Plugins › <name>"), renames rewrite them
   (plugin ids themselves aren't renamable), `assetReferences` includes asset values (audio by
   extension), and exports copy an enabled plugin's whole folder (a turned-off one ships only
@@ -808,6 +809,10 @@ target, player, … })` writes `game/` + the player files + the marker into an e
   access; a temporary write to `$APPDATA/saves/` is the reliable "did the game start" probe. A
   probe can also press keys (`window.dispatchEvent(new KeyboardEvent('keydown', …))`) and
   collect `error`/`console.error`; that is how the black map (a WebGL SecurityError) was found.
+  Saves are under `~/Library/Application Support/org.freequest.player/saves/<game id>/` (the
+  shell's identifier, not the renamed app's). A test plugin can mark how far it got by
+  setting the window's size (`__TAURI_INTERNALS__.invoke('plugin:window|set_size', …)`),
+  which the window list shows (M15 step 6).
 - Web export layout: `index.html`, `player/`, `game/project.json`, `game/data/…`,
   `game/assets/…`. Must be served over HTTP (itch.io, any static host); `file://` shows the
   "needs a website" message.
@@ -1541,9 +1546,16 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      (done; removal warns with the uses. Tried in browser mode with a throwaway weather
      plugin: added, settings checked live, its command added to Rest, removed with the
      warning, and the orphaned command's dialog)
-  6. Exports and the importer: web, Mac, Windows, Linux exports run plugins (CSPs checked); the
+  6. ~~Exports and the importer: web, Mac, Windows, Linux exports run plugins (CSPs checked); the
      CLI `check` checks them; the MZ importer lists the MZ plugins a game used and turns plugin
-     commands into comments naming them (already comments, now grouped in the report).
+     commands into comments naming them (already comments, now grouped in the report).~~ (done;
+     CLI tests export all four targets with plugins. A web export and a Mac app of a demo copy
+     (game id `plugin-probe`) with a probe plugin that plays by itself: its banner drew, and
+     its data reached the save (localStorage on the web, the save file in the Mac app).
+     Importer: `readMzPlugins` reads only the JSON array in `js/plugins.js` (never run),
+     `reportMzPlugins` lists them (on, off) under "Plugins"; commands 357/356 become comments
+     naming the plugin, counted as "Plugin command (<name>)" topics. Windows and Linux players
+     aren't run here: their CSP was checked in M15 step 2)
   7. Two example plugins of our own (weather: rain/snow on a map; a HUD showing gold or a
      variable), the demo uses weather in one place, `docs/plugins.md` (writing one, the api
      reference, safety), Starter, guides, the quest test, freeze the 0.6 formats, and a 0.6.0

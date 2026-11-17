@@ -273,3 +273,65 @@ describe('freequest import mz', () => {
     });
   });
 });
+
+describe('plugins (M15)', () => {
+  /** The demo with an enabled plugin (script + a picture) and a turned-off one. */
+  function withPlugins(): string {
+    const dir = demoCopy();
+    const declaration = (id: string) => ({
+      formatVersion: 1,
+      id,
+      name: id,
+      version: '1.0.0',
+      apiVersion: 1,
+      entry: 'main.js',
+      settings: [],
+      commands: [],
+    });
+    for (const id of ['weather', 'clock']) {
+      mkdirSync(join(dir, 'plugins', id), { recursive: true });
+      writeFileSync(join(dir, 'plugins', id, 'plugin.json'), JSON.stringify(declaration(id)));
+      writeFileSync(join(dir, 'plugins', id, 'main.js'), 'export default { setup() {} };');
+    }
+    writeFileSync(join(dir, 'plugins', 'weather', 'drop.png'), 'png');
+    const manifest = JSON.parse(readFileSync(join(dir, 'project.json'), 'utf8')) as {
+      plugins?: unknown[];
+    };
+    manifest.plugins = [
+      { id: 'weather', path: 'plugins/weather/plugin.json', enabled: true },
+      { id: 'clock', path: 'plugins/clock/plugin.json', enabled: false },
+    ];
+    writeFileSync(join(dir, 'project.json'), JSON.stringify(manifest));
+    return dir;
+  }
+
+  it('are checked: a missing script is a problem', async () => {
+    const dir = withPlugins();
+    expect((await cli(['check', dir])).code).toBe(0);
+    rmSync(join(dir, 'plugins', 'weather', 'main.js'));
+    const result = await cli(['check', dir]);
+    expect(result.code).toBe(1);
+    expect(result.err).toMatch(/plugins\/weather\/plugin\.json: .*main\.js/);
+  });
+
+  it('ship with every export: an enabled one’s whole folder, a turned-off one’s plugin.json', async () => {
+    const dir = withPlugins();
+    const games: Record<string, string> = {
+      web: 'game',
+      mac: 'FreeQuest Demo.app/Contents/Resources/game',
+      windows: 'FreeQuest Demo/game',
+      linux: 'FreeQuest Demo/game',
+    };
+    for (const [target, game] of Object.entries(games)) {
+      const out = join(temp(), target);
+      const result = await cli(['export', target, dir, '--out', out]);
+      expect(result.code, `${target}: ${result.err}`).toBe(0);
+      const root = join(out, game);
+      expect(existsSync(join(root, 'plugins/weather/main.js')), target).toBe(true);
+      expect(existsSync(join(root, 'plugins/weather/drop.png')), target).toBe(true);
+      expect(existsSync(join(root, 'plugins/clock/plugin.json')), target).toBe(true);
+      expect(existsSync(join(root, 'plugins/clock/main.js')), target).toBe(false);
+      expect((await openProject(new NodeFs(root))).problems, target).toEqual([]);
+    }
+  });
+});

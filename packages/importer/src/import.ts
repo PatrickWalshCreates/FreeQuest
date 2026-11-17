@@ -38,7 +38,7 @@ import { systemAudio } from './system-audio.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
-import { readMzJson, readMzProject } from './mz-project.js';
+import { readMzJson, readMzPlugins, readMzProject, reportMzPlugins } from './mz-project.js';
 import { ImportReport } from './report.js';
 
 /** The report's file in the new project. */
@@ -70,6 +70,9 @@ export async function importMzProject(
 ): Promise<ImportResult> {
   const report = new ImportReport();
   const mz = await readMzProject(source, report);
+  // The MZ plugins it used are listed in the report; they never come across or run.
+  const mzPlugins = await readMzPlugins(source, report);
+  if (mzPlugins) reportMzPlugins(mzPlugins, report);
   const name = options.name?.trim() || mz.system.title || 'Imported game';
   const id = options.id ?? suggestGameId(name);
   const problem = newProjectProblem({ name, id });
