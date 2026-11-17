@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.5.0 released (2026-11-16), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.6.0 released (2026-11-17), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1487,7 +1487,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
     its own milestone), weather, vehicles, movies, side-view battlers, map regions, wall
     shadows, the MZ traits not listed above (counterattack, magic reflection, party
     abilities…: next, if the samples' use holds up in other games).
-- **M15 (in progress)** The plugin API, to release as 0.6.0. M14 left weather, scripts, MZ
+- **M15 (done)** The plugin API, released as 0.6.0. M14 left weather, scripts, MZ
   plugins and one-off battle rules out on purpose: instead of growing the engine for each, game
   makers get a typed, hook-based way to add them. Plugins are JavaScript run by the game, never
   by formulas (formulas stay our own language) and never by the editor.
@@ -1556,10 +1556,10 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      `reportMzPlugins` lists them (on, off) under "Plugins"; commands 357/356 become comments
      naming the plugin, counted as "Plugin command (<name>)" topics. Windows and Linux players
      aren't run here: their CSP was checked in M15 step 2)
-  7. Two example plugins of our own (weather: rain/snow on a map; a HUD showing gold or a
+  7. ~~Two example plugins of our own (weather: rain/snow on a map; a HUD showing gold or a
      variable), the demo uses weather in one place, `docs/plugins.md` (writing one, the api
      reference, safety), Starter, guides, the quest test, freeze the 0.6 formats, and a 0.6.0
-     release through the checklist. (Done up to the draft: the plugins live in the demo,
+     release through the checklist.~~ (done: the plugins live in the demo,
      `samples/demo-project/plugins/{weather,hud}/` (plain JS, one file each, tested for real in
      `runtime/test/example-plugins.test.ts` with a fake canvas); weather is per map
      (plugin data `{map, kind, strength}`, eased in `onStep`, shown at once on map load), the
@@ -1568,7 +1568,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      copies both turned off (`gen-templates.ts`). Tests that add their own plugins use
      editor-core's `demoWithoutPlugins()`. Guide `docs/plugins.md` in the Help window and
      the site. 0.6 frozen: `release-0.6/` includes `plugins/`, its save holds both plugins'
-     data. Still to do: the user's by-hand check of the draft, then publishing)
+     data. The user's by-hand check of the downloaded editor passed (playtest prompt, rain at
+     the bridge, the HUD, plugin commands, a Mac export); published 2026-11-17,
+     `latest.json` names 0.6.0)
   - Formats: manifest 10, map 10, save 4, plus `plugin.json` 1; each with a migration, the
     frozen 0.1–0.5 projects and saves keep opening.
   - Not in M15: plugins in the editor (custom panels, tools), a plugin registry or downloads,
