@@ -456,7 +456,7 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   Start the dev player with `pnpm dev` from the repo root if a preview config fails to start it.
 - **Debug panel** (dev builds, F9): HTML overlay from `runtime/src/debug-text.ts` (DOM-free,
   tested) + `debug-panel.ts`. Enabled via `startGame({ debug: true })`.
-- **Plugins** (M15 step 1, format only; nothing runs yet): `schema/plugin.ts`. A plugin is
+- **Plugins** (M15): format in `schema/plugin.ts`. A plugin is
   `plugins/<id>/plugin.json` (file kind `plugin`, format 1: id, name, version, `apiVersion` ≤
   `PLUGIN_API_VERSION`, `entry` script inside the folder, `settings` and `commands[].params`)
   plus its files. Parameters are our own small spec (`PluginParam`: boolean, integer, number
@@ -466,17 +466,34 @@ false })`, the list is narrow); the title's Load list adds the party. `ListWindo
   (`resolvePluginValues`), `checkPluginValues` checks names, types, ranges, choices and ids,
   `checkPluginShape` the declaration itself. Manifest v10 `plugins` (`PluginRef`: id, path =
   `pluginPath(id)`, `enabled`, `settings`), map v10 command `plugin` (plugin, command, args;
-  allowed in battle events; the interpreter skips it until step 2; a turned-off plugin's
+  allowed in battle events; a turned-off plugin's
   commands are not a problem). `ReferenceContext.plugins` (declarations): without it only the
-  listing is checked (the runtime loader for now). Editor-core: `OpenedProject.plugins`
+  listing is checked. Editor-core: `OpenedProject.plugins`
   (read with the manifest's refs; a missing `entry` script is a problem on the declaration,
   found at open), the reference index (`plugin` kind; values indexed by declared type, never by
   argument name; settings as "Project settings › Plugins › <name>"), renames rewrite them
   (plugin ids themselves aren't renamable), `assetReferences` includes asset values (audio by
   extension), and exports copy an enabled plugin's whole folder (a turned-off one ships only
   `plugin.json`). The editor's add menu doesn't offer `plugin` yet (step 5: per plugin).
-- **Plugin API**: typed, hook-based, no monkey-patching of globals or engine classes. Only a stub
-  interface exists (`packages/core/src/plugin.ts`); not implemented yet.
+- **Plugin API** (M15 step 2, `core/plugin.ts`, tested in `core/test/plugin.test.ts`): a
+  script default-exports `{ setup(api) }` (`definePlugin` types it). `PluginApi`: `apiVersion`,
+  `id`, `settings` (resolved), `onGameStart`, `onMapLoaded`, `onStep(game, dt)`,
+  `command(id, handler)`; registering only in setup, only declared commands, every declared
+  command needs a handler. Hooks get a `PluginGame` view (map, player, gold, get/set switches
+  and variables, `playSound`), handlers a `PluginCommandCall` (args with defaults, `event`,
+  `game`) and return nothing or a "finished" check the event waits on (via
+  `EventContext.runPlugin`). `PluginHost` runs them: `start(world)` (sets `world.plugins`,
+  game start then map loaded), `World.changeMap` → `mapLoaded`, end of `World.step` →
+  `afterStep` (so hooks pause with the menu and battles). Any throw (setup, a hook, a handler,
+  a wait check, a non-function result) becomes a `PluginError` (plugin, hook, cause) through
+  `onError` and switches that plugin off for the session; the game and the event go on.
+  `status` lists them. Runtime: the loader reads every listed `plugin.json` (`project.plugins`,
+  `checkPluginShape` refuses at start; commands' args checked with the maps); `plugins.ts`
+  `loadPlugins` imports enabled scripts (`import(url)` from `assetUrl`, injectable) in manifest
+  order, a failed import reported and left out; `startGame` `plugins` (default on) and
+  `onPluginError` (default: console + `showPluginNotice`, a closable notice over the game);
+  `play()` starts the host for each new world. The desktop player's CSP has `script-src` for
+  the asset protocol. Editor playtests pass `plugins: false` until step 4's sandbox.
 - **Dev without builds**: each package's `exports` has a `"@freequest/source"` condition pointing at
   `src/index.ts`. Vite, Vitest and `tsc --noEmit` use it (`customConditions`); `tsconfig.build.json`
   disables it so published `dist/` resolves dependencies' `dist/`.
@@ -1435,13 +1452,16 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      problem), editor-core reads plugins in `openProject`, the reference index and renames
      know them, export copies enabled plugins' folders. Nothing runs yet.~~ (done; tested in
      schema `plugin.test.ts` and editor-core `plugins.test.ts` on the demo with a plugin added)
-  2. The game side: `definePlugin` and the versioned `api` types (exported for plugin
+  2. ~~The game side: `definePlugin` and the versioned `api` types (exported for plugin
      authors), the runtime loads enabled plugins' modules at start (dynamic import from
      `assetUrl`; desktop player CSP allows scripts from the asset protocol), lifecycle hooks
      and commands through the interpreter, a failing plugin reported clearly (which plugin,
-     which hook) instead of a blank game. Tested in Node with fake plugins.
+     which hook) instead of a blank game. Tested in Node with fake plugins.~~ (done; settings
+     reach `setup` already. Tried in the dev player with a throwaway plugin: hooks ran, a
+     throwing command showed the notice while the event went on. The desktop player's import
+     through the asset protocol is tried in step 6)
   3. Drawing and saving: the map layer (under dialogs, over pictures? decide), plugin data in
-     saves (save v4), plugin settings values passed to `setup`.
+     saves (save v4).
   4. Sandboxed playtests: the editor's Play runs the game in a sandboxed iframe; tests and a
      desktop check that plugin code can't call Tauri or the dev server's writes. The trust
      prompt.

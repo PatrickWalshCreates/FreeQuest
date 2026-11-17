@@ -7,6 +7,7 @@ import type {
   InputAction,
   Manifest,
   Operand,
+  PluginValues,
   VariableOp,
   VariableValue,
 } from '@freequest/schema';
@@ -232,6 +233,16 @@ export interface EventContext {
   readonly playSeconds?: () => number;
   /** Uniform random in [0, 1), for random numbers. Defaults to Math.random. */
   readonly random?: () => number;
+  /**
+   * Run a plugin's command (the world's plugins). Returns a check the event
+   * waits on, or null. Without it plugin commands do nothing.
+   */
+  readonly runPlugin?: (
+    plugin: string,
+    command: string,
+    args: PluginValues,
+    event: string | null,
+  ) => (() => boolean) | null;
 }
 
 /** Where a character stands and faces. */

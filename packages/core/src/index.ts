@@ -18,7 +18,7 @@ export * from './effects.js';
 export * from './enemy.js';
 export * from './battle.js';
 export * from './world.js';
-export type * from './plugin.js';
+export * from './plugin.js';
 export * from './text.js';
 export * from './screen.js';
 export * from './scroll.js';

@@ -18,6 +18,7 @@ import { DatabaseIndex } from './database.js';
 import { DIRECTIONS, DIRECTION_DELTA, type Direction } from './direction.js';
 import { EventInstance } from './events.js';
 import { type AudioSink, type EventContext, GameState } from './game-state.js';
+import type { PluginHost } from './plugin.js';
 import { GridMover, type MoveHooks } from './grid-mover.js';
 import type { InputState } from './input.js';
 import { Interpreter } from './interpreter.js';
@@ -83,6 +84,8 @@ export class World {
   readonly pictures = new Pictures();
   /** Animations and balloons playing on the player and events (cleared by a new map). */
   readonly effects = new CharacterEffects();
+  /** The project's plugins, once `PluginHost.start` binds them to this world. */
+  plugins: PluginHost | null = null;
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
   readonly access = { menu: true, saving: true };
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
@@ -226,6 +229,7 @@ export class World {
     this.enterMap(map, tileset, x, y);
     if (direction) this.player.direction = direction;
     this.runningEvent = null;
+    this.plugins?.mapLoaded(this);
   }
 
   /**
@@ -669,6 +673,8 @@ export class World {
       },
       playSeconds: () => this.playSeconds,
       random: this.random,
+      runPlugin: (plugin, command, args, event) =>
+        this.plugins?.runCommand(this, plugin, command, args, event) ?? null,
     };
   }
 
@@ -880,5 +886,6 @@ export class World {
     // An event triggered during this step runs up to its first pause right
     // away, so its first message shows without a one-step delay.
     if (this.running && this.running !== runningAtStart) this.advanceInterpreter(0);
+    this.plugins?.afterStep(this, dt);
   }
 }

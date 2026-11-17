@@ -8,6 +8,7 @@ import {
   type FileRef,
   type GameMap,
   type Manifest,
+  type PluginDeclaration,
   ProjectFileError,
   type Tileset,
   assembleDatabase,
@@ -18,6 +19,7 @@ import {
   checkMapReferences,
   checkCharacterShape,
   checkMapShape,
+  checkPluginShape,
   parseProjectFile,
 } from '@freequest/schema';
 
@@ -64,6 +66,8 @@ export interface LoadedProject {
   readonly database: Database;
   /** Maps fetched so far. */
   readonly maps: ReadonlyMap<string, GameMap>;
+  /** Declarations of the plugins the manifest lists (on or off), by id. Scripts load in the game. */
+  readonly plugins: ReadonlyMap<string, PluginDeclaration>;
   /** Fetch and validate a map (once; later calls reuse it). */
   loadMap(id: string): Promise<GameMap>;
   /** A URL for a project-relative asset (images, audio). */
@@ -78,7 +82,7 @@ async function fetchFile<K extends FileKind>(
   return parseProjectFile(kind, await source.readJson(path), path);
 }
 
-async function fetchAll<K extends 'tileset' | 'map' | 'character'>(
+async function fetchAll<K extends 'tileset' | 'map' | 'character' | 'plugin'>(
   source: ProjectSource,
   kind: K,
   refs: FileRef[],
@@ -115,11 +119,17 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
   const source = typeof from === 'string' || from instanceof URL ? httpSource(from) : from;
 
   const manifest = await fetchFile(source, 'manifest', 'project.json');
-  const [tilesets, characters, database] = await Promise.all([
+  const [tilesets, characters, plugins, database] = await Promise.all([
     fetchAll(source, 'tileset', manifest.tilesets),
     fetchAll(source, 'character', manifest.characters),
+    fetchAll(source, 'plugin', manifest.plugins ?? []),
     fetchDatabase(source, manifest),
   ]);
+  for (const ref of manifest.plugins ?? []) {
+    const plugin = plugins.get(ref.id);
+    const problems = plugin ? checkPluginShape(plugin) : [];
+    if (problems.length > 0) throw new ProjectFileError(ref.path, problems);
+  }
   for (const ref of manifest.characters) {
     const sheet = characters.get(ref.id);
     const problems = sheet ? checkCharacterShape(sheet) : [];
@@ -129,7 +139,7 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
   if (databaseProblems.length > 0) throw new ProjectFileError('database', databaseProblems);
   const maps = new Map<string, GameMap>();
   const pending = new Map<string, Promise<GameMap>>();
-  const context = { manifest, tilesets, characters, maps, database };
+  const context = { manifest, tilesets, characters, maps, database, plugins };
 
   const loadMap = (id: string): Promise<GameMap> => {
     let promise = pending.get(id);
@@ -182,6 +192,7 @@ export async function loadProject(from: string | URL | ProjectSource): Promise<L
     characters,
     database,
     maps,
+    plugins,
     loadMap,
     assetUrl: (path) => source.assetUrl(path),
   };

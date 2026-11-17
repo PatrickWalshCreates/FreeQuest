@@ -31,3 +31,5 @@ export * from './textures.js';
 export * from './scale.js';
 export * from './text-fit.js';
 export * from './options.js';
+export * from './plugins.js';
+export * from './plugin-notice.js';

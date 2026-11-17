@@ -44,6 +44,9 @@ export function Playtest({ gameName, source, start, onClose }: Props) {
       project: source,
       debug: true,
       saveStorage: new MemoryStorage(),
+      // Plugins run in playtests once they run sandboxed, away from the editor's
+      // file access (M15 step 4). Until then their commands do nothing here.
+      plugins: false,
       ...(start ? { start: { map: start.map, x: start.x, y: start.y }, skipTitle: true } : {}),
     }).then(
       (started) => {

@@ -30,9 +30,10 @@ describe('desktop content security policies', () => {
     }
   });
 
-  it('lets the desktop player fetch and show its game through the asset protocol', () => {
+  it('lets the desktop player fetch, show and run its game through the asset protocol', () => {
     const player = csp('player-desktop');
-    for (const directive of ['connect-src', 'img-src', 'media-src']) {
+    // script-src: plugins' scripts are imported from the game folder (M15).
+    for (const directive of ['connect-src', 'img-src', 'media-src', 'script-src']) {
       expect(player.get(directive), directive).toEqual(
         expect.arrayContaining(['asset:', 'http://asset.localhost']),
       );

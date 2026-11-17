@@ -3,6 +3,8 @@ import {
   DatabaseIndex,
   type Direction,
   FixedTimestep,
+  type PluginError,
+  type PluginHost,
   World,
   translateSave,
   computeCamera,
@@ -40,6 +42,8 @@ import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { PictureView } from './picture-view.js';
+import { showPluginNotice } from './plugin-notice.js';
+import { loadPlugins } from './plugins.js';
 import { AnimationSheets, CharacterEffectViews } from './effect-views.js';
 import { fitScale } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
@@ -67,6 +71,16 @@ export interface StartGameOptions {
   debug?: boolean;
   /** Where save slots live. Defaults to localStorage (or memory if it's unavailable). */
   saveStorage?: KeyValueStorage;
+  /**
+   * Run the project's enabled plugins (default true). Off, their commands do
+   * nothing and no plugin code is loaded.
+   */
+  plugins?: boolean;
+  /**
+   * A plugin failed (it is switched off; the game goes on). Default: logged
+   * and shown in a notice over the game.
+   */
+  onPluginError?: (error: PluginError) => void;
 }
 
 export interface Game {
@@ -82,6 +96,14 @@ export interface Game {
 export async function startGame(options: StartGameOptions): Promise<Game> {
   const project = await loadProject(options.project);
   const { manifest } = project;
+  const onPluginError =
+    options.onPluginError ??
+    ((error: PluginError) => {
+      console.error(error, error.cause);
+      showPluginNotice(options.parent, error.message);
+    });
+  const plugins: PluginHost | null =
+    options.plugins === false ? null : await loadPlugins(project, onPluginError);
   const start = options.start;
   const map = start
     ? await project.loadMap(start.map)
@@ -423,6 +445,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const play = (next: World, seconds: number) => {
     world = next;
     playSeconds = seconds;
+    plugins?.start(next);
     dialog = new DialogController();
     battles.reset();
     gameOverScreen.visible = false;
