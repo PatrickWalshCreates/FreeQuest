@@ -228,6 +228,7 @@ function makeChecks(ctx: ReferenceContext, problems: string[]) {
             checkOperand(at, command.amount);
             break;
           case 'changeParty':
+          case 'movePartyMember':
             checkEntry(at, 'actor', command.actor);
             break;
           case 'shop':

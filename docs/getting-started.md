@@ -265,7 +265,8 @@ In battle, a skill or item with an **Animation** plays it on each target before 
   it), for showing a place in a cutscene; **Back to the player** returns it.
 - **Change HP**, **Change MP** and **Change state** affect one party member or everyone: a trap,
   a curse, a blessing. Losing HP stops at 1 unless **Can knock out** is ticked.
-- **Menu or saving on/off** stops the player opening the menu, or saving from it (kept in saves,
+- **Menu, saving or formation on/off** stops the player opening the menu, saving from it, or
+  changing the party's order with Formation (kept in saves,
   until turned on again). **Open save screen** lets them save right there (at a save point, even
   while saving is off); the save is made as if the event had finished. **Game over** and **Back
   to title** end the game.
@@ -354,6 +355,12 @@ turns, stacking to two levels (±50%); using it again renews the turns. They end
 **Hits** makes a skill or item land on each target several times for one cost. A **Run a common
 event** effect runs a common event once the skill or item has been used: in battle straight
 away, or on the map once the menu closes.
+
+**The party's order**: the first member leads (the player looks like them on the map), and the
+first four fight; the rest wait. Players change the order with **Formation** in the game's menu
+(pick a member, then the one to swap places with). Events can move a member to a place with
+**Move a party member** (1 is the leader), and turn Formation off and on with **Menu, saving
+or formation on/off** (a story scene where the order must stay).
 
 **Where enemies stand**: a troop's **In battle** picture shows its battle screen with the
 game's battle background. Drag the enemies to where they stand (by their feet): a bat higher

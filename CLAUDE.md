@@ -1615,9 +1615,18 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      even row"); `places` is left out of the troop's generated form. Importer: MZ members' x,
      y kept as they are (MZ's screen size becomes the project's). Demo: the bat swarm and the
      slime and bat fly at staggered heights, their shadows on the grass; tried by dragging in browser mode and in a dev player battle)
-  3. Party formation: Formation in the menu changes the party's order (the leader is who the
+  3. ~~Party formation: Formation in the menu changes the party's order (the leader is who the
      player looks like; the front members fight, the rest wait), a command to allow or forbid
-     it, and an event command to move a member to a place. Saved with the party.
+     it, and an event command to move a member to a place. Saved with the party.~~ (done;
+     `Party.moveMember(id, index)` (clamped, past the end = last) and `swapMembers(a, b)`, both
+     bump `Party.version`; the order is the members array, so saves already keep it. Map v11
+     command `movePartyMember` {actor, place ≥ 1} and `setAccess` `what: 'formation'`
+     (`World.access.formation`, save v5 `access.formation`); both formats unreleased, so no
+     extra bump. Runtime: Formation in the menu after Status (greyed alone or while off):
+     screens `formation` → `formationSwap` (`picked` marked "▸", members past
+     `MAX_BATTLE_MEMBERS` show "waits"); picking the same member lets go. Editor: the command
+     in the Party group, labels in `project-context.ts`. Importer: MZ's 137 (formation access).
+     Tried in the dev player: Mira swapped to the front, the player turned into her)
   4. Combat traits as modifiers: counterattack (answers physical hits), magic reflection,
      magic evasion, extra actions per turn, and party abilities (fewer or no encounters, double
      gold, double drops, no surprise attacks; held by any party member). Battle log lines for

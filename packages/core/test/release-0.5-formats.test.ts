@@ -49,7 +49,7 @@ describe('a 0.5 save', () => {
     expect(world.pictures.list).toMatchObject([
       { number: 1, image: 'assets/pictures/meadow-map.png', x: 240, y: 150, opacity: 1 },
     ]);
-    expect(world.access).toEqual({ menu: true, saving: false });
+    expect(world.access).toEqual({ menu: true, saving: false, formation: true });
     expect(world.battleMusic).toEqual({ battle: 'assets/audio/battle.wav' });
     expect(world.screen.toData().tint).toEqual({ color: '#203060', strength: 0.3 });
     expect(world.playSeconds).toBe(1234);

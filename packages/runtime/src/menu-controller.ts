@@ -1,6 +1,7 @@
 // The main menu on the map: items, skills, equipment, status, save, quit.
 // Free of PixiJS so it can be tested in Node; `menu-view.ts` draws the state.
 import {
+  MAX_BATTLE_MEMBERS,
   type Actor,
   type InputState,
   type TargetResult,
@@ -28,6 +29,8 @@ export type MenuScreen =
   | 'equipChoices'
   | 'statusActor'
   | 'status'
+  | 'formation'
+  | 'formationSwap'
   | 'target'
   | 'save'
   | 'quit';
@@ -55,6 +58,8 @@ interface Screen {
   cursor: number;
   readonly actor?: Actor;
   readonly slot?: string;
+  /** Formation: the member picked first, by place. */
+  readonly picked?: number;
   /** For target screens: what is being used. */
   readonly use?:
     { kind: 'item'; entry: ItemEntry } | { kind: 'skill'; entry: SkillEntry; user: Actor };
@@ -76,7 +81,16 @@ export interface MenuControllerOptions {
   readonly saveOnly?: boolean;
 }
 
-const ROOT = ['Items', 'Skills', 'Equipment', 'Status', 'Save', 'Options', 'Quit'] as const;
+const ROOT = [
+  'Items',
+  'Skills',
+  'Equipment',
+  'Status',
+  'Formation',
+  'Save',
+  'Options',
+  'Quit',
+] as const;
 
 const usableInMenu = (o: SkillEntry['occasion']) => o === 'always' || o === 'menu';
 
@@ -149,6 +163,10 @@ export class MenuController {
         return this.db.system.equipmentSlots.find((s) => s.id === screen.slot)?.name ?? 'Equip';
       case 'status':
         return screen.actor?.name ?? '';
+      case 'formation':
+        return 'Move who?';
+      case 'formationSwap':
+        return 'Swap places with?';
       case 'target':
         return `Use ${screen.use?.entry.name ?? ''} on`;
       case 'save':
@@ -183,7 +201,9 @@ export class MenuController {
               ? this.party.members.some((m) => this.menuSkills(m).length > 0)
               : label === 'Save'
                 ? this.world.access.saving
-                : true,
+                : label === 'Formation'
+                  ? this.world.access.formation && this.party.members.length > 1
+                  : true,
         }));
       case 'items':
         return this.carriedItems().map(({ entry, count }) => ({
@@ -198,6 +218,14 @@ export class MenuController {
       case 'equipActor':
       case 'statusActor':
         return this.party.members.map((m) => this.memberOption(m));
+      case 'formation':
+      case 'formationSwap':
+        // Who fights (the front members) and who waits; the picked one is marked.
+        return this.party.members.map((m, i) => ({
+          label: `${i === screen.picked ? '▸ ' : ''}${m.name}`,
+          detail: `Lv ${m.level}${i >= MAX_BATTLE_MEMBERS ? ' · waits' : ''}`,
+          enabled: true,
+        }));
       case 'skills': {
         const actor = screen.actor;
         if (!actor) return [];
@@ -313,6 +341,7 @@ export class MenuController {
         else if (command === 'Skills') this.push({ kind: 'skillUser' });
         else if (command === 'Equipment') this.push({ kind: 'equipActor' });
         else if (command === 'Status') this.push({ kind: 'statusActor' });
+        else if (command === 'Formation') this.push({ kind: 'formation' });
         else if (command === 'Save') this.push({ kind: 'save' });
         else if (command === 'Options') this.result = 'options';
         else if (command === 'Quit') this.push({ kind: 'quit' });
@@ -365,6 +394,18 @@ export class MenuController {
       }
       case 'status':
         return;
+      case 'formation':
+        this.push({ kind: 'formationSwap', picked: index });
+        this.top.cursor = index;
+        return;
+      case 'formationSwap': {
+        // Picking the same member again just lets go of them.
+        const picked = screen.picked ?? index;
+        this.party.swapMembers(picked, index);
+        this.stack.pop();
+        this.top.cursor = index;
+        return;
+      }
       case 'save':
         return this.saveTo(index + 1);
       case 'quit':

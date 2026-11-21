@@ -92,7 +92,7 @@ export class World {
    */
   readonly pluginData = new Map<string, unknown>();
   /** Whether the menu opens, and whether it can save (events turn them off). Saved. */
-  readonly access = { menu: true, saving: true };
+  readonly access = { menu: true, saving: true, formation: true };
   /** The battle background an event chose (`changeBattleBackground`); null: none chosen. Saved. */
   battleBackground: string | null = null;
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
@@ -309,6 +309,7 @@ export class World {
     const access = {
       ...(this.access.menu ? {} : { menu: false }),
       ...(this.access.saving ? {} : { saving: false }),
+      ...(this.access.formation ? {} : { formation: false }),
     };
     const party = this.party.toData();
     return {
@@ -374,6 +375,7 @@ export class World {
     world.pictures.loadData(save.pictures);
     world.access.menu = save.access?.menu ?? true;
     world.access.saving = save.access?.saving ?? true;
+    world.access.formation = save.access?.formation ?? true;
     Object.assign(world.battleMusic, save.battleMusic ?? {});
     world.battleBackground = save.battleBackground ?? null;
     for (const [id, data] of Object.entries(save.plugins ?? {})) world.pluginData.set(id, data);

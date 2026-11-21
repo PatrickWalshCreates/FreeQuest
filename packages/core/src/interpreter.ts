@@ -329,6 +329,9 @@ export class Interpreter {
         else party.removeMember(command.actor);
         break;
       }
+      case 'movePartyMember':
+        this.party(command.type).moveMember(command.actor, command.place - 1);
+        break;
       case 'gainExp': {
         const amount = this.operand(command.amount);
         for (const member of this.targets(command.type, command.actor)) member.gainExp(amount);

@@ -70,7 +70,12 @@ export const SaveFile = Type.Object(
     /** The menu or saving turned off by an event (v3). */
     access: Type.Optional(
       Type.Object(
-        { menu: Type.Optional(Type.Boolean()), saving: Type.Optional(Type.Boolean()) },
+        {
+          menu: Type.Optional(Type.Boolean()),
+          saving: Type.Optional(Type.Boolean()),
+          /** Changing the party's order from the menu (v5). */
+          formation: Type.Optional(Type.Boolean()),
+        },
         { additionalProperties: false },
       ),
     ),

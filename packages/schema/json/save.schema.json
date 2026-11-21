@@ -11,6 +11,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "formation": {
+          "type": "boolean"
+        },
         "menu": {
           "type": "boolean"
         },

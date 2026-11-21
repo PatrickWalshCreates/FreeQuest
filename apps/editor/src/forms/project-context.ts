@@ -90,6 +90,7 @@ const LABELS: Record<string, string> = {
   below: 'At or below (% of the most)',
   span: 'Runs',
   events: 'Battle events',
+  place: 'Place (1 = the leader)',
   battleBackground: 'Battle background',
   background: 'Background (instead of the game’s)',
 };
@@ -97,7 +98,11 @@ const LABELS: Record<string, string> = {
 /** Readable choices for fields whose values are words. */
 const CHOICE_LABELS: Record<string, Record<string, string>> = {
   which: { battle: 'Battles', victory: 'Winning a battle' },
-  what: { menu: 'Opening the menu', saving: 'Saving from the menu' },
+  what: {
+    menu: 'Opening the menu',
+    saving: 'Saving from the menu',
+    formation: 'Changing the party’s order (Formation)',
+  },
   axis: { x: 'X (across)', y: 'Y (down)' },
   action: { confirm: 'Confirm', cancel: 'Cancel', menu: 'Menu' },
   stat: {
@@ -181,6 +186,7 @@ const NUMBER_DEFAULTS: Record<string, number | boolean> = {
   // Buffs last a few turns; HP tests at half.
   turns: 3,
   below: 50,
+  place: 1,
 };
 
 const AUDIO_FIELDS = new Set<string>([

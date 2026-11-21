@@ -8,12 +8,12 @@ import { demoDb, readDemo } from './demo.js';
 const db = demoDb();
 const manifest = parseProjectFile('manifest', readDemo('project.json'));
 
-function setup() {
+function setup(database = db) {
   const world = new World({
     manifest,
     map: parseProjectFile('map', readDemo('data/maps/map001.json')),
     tileset: parseProjectFile('tileset', readDemo('data/tilesets/overworld.json')),
-    database: db,
+    database,
   });
   const saves = new SaveStore(new MemoryStorage(), manifest);
   const menu = new MenuController({
@@ -45,6 +45,7 @@ describe('MenuController', () => {
       'Skills',
       'Equipment',
       'Status',
+      'Formation',
       'Save',
       'Options',
       'Quit',
@@ -61,7 +62,7 @@ describe('MenuController', () => {
     expect(menu.outcome).toBe('options');
     menu.resume();
     expect(menu.outcome).toBeNull();
-    expect(menu.state).toMatchObject({ screen: 'root', cursor: 5 });
+    expect(menu.state).toMatchObject({ screen: 'root', cursor: 6 });
   });
 
   it('uses a potion on a chosen member and reports the result', () => {
@@ -163,7 +164,7 @@ describe('MenuController', () => {
 
   it('saves to a slot and shows it in the slot list', () => {
     const { saves, menu, tap } = setup();
-    tap('down', 4);
+    tap('down', 5);
     tap('confirm'); // Save
     expect(menu.state.options.map((o) => o.detail)).toEqual(['Empty', 'Empty', 'Empty']);
     tap('down');
@@ -182,7 +183,7 @@ describe('MenuController', () => {
   it('greys out Save while events have turned saving off', () => {
     const { world, menu } = setup();
     world.access.saving = false;
-    expect(menu.state.options[4]).toMatchObject({ label: 'Save', enabled: false });
+    expect(menu.state.options[5]).toMatchObject({ label: 'Save', enabled: false });
   });
 
   it('opens on the save list for an event, saving as if the event had finished', () => {
@@ -229,7 +230,7 @@ describe('MenuController', () => {
       playSeconds: () => 0,
     });
     const input = new ActionState();
-    for (const a of ['down', 'down', 'down', 'down', 'confirm', 'confirm'] as const) {
+    for (const a of ['down', 'down', 'down', 'down', 'down', 'confirm', 'confirm'] as const) {
       input.press(a);
       failing.update(input);
       input.endStep();
@@ -257,5 +258,45 @@ describe('formatPlayTime', () => {
   it('formats hours:minutes:seconds', () => {
     expect(formatPlayTime(0)).toBe('0:00:00');
     expect(formatPlayTime(3725.9)).toBe('1:02:05');
+  });
+});
+
+describe('Formation', () => {
+  it('swaps two members: pick one, then the place to swap with', () => {
+    const { world, menu, tap } = setup();
+    world.party.addMember('mira');
+    tap('down', 4);
+    expect(menu.state.options[4]).toMatchObject({ label: 'Formation', enabled: true });
+    tap('confirm');
+    expect(menu.state.options.map((o) => o.label)).toEqual(['Hero', 'Mira']);
+    tap('confirm'); // pick the hero
+    expect(menu.state.screen).toBe('formationSwap');
+    expect(menu.state.options[0]?.label).toBe('▸ Hero');
+    tap('down');
+    tap('confirm'); // swap with Mira
+    expect(world.party.members.map((m) => m.id)).toEqual(['mira', 'hero']);
+    // Back on the list, the cursor where the picked member went; Mira now leads.
+    expect(menu.state).toMatchObject({ screen: 'formation', cursor: 1 });
+    expect(world.playerCharacter).toBe(world.party.members[0]?.character);
+  });
+
+  it('marks members past the front four as waiting', () => {
+    const { world, menu, tap } = setup(demoDb(['ada', 'bo', 'cy']));
+    for (const id of ['mira', 'ada', 'bo', 'cy']) world.party.addMember(id);
+    expect(world.party.members).toHaveLength(5);
+    tap('down', 4);
+    tap('confirm');
+    const details = menu.state.options.map((o) => o.detail ?? '');
+    expect(details.slice(0, 4).every((d) => !d.includes('waits'))).toBe(true);
+    expect(details.slice(4).every((d) => d.includes('waits'))).toBe(true);
+  });
+
+  it('is greyed out alone, or while events have turned it off', () => {
+    const { world, menu } = setup();
+    expect(menu.state.options[4]).toMatchObject({ label: 'Formation', enabled: false });
+    world.party.addMember('mira');
+    expect(menu.state.options[4]?.enabled).toBe(true);
+    world.access.formation = false;
+    expect(menu.state.options[4]?.enabled).toBe(false);
   });
 });

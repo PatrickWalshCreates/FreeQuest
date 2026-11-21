@@ -278,6 +278,7 @@ describe('importing events', () => {
       { type: 'comment', text: 'From MZ, not imported: Change victory music: silence' },
       { type: 'setAccess', what: 'saving', allowed: false },
       { type: 'setAccess', what: 'menu', allowed: true },
+      { type: 'setAccess', what: 'formation', allowed: false },
       { type: 'changeHp', amount: -10, canKnockOut: false },
       { type: 'changeMp', actor: 'wren', amount: 5 },
       { type: 'changeState', actor: 'wren', action: 'add', state: 'bracing' },

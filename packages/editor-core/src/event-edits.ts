@@ -556,6 +556,10 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
     }
     case 'changeParty':
       return `${names.actor(command.actor)} ${command.action === 'add' ? 'joins' : 'leaves'} the party`;
+    case 'movePartyMember':
+      return command.place === 1
+        ? `${names.actor(command.actor)} leads the party`
+        : `${names.actor(command.actor)} moves to place ${command.place} in the party`;
     case 'gainExp':
       return `${command.actor ? names.actor(command.actor) : 'Party'} gains ${operand(command.amount, names)} exp`;
     case 'recoverAll':
@@ -619,7 +623,13 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
     case 'openSave':
       return 'Open the save screen';
     case 'setAccess':
-      return `${command.allowed ? 'Allow' : 'Stop'} ${command.what === 'menu' ? 'opening the menu' : 'saving'}`;
+      return `${command.allowed ? 'Allow' : 'Stop'} ${
+        command.what === 'menu'
+          ? 'opening the menu'
+          : command.what === 'formation'
+            ? 'changing the party’s order'
+            : 'saving'
+      }`;
     case 'changeBattleMusic': {
       const what = command.which === 'battle' ? 'Battle music' : 'Victory music';
       return command.path === null
@@ -787,6 +797,7 @@ export const COMMAND_GROUPS: readonly {
       'changeItems',
       'shop',
       'changeParty',
+      'movePartyMember',
       'changeActor',
       'gainExp',
       'changeHp',
@@ -870,8 +881,9 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   gameOver: 'Game over',
   returnToTitle: 'Back to title',
   openSave: 'Open save screen',
-  setAccess: 'Menu or saving on/off',
+  setAccess: 'Menu, saving or formation on/off',
   changeBattleMusic: 'Change battle music',
+  movePartyMember: 'Move a party member',
   changeBattleBackground: 'Change battle background',
   playBackgroundSound: 'Background sound',
   changeHp: 'Change HP',

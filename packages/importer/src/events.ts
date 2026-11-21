@@ -527,8 +527,13 @@ class Converter {
         return [{ type: 'returnToTitle' }];
       case 134:
       case 135:
+      case 137:
         return [
-          { type: 'setAccess', what: code === 134 ? 'saving' : 'menu', allowed: int(0) === 1 },
+          {
+            type: 'setAccess',
+            what: code === 134 ? 'saving' : code === 135 ? 'menu' : 'formation',
+            allowed: int(0) === 1,
+          },
         ];
       case 132:
       case 133: {

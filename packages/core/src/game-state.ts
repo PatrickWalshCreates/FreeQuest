@@ -230,7 +230,7 @@ export interface EventContext {
   /** Change the picture behind battles for the rest of the game (null: back to the map's or project's). */
   readonly setBattleBackground?: (image: string | null) => void;
   /** Turn the menu or saving on or off. */
-  readonly setAccess?: (what: 'menu' | 'saving', allowed: boolean) => void;
+  readonly setAccess?: (what: 'menu' | 'saving' | 'formation', allowed: boolean) => void;
   /** Seconds played so far. */
   readonly playSeconds?: () => number;
   /** Uniform random in [0, 1), for random numbers. Defaults to Math.random. */

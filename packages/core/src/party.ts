@@ -147,6 +147,30 @@ export class Party {
     this.changes++;
   }
 
+  /**
+   * Move a member to `index` in the party's order (0 is the leader; past the
+   * end means last). Does nothing for an actor who isn't a member.
+   */
+  moveMember(id: string, index: number): void {
+    const from = this.memberList.findIndex((m) => m.id === id);
+    if (from === -1) return;
+    const to = Math.max(0, Math.min(this.memberList.length - 1, Math.floor(index)));
+    if (to === from) return;
+    const [member] = this.memberList.splice(from, 1);
+    if (member) this.memberList.splice(to, 0, member);
+    this.changes++;
+  }
+
+  /** Swap two members by their places in the order (the menu's Formation). */
+  swapMembers(a: number, b: number): void {
+    const first = this.memberList[a];
+    const second = this.memberList[b];
+    if (!first || !second || a === b) return;
+    this.memberList[a] = second;
+    this.memberList[b] = first;
+    this.changes++;
+  }
+
   /** Remove an actor; their equipment goes with them (as in most RPGs). */
   removeMember(id: string): void {
     const index = this.memberList.findIndex((m) => m.id === id);

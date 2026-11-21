@@ -965,6 +965,27 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Move a party member to a place in the party’s order (v11).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "movePartyMember"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Lowercase identifier: letters, digits, \"_\" and \"-\".",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "place": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["type", "actor", "place"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
             "type": {
               "type": "string",
@@ -1854,6 +1875,10 @@
                 {
                   "type": "string",
                   "const": "saving"
+                },
+                {
+                  "type": "string",
+                  "const": "formation"
                 }
               ]
             }

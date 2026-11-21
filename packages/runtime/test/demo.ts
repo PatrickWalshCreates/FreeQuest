@@ -13,9 +13,21 @@ export const DEMO = join(import.meta.dirname, '..', '..', '..', 'samples', 'demo
 export const readDemo = (path: string): unknown =>
   JSON.parse(readFileSync(join(DEMO, path), 'utf8'));
 
-export function demoDb(): DatabaseIndex {
+/** The demo's database; `extraActors` adds copies of the hero with these ids (for big parties). */
+export function demoDb(extraActors: readonly string[] = []): DatabaseIndex {
   const files = Object.fromEntries(
     DATABASE_KINDS.map((k) => [k, parseProjectFile(k, readDemo(`data/database/${k}.json`))]),
   ) as DatabaseFiles;
-  return new DatabaseIndex(assembleDatabase(files));
+  const hero = files.actors?.entries[0];
+  const actors =
+    files.actors && hero
+      ? {
+          ...files.actors,
+          entries: [
+            ...files.actors.entries,
+            ...extraActors.map((id) => ({ ...hero, id, name: id })),
+          ],
+        }
+      : files.actors;
+  return new DatabaseIndex(assembleDatabase({ ...files, ...(actors ? { actors } : {}) }));
 }

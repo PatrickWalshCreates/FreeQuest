@@ -263,6 +263,18 @@ export const Command = Type.Cyclic(
       ),
       Type.Object(
         {
+          type: Type.Literal('movePartyMember'),
+          actor: Id,
+          /** 1 is the leader (who the player looks like); past the end means last. */
+          place: Type.Integer({ minimum: 1 }),
+        },
+        {
+          additionalProperties: false,
+          description: 'Move a party member to a place in the party’s order (v11).',
+        },
+      ),
+      Type.Object(
+        {
           type: Type.Literal('gainExp'),
           /** Omit for every party member. */
           actor: Type.Optional(Id),
@@ -475,7 +487,12 @@ export const Command = Type.Cyclic(
       Type.Object(
         {
           type: Type.Literal('setAccess'),
-          what: Type.Union([Type.Literal('menu'), Type.Literal('saving')]),
+          what: Type.Union([
+            Type.Literal('menu'),
+            Type.Literal('saving'),
+            /** Changing the party's order from the menu (v11). */
+            Type.Literal('formation'),
+          ]),
           allowed: Type.Boolean(),
         },
         {

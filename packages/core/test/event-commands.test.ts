@@ -252,11 +252,11 @@ describe('game flow', () => {
       { type: 'setAccess', what: 'saving', allowed: false },
       { type: 'setAccess', what: 'menu', allowed: true },
     ]);
-    expect(w.access).toEqual({ menu: true, saving: false });
+    expect(w.access).toEqual({ menu: true, saving: false, formation: true });
     const save = w.toSave({ game: manifest.id, playSeconds: 10 });
     expect(save.access).toEqual({ saving: false });
     const loaded = World.fromSave(save, { manifest, map, tileset, database: demoDb() });
-    expect(loaded.access).toEqual({ menu: true, saving: false });
+    expect(loaded.access).toEqual({ menu: true, saving: false, formation: true });
     expect(loaded.playSeconds).toBe(10);
   });
 });
