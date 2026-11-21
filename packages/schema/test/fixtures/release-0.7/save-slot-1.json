@@ -1,0 +1,73 @@
+{
+  "formatVersion": 5,
+  "access": {
+    "formation": false
+  },
+  "battleBackground": "assets/battlebacks/meadow.png",
+  "direction": "down",
+  "flags": {},
+  "game": "freequest-demo",
+  "map": "map001",
+  "party": {
+    "equipment": {},
+    "gold": 50,
+    "items": {},
+    "members": [
+      {
+        "id": "mira",
+        "equipment": {
+          "body": "cloth-robe",
+          "weapon": "oak-staff"
+        },
+        "exp": 152,
+        "extraSkills": [],
+        "hp": 152,
+        "level": 3,
+        "mp": 59,
+        "states": []
+      },
+      {
+        "id": "hero",
+        "equipment": {
+          "body": "leather-vest",
+          "weapon": "bronze-sword"
+        },
+        "exp": 0,
+        "extraSkills": [],
+        "hp": 120,
+        "level": 1,
+        "mp": 10,
+        "states": []
+      }
+    ],
+    "steps": 0
+  },
+  "playSeconds": 2345,
+  "savedAt": "2026-11-21T19:06:56.672Z",
+  "screen": {
+    "fade": 0,
+    "tint": {
+      "color": "#000000",
+      "strength": 0
+    }
+  },
+  "summary": {
+    "location": "Meadow",
+    "members": [
+      {
+        "name": "Mira",
+        "level": 3
+      },
+      {
+        "name": "Hero",
+        "level": 1
+      }
+    ]
+  },
+  "switches": {
+    "accepted_request": true
+  },
+  "variables": {},
+  "x": 7,
+  "y": 7
+}

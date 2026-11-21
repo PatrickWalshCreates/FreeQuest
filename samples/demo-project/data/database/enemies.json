@@ -59,7 +59,12 @@
       "exp": 5,
       "gold": 6,
       "image": "assets/enemies/bat.png",
-      "modifiers": [],
+      "modifiers": [
+        {
+          "type": "extraActions",
+          "value": 0.3
+        }
+      ],
       "stats": {
         "agility": 22,
         "attack": 10,
@@ -107,6 +112,10 @@
           "type": "elementRate",
           "element": "ice",
           "value": 1.25
+        },
+        {
+          "type": "counterRate",
+          "value": 0.25
         }
       ],
       "stats": {

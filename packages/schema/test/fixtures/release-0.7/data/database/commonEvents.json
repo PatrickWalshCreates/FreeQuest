@@ -1,0 +1,93 @@
+{
+  "formatVersion": 6,
+  "entries": [
+    {
+      "id": "rest",
+      "name": "Rest",
+      "trigger": "call",
+      "commands": [
+        {
+          "type": "fadeScreen",
+          "seconds": 0.6,
+          "to": "out",
+          "wait": true
+        },
+        {
+          "type": "recoverAll"
+        },
+        {
+          "type": "wait",
+          "seconds": 0.4
+        },
+        {
+          "type": "fadeScreen",
+          "seconds": 0.6,
+          "to": "in",
+          "wait": true
+        },
+        {
+          "type": "showAnimation",
+          "animation": "sparkle",
+          "target": "player",
+          "wait": true
+        },
+        {
+          "type": "message",
+          "text": "Everyone is fully rested."
+        }
+      ]
+    },
+    {
+      "id": "read-map",
+      "name": "Read the map",
+      "trigger": "call",
+      "commands": [
+        {
+          "type": "showPicture",
+          "image": "assets/pictures/meadow-map.png",
+          "number": 1,
+          "opacity": 0,
+          "origin": "center",
+          "scaleX": 100,
+          "scaleY": 100,
+          "x": 240,
+          "y": 150
+        },
+        {
+          "type": "movePicture",
+          "easing": "ease-out",
+          "number": 1,
+          "opacity": 1,
+          "origin": "center",
+          "scaleX": 100,
+          "scaleY": 100,
+          "seconds": 0.4,
+          "wait": true,
+          "x": 240,
+          "y": 150
+        },
+        {
+          "type": "message",
+          "text": "The elder’s map: the old bridge is east, past the stream."
+        },
+        {
+          "type": "movePicture",
+          "easing": "ease-in",
+          "number": 1,
+          "opacity": 0,
+          "origin": "center",
+          "scaleX": 100,
+          "scaleY": 100,
+          "seconds": 0.3,
+          "wait": true,
+          "x": 240,
+          "y": 150
+        },
+        {
+          "type": "erasePicture",
+          "number": 1
+        }
+      ]
+    }
+  ]
+}

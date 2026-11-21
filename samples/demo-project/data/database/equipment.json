@@ -116,6 +116,10 @@
           "type": "stateRate",
           "state": "poison",
           "value": 0
+        },
+        {
+          "type": "partyAbility",
+          "ability": "doubleDrops"
         }
       ],
       "price": 200,

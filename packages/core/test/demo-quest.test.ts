@@ -361,6 +361,12 @@ describe('demo quest', () => {
     if (request?.type !== 'shop') throw new Error(`expected the shop, got ${request?.type}`);
     const potion = request.goods.find((g) => g.id === 'potion');
     if (!potion) throw new Error('no potions for sale');
+    // The Lucky Charm is for sale too: worn, it doubles the party's drop chances (0.7).
+    expect(request.goods.some((g) => g.id === 'lucky-charm')).toBe(true);
+    expect(world.db.equipment.get('lucky-charm').modifiers).toContainEqual({
+      type: 'partyAbility',
+      ability: 'doubleDrops',
+    });
     // What the shop screen does when the player buys one.
     buy(world.party, world.db, potion, 1);
     finish();

@@ -4,6 +4,49 @@ What changed in each FreeQuest release. Versions follow [semantic versioning](ht
 before 1.0, a minor version (0.2, 0.3…) may change things, but projects made with an older
 version always open and are upgraded automatically.
 
+## 0.7.0 (2026-11-21)
+
+Battles that look finished: backgrounds, enemies placed where you want them, the party's
+order, new combat traits, and battles that move.
+
+### Battles
+
+- **Battle backgrounds**: a picture behind battles, scaled to fill the screen. The game's own
+  (Database › System), a map's own (its settings), a battle command's own, and **Change battle
+  background** for the rest of the game, kept in saves. Each picker shows a preview, and Assets
+  has a Battle backgrounds folder.
+- **Where enemies stand**: drag a troop's enemies into place over the battle background (the
+  troop's **In battle** picture). Troops you don't arrange keep the even row.
+- **The party's order**: **Formation** in the game's menu swaps two members. The leader is who
+  the player looks like, the first four fight and the rest wait. Events can move a member to a
+  place, and turn Formation off and on.
+- **New modifiers**: counterattack physical hits, send magic back, dodge magic, extra actions
+  each turn, and party abilities (half as many or no random battles, double gold, double drop
+  chances).
+- **How battles move**: enemies fade in and rise into place, each turn starts with a short pause
+  and a sound (a new **Turn start** sound in System › Audio), the acting enemy hops, and damage
+  numbers pop up larger (heals with "+", critical hits with "!").
+
+### The demo and Starter
+
+- A meadow battle background for both. In the demo the bats fly at different heights and may act
+  twice, the wolf sometimes strikes back, and the peddler sells a Lucky Charm that doubles the
+  party's drop chances.
+
+### Importing from RPG Maker MZ
+
+- Battle backgrounds (each MZ pair of images as one picture, for maps that name one, Change
+  battle background, and the project's), where enemies stand in troops, Change formation access,
+  and the traits for counterattack, magic reflection and evasion, action times and the party
+  abilities for encounters, gold and drops.
+
+### Formats
+
+- Maps 11 (battle backgrounds, Move a party member, formation access), database 6 (the system
+  battle background and Turn start sound, troops' places, the new modifiers), saves 5 (the
+  battle background events chose, formation access). Older files are read as before; the editor
+  upgrades them on save.
+
 ## 0.6.0 (2026-11-17)
 
 Plugins: add to your game what FreeQuest doesn't do by itself, in JavaScript. See the new

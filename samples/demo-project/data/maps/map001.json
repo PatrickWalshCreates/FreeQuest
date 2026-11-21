@@ -428,6 +428,10 @@
                 {
                   "id": "wooden-shield",
                   "kind": "equipment"
+                },
+                {
+                  "id": "lucky-charm",
+                  "kind": "equipment"
                 }
               ]
             },

@@ -1,0 +1,67 @@
+{
+  "formatVersion": 6,
+  "entries": [
+    {
+      "id": "slimes",
+      "name": "Slimes",
+      "enemies": ["slime", "slime"]
+    },
+    {
+      "id": "bats",
+      "name": "Bat swarm",
+      "enemies": ["bat", "bat", "bat"],
+      "places": [
+        {
+          "x": 130,
+          "y": 206
+        },
+        {
+          "x": 240,
+          "y": 192
+        },
+        {
+          "x": 350,
+          "y": 210
+        }
+      ]
+    },
+    {
+      "id": "slime-and-bat",
+      "name": "Slime and bat",
+      "enemies": ["slime", "bat"],
+      "places": [
+        {
+          "x": 190,
+          "y": 214
+        },
+        {
+          "x": 300,
+          "y": 196
+        }
+      ]
+    },
+    {
+      "id": "bridge-wolf",
+      "name": "Wolf on the bridge",
+      "enemies": ["wolf"],
+      "events": [
+        {
+          "conditions": {
+            "turn": {
+              "every": 0,
+              "from": 1
+            }
+          },
+          "span": "battle",
+          "commands": [
+            {
+              "type": "message",
+              "speaker": "Wolf",
+              "text": "The wolf bares its teeth and circles you."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

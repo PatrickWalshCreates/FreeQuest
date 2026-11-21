@@ -1,6 +1,6 @@
 {
   "name": "@freequest/player-desktop",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "The desktop player app exported games are made from (the \"shell\"). Its page is @freequest/player.",
   "license": "MIT",

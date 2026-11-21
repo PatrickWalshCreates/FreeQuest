@@ -1130,11 +1130,11 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   To change a format: bump its `*_FORMAT_VERSION`, add a `Migration` to `MIGRATIONS` in
   `migrations.ts`, add an old-format fixture under `packages/schema/test/fixtures/v<N>/` with a test,
   run `pnpm gen:schema`, and re-save the samples through the migration.
-- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3, 0.5, 0.6) hold
+- **Released formats are frozen**: `packages/schema/test/fixtures/release-<v>/` (0.1, 0.2, 0.3, 0.5, 0.6, 0.7) hold
   the demo's data and a save exactly as that release wrote them (never edit; checksums in
   `editor-core/test/release-formats.test.ts`, which opens each with no problems;
   `.gitattributes` and `.prettierignore` keep the bytes). Core loads each save
-  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint; `release-0.6-formats.test.ts`: plugins' data, with the plugins in the folder). Change a
+  (`release-formats.test.ts` for 0.1, `release-0.2-formats.test.ts`: flags, tint; `release-0.3-formats.test.ts`: a save made by `World.toSave`, faces in the maps; `release-0.5-formats.test.ts`: pictures, access, battle music, a renamed actor, a tint; `release-0.6-formats.test.ts`: plugins' data, with the plugins in the folder; `release-0.7-formats.test.ts`: party order, formation access, a battle background). Change a
   format only with a migration; a release that changes one adds its own folder, checksum and
   save test.
 - Current versions: manifest 10 (v3: `database` paths, `start.party`/`start.gold`; v4: troops file;
@@ -1659,8 +1659,14 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      from `baseY`; numbers are bigger with a shadow, heals "+", criticals "!". Enemies already
      blinked when hit and faded when felled. Seen in the dev player by stepping the ticker:
      bats mid-entrance, "40" over a felled bat)
-  6. Demo, Starter, guides (a battles section in Getting started), the quest test, CHANGELOG,
-     freeze the 0.7 formats, and a 0.7.0 release through the checklist.
+  6. ~~Demo, Starter, guides (a battles section in Getting started), the quest test, CHANGELOG,
+     freeze the 0.7 formats, and a 0.7.0 release through the checklist.~~ (done up to the draft:
+     the bats get `extraActions` 0.3, the wolf `counterRate` 0.25, the Lucky Charm
+     `partyAbility` doubleDrops and the peddler sells it (the quest test checks); Getting
+     started's section 7 has "Battles" and "Icons and shops" subsections. 0.7 frozen:
+     `release-0.7/` (data and plugins) and a save with Mira leading, formation off and an
+     event's battle background (`core/test/release-0.7-formats.test.ts`). Still to do: the
+     user's by-hand check of the draft, then publishing)
   - Formats: database 6 (troop places, the new modifiers, system battle background), map 11
     (a map's battle background, the battle command's, the change command, the formation
     commands), save 5 (battle background, formation access); each with a migration, the

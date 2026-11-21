@@ -340,6 +340,8 @@ For random battles, open a map's settings and turn on **Random battles** with th
 roam there. For a set fight, use the **Start battle** command in an event; it can branch on
 winning, escaping or losing.
 
+### Battles
+
 **Modifiers** are how classes, actors, equipment, states and enemies change a battler: stats,
 elements, hit and evasion chances, damage taken, and more. Some to try:
 
@@ -396,6 +398,8 @@ settings (a cave, a castle), and a battle's own in the **Battle** command. **Cha
 background** (in the add menu's World group) switches it for the rest of the game, over every
 map's own, until changed back. Import pictures for it into the **Battle backgrounds** folder in
 Assets.
+
+### Icons and shops
 
 **Icons**: items, skills, equipment and states can have an icon from the game's iconset (set in
 **System**; the templates come with one). Click **Choose…** on an entry's Icon to pick from the
