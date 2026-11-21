@@ -12,7 +12,8 @@
       "cursor": "assets/audio/sfx-cursor.wav",
       "damage": "assets/audio/sfx-damage.wav",
       "heal": "assets/audio/sfx-heal.wav",
-      "save": "assets/audio/sfx-save.wav"
+      "save": "assets/audio/sfx-save.wav",
+      "turnStart": "assets/audio/sfx-turnStart.wav"
     },
     "titleMusic": "assets/audio/title.wav",
     "victoryMusic": "assets/audio/victory.wav"

@@ -5,8 +5,8 @@ import type { SoundKey, SystemAudio } from '@freequest/schema';
 import type { AudioImporter } from './audio.js';
 import { asArray, asRecord, asString } from './json.js';
 
-/** Which of MZ's system sounds (by position) each FreeQuest sound uses. */
-const SOUNDS: Readonly<Record<SoundKey, number>> = {
+/** Which of MZ's system sounds (by position) each FreeQuest sound uses (MZ has no turn-start one). */
+const SOUNDS: Readonly<Partial<Record<SoundKey, number>>> = {
   cursor: 0,
   confirm: 1,
   cancel: 2,

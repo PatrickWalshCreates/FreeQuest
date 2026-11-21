@@ -156,7 +156,8 @@ describe('BattleController', () => {
       ticks++;
     }
     expect(ticks).toBeGreaterThanOrEqual(23);
-    expect(ui.drainSounds()).toEqual([]);
+    // The slash has no sounds: only the turn's start played one.
+    expect(ui.drainSounds()).toEqual(['assets/audio/sfx-turnStart.wav']);
   });
 
   it('announces the enemies, then opens the party menu', () => {
@@ -168,7 +169,7 @@ describe('BattleController', () => {
   });
 
   it('commands each actor, choosing targets, then plays the turn', () => {
-    const { ui, battle, tap, skipLog } = setup();
+    const { ui, battle, tap, tick, skipLog } = setup();
     skipLog();
     tap('confirm'); // Fight
     expect(ui.state).toMatchObject({ stage: 'actor', menu: { title: 'Hero' } });
@@ -189,6 +190,9 @@ describe('BattleController', () => {
     tap('down'); // Guard
     tap('confirm');
     expect(ui.state.stage).toBe('playback');
+    // A moment of quiet as the turn starts, then the log.
+    expect(ui.state.line).toBeNull();
+    tick(18);
     expect(ui.state.line).toBe('Mira uses Guard!'); // guard goes first
   });
 

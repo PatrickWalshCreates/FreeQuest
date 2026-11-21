@@ -351,6 +351,13 @@ const SOUNDS: Record<string, () => Track> = {
     );
     return t;
   },
+  // A battle turn starting: a short, low two-step drum.
+  turnStart: () => {
+    const t = new Track(0.2);
+    t.note(0, 0.06, 180, 'noise', 0.35, 0.4);
+    t.note(0.08, 0.08, 130, 'square', 0.25, 0.7);
+    return t;
+  },
   battleStart: () => {
     const t = new Track(0.6);
     t.note(0, 0.35, 400, 'noise', 0.4, 6);

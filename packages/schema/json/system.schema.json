@@ -69,6 +69,11 @@
               "type": "string",
               "description": "Path relative to the project root, using \"/\" separators.",
               "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+            },
+            "turnStart": {
+              "type": "string",
+              "description": "Path relative to the project root, using \"/\" separators.",
+              "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
             }
           }
         },

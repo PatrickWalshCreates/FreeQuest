@@ -1645,9 +1645,20 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      and raise preemptive). Editor: names in `VARIANT_NAMES` and `CHOICE_LABELS`. Importer:
      ex-parameters 4–6, trait 61, trait 64 abilities 0, 1, 4, 5. Tested in
      `core/test/battle-traits.test.ts`; the demo uses them in step 6)
-  5. Battle feel: enemies shown entering and fading, a short pause and a sound when a turn
+  5. ~~Battle feel: enemies shown entering and fading, a short pause and a sound when a turn
      starts, a flash on the acting enemy, and readable damage numbers; all timings in the
-     PixiJS-free `BattleController`, tested.
+     PixiJS-free `BattleController`, tested.~~ (done; timing curves in PixiJS-free
+     `runtime/battle-feel.ts` (`entrance(t)`: fade and rise after `ENTRANCE_DELAY` 0.3 s, so it
+     isn't hidden by the fade from black, over 0.6 s eased; `actHop(t)` a 0.3 s hop instead of a
+     flash, since tints can't brighten; `popupMotion(age)` pops in at 1.6× and settles, rises,
+     holds, fades over 1.1 s). `BattleController`: `state.opened` (seconds since it was made),
+     `state.acting` (an `action` or `counter` line's battler and its time), and a `pause` line
+     kind for each `turnStart` event (`TURN_PAUSE_SECONDS` 0.3, the log hidden) whose first
+     frame queues system sound `turnStart` (new `SOUND_KEYS` entry, database 6; demo/Starter
+     `sfx-turnStart.wav` from gen-placeholder-audio; MZ has none). `BattleView` moves sprites
+     from `baseY`; numbers are bigger with a shadow, heals "+", criticals "!". Enemies already
+     blinked when hit and faded when felled. Seen in the dev player by stepping the ticker:
+     bats mid-entrance, "40" over a felled bat)
   6. Demo, Starter, guides (a battles section in Getting started), the quest test, CHANGELOG,
      freeze the 0.7 formats, and a 0.7.0 release through the checklist.
   - Formats: database 6 (troop places, the new modifiers, system battle background), map 11

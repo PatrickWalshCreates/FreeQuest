@@ -385,6 +385,11 @@ turn starts (or ends, with **Checked as the turn ends**), and runs once a battle
 or every time. Its messages and choices show over the battle. Commands that need the map
 (transfers, routes, shops, another battle) can't be used there.
 
+**How battles move**: enemies fade in and rise into place as a battle opens, each turn starts
+with a short pause and a sound (**Database › System › Audio › Turn start**; the templates have
+one), an enemy hops as it acts, and damage numbers pop up over who was hit (heals with a "+",
+critical hits with a "!").
+
 **Battle backgrounds**: a picture behind battles, scaled to fill the screen. Set the game's in
 **Database › System › Battle background** (the templates use a meadow), a map's own in its
 settings (a cave, a castle), and a battle's own in the **Battle** command. **Change battle

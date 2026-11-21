@@ -23,6 +23,7 @@ import {
   animationSeconds,
 } from '@freequest/schema';
 import { withIcon } from './icons.js';
+import { TURN_PAUSE_SECONDS } from './battle-feel.js';
 import { describeEvent } from './battle-text.js';
 
 export interface MenuOption {
@@ -66,6 +67,10 @@ export interface BattleUiState {
   readonly outcome: BattleOutcome | null;
   /** An animation playing on a battler: its entry, target and seconds in (or null). */
   readonly animation: BattleAnimation | null;
+  /** Seconds since the battle opened (the enemies' entrance). */
+  readonly opened: number;
+  /** Who is acting in the line shown now, and for how long it has been up (or null). */
+  readonly acting: { readonly battler: Battler; readonly elapsed: number } | null;
 }
 
 export interface BattleAnimation {
@@ -89,6 +94,8 @@ type Line =
       readonly animation?: AnimationEntry;
     }
   | { readonly kind: 'run'; readonly commands: readonly Command[] }
+  /** A moment of quiet (as a turn starts), with a sound at its start. */
+  | { readonly kind: 'pause'; readonly seconds: number; readonly sound: string | null }
   | { readonly kind: 'check'; readonly moment: 'turnStart' | 'turnEnd' };
 
 type Pending = { kind: 'skill'; entry: SkillEntry } | { kind: 'item'; entry: ItemEntry };
@@ -113,7 +120,9 @@ export class BattleController {
   private targets: Battler[] = [];
   private queue: Line[] = [];
   private lineTime = 0;
-  /** Animation sounds due since the last `drainSounds()`. */
+  /** Seconds since the battle opened. */
+  private time = 0;
+  /** Sounds due since the last `drainSounds()`: animations' and each turn's start. */
   private readonly sounds: string[] = [];
   private finalOutcome: BattleOutcome | null = null;
   private readonly lineSeconds: number;
@@ -157,6 +166,13 @@ export class BattleController {
         line?.animation && line.event?.type === 'hit'
           ? { entry: line.animation, target: line.event.result.target, elapsed: this.lineTime }
           : null,
+      opened: this.time,
+      acting:
+        line?.event?.type === 'action'
+          ? { battler: line.event.user, elapsed: this.lineTime }
+          : line?.event?.type === 'counter'
+            ? { battler: line.event.battler, elapsed: this.lineTime }
+            : null,
     };
   }
 
@@ -165,7 +181,7 @@ export class BattleController {
     return this.running;
   }
 
-  /** Animation sounds due since the last call, in order. */
+  /** Sounds due since the last call (animations', a turn's start), in order. */
   drainSounds(): string[] {
     return this.sounds.splice(0);
   }
@@ -182,6 +198,7 @@ export class BattleController {
 
   /** Call once per fixed logic step. */
   update(dt: number, input: InputState): void {
+    this.time += dt;
     switch (this.stage) {
       case 'playback':
         return this.updatePlayback(dt, input);
@@ -200,6 +217,14 @@ export class BattleController {
 
   private enqueue(events: readonly BattleEvent[]): void {
     for (const event of events) {
+      if (event.type === 'turnStart') {
+        this.queue.push({
+          kind: 'pause',
+          seconds: TURN_PAUSE_SECONDS,
+          sound: this.db.system.audio?.sounds?.turnStart ?? null,
+        });
+        continue;
+      }
       const hold =
         event.type === 'victory' ||
         event.type === 'defeat' ||
@@ -285,6 +310,16 @@ export class BattleController {
       this.running = new Interpreter(line.commands, { ...this.events, self: null });
       this.stage = 'event';
       this.updateEvent(dt);
+      return;
+    }
+    if (line.kind === 'pause') {
+      if (this.lineTime === 0 && line.sound) this.sounds.push(line.sound);
+      this.lineTime += dt;
+      if (this.lineTime >= line.seconds) {
+        this.queue.shift();
+        this.lineTime = 0;
+        if (this.queue.length === 0) this.afterPlayback();
+      }
       return;
     }
     const from = this.lineTime;

@@ -12,10 +12,10 @@ import type { BattleUiState } from './battle-controller.js';
 import { DEFAULT_UI_THEME, type UiTheme, drawWindow } from './dialog-view.js';
 import type { AnimationSheets } from './effect-views.js';
 import { animationSeconds } from '@freequest/schema';
+import { POPUP_SECONDS, actHop, entrance, popupMotion } from './battle-feel.js';
 import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 
 const STATUS_ROW = 22;
-const POPUP_SECONDS = 0.9;
 const FADE_SECONDS = 0.4;
 
 interface Popup {
@@ -27,6 +27,8 @@ interface Popup {
 interface EnemySprite {
   readonly enemy: Enemy;
   readonly display: Container;
+  /** Where its feet stand (the hop and the entrance move it from there). */
+  readonly baseY: number;
   /** Seconds since knocked out (for the fade), or null while standing. */
   fadeAge: number | null;
   flash: number;
@@ -137,7 +139,14 @@ export class BattleView {
       const place = places[i] ?? { x: this.width / 2, y: Math.round(this.height * 0.6) };
       display.position.set(place.x, place.y);
       this.enemyLayer.addChild(display);
-      this.enemySprites.push({ enemy, display, fadeAge: null, flash: 0, felled: false });
+      this.enemySprites.push({
+        enemy,
+        display,
+        baseY: place.y,
+        fadeAge: null,
+        flash: 0,
+        felled: false,
+      });
     });
   }
 
@@ -165,7 +174,7 @@ export class BattleView {
     }
     // Once the turn's lines are over, anything knocked out falls.
     if (state.stage !== 'playback') for (const s of this.enemySprites) s.felled = true;
-    this.renderEnemies(dt);
+    this.renderEnemies(dt, state);
     this.renderLog(state.line);
     this.renderStatus(state);
     this.renderMenu(state);
@@ -188,8 +197,12 @@ export class BattleView {
     this.animationSprite.position.set(at.x, isEnemy ? at.y : at.y - STATUS_ROW / 2);
   }
 
-  private renderEnemies(dt: number): void {
+  private renderEnemies(dt: number, state: BattleUiState): void {
+    const enter = entrance(state.opened);
     for (const s of this.enemySprites) {
+      // Rising into place as the battle opens; a hop while it acts.
+      const hop = state.acting?.battler === s.enemy ? actHop(state.acting.elapsed) : 0;
+      s.display.y = s.baseY + enter.offsetY - hop;
       // It falls once the blow that knocked it out has been shown.
       if (s.enemy.isKnockedOut && s.fadeAge === null && s.felled) s.fadeAge = 0;
       if (!s.enemy.isKnockedOut) {
@@ -201,7 +214,7 @@ export class BattleView {
       const fade = s.fadeAge === null ? 1 : Math.max(0, 1 - s.fadeAge / FADE_SECONDS);
       // Blink while recently hit.
       const blink = s.flash > 0 && Math.floor(s.flash * 20) % 2 === 0 ? 0.3 : 1;
-      s.display.alpha = fade * blink;
+      s.display.alpha = enter.alpha * fade * blink;
     }
   }
 
@@ -426,7 +439,8 @@ export class BattleView {
       text = 'Miss';
       color = 0xdddddd;
     } else if (result.hpDamage !== 0) {
-      text = String(Math.abs(result.hpDamage));
+      // Heals read "+30", critical hits "45!".
+      text = `${result.hpDamage < 0 ? '+' : ''}${Math.abs(result.hpDamage)}${result.critical ? '!' : ''}`;
       color = result.hpDamage > 0 ? (result.critical ? 0xffd479 : 0xff7a6a) : 0x7ae07a;
     } else if (result.mpDamage !== 0) {
       text = `${Math.abs(result.mpDamage)} MP`;
@@ -438,10 +452,11 @@ export class BattleView {
       text,
       style: new TextStyle({
         fontFamily: this.theme.fontFamily,
-        fontSize: this.theme.fontSize + (result.critical ? 6 : 3),
+        fontSize: this.theme.fontSize + (result.critical ? 8 : 4),
         fontWeight: 'bold',
         fill: color,
-        stroke: { color: 0x000000, width: 3 },
+        stroke: { color: 0x000000, width: 4 },
+        dropShadow: { color: 0x000000, alpha: 0.5, angle: Math.PI / 2, distance: 2, blur: 0 },
       }),
     });
     popup.anchor.set(0.5, 1);
@@ -468,10 +483,11 @@ export class BattleView {
   private renderPopups(dt: number): void {
     for (const p of [...this.popups]) {
       p.age += dt;
-      const t = p.age / POPUP_SECONDS;
-      p.text.y = p.startY - Math.min(1, t * 3) * 14;
-      p.text.alpha = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3);
-      if (t >= 1) {
+      const motion = popupMotion(p.age);
+      p.text.y = p.startY - motion.rise;
+      p.text.alpha = motion.alpha;
+      p.text.scale.set(motion.scale);
+      if (p.age >= POPUP_SECONDS) {
         p.text.destroy();
         this.popups.splice(this.popups.indexOf(p), 1);
       }

@@ -31,6 +31,8 @@ export const SOUND_KEYS = [
   'heal',
   'save',
   'battleStart',
+  /** Each battle turn starting (v6). */
+  'turnStart',
 ] as const;
 export type SoundKey = (typeof SOUND_KEYS)[number];
 
