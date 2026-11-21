@@ -28,9 +28,9 @@ const EX_PARAMS: Readonly<Record<number, RateType | 'hpRegen' | string>> = {
   1: 'evasionRate',
   2: 'criticalRate',
   3: 'critical evasion',
-  4: 'magic evasion',
-  5: 'magic reflection',
-  6: 'counterattack',
+  4: 'magicEvasionRate',
+  5: 'reflectRate',
+  6: 'counterRate',
   7: 'hpRegen',
   8: 'MP regeneration',
   9: 'TP regeneration',
@@ -60,10 +60,12 @@ const OTHER: Readonly<Record<number, string>> = {
   53: 'locked equipment',
   54: 'sealed equipment',
   55: 'dual wield',
-  61: 'extra actions',
   63: 'a collapse effect',
-  64: 'party abilities',
 };
+
+const PARTY_ABILITIES: Readonly<
+  Record<number, 'fewerEncounters' | 'noEncounters' | 'doubleGold' | 'doubleDrops'>
+> = { 0: 'fewerEncounters', 1: 'noEncounters', 4: 'doubleGold', 5: 'doubleDrops' };
 
 export interface TraitContext {
   readonly db: MzDatabase;
@@ -125,7 +127,10 @@ export function traitModifiers(
         if (kind === 'hitRate' || kind === 'evasionRate' || kind === 'criticalRate') {
           rates[kind] = (rates[kind] ?? 0) + value;
         } else if (kind === 'hpRegen') regen += value;
-        else if (value !== 0 && kind) left.add(kind);
+        else if (kind === 'counterRate' || kind === 'reflectRate' || kind === 'magicEvasionRate') {
+          // Chances on their own (FreeQuest has no base for these): one modifier per trait.
+          if (value > 0) modifiers.push({ type: kind, value: clamp(round(value), 0, 1) });
+        } else if (value !== 0 && kind) left.add(kind);
         break;
       }
       case 23: {
@@ -150,6 +155,25 @@ export function traitModifiers(
       case 52:
         modifiers.push({ type: 'equipType', equipmentType: ctx.types.armorTypes.id(data) });
         break;
+      case 61:
+        // Action times +: a chance of acting once more each turn.
+        if (value > 0) modifiers.push({ type: 'extraActions', value: clamp(round(value), 0, 1) });
+        break;
+      case 64: {
+        // Party abilities: 0 encounters half, 1 none, 2 cancel surprise, 3 raise preemptive,
+        // 4 gold double, 5 drop item double.
+        const ability = PARTY_ABILITIES[data];
+        if (ability) modifiers.push({ type: 'partyAbility', ability });
+        else
+          left.add(
+            data === 2
+              ? 'no surprise attacks'
+              : data === 3
+                ? 'more first strikes'
+                : 'a party ability',
+          );
+        break;
+      }
       case 62:
         // Special flags: 0 auto battle, 1 guard, 2 substitute, 3 preserve TP.
         if (data === 1) modifiers.push({ type: 'damageTaken', value: 0.5 });

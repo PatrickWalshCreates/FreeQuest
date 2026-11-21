@@ -35,6 +35,10 @@ export function describeEvent(event: BattleEvent, db: DatabaseIndex): string[] {
       return [`${event.user.name} can't move (${stateName(db, event.state)}).`];
     case 'confused':
       return [`${event.user.name} is confused!`];
+    case 'counter':
+      return [`${event.battler.name} strikes back at ${event.target.name}!`];
+    case 'reflect':
+      return [`${event.battler.name} sends the magic back at ${event.user.name}!`];
     case 'hit':
       return describeHit(event.result, db);
     case 'regen':

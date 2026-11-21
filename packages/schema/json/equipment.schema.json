@@ -268,6 +268,84 @@
                   "additionalProperties": false,
                   "properties": {
                     "type": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "counterRate"
+                        },
+                        {
+                          "type": "string",
+                          "const": "reflectRate"
+                        },
+                        {
+                          "type": "string",
+                          "const": "magicEvasionRate"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Chance (added up from every source, at most 1): counterattack a physical hit instead of taking it, send magic back to its user, or dodge magic (v6).",
+                      "maximum": 1,
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "extraActions"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "Chance of acting once more each turn; each such modifier rolls on its own (v6). Party members repeat their command, enemies choose again.",
+                      "maximum": 1,
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["type", "value"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Helps the whole party while any member standing has it: half as many or no random battles, double gold or double drop chances after a win (v6).",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "partyAbility"
+                    },
+                    "ability": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "fewerEncounters"
+                        },
+                        {
+                          "type": "string",
+                          "const": "noEncounters"
+                        },
+                        {
+                          "type": "string",
+                          "const": "doubleGold"
+                        },
+                        {
+                          "type": "string",
+                          "const": "doubleDrops"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["type", "ability"]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
                       "type": "string",
                       "const": "damageTaken"
                     },

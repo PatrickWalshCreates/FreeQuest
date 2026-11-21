@@ -286,8 +286,41 @@ export abstract class Battler implements FormulaSubject {
     return this.modifiers().reduce((sum, m) => (m.type === 'hpRegen' ? sum + m.value : sum), 0);
   }
 
-  private sumOf(type: 'hitRate' | 'evasionRate' | 'criticalRate'): number {
+  private sumOf(
+    type:
+      | 'hitRate'
+      | 'evasionRate'
+      | 'criticalRate'
+      | 'counterRate'
+      | 'reflectRate'
+      | 'magicEvasionRate',
+  ): number {
     return this.modifiers().reduce((sum, m) => (m.type === type ? sum + m.value : sum), 0);
+  }
+
+  /** Chance to counterattack a physical hit instead of taking it (0–1). */
+  counterRate(): number {
+    return Math.min(1, this.sumOf('counterRate'));
+  }
+
+  /** Chance to send magic back to its user (0–1). */
+  reflectRate(): number {
+    return Math.min(1, this.sumOf('reflectRate'));
+  }
+
+  /** Chance to dodge magic (0–1). */
+  magicEvasionRate(): number {
+    return Math.min(1, this.sumOf('magicEvasionRate'));
+  }
+
+  /** One chance per `extraActions` modifier of acting once more this turn. */
+  extraActionChances(): number[] {
+    return this.modifiers().flatMap((m) => (m.type === 'extraActions' ? [m.value] : []));
+  }
+
+  /** The party abilities this battler holds. */
+  partyAbilities(): string[] {
+    return this.modifiers().flatMap((m) => (m.type === 'partyAbility' ? [m.ability] : []));
   }
 
   /** Chance multiplier for physical hits to land (base BASE_HIT_RATE). */

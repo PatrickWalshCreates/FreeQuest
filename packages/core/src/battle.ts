@@ -4,6 +4,7 @@ import type { Actor } from './actor.js';
 import type { Battler } from './battler.js';
 import type { DatabaseIndex } from './database.js';
 import {
+  applyUsable,
   type TargetResult,
   type UseContext,
   commonEventsOf,
@@ -47,6 +48,10 @@ export type BattleEvent =
     }
   | { readonly type: 'cannotAct'; readonly user: Battler; readonly state: string }
   | { readonly type: 'confused'; readonly user: Battler }
+  /** `battler` answers `target`'s physical hit with an attack instead of taking it. */
+  | { readonly type: 'counter'; readonly battler: Battler; readonly target: Battler }
+  /** `battler` sends `user`'s magic back at them. */
+  | { readonly type: 'reflect'; readonly battler: Battler; readonly user: Battler }
   | {
       readonly type: 'hit';
       readonly user: Battler;
@@ -213,7 +218,7 @@ export class Battle {
       ...this.actors.map((a) => this.plan(a, this.chosen.get(a) ?? null)),
       ...this.enemies.map((e) => this.plan(e, this.enemyAction(e))),
     ];
-    return this.resolveTurn(plans);
+    return this.resolveTurn(this.withExtraActions(plans));
   }
 
   /**
@@ -235,7 +240,7 @@ export class Battle {
     }
     this.failedEscapes++;
     const plans = this.enemies.map((e) => this.plan(e, this.enemyAction(e)));
-    return [{ type: 'escape', success: false }, ...this.resolveTurn(plans)];
+    return [{ type: 'escape', success: false }, ...this.resolveTurn(this.withExtraActions(plans))];
   }
 
   // Turn resolution ---------------------------------------------------------
@@ -250,6 +255,22 @@ export class Battle {
     let speed = agility + this.random() * (agility / 4 + 1);
     if (action?.kind === 'skill' && action.skill === this.db.system.guardSkill) speed += 1e6;
     return { user, action, speed };
+  }
+
+  /**
+   * Extra actions: each `extraActions` chance that rolls true adds another
+   * action this turn: party members repeat their command, enemies choose again.
+   */
+  private withExtraActions(plans: PlannedAction[]): PlannedAction[] {
+    const extras: PlannedAction[] = [];
+    for (const { user, action } of plans) {
+      for (const chance of user.extraActionChances()) {
+        if (this.random() >= chance) continue;
+        const again = this.isEnemy(user) ? this.enemyAction(user as Enemy) : action;
+        if (again) extras.push(this.plan(user, again));
+      }
+    }
+    return [...plans, ...extras];
   }
 
   private enemyAction(enemy: Enemy): BattleAction | null {
@@ -314,12 +335,30 @@ export class Battle {
     const targets = resolveTargets(usable.target, user, allies, foes, this.random, chosen);
 
     events.push({ type: 'action', user, name: usable.name });
+    // Foes may counter a physical hit (instead of taking it) or send magic back.
+    const hit: Battler[] = [];
+    const countering: Battler[] = [];
+    const reflecting: Battler[] = [];
+    for (const target of targets) {
+      const foe = foes.includes(target) && !target.isKnockedOut;
+      if (foe && usable.hitType === 'physical' && target.canAct) {
+        if (this.random() < target.counterRate()) {
+          countering.push(target);
+          continue;
+        }
+      }
+      if (foe && usable.hitType === 'magical' && this.random() < target.reflectRate()) {
+        reflecting.push(target);
+        continue;
+      }
+      hit.push(target);
+    }
     let results: TargetResult[];
     try {
       results =
         action.kind === 'skill'
-          ? useSkill(user, usable as SkillEntry, targets, 'battle', this.ctx)
-          : useItem(this.party, user, usable as ItemEntry, targets, 'battle', this.ctx);
+          ? useSkill(user, usable as SkillEntry, hit, 'battle', this.ctx)
+          : useItem(this.party, user, usable as ItemEntry, hit, 'battle', this.ctx);
     } catch (error) {
       // E.g. MP drained, or the last potion was used earlier this turn.
       const reason =
@@ -332,6 +371,23 @@ export class Battle {
     for (const result of results) events.push({ type: 'hit', user, result, animation });
     for (const common of commonEventsOf(usable, results))
       events.push({ type: 'commonEvent', common });
+    for (const battler of reflecting) {
+      if (user.isKnockedOut) break;
+      events.push({ type: 'reflect', battler, user });
+      for (const result of applyUsable(usable, user, [user], this.ctx)) {
+        events.push({ type: 'hit', user, result, animation });
+      }
+    }
+    for (const battler of countering) {
+      if (user.isKnockedOut || battler.isKnockedOut) break;
+      const attackId = this.db.system.attackSkill;
+      if (!attackId) break;
+      const attack = this.db.skills.get(attackId);
+      events.push({ type: 'counter', battler, target: user });
+      for (const result of applyUsable(attack, battler, [user], this.ctx)) {
+        events.push({ type: 'hit', user: battler, result, animation: attack.animation ?? null });
+      }
+    }
   }
 
   /** A confused battler attacks someone at random, friend or foe. */
@@ -424,8 +480,11 @@ export class Battle {
   /** Exp goes in full to every standing actor; gold and drops to the party. */
   private win(): BattleEvent {
     const exp = this.enemies.reduce((sum, e) => sum + e.exp, 0);
-    const gold = this.enemies.reduce((sum, e) => sum + e.gold, 0);
-    const drops = this.enemies.flatMap((e) => e.rollDrops(this.random));
+    const gold =
+      this.enemies.reduce((sum, e) => sum + e.gold, 0) *
+      (this.party.hasAbility('doubleGold') ? 2 : 1);
+    const dropRate = this.party.hasAbility('doubleDrops') ? 2 : 1;
+    const drops = this.enemies.flatMap((e) => e.rollDrops(this.random, dropRate));
     const levelUps: LevelUp[] = [];
     for (const actor of this.actors) {
       if (actor.isKnockedOut) continue;

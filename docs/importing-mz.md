@@ -95,11 +95,12 @@ The report names each one and where it was. The usual ones:
   other than the arrows, OK, Cancel and Menu…) keep both
   sides, but test the switch **Imported: condition to redo**, which is never on: the "else"
   side runs until you change the condition.
-- **Battle features**: counterattacks, extra attacks, removing buffs, and the battle commands
+- **Battle features**: extra attacks, removing buffs, surprise attacks and first strikes, and the battle commands
   for enemies (changing an enemy's HP or states, forcing an action, aborting the battle).
   Experience curves are FreeQuest's own shape, set from each class's base value. TP, buffs and
   debuffs, skills that hit several times, items and skills that call common events and troops'
-  battle events come across (from 0.5).
+  battle events come across (from 0.5), and so do counterattack, magic reflection and evasion,
+  action times and the party abilities for encounters, gold and drops (from 0.7).
 - **Map details**: water is still (its first frame), wall shadows and regions aren't used, and
   tiles you can pass from some sides only become walkable from every side.
 - **Font size changes** in messages (and `\^`, `\$`) are left out. Pauses (`\.`, `\|`), waits

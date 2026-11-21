@@ -79,12 +79,13 @@ export function resolveTargets(
 }
 
 /**
- * Chance that a use lands on a target: the success rate, and for physical
- * hits also the user's hit rate minus the target's evasion. Using something
- * on yourself never misses.
+ * Chance that a use lands on a target: the success rate, for physical hits
+ * also the user's hit rate minus the target's evasion, for magic minus the
+ * target's magic evasion. Using something on yourself never misses.
  */
 export function hitChance(usable: Usable, user: Battler, target: Battler): number {
   if (user === target) return 1;
+  if (usable.hitType === 'magical') return usable.successRate - target.magicEvasionRate();
   if (usable.hitType !== 'physical') return usable.successRate;
   return usable.successRate * user.hitRate() - target.evasionRate();
 }

@@ -1627,16 +1627,30 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
      `MAX_BATTLE_MEMBERS` show "waits"); picking the same member lets go. Editor: the command
      in the Party group, labels in `project-context.ts`. Importer: MZ's 137 (formation access).
      Tried in the dev player: Mira swapped to the front, the player turned into her)
-  4. Combat traits as modifiers: counterattack (answers physical hits), magic reflection,
+  4. ~~Combat traits as modifiers: counterattack (answers physical hits), magic reflection,
      magic evasion, extra actions per turn, and party abilities (fewer or no encounters, double
      gold, double drops, no surprise attacks; held by any party member). Battle log lines for
-     each; the importer maps MZ's traits to them.
+     each; the importer maps MZ's traits to them.~~ (done; database 6 modifiers `counterRate`,
+     `reflectRate`, `magicEvasionRate` (chances summed, at most 1; `Battler` methods of the same
+     names), `extraActions` (each rolls on its own: `Battle.withExtraActions` adds plans, party
+     members repeat their command, enemies choose again) and `partyAbility` (`fewerEncounters`,
+     `noEncounters`, `doubleGold`, `doubleDrops`; `Party.hasAbility`: any standing member).
+     Magic evasion is in `hitChance` (magical: success − magic evasion). `Battle.act` decides
+     per foe target before the use lands: a physical hit on one that can act may be countered
+     (`counter` event, then its attack skill on the user via `applyUsable`, so counters never
+     chain), magic may be reflected (`reflect` event, the use applied to the user); the rest
+     take it. Encounters: none, or each step counts 0.5; win: gold ×2, `rollDrops(random,
+rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dropped:
+     FreeQuest has no surprise attacks to cancel (the importer reports MZ's cancel surprise
+     and raise preemptive). Editor: names in `VARIANT_NAMES` and `CHOICE_LABELS`. Importer:
+     ex-parameters 4–6, trait 61, trait 64 abilities 0, 1, 4, 5. Tested in
+     `core/test/battle-traits.test.ts`; the demo uses them in step 6)
   5. Battle feel: enemies shown entering and fading, a short pause and a sound when a turn
      starts, a flash on the acting enemy, and readable damage numbers; all timings in the
      PixiJS-free `BattleController`, tested.
   6. Demo, Starter, guides (a battles section in Getting started), the quest test, CHANGELOG,
      freeze the 0.7 formats, and a 0.7.0 release through the checklist.
-  - Formats: database 6 (troop positions, the new modifiers, system battle background), map 11
+  - Formats: database 6 (troop places, the new modifiers, system battle background), map 11
     (a map's battle background, the battle command's, the change command, the formation
     commands), save 5 (battle background, formation access); each with a migration, the
     frozen 0.1–0.6 projects and saves keep opening.

@@ -340,6 +340,17 @@ For random battles, open a map's settings and turn on **Random battles** with th
 roam there. For a set fight, use the **Start battle** command in an event; it can branch on
 winning, escaping or losing.
 
+**Modifiers** are how classes, actors, equipment, states and enemies change a battler: stats,
+elements, hit and evasion chances, damage taken, and more. Some to try:
+
+- **Counterattack physical hits**: a chance to strike back at an attacker instead of taking the
+  hit. **Send magic back** returns a spell to its caster; **Dodge magic** makes it miss.
+- **Extra actions**: a chance of acting once more each turn. Party members repeat their command;
+  enemies choose another action.
+- **Party ability**: while any standing member has it, the whole party gets **half as many**
+  or **no random battles**, **double gold** or **double drop chances** after a win (a lucky
+  charm, a thief's gloves).
+
 Each enemy action can have **conditions**: its own HP below (or at least) a share of its max HP,
 the turn number (from turn 2, every 3 turns…), or a state it has. An enemy picks, by rating, among
 the actions whose conditions all hold, so a wolf can save its big attack for when it's hurt.

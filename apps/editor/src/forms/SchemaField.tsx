@@ -71,6 +71,9 @@ interface FieldProps {
 
 /** Labels for the non-object variants of a union (e.g. an amount that's a number or a variable). */
 const VARIANT_NAMES: Record<string, string> = {
+  'counterRate / reflectRate / magicEvasionRate': 'Counterattack, reflect or dodge magic',
+  extraActions: 'Extra actions',
+  partyAbility: 'Party ability',
   integer: 'Number',
   number: 'Number',
   variable: 'Variable',

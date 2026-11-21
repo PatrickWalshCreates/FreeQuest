@@ -131,11 +131,14 @@ describe('importing the database', () => {
     expect(find(result.states, 'ember-sickness')).toMatchObject({
       restriction: 'confused',
       removal: { battleEnd: false, turns: { min: 3, max: 5 }, steps: 30, damageChance: 0.5 },
-      modifiers: [{ type: 'hpRegen', value: -0.1 }],
+      // MZ's counterattack trait (ex-parameter 6) is FreeQuest's counterRate since 0.7.
+      modifiers: [
+        { type: 'counterRate', value: 0.2 },
+        { type: 'hpRegen', value: -0.1 },
+      ],
     });
-    expect(where('Ember sickness').join('\n')).toMatch(
-      /attack allies[\s\S]*after actions[\s\S]*counterattack/,
-    );
+    expect(where('Ember sickness').join('\n')).toMatch(/attack allies[\s\S]*after actions/);
+    expect(where('Ember sickness').join('\n')).not.toMatch(/counterattack/);
     expect(where('Down')).toEqual(["Traits FreeQuest doesn't have: experience rate."]);
   });
 

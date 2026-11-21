@@ -72,6 +72,50 @@ export const Modifier = Type.Union([
   ),
   Type.Object(
     {
+      type: Type.Union([
+        Type.Literal('counterRate'),
+        Type.Literal('reflectRate'),
+        Type.Literal('magicEvasionRate'),
+      ]),
+      value: Type.Number({
+        minimum: 0,
+        maximum: 1,
+        description:
+          'Chance (added up from every source, at most 1): counterattack a physical hit instead of taking it, send magic back to its user, or dodge magic (v6).',
+      }),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('extraActions'),
+      value: Type.Number({
+        minimum: 0,
+        maximum: 1,
+        description:
+          'Chance of acting once more each turn; each such modifier rolls on its own (v6). Party members repeat their command, enemies choose again.',
+      }),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      type: Type.Literal('partyAbility'),
+      ability: Type.Union([
+        Type.Literal('fewerEncounters'),
+        Type.Literal('noEncounters'),
+        Type.Literal('doubleGold'),
+        Type.Literal('doubleDrops'),
+      ]),
+    },
+    {
+      additionalProperties: false,
+      description:
+        'Helps the whole party while any member standing has it: half as many or no random battles, double gold or double drop chances after a win (v6).',
+    },
+  ),
+  Type.Object(
+    {
       type: Type.Literal('damageTaken'),
       value: Type.Number({
         minimum: 0,

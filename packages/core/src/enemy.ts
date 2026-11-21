@@ -51,10 +51,10 @@ export class Enemy extends Battler {
     return this.entry.gold;
   }
 
-  /** Roll each drop independently. */
-  rollDrops(random: () => number): Drop[] {
+  /** Roll each drop independently; `rate` multiplies every chance (2 with double drops). */
+  rollDrops(random: () => number, rate = 1): Drop[] {
     return this.entry.drops
-      .filter((d) => random() < d.chance)
+      .filter((d) => random() < d.chance * rate)
       .map((d) => ({ kind: d.kind, id: d.id }));
   }
 

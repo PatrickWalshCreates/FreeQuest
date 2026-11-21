@@ -171,6 +171,11 @@ export class Party {
     this.changes++;
   }
 
+  /** Whether a standing member holds a party ability (fewer battles, double gold…). */
+  hasAbility(ability: string): boolean {
+    return this.memberList.some((m) => !m.isKnockedOut && m.partyAbilities().includes(ability));
+  }
+
   /** Remove an actor; their equipment goes with them (as in most RPGs). */
   removeMember(id: string): void {
     const index = this.memberList.findIndex((m) => m.id === id);

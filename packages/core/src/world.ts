@@ -252,7 +252,9 @@ export class World {
   private countEncounterStep(): void {
     const encounters = this.currentMap.encounters;
     if (!encounters || this.pendingEncounter !== null) return;
-    this.encounterCountdown--;
+    // Party abilities: no random battles at all, or each step counting half.
+    if (this.party.hasAbility('noEncounters')) return;
+    this.encounterCountdown -= this.party.hasAbility('fewerEncounters') ? 0.5 : 1;
     if (this.encounterCountdown > 0) return;
     const total = encounters.troops.reduce((sum, t) => sum + t.weight, 0);
     let roll = this.random() * total;

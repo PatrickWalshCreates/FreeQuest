@@ -124,6 +124,17 @@ const CHOICE_LABELS: Record<string, Record<string, string>> = {
     moment: 'Every time it’s checked and holds',
   },
   origin: { 'top-left': 'Top-left corner', center: 'Centre' },
+  type: {
+    counterRate: 'Counterattack physical hits (chance)',
+    reflectRate: 'Send magic back (chance)',
+    magicEvasionRate: 'Dodge magic (chance)',
+  },
+  ability: {
+    fewerEncounters: 'Half as many random battles',
+    noEncounters: 'No random battles',
+    doubleGold: 'Double gold after a win',
+    doubleDrops: 'Double drop chances',
+  },
   easing: {
     linear: 'Steady',
     'ease-in': 'Starts slow',
