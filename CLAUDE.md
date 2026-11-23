@@ -1,7 +1,7 @@
 # FreeQuest
 
 A free, open-source (MIT) 2D RPG engine and editor, an alternative to RPG Maker MZ.
-Status: 0.6.0 released (2026-11-17), early days. Solo project for now; keep it structured so others can contribute.
+Status: 0.7.0 released (2026-11-23), early days. Solo project for now; keep it structured so others can contribute.
 
 ## Clean-room rule (non-negotiable)
 
@@ -1576,7 +1576,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   - Not in M15: plugins in the editor (custom panels, tools), a plugin registry or downloads,
     plugin dependencies, replacing built-in screens (menu, battle) from plugins (maybe later,
     through dedicated hooks).
-- **M16 (planned)** Battles that look finished, to release as 0.7.0. Battles are where games
+- **M16 (done)** Battles that look finished, released as 0.7.0. Battles are where games
   still look and play least finished: a black backdrop, every troop in one row, a party order
   that can't change, and MZ's most used combat traits missing (the importer reports them). Each
   is a FreeQuest feature of its own (format, editor, runtime, tests, guide) that the importer
@@ -1660,13 +1660,14 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      blinked when hit and faded when felled. Seen in the dev player by stepping the ticker:
      bats mid-entrance, "40" over a felled bat)
   6. ~~Demo, Starter, guides (a battles section in Getting started), the quest test, CHANGELOG,
-     freeze the 0.7 formats, and a 0.7.0 release through the checklist.~~ (done up to the draft:
+     freeze the 0.7 formats, and a 0.7.0 release through the checklist.~~ (done:
      the bats get `extraActions` 0.3, the wolf `counterRate` 0.25, the Lucky Charm
      `partyAbility` doubleDrops and the peddler sells it (the quest test checks); Getting
      started's section 7 has "Battles" and "Icons and shops" subsections. 0.7 frozen:
      `release-0.7/` (data and plugins) and a save with Mira leading, formation off and an
-     event's battle background (`core/test/release-0.7-formats.test.ts`). Still to do: the
-     user's by-hand check of the draft, then publishing)
+     event's battle background (`core/test/release-0.7-formats.test.ts`). The user's by-hand check of the downloaded
+     editor passed (backgrounds, troop layouts, formation, traits, battle feel, a Mac
+     export); published 2026-11-23, `latest.json` names 0.7.0)
   - Formats: database 6 (troop places, the new modifiers, system battle background), map 11
     (a map's battle background, the battle command's, the change command, the formation
     commands), save 5 (battle background, formation access); each with a migration, the
