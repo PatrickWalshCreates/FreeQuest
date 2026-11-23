@@ -155,9 +155,10 @@ describe('importing maps', () => {
     ]);
     // The Starter's own map and tileset are gone.
     expect(target.binaries.has('assets/tilesets/overworld.png')).toBe(false);
-    expect(messages('Maps › Hollow').join('\n')).toMatch(
-      /1 tile is passable from some sides[\s\S]*shadows[\s\S]*certain regions/,
-    );
+    expect(messages('Maps › Hollow').join('\n')).toMatch(/shadows[\s\S]*certain regions/);
+    // The fence (MZ: blocked going down only) keeps its blocked side.
+    const tileset = JSON.parse(await target.readText('data/tilesets/hollow.json')) as Tileset;
+    expect(tileset.tiles.filter((t) => t.blocks).map((t) => t.blocks)).toEqual([['down']]);
     expect(messages("Maps › Keeper's house")).toEqual([
       'data/Map003.json is missing, so the map was left out.',
     ]);

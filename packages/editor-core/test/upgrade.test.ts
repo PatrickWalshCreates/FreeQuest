@@ -25,7 +25,7 @@ describe('upgrading a project from an older FreeQuest', () => {
       expect.arrayContaining(['project.json', 'data/maps/map001.json', 'data/maps/house.json']),
     );
     // Files whose format hasn't changed since aren't listed.
-    expect(doc.olderFiles).not.toContain('data/tilesets/overworld.json');
+    expect(doc.olderFiles).not.toContain('data/characters/hero.json');
     expect(doc.dirty).toBe(true);
     const older = doc.olderFiles;
 

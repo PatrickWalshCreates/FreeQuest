@@ -1,12 +1,18 @@
 import Type, { type Static } from 'typebox';
-import { Id, PositiveInt, RelativePath } from './common.js';
+import { Direction, Id, PositiveInt, RelativePath } from './common.js';
 
-export const TILESET_FORMAT_VERSION = 1;
+export const TILESET_FORMAT_VERSION = 2;
 
 export const Tile = Type.Object(
   {
     name: Type.Optional(Type.String()),
     passable: Type.Boolean({ description: 'Whether characters can walk onto this tile.' }),
+    /**
+     * Sides of a walkable tile that can't be crossed, entering or leaving
+     * (v2): a fence along one edge, a cliff's rim, the top of a wall you walk
+     * along. Jumps go over them.
+     */
+    blocks: Type.Optional(Type.Array(Direction, { minItems: 1, maxItems: 4, uniqueItems: true })),
     above: Type.Optional(
       Type.Boolean({
         description: 'Drawn above characters and ignored for collision (e.g. treetops).',

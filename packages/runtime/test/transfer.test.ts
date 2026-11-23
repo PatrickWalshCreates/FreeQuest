@@ -7,7 +7,7 @@ import { type LoadedMap, TransferController } from '../src/transfer.js';
 const DT = 1 / 60;
 
 const tileset: Tileset = {
-  formatVersion: 1,
+  formatVersion: 2,
   id: 'ts',
   name: 'TS',
   image: 'ts.png',

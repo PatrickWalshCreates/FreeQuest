@@ -3,7 +3,7 @@ import type { GameMap, Manifest, Tileset } from '@freequest/schema';
 
 // Tile 0: floor, 1: wall, 2: treetop (above, impassable flag ignored), 3: floor with passable overlay.
 export const tileset: Tileset = {
-  formatVersion: 1,
+  formatVersion: 2,
   id: 'test',
   name: 'Test',
   image: 'test.png',

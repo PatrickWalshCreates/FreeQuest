@@ -402,6 +402,20 @@ export class MapRenderer {
           );
         }
       }
+      // Blocked sides of walkable cells: a red bar along the edge.
+      const bar = Math.max(2, Math.round(Math.min(tw, th) / 8));
+      for (let y = 0; y < passability.height; y++) {
+        for (let x = 0; x < passability.width; x++) {
+          if (!passability.isPassable(x, y) || !passability.canCross) continue;
+          const px = x * tw;
+          const py = y * th;
+          if (!passability.canCross(x, y, 0, -1)) this.walkable.rect(px, py, tw, bar);
+          if (!passability.canCross(x, y, 0, 1)) this.walkable.rect(px, py + th - bar, tw, bar);
+          if (!passability.canCross(x, y, -1, 0)) this.walkable.rect(px, py, bar, th);
+          if (!passability.canCross(x, y, 1, 0)) this.walkable.rect(px + tw - bar, py, bar, th);
+        }
+      }
+      this.walkable.fill({ color: 0xff4d4d, alpha: 0.85 });
     }
     this.render();
   }

@@ -318,7 +318,10 @@ and the old file is removed when you save (until then, Undo puts everything back
 - **Tilesets**: an image of square tiles in a grid (32 × 32 pixels each is usual). Click **+**
   next to **Tilesets**, pick the image and the tile size. Then mark tiles that block the player
   (**Walkable** mode: click or drag across tiles) and tiles drawn over the player, like treetops
-  (**Above** mode). Choose a map's tileset in its settings.
+  (**Above** mode). **Sides** mode blocks one side of a tile, such as a fence along an edge or
+  a cliff's rim: click near the edge (it turns red), and nobody crosses it, either way, though
+  jumps go over it. The map's **Walkable** overlay shows those edges too. Choose a map's tileset
+  in its settings.
 - **Characters**: a sprite sheet with four rows (facing down, left, right and up) and a few walking
   frames in each row. Click **+** next to **Characters**, pick the image and the frame size. The
   preview walks all four ways at the player's speed. If your sheet's rows are in another order,

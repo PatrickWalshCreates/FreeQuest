@@ -33,7 +33,7 @@ const manifest: Manifest = {
 };
 
 const tileset: Tileset = {
-  formatVersion: 1,
+  formatVersion: 2,
   id: 'ts',
   name: 'TS',
   image: 'ts.png',

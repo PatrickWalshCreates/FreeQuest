@@ -17,11 +17,9 @@ import { asArray, asInt, asRecord, asString, type JsonRecord } from './json.js';
 import type { MzList } from './mz-lists.js';
 import type { MzMapInfo } from './mz-project.js';
 import type { ImportReport } from './report.js';
-import { TILE_FLAGS, type TilesetBaker } from './tilesets.js';
+import { TILE_FLAGS, type TilesetBaker, blockedSides } from './tilesets.js';
 
 const TILE_LAYERS = 4;
-/** MZ's A4 sheet (wall tops and walls). */
-const isWallTop = (id: number) => id >= 5888 && id < 8192;
 const SHADOW_LAYER = 4;
 const REGION_LAYER = 5;
 const LAYER_NAMES = ['ground', 'ground 2', 'upper', 'upper 2'];
@@ -60,7 +58,6 @@ export function convertMap(
   const layers: number[][][] = Array.from({ length: TILE_LAYERS }, () =>
     Array.from({ length: height }, () => new Array<number>(width).fill(EMPTY_TILE)),
   );
-  let partial = 0;
   let shadows = false;
   let regions = false;
   let counters = false;
@@ -81,11 +78,9 @@ export function convertMap(
       }
       const topId = top >= 0 ? (ids[top] ?? 0) : 0;
       const walkable = top >= 0 && baker.isPassable(topId);
+      // The deciding tile's blocked sides (a fence's edge, a wall top's rim) go with its copy.
+      const sides = walkable ? blockedSides(baker.flag(topId)) : [];
       if (top >= 0) {
-        const blocked = baker.flag(topId) & TILE_FLAGS.blocked;
-        // A4 wall tops are blocked at their outer edges in MZ, beside walls that
-        // block anyway, so walkable is what MZ plays like; other one-way tiles differ.
-        if (blocked !== 0 && blocked !== TILE_FLAGS.blocked && !isWallTop(topId)) partial++;
         if (baker.flag(topId) & TILE_FLAGS.counter) counters = true;
         if (baker.flag(topId) & TILE_FLAGS.damage) damage = true;
       }
@@ -96,17 +91,11 @@ export function convertMap(
           ? baker.isPassable(tile)
           : walkable || (z !== top && baker.isPassable(tile));
         const row = layers[z]?.[y];
-        if (row) row[x] = baker.tile(tile, passable, above);
+        if (row) row[x] = baker.tile(tile, passable, above, z === top ? sides : []);
       });
     }
   }
 
-  if (partial > 0) {
-    ctx.report.changed(
-      where,
-      `${partial} ${partial === 1 ? 'tile is' : 'tiles are'} passable from some sides only; FreeQuest tiles are walkable from every side or none, so they're walkable.`,
-    );
-  }
   if (shadows) ctx.report.missing(where, 'Its wall shadows aren’t drawn.');
   if (counters) ctx.report.missing(where, 'Talking across counters doesn’t work in FreeQuest yet.');
   if (damage) ctx.report.missing(where, 'Its damage floors don’t hurt in FreeQuest.');

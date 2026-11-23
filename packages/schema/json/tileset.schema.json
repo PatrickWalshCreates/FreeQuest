@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "id": {
       "type": "string",
@@ -44,6 +44,32 @@
           "above": {
             "type": "boolean",
             "description": "Drawn above characters and ignored for collision (e.g. treetops)."
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "down"
+                },
+                {
+                  "type": "string",
+                  "const": "left"
+                },
+                {
+                  "type": "string",
+                  "const": "right"
+                },
+                {
+                  "type": "string",
+                  "const": "up"
+                }
+              ]
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "uniqueItems": true
           },
           "passable": {
             "type": "boolean",

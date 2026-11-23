@@ -105,8 +105,8 @@ The report names each one and where it was. The usual ones:
   debuffs, skills that hit several times, items and skills that call common events and troops'
   battle events come across (from 0.5), and so do counterattack, magic reflection and evasion,
   action times and the party abilities for encounters, gold and drops (from 0.7).
-- **Map details**: water is still (its first frame), wall shadows and regions aren't used, and
-  tiles you can pass from some sides only become walkable from every side.
+- **Map details**: water is still (its first frame), and wall shadows and regions aren't used.
+  Tiles you can pass from some sides only keep their blocked sides (from 0.8).
 - **Font size changes** in messages (and `\^`, `\$`) are left out. Pauses (`\.`, `\|`), waits
   for a key (`\!`) and instant text (`\>`…`\<`) come across as FreeQuest's `{wait}`, `{key}` and
   `{instant}` codes (from 0.5).

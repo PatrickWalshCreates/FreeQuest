@@ -85,7 +85,10 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     // v10: plugins. Additive.
     { from: 9, migrate: (d) => d },
   ],
-  tileset: [],
+  tileset: [
+    // v2: tiles' blocked sides. Additive.
+    { from: 1, migrate: (d) => d },
+  ],
   map: [
     // v2: events.
     { from: 1, migrate: (d) => ({ ...d, events: [] }) },

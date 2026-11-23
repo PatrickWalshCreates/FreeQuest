@@ -182,6 +182,7 @@ export class World {
         return currentMap().height;
       },
       isPassable: (x, y) => this.collision.isPassable(x, y) && !this.blockingEventAt(x, y),
+      canCross: (x, y, dx, dy) => this.collision.canCross(x, y, dx, dy),
     };
   }
 
@@ -556,6 +557,7 @@ export class World {
         this.collision.isPassable(x, y) &&
         !this.blockingEventAt(x, y, event) &&
         !(event.blocks && this.playerOccupies(x, y)),
+      canCross: (x, y, dx, dy) => this.collision.canCross(x, y, dx, dy),
     };
   }
 
@@ -577,7 +579,10 @@ export class World {
     ).filter((d): d is Direction => d !== null);
     const isOpen = (d: Direction) => {
       const { dx: sx, dy: sy } = DIRECTION_DELTA[d];
-      return passability.isPassable(event.x + sx, event.y + sy);
+      return (
+        passability.isPassable(event.x + sx, event.y + sy) &&
+        (passability.canCross?.(event.x, event.y, sx, sy) ?? true)
+      );
     };
     const open = ways.find(isOpen);
     if (open) return open;

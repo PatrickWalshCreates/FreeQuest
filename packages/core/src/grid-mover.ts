@@ -137,8 +137,16 @@ export class GridMover {
     const tx = this.x + dx;
     const ty = this.y + dy;
     const open = (x: number, y: number) => this.through || passability.isPassable(x, y);
-    const diagonal = dx !== 0 && dy !== 0;
-    if (!open(tx, ty) || (diagonal && !open(this.x + dx, this.y) && !open(this.x, this.y + dy))) {
+    const cross = (x: number, y: number, sx: number, sy: number) =>
+      this.through || (passability.canCross?.(x, y, sx, sy) ?? true);
+    const { x, y } = this;
+    // A diagonal step goes round one corner or the other: either way's tile and sides must be open.
+    const reachable =
+      dx !== 0 && dy !== 0
+        ? (open(x + dx, y) && cross(x, y, dx, 0) && cross(x + dx, y, 0, dy)) ||
+          (open(x, y + dy) && cross(x, y, 0, dy) && cross(x, y + dy, dx, 0))
+        : cross(x, y, dx, dy);
+    if (!open(tx, ty) || !reachable) {
       hooks?.bumped?.(tx, ty);
       return false;
     }

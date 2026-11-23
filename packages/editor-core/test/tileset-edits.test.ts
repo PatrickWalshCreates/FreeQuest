@@ -9,7 +9,9 @@ import {
   fitTileset,
   fitsImage,
   openProject,
+  nearestSide,
   setAbove,
+  setBlockedSide,
   setPassable,
   setTileName,
   tileGrid,
@@ -19,7 +21,7 @@ import {
 import { DEMO, memoryCopy } from './helpers.js';
 
 const base: Tileset = {
-  formatVersion: 1,
+  formatVersion: 2,
   id: 'ts',
   name: 'TS',
   image: 'assets/tilesets/ts.png',
@@ -62,6 +64,25 @@ describe('tileset grid', () => {
     expect(fitTileset(exact, 32, 32)).toBe(exact);
     expect(fitsImage(exact, 32, 32)).toBe(true);
     expect(fitsImage(exact, 48, 32)).toBe(false);
+  });
+});
+
+describe('blocked sides', () => {
+  it('block and open sides in a fixed order, leaving none out of the file', () => {
+    const one = setBlockedSide(base, 0, 'left', true);
+    const two = setBlockedSide(one, 0, 'up', true);
+    expect(two.tiles[0]?.blocks).toEqual(['up', 'left']);
+    expect(setBlockedSide(two, 0, 'up', true)).toBe(two);
+    const open = setBlockedSide(setBlockedSide(two, 0, 'up', false), 0, 'left', false);
+    expect(open.tiles[0]).toEqual(base.tiles[0]);
+    expect(open.tiles[1]).toBe(base.tiles[1]);
+  });
+
+  it('pick the side nearest a click', () => {
+    expect(nearestSide(8, 1, 16, 16)).toBe('up');
+    expect(nearestSide(8, 15, 16, 16)).toBe('down');
+    expect(nearestSide(1, 9, 16, 16)).toBe('left');
+    expect(nearestSide(14, 6, 16, 16)).toBe('right');
   });
 });
 

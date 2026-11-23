@@ -82,7 +82,15 @@ Never the other way.
   steps only turn the character.
 - **Collision is derived, never stored**: a cell is passable iff it has at least one collidable tile
   and all collidable tiles on it (across all layers) are `passable`. Tiles with `above: true` are drawn
-  over characters and ignored for collision. Out-of-bounds is impassable.
+  over characters and ignored for collision. Out-of-bounds is impassable. Tileset v2 adds a
+  tile's `blocks` sides (M17 step 5): every collidable tile on a cell adds its sides to the
+  cell's mask (`CollisionMap.sidesAt`, `SIDE_BITS`), and `canCross(x, y, dx, dy)` refuses a step
+  through the side it leaves or the side it enters (so an edge blocks both ways). `Passability`
+  has it optionally; `GridMover.tryMove` checks it (a diagonal goes round either open corner),
+  jumps and `through` ignore it, the world's passabilities and approach movement pass it on.
+  Editor: the tileset editor's Sides mode (D; `nearestSide` picks the clicked edge,
+  `setBlockedSide` keeps them in a fixed order), the tile panel's four boxes, and the map's
+  walkable overlay draws blocked edges as red bars.
 - **Game state** (`GameState`): switches (bool, default false) and variables (safe integers, default
   0), keyed by string ids declared in the manifest. Undeclared ids throw. Lives outside `World` so it
   survives map transfers; `World` takes it as an option.
@@ -1125,8 +1133,8 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   into `assets/tilesets/<id>.png` (about square, so no huge textures). Passage: MZ decides a
   cell by its topmost non-star tile, FreeQuest needs every colliding tile walkable, so each
   tile is baked with the flag that gives MZ's answer (a bridge's water is a walkable copy).
-  One-way tiles become walkable (reported, except A4 wall tops, which MZ blocks only at
-  edges beside walls). Shadows, regions, counters, damage floors and map display names are
+  The deciding tile's passage bits for some sides only become its copy's `blocks`
+  (`blockedSides`: 1 down, 2 left, 4 right, 8 up; M17 step 5), wall tops included. Shadows, regions, counters, damage floors and map display names are
   reported. PNGs go through an injected `ImageCodec` (`RgbaImage`, `copyArea`): the CLI's
   `png-codec.ts` (pngjs), later a canvas in the editor. When maps import, the template's maps,
   tilesets and tileset images are left out.
@@ -1211,7 +1219,7 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   map 10 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`; v12: `changeWindowColor`), tileset 1, character 1, plugin 1, every database file 6 (v2: combat modifiers,
+  `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`; v12: `changeWindowColor`), tileset 2 (v2: tiles' `blocks`), character 1, plugin 1, every database file 6 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
   animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`, troops' `places`; v7: system `ui`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`; v6: optional `windowColor`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
@@ -1774,10 +1782,13 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      cancel / menu buttons (shown on touch devices only), the canvas fitted to the screen in
      portrait and landscape, and the site's demo playable on a phone.~~ (done; see Touch
      controls)
-  5. One-way tiles: passability per direction (tileset v2: a tile's `blocks` sides, migrated
+  5. ~~One-way tiles: passability per direction (tileset v2: a tile's `blocks` sides, migrated
      from `passable`); core's collision checks the side left and the side entered; the tileset
      editor gets a Directions mode (click a tile's edge). The importer brings MZ's four-way
-     passage flags (replacing the "walkable" approximation and the A4 wall-top rule).
+     passage flags (replacing the "walkable" approximation and the A4 wall-top rule).~~ (done;
+     see Collision. `blocks` is additive beside `passable`, not migrated from it, so tileset v2
+     needs no change to old files; the mode is called Sides. Tried in the editor (a side
+     blocked, the overlay's red edges, undone) and the dev player with a temporary fence)
   6. Battle and database depth from the long tail: states that wear off after actions (or at
      turn end), and the most used missing traits as modifiers: MP and TP regeneration, MP cost
      rate, target rate, attack states, experience rate, sealed skill types and equipment; plus

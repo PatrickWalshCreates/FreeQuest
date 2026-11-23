@@ -6,7 +6,9 @@ import {
   type ProjectFile,
   fitTileset,
   fitsImage,
+  nearestSide,
   setAbove,
+  setBlockedSide,
   setPassable,
   setTileName,
   tileGrid,
@@ -20,7 +22,7 @@ import { useElementSize } from '../use-element-size.js';
 import { type ImageInfo, useImage } from './image-size.js';
 import { RenameIdButton } from '../RenameIdButton.js';
 
-type Mode = 'passage' | 'above' | 'select';
+type Mode = 'passage' | 'sides' | 'above' | 'select';
 
 const MODES: readonly { id: Mode; label: string; key: string; hint: string }[] = [
   {
@@ -28,6 +30,12 @@ const MODES: readonly { id: Mode; label: string; key: string; hint: string }[] =
     label: 'Walkable',
     key: 'w',
     hint: 'Click or drag to switch tiles between walkable and blocking',
+  },
+  {
+    id: 'sides',
+    label: 'Sides',
+    key: 'd',
+    hint: 'Click near a tile’s edge to block that side (a fence, a cliff’s rim) or open it again',
   },
   {
     id: 'above',
@@ -39,6 +47,8 @@ const MODES: readonly { id: Mode; label: string; key: string; hint: string }[] =
 ];
 
 const ZOOMS = [1, 2, 3, 4, 6, 8];
+
+const SIDE_NAMES = { up: 'Top', right: 'Right', down: 'Bottom', left: 'Left' } as const;
 
 interface Props {
   readonly doc: ProjectDocument;
@@ -88,10 +98,20 @@ export function TilesetEditor({ doc, file }: Props) {
     if (mode === 'passage') change('Set walkable', (t) => setPassable(t, [index], value), key);
     if (mode === 'above') change('Set drawn above', (t) => setAbove(t, [index], value), key);
   };
-  const press = (index: number) => {
+  const press = (index: number, event: React.PointerEvent<HTMLElement>) => {
     setSelected(index);
     const tile = tileset.tiles[index];
     if (mode === 'select' || !tile) return;
+    if (mode === 'sides') {
+      // One click, one side: the edge nearest the pointer.
+      const r = event.currentTarget.getBoundingClientRect();
+      const side = nearestSide(event.clientX - r.left, event.clientY - r.top, r.width, r.height);
+      const blocked = !(tile.blocks ?? []).includes(side);
+      change(blocked ? 'Block a side' : 'Open a side', (t) =>
+        setBlockedSide(t, index, side, blocked),
+      );
+      return;
+    }
     const value = mode === 'passage' ? !tile.passable : !(tile.above ?? false);
     paint.current = { value, key: `tileset-paint:${++strokes}` };
     apply(index, value, paint.current.key);
@@ -150,9 +170,11 @@ export function TilesetEditor({ doc, file }: Props) {
           <span className="muted small">
             {mode === 'passage'
               ? '○ walkable · × blocks · ★ drawn above (never blocks)'
-              : mode === 'above'
-                ? '★ drawn above characters, ignored for walking'
-                : 'Click a tile to edit it'}
+              : mode === 'sides'
+                ? 'Red edges can’t be crossed, either way (jumps go over them)'
+                : mode === 'above'
+                  ? '★ drawn above characters, ignored for walking'
+                  : 'Click a tile to edit it'}
           </span>
         </div>
         <div className="tileset-canvas" ref={canvas}>
@@ -186,12 +208,16 @@ export function TilesetEditor({ doc, file }: Props) {
                   title={`${i}: ${t.name ?? 'unnamed'}`}
                   onPointerDown={(event) => {
                     event.preventDefault();
-                    press(i);
+                    press(i, event);
                   }}
                   onPointerEnter={(event) => enter(i, event.buttons)}
                 >
+                  {mode === 'sides' &&
+                    (t.blocks ?? []).map((side) => (
+                      <span key={side} className={`tile-side ${side}`} aria-hidden />
+                    ))}
                   <span aria-hidden>
-                    {mode === 'select'
+                    {mode === 'select' || mode === 'sides'
                       ? ''
                       : t.above
                         ? '★'
@@ -251,6 +277,23 @@ export function TilesetEditor({ doc, file }: Props) {
               />
               Drawn above characters
             </label>
+            <fieldset className="tile-sides">
+              <legend>Sides that can’t be crossed</legend>
+              {(['up', 'right', 'down', 'left'] as const).map((side) => (
+                <label key={side} className="toggle">
+                  <input
+                    type="checkbox"
+                    checked={(tile.blocks ?? []).includes(side)}
+                    onChange={(e) =>
+                      change(e.target.checked ? 'Block a side' : 'Open a side', (t) =>
+                        setBlockedSide(t, selected, side, e.target.checked),
+                      )
+                    }
+                  />
+                  {SIDE_NAMES[side]}
+                </label>
+              ))}
+            </fieldset>
             <p className="hint">
               A cell is walkable when every tile on it is (tiles drawn above don't count).
             </p>

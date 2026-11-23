@@ -2,7 +2,13 @@
 // deleting tileset files. Tile index i is column i % columns, row
 // floor(i / columns) of the image, so the grid (tile size, columns) decides
 // which picture every map cell shows; flags and names follow the index.
-import { TILESET_FORMAT_VERSION, type Tile, type Tileset, idFromName } from '@freequest/schema';
+import {
+  type Direction,
+  TILESET_FORMAT_VERSION,
+  type Tile,
+  type Tileset,
+  idFromName,
+} from '@freequest/schema';
 import type { ProjectDocument } from './document.js';
 import { MANIFEST_PATH, type OpenedProject } from './open-project.js';
 import { usagesOf } from './usages.js';
@@ -93,6 +99,45 @@ export function setAbove(tileset: Tileset, indices: Iterable<number>, above: boo
     const { above: _, ...rest } = t;
     return rest;
   });
+}
+
+const SIDE_ORDER: readonly Direction[] = ['up', 'right', 'down', 'left'];
+
+/**
+ * Block or open one side of a tile (`blocks` is kept in a fixed order and left
+ * out when every side is open).
+ */
+export function setBlockedSide(
+  tileset: Tileset,
+  index: number,
+  side: Direction,
+  blocked: boolean,
+): Tileset {
+  return changeTiles(tileset, [index], (t) => {
+    const now = new Set(t.blocks ?? []);
+    if (now.has(side) === blocked) return t;
+    if (blocked) now.add(side);
+    else now.delete(side);
+    const blocks = SIDE_ORDER.filter((s) => now.has(s));
+    if (blocks.length > 0) return { ...t, blocks };
+    const { blocks: _, ...rest } = t;
+    return rest;
+  });
+}
+
+/**
+ * The side of a tile nearest a point inside it (`x`, `y` from its top-left,
+ * in the tile's own `width` × `height`): which edge a click meant.
+ */
+export function nearestSide(x: number, y: number, width: number, height: number): Direction {
+  const gaps: [Direction, number][] = [
+    ['up', y / height],
+    ['down', 1 - y / height],
+    ['left', x / width],
+    ['right', 1 - x / width],
+  ];
+  gaps.sort((a, b) => a[1] - b[1]);
+  return gaps[0]?.[0] ?? 'up';
 }
 
 /** Name a tile (shown in the palette); an empty name removes it. */

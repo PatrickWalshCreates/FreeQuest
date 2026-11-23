@@ -4,7 +4,7 @@
 // holding exactly the tiles its maps use (autotiles baked into plain tiles),
 // so nothing unused is copied.
 import { FileNotFoundError, type ProjectFs } from '@freequest/editor-core';
-import { TILESET_FORMAT_VERSION, type Tileset } from '@freequest/schema';
+import { type Direction, TILESET_FORMAT_VERSION, type Tileset } from '@freequest/schema';
 import { type ImageCodec, type RgbaImage, blankImage, copyArea } from './image.js';
 import { asArray, asInt, asString, isRecord } from './json.js';
 import type { ImportReport } from './report.js';
@@ -122,6 +122,23 @@ interface Variant {
   readonly mzId: number;
   readonly passable: boolean;
   readonly above: boolean;
+  /** Sides that can't be crossed (MZ's per-direction passage). */
+  readonly blocks: readonly Direction[];
+}
+
+/** MZ's passage bits, one per direction a tile blocks: 1 down, 2 left, 4 right, 8 up. */
+const SIDE_FLAGS: readonly (readonly [number, Direction])[] = [
+  [0x08, 'up'],
+  [0x04, 'right'],
+  [0x01, 'down'],
+  [0x02, 'left'],
+];
+
+/** The sides an MZ flag blocks, for a tile that's open from some sides only (else none). */
+export function blockedSides(flag: number): Direction[] {
+  const bits = flag & TILE_FLAGS.blocked;
+  if (bits === 0 || bits === TILE_FLAGS.blocked) return [];
+  return SIDE_FLAGS.filter(([bit]) => (bits & bit) !== 0).map(([, side]) => side);
 }
 
 /** Collects the tiles a tileset's maps use, then draws them into one image. */
@@ -154,12 +171,12 @@ export class TilesetBaker {
   }
 
   /** The FreeQuest tile index for an MZ tile with these flags (added on first use). */
-  tile(mzId: number, passable: boolean, above: boolean): number {
-    const key = `${mzId}|${passable ? 1 : 0}|${above ? 1 : 0}`;
+  tile(mzId: number, passable: boolean, above: boolean, blocks: readonly Direction[] = []): number {
+    const key = `${mzId}|${passable ? 1 : 0}|${above ? 1 : 0}|${blocks.join(',')}`;
     const known = this.#index.get(key);
     if (known !== undefined) return known;
     const index = this.#variants.length;
-    this.#variants.push({ mzId, passable, above });
+    this.#variants.push({ mzId, passable, above, blocks });
     this.#index.set(key, index);
     return index;
   }
@@ -185,7 +202,11 @@ export class TilesetBaker {
         (i % columns) * size,
         Math.floor(i / columns) * size,
       );
-      tiles.push({ passable: variant.passable, ...(variant.above ? { above: true } : {}) });
+      tiles.push({
+        passable: variant.passable,
+        ...(variant.blocks.length > 0 ? { blocks: [...variant.blocks] } : {}),
+        ...(variant.above ? { above: true } : {}),
+      });
     }
     if (tiles.length === 0) tiles.push({ passable: false });
     if (this.drawer.animated) {

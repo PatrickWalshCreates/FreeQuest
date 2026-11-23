@@ -1671,6 +1671,54 @@ a.button.primary {
   background: rgba(255, 210, 90, 0.2);
 }
 
+/* Sides mode: a blocked side is a red bar along that edge. */
+.tile-side {
+  position: absolute;
+  background: #ff5a4a;
+  box-shadow: 0 0 2px #000;
+  pointer-events: none;
+}
+.tile-side.up,
+.tile-side.down {
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+.tile-side.left,
+.tile-side.right {
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+.tile-side.up {
+  top: 0;
+}
+.tile-side.down {
+  bottom: 0;
+}
+.tile-side.left {
+  left: 0;
+}
+.tile-side.right {
+  right: 0;
+}
+
+.tile-sides {
+  border: 0;
+  padding: 0;
+  margin: 4px 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+}
+
+.tile-sides legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .tileset-cell.selected {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
