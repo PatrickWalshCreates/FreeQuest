@@ -1674,6 +1674,47 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
     frozen 0.1–0.6 projects and saves keep opening.
   - Not in M16: side-view battlers, animated battle backgrounds, enemy sprites with frames,
     battle formations for enemies (rows that change who can be hit), gamepads.
+- **M17 (planned)** Games that look and play like yours, to release as 0.8.0. Every FreeQuest
+  game still has the same windows and system font (`UiTheme` isn't in the project format),
+  text is upscaled pixels, and games play only with a keyboard. Importing Winds Rhapsody again
+  after 0.7.0 shows the import gaps are now a long tail: one-way tiles (15 maps), states that
+  wear off after actions (9), window colour, and about twenty traits used once or twice each.
+  Each step is a FreeQuest feature of its own (format, editor, runtime, tests, guide); the
+  importer brings across what MZ games use. Behaviour may match MZ's; the design and names are
+  ours (clean-room). Steps:
+  1. The look of windows in the project: system.json `ui` (window colour and opacity, border,
+     text and speaker colours, the `{color:…}` names, sizes, and a font: a file under
+     `assets/fonts/` (.ttf/.otf/.woff2) or the system font), read into `UiTheme` by every
+     window (messages, menus, battle, shop, title); a `changeWindowColor` command (saved).
+     Editor: a "Windows" section in System with a live preview of a message and a menu.
+     Importer: the window tone and Change window colour.
+  2. Sharp text: windows' text drawn at the screen's real resolution (a high-resolution UI
+     layer over the pixel-scaled game) when a project chooses it, so smooth fonts read well;
+     pixel fonts keep the current crisp upscale. Measured on a small window and fullscreen.
+  3. Gamepads: the Gamepad API mapped to actions (standard layout: d-pad and left stick,
+     A/B/Start), held and pressed like keys in `InputState`; Options rebinds buttons beside
+     keys (kept per game); works in the editor's playtest and every export.
+  4. Touch for web exports on phones and tablets: an on-screen direction pad and confirm /
+     cancel / menu buttons (shown on touch devices only), the canvas fitted to the screen in
+     portrait and landscape, and the site's demo playable on a phone.
+  5. One-way tiles: passability per direction (tileset v2: a tile's `blocks` sides, migrated
+     from `passable`); core's collision checks the side left and the side entered; the tileset
+     editor gets a Directions mode (click a tile's edge). The importer brings MZ's four-way
+     passage flags (replacing the "walkable" approximation and the A4 wall-top rule).
+  6. Battle and database depth from the long tail: states that wear off after actions (or at
+     turn end), and the most used missing traits as modifiers: MP and TP regeneration, MP cost
+     rate, target rate, attack states, experience rate, sealed skill types and equipment; plus
+     a `changeSkill` (learn/forget) command, and saving and resuming music. The importer maps
+     them.
+  7. Demo (its own window look and font, a one-way ledge), Starter, guides (a Windows and
+     controls section), the quest test, freeze the 0.8 formats, and a 0.8.0 release through
+     the checklist (including a phone and a gamepad).
+  - Formats: database 7 (system `ui`, the new modifiers and state timing), map 12
+    (`changeWindowColor`, `changeSkill`, music save/resume), tileset 2 (sides), save 6 (window
+    colour, saved music); each with a migration, the frozen 0.1–0.7 projects and saves keep
+    opening.
+  - Not in M17: animated tiles and wall shadows, MZ's animation flashes, side-view battlers,
+    a pixel font bundled with FreeQuest (projects bring their own), plugin hooks for windows.
 - **Later**: candidates, in no fixed order: the deferred items above, Developer ID / Windows
   signing, gamepads, and a plugin catalog on the website (downloadable example plugins, people
   sharing theirs by pull request, "Add a plugin from a .zip" in the editor): a side project, only
