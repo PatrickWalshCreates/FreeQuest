@@ -2,6 +2,7 @@
 // Kept per game, apart from save slots, in the same storage (localStorage,
 // or files in the desktop player). DOM-free and tested.
 import { ACTIONS, type Action } from '@freequest/core';
+import { DEFAULT_PAD_BINDINGS, type PadBindings, isPadInput, padLabel } from './gamepad.js';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings } from './keyboard.js';
 import type { KeyValueStorage } from './save-store.js';
 
@@ -15,10 +16,15 @@ export interface GameOptions {
   readonly sound: number;
   /** KeyboardEvent.code → action. */
   readonly keys: KeyBindings;
+  /** Gamepad input id ("button:0", "axis:1-") → action. */
+  readonly pad: PadBindings;
 }
 
-export function defaultOptions(keys: KeyBindings = DEFAULT_KEY_BINDINGS): GameOptions {
-  return { music: 5, sound: 7, keys };
+export function defaultOptions(
+  keys: KeyBindings = DEFAULT_KEY_BINDINGS,
+  pad: PadBindings = DEFAULT_PAD_BINDINGS,
+): GameOptions {
+  return { music: 5, sound: 7, keys, pad };
 }
 
 /** A volume level as the 0..1 gain the audio player uses. */
@@ -26,8 +32,8 @@ export function volumeGain(level: number): number {
   return Math.min(Math.max(level, 0), VOLUME_STEPS) / VOLUME_STEPS;
 }
 
-/** The keys bound to an action, in the order they were bound. */
-export function keysFor(keys: KeyBindings, action: Action): string[] {
+/** The keys (or pad inputs) bound to an action, in the order they were bound. */
+export function keysFor(keys: Readonly<Record<string, Action>>, action: Action): string[] {
   return Object.entries(keys)
     .filter(([, a]) => a === action)
     .map(([code]) => code);
@@ -75,14 +81,16 @@ export function keyLabel(code: string): string {
  * always keeps at least one key, so the game can't become unplayable.
  */
 export function rebind(
-  keys: KeyBindings,
+  keys: Readonly<Record<string, Action>>,
   action: Action,
   code: string,
-): { readonly keys: KeyBindings } | { readonly problem: string } {
+  device: 'key' | 'button' = 'key',
+): { readonly keys: Readonly<Record<string, Action>> } | { readonly problem: string } {
   const owner = keys[code];
   if (owner && owner !== action && keysFor(keys, owner).length === 1) {
+    const label = device === 'key' ? keyLabel(code) : padLabel(code);
     return {
-      problem: `${keyLabel(code)} is the only key for ${ACTION_NAMES[owner]}: give it another first.`,
+      problem: `${label} is the only ${device} for ${ACTION_NAMES[owner]}: give it another first.`,
     };
   }
   const next: Record<string, Action> = {};
@@ -118,18 +126,22 @@ export class OptionsStore {
     const d = data as Record<string, unknown>;
     const level = (v: unknown, fallback: number) =>
       typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= VOLUME_STEPS ? v : fallback;
-    const keys: Record<string, Action> = {};
-    if (typeof d['keys'] === 'object' && d['keys'] !== null) {
-      for (const [code, action] of Object.entries(d['keys'] as Record<string, unknown>)) {
-        if (isAction(action)) keys[code] = action;
+    // Bindings only count if every action still has one; otherwise start over from the defaults.
+    const bindings = (value: unknown, valid: (id: string) => boolean) => {
+      const read: Record<string, Action> = {};
+      if (typeof value === 'object' && value !== null) {
+        for (const [id, action] of Object.entries(value as Record<string, unknown>)) {
+          if (isAction(action) && valid(id)) read[id] = action;
+        }
       }
-    }
-    // Keys only count if every action still has one; otherwise start over from the defaults.
-    const complete = ACTIONS.every((a) => keysFor(keys, a).length > 0);
+      return ACTIONS.every((a) => keysFor(read, a).length > 0) ? read : null;
+    };
     return {
       music: level(d['music'], this.defaults.music),
       sound: level(d['sound'], this.defaults.sound),
-      keys: complete ? keys : this.defaults.keys,
+      keys: bindings(d['keys'], () => true) ?? this.defaults.keys,
+      // Options saved before gamepads have none: the default buttons.
+      pad: bindings(d['pad'], isPadInput) ?? this.defaults.pad,
     };
   }
 

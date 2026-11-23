@@ -1,4 +1,5 @@
-import type { Action, ActionState } from '@freequest/core';
+import type { Action } from '@freequest/core';
+import type { HeldInputs } from './held-inputs.js';
 
 /** KeyboardEvent.code → action. Several keys may map to the same action. */
 export type KeyBindings = Readonly<Record<string, Action>>;
@@ -27,21 +28,21 @@ export interface KeyboardInput {
   setBindings(bindings: KeyBindings): void;
   /** Hand the next key press (its `code`) to `handler` instead of the game (rebinding). */
   captureNext(handler: (code: string) => void): void;
+  /** Stop waiting for a key (the capture was answered some other way). */
+  cancelCapture(): void;
   /** Remove the listeners. */
   dispose(): void;
 }
 
-/** Feed keyboard events into an ActionState. */
+/** Feed keyboard events into the game's actions (through `held`, shared with gamepads). */
 export function bindKeyboard(
   target: Window,
-  input: ActionState,
+  held: HeldInputs,
   initial: KeyBindings = DEFAULT_KEY_BINDINGS,
 ): KeyboardInput {
   let bindings = initial;
   let capture: ((code: string) => void) | null = null;
-  // Keys currently held per action, so releasing one of two keys bound to
-  // the same action (e.g. ArrowUp and W) doesn't release the action.
-  const held = new Map<Action, Set<string>>();
+  const id = (code: string) => `key:${code}`;
 
   const onDown = (e: KeyboardEvent) => {
     if (capture && !e.repeat) {
@@ -54,23 +55,14 @@ export function bindKeyboard(
     const action = bindings[e.code];
     if (!action) return;
     e.preventDefault();
-    let codes = held.get(action);
-    if (!codes) held.set(action, (codes = new Set()));
-    codes.add(e.code);
-    input.press(action);
+    held.hold(id(e.code), action);
   };
   const onUp = (e: KeyboardEvent) => {
-    const action = bindings[e.code];
-    if (!action) return;
+    if (!bindings[e.code] && !held.has(id(e.code))) return;
     e.preventDefault();
-    const codes = held.get(action);
-    codes?.delete(e.code);
-    if (!codes || codes.size === 0) input.release(action);
+    held.letGo(id(e.code));
   };
-  const onBlur = () => {
-    held.clear();
-    input.releaseAll();
-  };
+  const onBlur = () => held.letGoAll('key:');
 
   target.addEventListener('keydown', onDown);
   target.addEventListener('keyup', onUp);
@@ -79,11 +71,13 @@ export function bindKeyboard(
     setBindings(next) {
       // Keys held under the old bindings would never be released: start clean.
       bindings = next;
-      held.clear();
-      input.releaseAll();
+      held.letGoAll('key:');
     },
     captureNext(handler) {
       capture = handler;
+    },
+    cancelCapture() {
+      capture = null;
     },
     dispose() {
       target.removeEventListener('keydown', onDown);

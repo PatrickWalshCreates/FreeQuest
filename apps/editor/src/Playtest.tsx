@@ -132,7 +132,8 @@ export function Playtest({ gameName, source, start, plugins, onClose }: Props) {
           // Scripts only: an opaque origin, no same-origin access, no popups,
           // forms, top navigation or modals.
           sandbox="allow-scripts"
-          allow="autoplay"
+          // Sound, and gamepads (a frame from another origin sees none without it).
+          allow="autoplay; gamepad"
           referrerPolicy="no-referrer"
         />
       )}

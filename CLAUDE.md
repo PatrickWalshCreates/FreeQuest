@@ -390,6 +390,24 @@ Never the other way.
   `KeyboardInput` (`setBindings`, `captureNext`, `dispose`); the game arms `captureNext` while
   the controller is `capturing`, and Escape keeps the old keys.
 
+- **Gamepads** (M17 step 3; `runtime/src/gamepad.ts`, `held-inputs.ts`, tested): `HeldInputs`
+  is what holds each action down (ids `key:<code>`, `pad<i>:<input>`): an action is released
+  only when its last holder lets go, so a key and the d-pad (or two keys) never drop each
+  other; `bindKeyboard` now takes it. `GamepadInput.poll(pads)` (once a frame, before the logic
+  steps, from `navigator.getGamepads()`, which may throw in a frame without the permission)
+  diffs each pad's held inputs (`padInputs`: `button:<n>`, `axis:<n>-/+` past
+  `STICK_THRESHOLD` 0.5), presses on new ones, lets go of released ones and of an unplugged
+  pad's; a press also unlocks audio. `DEFAULT_PAD_BINDINGS` (standard layout: d-pad and left
+  stick, A confirm, B cancel, X and Start menu), `padLabel` (A, Start, D-pad ↑, Stick ←,
+  "Button 20"). Options: `GameOptions.pad` (older options get the defaults, damaged ones too),
+  `rebind(…, 'button')`, the screen's **Keyboard…** and **Gamepad…** pages
+  (`capturingFrom`; on the Gamepad page any key, not only Escape, keeps the old buttons;
+  "No gamepad found" while none is seen). `captureNext` / `cancelCapture` on both devices.
+  The playtest frame needs `allow="gamepad"` (a cross-origin frame sees no pads without it).
+  Tried in the dev player with a stand-in `navigator.getGamepads`: walking with the stick and
+  d-pad, Menu rebound to Y and saved. A real pad and the desktop apps (WebKit) are for the
+  release's by-hand check.
+
 ### Database and battlers (M3)
 
 - **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
@@ -1732,9 +1750,10 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      (done; see Sharp text: the whole renderer at the screen's resolution rather than a
      separate layer, since nearest-sampled art at whole scales is unchanged. Measured in the
      dev player at 1× and at a 1600 × 1100 view)
-  3. Gamepads: the Gamepad API mapped to actions (standard layout: d-pad and left stick,
+  3. ~~Gamepads: the Gamepad API mapped to actions (standard layout: d-pad and left stick,
      A/B/Start), held and pressed like keys in `InputState`; Options rebinds buttons beside
-     keys (kept per game); works in the editor's playtest and every export.
+     keys (kept per game); works in the editor's playtest and every export.~~ (done; see
+     Gamepads. Options' Controls… is now Keyboard… and Gamepad…)
   4. Touch for web exports on phones and tablets: an on-screen direction pad and confirm /
      cancel / menu buttons (shown on touch devices only), the canvas fitted to the screen in
      portrait and landscape, and the site's demo playable on a phone.

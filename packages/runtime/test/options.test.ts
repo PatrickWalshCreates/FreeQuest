@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { OptionsController, volumeBar } from '../src/options-controller.js';
 import {
   DEFAULT_KEY_BINDINGS,
+  DEFAULT_PAD_BINDINGS,
   type GameOptions,
   OptionsStore,
   defaultOptions,
@@ -47,12 +48,24 @@ describe('options', () => {
       music: 2,
       sound: 9,
       keys: { ...DEFAULT_KEY_BINDINGS, KeyQ: 'menu' },
+      pad: { ...DEFAULT_PAD_BINDINGS, 'button:3': 'menu' },
     };
     store.save(changed);
     expect(new OptionsStore(storage, 'demo').load()).toEqual(changed);
     expect(new OptionsStore(storage, 'other').load()).toEqual(defaultOptions());
     storage.setItem('freequest:game:demo:options', '{"music":99,"keys":{"KeyA":"up"}}');
     expect(store.load()).toEqual(defaultOptions());
+    // Options saved before gamepads (no pad) keep their keys and get the default buttons.
+    storage.setItem(
+      'freequest:game:demo:options',
+      JSON.stringify({ music: 2, sound: 9, keys: changed.keys }),
+    );
+    expect(store.load()).toEqual({ ...changed, pad: DEFAULT_PAD_BINDINGS });
+    storage.setItem(
+      'freequest:game:demo:options',
+      JSON.stringify({ ...changed, pad: { 'button:0': 'confirm', nonsense: 'up' } }),
+    );
+    expect(store.load().pad).toEqual(DEFAULT_PAD_BINDINGS);
     storage.setItem('freequest:game:demo:options', 'not json');
     expect(store.load()).toEqual(defaultOptions());
   });
@@ -92,7 +105,7 @@ describe('OptionsController', () => {
   it('rebinds a key by pressing it, and Esc keeps the old ones', () => {
     const { options, changes, tap } = setup();
     tap('down', 2);
-    tap('confirm'); // Controls…
+    tap('confirm'); // Keyboard…
     expect(options.state.screen).toBe('controls');
     tap('down', 6); // Menu
     tap('confirm');
@@ -111,5 +124,35 @@ describe('OptionsController', () => {
     tap('cancel');
     tap('cancel');
     expect(options.isClosed).toBe(true);
+  });
+
+  it('rebinds gamepad buttons on their own screen; keys there only cancel', () => {
+    const { options, tap } = setup();
+    tap('down', 3);
+    tap('confirm'); // Gamepad…
+    expect(options.state.title).toBe('Gamepad');
+    expect(options.state.message).toBe(
+      'No gamepad found: connect one and press any of its buttons.',
+    );
+    expect(options.state.options[0]).toMatchObject({ label: 'Up', detail: 'D-pad ↑, Stick ↑' });
+    tap('down', 6); // Menu
+    tap('confirm');
+    expect(options.state).toMatchObject({ capturing: 'menu', capturingFrom: 'gamepad' });
+    options.padPressed('button:3');
+    expect(keysFor(options.options.pad, 'menu')).toEqual(['button:3']);
+    expect(options.state.message).toBe('Menu: Y');
+    // A key on the Gamepad screen keeps the old buttons.
+    tap('confirm');
+    options.keyPressed('KeyM');
+    expect(keysFor(options.options.pad, 'menu')).toEqual(['button:3']);
+    expect(keysFor(options.options.keys, 'menu')).not.toContain('KeyM');
+    // The only button for an action can't be taken.
+    tap('up'); // Cancel
+    tap('confirm');
+    options.padPressed('button:3');
+    expect(options.state.message).toBe('Y is the only button for Menu: give it another first.');
+    tap('down', 2); // Reset
+    tap('confirm');
+    expect(options.options.pad).toEqual(DEFAULT_PAD_BINDINGS);
   });
 });

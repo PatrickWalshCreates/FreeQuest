@@ -41,6 +41,8 @@ import { type GameOptions, OptionsStore, defaultOptions, volumeGain } from './op
 import { ShopController } from './shop-controller.js';
 import { ShopView } from './shop-view.js';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard.js';
+import { GamepadInput } from './gamepad.js';
+import { HeldInputs } from './held-inputs.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { PictureView } from './picture-view.js';
@@ -309,7 +311,18 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   window.addEventListener('resize', fit);
   fit();
 
-  const keyboard = bindKeyboard(window, input, options.keyBindings);
+  // Keys and gamepads hold actions together (letting go of one never drops the other's).
+  const held = new HeldInputs(input);
+  const keyboard = bindKeyboard(window, held, options.keyBindings);
+  const gamepads = new GamepadInput(held);
+  const connectedPads = (): readonly (Gamepad | null)[] => {
+    try {
+      return navigator.getGamepads?.() ?? [];
+    } catch {
+      // Not allowed here (a frame without the gamepad permission): no pads.
+      return [];
+    }
+  };
   const removeDebugPanel = options.debug
     ? createDebugPanel(options.parent, () => world, manifest)
     : () => undefined;
@@ -395,6 +408,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const applyOptions = (o: GameOptions) => {
     audio.setVolumes(volumeGain(o.music), volumeGain(o.sound));
     keyboard.setBindings(o.keys);
+    gamepads.setBindings(o.pad);
   };
   let gameOptions = optionsStore.load();
   applyOptions(gameOptions);
@@ -410,11 +424,14 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         optionsStore.save(next);
         applyOptions(next);
       },
+      () => gamepads.connected,
     );
     optionsView = new OptionsView(width, height, theme);
     app.stage.addChildAt(optionsView.container, app.stage.getChildIndex(fadeOverlay));
   };
   const closeOptions = () => {
+    keyboard.cancelCapture();
+    gamepads.cancelCapture();
     optionsView?.destroy();
     optionsView = null;
     optionsScreen = null;
@@ -587,6 +604,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   const tick = () => {
+    // Pads are read once a frame, before the logic steps that use them.
+    if (gamepads.poll(connectedPads())) audio.unlock();
     const alpha = loop.advance(app.ticker.deltaMS / 1000, (dt) => {
       prevX = world.player.realX;
       prevY = world.player.realY;
@@ -599,10 +618,19 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
         screen.update(input);
         if (screen.state.capturing && !capturing) {
           capturing = true;
+          // A key answers either screen (Escape keeps the old binding); a pad only the Gamepad one.
           keyboard.captureNext((code) => {
             capturing = false;
+            gamepads.cancelCapture();
             screen.keyPressed(code);
           });
+          if (screen.state.capturingFrom === 'gamepad') {
+            gamepads.captureNext((id) => {
+              capturing = false;
+              keyboard.cancelCapture();
+              screen.padPressed(id);
+            });
+          }
         }
         if (screen.isClosed) {
           closeOptions();

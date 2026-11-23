@@ -435,6 +435,11 @@ to know.
 Players can change the music and sound volume and rebind the keys under **Options**, on the title
 screen and in the menu. Their choices are kept with their saves.
 
+Games also play with a gamepad (from 0.8): plug one in and press a button. The d-pad or left
+stick walks, A confirms and talks, B cancels, and X or Start opens the menu (on a PlayStation
+pad, cross, circle and square). **Options › Gamepad…** rebinds the buttons, like the keys. This
+works in playtests and in every export.
+
 ## Going further: plugins
 
 Plugins add things FreeQuest doesn't do by itself. Every new project has two to try, turned off:
@@ -460,4 +465,5 @@ On a Mac, use ⌘ for Ctrl.
 | Ctrl+. (or Stop)               | While playing     | Back to the editor                                    |
 
 In the game itself: arrow keys or WASD walk, Enter or Space talks and confirms, Escape cancels and
-opens the menu, and F9 shows a debug panel while you test.
+opens the menu, and F9 shows a debug panel while you test. A gamepad works too: the d-pad or
+stick walks, A confirms, B cancels, X or Start opens the menu.
