@@ -52,6 +52,7 @@ describe('MZ windows', () => {
     expect(system.ui).toEqual({
       font: 'assets/fonts/round-hand.woff',
       fontSize: 20,
+      sharpText: true,
       lineHeight: 28,
       padding: 12,
       windowColor: '#3c3278',

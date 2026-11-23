@@ -14,6 +14,11 @@ export const WindowLook = Type.Object(
     /** A font file under assets/fonts (.ttf, .otf, .woff, .woff2); none = the system font. */
     font: Type.Optional(RelativePath),
     fontSize: Type.Optional(Type.Integer({ minimum: 6, maximum: 48 })),
+    /**
+     * Draw text at the screen's own resolution (smooth fonts read well) rather
+     * than in the game's pixels, enlarged like the art (best for pixel fonts).
+     */
+    sharpText: Type.Optional(Type.Boolean()),
     /** Pixels from one line of text to the next. */
     lineHeight: Type.Optional(Type.Integer({ minimum: 6, maximum: 64 })),
     /** Space between a window's border and its contents, in pixels. */
@@ -50,6 +55,7 @@ export type WindowLook = Static<typeof WindowLook>;
 export interface FullWindowLook {
   readonly font: string | null;
   readonly fontSize: number;
+  readonly sharpText: boolean;
   readonly lineHeight: number;
   readonly padding: number;
   readonly windowColor: string;
@@ -64,6 +70,7 @@ export interface FullWindowLook {
 export const DEFAULT_WINDOW_LOOK: FullWindowLook = {
   font: null,
   fontSize: 14,
+  sharpText: false,
   lineHeight: 18,
   padding: 10,
   windowColor: '#141a2e',
@@ -91,6 +98,7 @@ export function resolveWindowLook(look: WindowLook | undefined): FullWindowLook 
   return {
     font: look.font ?? null,
     fontSize,
+    sharpText: look.sharpText ?? d.sharpText,
     // Without its own line height, a bigger font gets the same proportion of space.
     lineHeight:
       look.lineHeight ?? Math.max(fontSize, Math.round((fontSize * d.lineHeight) / d.fontSize)),

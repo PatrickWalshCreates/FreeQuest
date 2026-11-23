@@ -88,6 +88,19 @@ export function WindowLookField(props: {
         {look.fontFailed && (
           <p className="error">This font couldn’t be loaded; the game would use the system font.</p>
         )}
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={full.sharpText}
+            onChange={(e) => set('sharpText', e.target.checked ? true : undefined)}
+          />
+          Sharp text
+        </label>
+        <p className="hint">
+          {full.sharpText
+            ? 'Text is drawn at the screen’s own resolution, so smooth fonts read well at any size. The art stays pixel-crisp.'
+            : 'Text is drawn in the game’s pixels and enlarged with the art, like a pixel font. Turn on sharp text for smooth fonts. (The preview shows text sharp either way.)'}
+        </p>
         {SIZES.map(({ key, label, min, max }) => (
           <label key={key} className="field">
             <span>{label}</span>

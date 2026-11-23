@@ -345,6 +345,17 @@ Never the other way.
   font size (default 26, line height in proportion to 36), padding 12, the main font copied from
   `fonts/` (`GraphicsImporter.font`), command 138 (null when it's the project's tone); one
   "changed" item says the skin's pattern and frame don't come across.
+- **Sharp text** (system `ui.sharpText`, M17 step 2): normally the canvas is the game's size
+  (renderer resolution 1) and CSS enlarges it, text included. With sharp text, `fit()` sets
+  the renderer's resolution to `renderResolution(scale, devicePixelRatio, true)` (whole-step
+  scale × pixel ratio, capped at `MAX_RENDER_RESOLUTION` 8; also re-fit on window `resize` for
+  a display change): Pixi redraws auto-resolution texts at it, and nearest-sampled art at a
+  whole scale stays exact blocks (measured: 0 of 1,600 6×6 blocks mixed in the map, text full
+  of finer detail). Characters may then move by device pixels rather than game pixels (no
+  mixels, just smoother). Cost measured at 2880×2112 (scale 3, ratio 2): a full render 2.6 ms
+  against 1.0 ms. Plugin drawings stay in game pixels (their canvas is the game's size). The
+  importer turns it on (MZ draws text at screen resolution); the editor's preview is always
+  sharp (DOM text), said in its hint.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -1715,9 +1726,12 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      skin's colour, MZ's font and size. Tried in the editor (the preview follows every field)
      and the dev player with a temporary font: messages and menus in it, Change window colour
      at once. The demo gets its own look in step 7)
-  2. Sharp text: windows' text drawn at the screen's real resolution (a high-resolution UI
+  2. ~~Sharp text: windows' text drawn at the screen's real resolution (a high-resolution UI
      layer over the pixel-scaled game) when a project chooses it, so smooth fonts read well;
-     pixel fonts keep the current crisp upscale. Measured on a small window and fullscreen.
+     pixel fonts keep the current crisp upscale. Measured on a small window and fullscreen.~~
+     (done; see Sharp text: the whole renderer at the screen's resolution rather than a
+     separate layer, since nearest-sampled art at whole scales is unchanged. Measured in the
+     dev player at 1× and at a 1600 × 1100 view)
   3. Gamepads: the Gamepad API mapped to actions (standard layout: d-pad and left stick,
      A/B/Start), held and pressed like keys in `InputState`; Options rebinds buttons beside
      keys (kept per game); works in the editor's playtest and every export.

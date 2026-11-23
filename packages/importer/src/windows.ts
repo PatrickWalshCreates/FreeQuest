@@ -59,6 +59,8 @@ export async function importWindows(
     ui: {
       ...(font ? { font } : {}),
       fontSize,
+      // MZ draws text at the screen's own resolution, with smooth fonts.
+      sharpText: true,
       lineHeight: Math.max(fontSize, Math.round((fontSize * MZ_LINE_HEIGHT) / MZ_FONT_SIZE)),
       padding: 12,
       windowColor,

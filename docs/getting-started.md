@@ -329,7 +329,9 @@ and the old file is removed when you save (until then, Undo puts everything back
   menus, battles, shops, the title): the window, border and text colours, how see-through
   windows are, the text size and spacing, the colours `{color:…}` names in messages, and a font.
   Import a font (TTF, OTF, WOFF or WOFF2) into the **Fonts** folder in Assets first, and check
-  its licence lets you put it in a game. The preview beside the settings shows a message and a
+  its licence lets you put it in a game. **Sharp text** draws text at the screen's own
+  resolution, so smooth fonts read well at any window size; without it, text is made of the
+  game's pixels and enlarged with the art, which suits pixel fonts. The preview beside the settings shows a message and a
   menu as the game draws them. The **Change window colour** command (in the Screen group)
   changes the colour for the rest of the game, until it's changed back to the project's own.
 - **Music and sounds**: a map's music is in its settings. Title, battle and menu sounds are in

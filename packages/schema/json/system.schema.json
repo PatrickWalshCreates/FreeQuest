@@ -279,6 +279,9 @@
           "maximum": 32,
           "minimum": 0
         },
+        "sharpText": {
+          "type": "boolean"
+        },
         "speakerColor": {
           "type": "string",
           "description": "A colour, #rrggbb.",

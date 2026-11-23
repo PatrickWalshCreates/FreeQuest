@@ -49,7 +49,7 @@ import { loadPlugins } from './plugins.js';
 import { PluginDrawing } from './plugin-drawing.js';
 import { PluginLayer } from './plugin-layer.js';
 import { AnimationSheets, CharacterEffectViews } from './effect-views.js';
-import { fitScale } from './scale.js';
+import { fitScale, renderResolution } from './scale.js';
 import { loadPixelTexture, sliceGrid } from './textures.js';
 import { TransferController } from './transfer.js';
 
@@ -297,11 +297,16 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   const fit = () => {
     const { clientWidth, clientHeight } = options.parent;
     const scale = fitScale(width, height, clientWidth, clientHeight);
+    // Sharp text: render at the screen's resolution (texts redraw themselves when it changes).
+    const resolution = renderResolution(scale, window.devicePixelRatio, look.sharpText);
+    if (resolution !== app.renderer.resolution) app.renderer.resize(width, height, resolution);
     canvas.style.width = `${width * scale}px`;
     canvas.style.height = `${height * scale}px`;
   };
   const resizeObserver = new ResizeObserver(fit);
   resizeObserver.observe(options.parent);
+  // A window moved to a display with another pixel ratio resizes without changing its size.
+  window.addEventListener('resize', fit);
   fit();
 
   const keyboard = bindKeyboard(window, input, options.keyBindings);
@@ -707,6 +712,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       audio.destroy();
       removeDebugPanel();
       resizeObserver.disconnect();
+      window.removeEventListener('resize', fit);
       pluginLayer?.destroy();
       // Not `destroy(true)`: that also releases PixiJS's global resources and breaks any
       // other PixiJS app on the page (the editor's map canvas behind a playtest).
