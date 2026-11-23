@@ -14,7 +14,7 @@ import { MANIFEST_PATH, type OpenedProject, type Problem, allFiles } from './ope
 import type { ProjectFs } from './project-fs.js';
 import { utf8Length } from './utf8.js';
 
-export type AssetKind = 'image' | 'audio';
+export type AssetKind = 'image' | 'audio' | 'font';
 
 /** Sound files (a plugin's asset parameter says only "a file": its extension says which kind). */
 const AUDIO_EXTENSION = /\.(wav|ogg|mp3|m4a|flac)$/i;
@@ -132,6 +132,7 @@ export function assetReferences(project: OpenedProject): Map<string, AssetUse> {
     add(system.balloons?.image, 'image', 'system balloons');
     add(system.titleScreen?.image, 'image', 'system title screen');
     add(system.battleBackground, 'image', 'system battle background');
+    add(system.ui?.font, 'font', 'system window font');
   }
   for (const animation of project.database.animations?.data?.entries ?? []) {
     add(animation.image, 'image', `animation ${animation.name}`);
@@ -221,8 +222,10 @@ export async function planExport(project: OpenedProject, fs: ProjectFs): Promise
     }
     const problem = {
       source: path,
-      message: `${use.kind === 'image' ? 'image' : 'sound'} not found (used by ${use.usedBy.join('; ')})`,
+      message: `${use.kind === 'audio' ? 'sound' : use.kind} not found (used by ${use.usedBy.join('; ')})`,
     };
+    // Without an image the game refuses to start; without a sound or font it goes on (silent, or
+    // in the system font).
     (use.kind === 'image' ? errors : warnings).push(problem);
   }
   return { files, errors, warnings };

@@ -11,10 +11,11 @@ import {
   TargetScope,
 } from './common.js';
 import { Command } from '../command.js';
+import { WindowLook } from '../window-look.js';
 import { Effect } from './effect.js';
 import { Modifier } from './modifier.js';
 
-export const DATABASE_FORMAT_VERSION = 6;
+export const DATABASE_FORMAT_VERSION = 7;
 
 const Named = Type.Object(
   { id: Id, name: Type.String({ minLength: 1 }) },
@@ -80,6 +81,8 @@ export const SystemData = Type.Object(
     ),
     /** A picture behind battles, scaled to cover the screen (v6); maps and battle commands can have their own. */
     battleBackground: Type.Optional(RelativePath),
+    /** How the game's windows look (v7): colours, font, sizes. */
+    ui: Type.Optional(WindowLook),
     titleScreen: Type.Optional(
       Type.Object(
         {

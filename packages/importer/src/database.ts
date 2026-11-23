@@ -689,7 +689,10 @@ function importTroop(id: string, name: string, t: JsonRecord, ctx: DatabaseConte
 export function systemData(
   types: SystemTypes,
   imported: ImportedDatabase,
-  keep: Pick<SystemData, 'audio' | 'iconset' | 'balloons' | 'titleScreen' | 'battleBackground'>,
+  keep: Pick<
+    SystemData,
+    'audio' | 'iconset' | 'balloons' | 'titleScreen' | 'battleBackground' | 'ui'
+  >,
 ): SystemData {
   return {
     formatVersion: DATABASE_FORMAT_VERSION,
@@ -701,6 +704,7 @@ export function systemData(
     ...(keep.balloons ? { balloons: keep.balloons } : {}),
     ...(keep.titleScreen ? { titleScreen: keep.titleScreen } : {}),
     ...(keep.battleBackground ? { battleBackground: keep.battleBackground } : {}),
+    ...(keep.ui ? { ui: keep.ui } : {}),
   };
 }
 

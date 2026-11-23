@@ -526,6 +526,18 @@ export const Command = Type.Cyclic(
       ),
       Type.Object(
         {
+          type: Type.Literal('changeWindowColor'),
+          /** null goes back to the project's own (Database › System › Windows). */
+          windowColor: Type.Union([HexColor, Type.Null()]),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Change the colour of the game’s windows for the rest of the game. Kept in saves (v12).',
+        },
+      ),
+      Type.Object(
+        {
           type: Type.Literal('playBackgroundSound'),
           /** null stops it. The map's own returns on the next map change. */
           path: Type.Union([RelativePath, Type.Null()]),

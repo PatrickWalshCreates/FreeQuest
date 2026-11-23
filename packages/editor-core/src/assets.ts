@@ -23,6 +23,7 @@ export const ASSET_FOLDERS: readonly {
   { path: 'assets/battlebacks', label: 'Battle backgrounds', type: 'image' },
   { path: 'assets/images', label: 'Other images', type: 'image' },
   { path: 'assets/audio', label: 'Audio', type: 'audio' },
+  { path: 'assets/fonts', label: 'Fonts', type: 'font' },
 ];
 
 /** File formats the game can load, by extension. */
@@ -34,6 +35,11 @@ const FORMATS: Readonly<Record<string, { type: AssetKind; format: string }>> = {
   wav: { type: 'audio', format: 'wav' },
   ogg: { type: 'audio', format: 'ogg' },
   mp3: { type: 'audio', format: 'mp3' },
+  // TrueType and OpenType files share one container (either outline kind in either name).
+  ttf: { type: 'font', format: 'sfnt' },
+  otf: { type: 'font', format: 'sfnt' },
+  woff: { type: 'font', format: 'woff' },
+  woff2: { type: 'font', format: 'woff2' },
 };
 
 /** Extensions an import accepts, for file pickers (".png,.wav,…"). */
@@ -61,6 +67,10 @@ export function sniffFormat(bytes: Uint8Array): string | null {
   if (startsWith(bytes, 0, 'OggS')) return 'ogg';
   if (startsWith(bytes, 0, 'ID3')) return 'mp3';
   if (bytes[0] === 0xff && ((bytes[1] ?? 0) & 0xe0) === 0xe0) return 'mp3';
+  if (bytes[0] === 0 && bytes[1] === 1 && bytes[2] === 0 && bytes[3] === 0) return 'sfnt';
+  if (startsWith(bytes, 0, 'true') || startsWith(bytes, 0, 'OTTO')) return 'sfnt';
+  if (startsWith(bytes, 0, 'wOFF')) return 'woff';
+  if (startsWith(bytes, 0, 'wOF2')) return 'woff2';
   return null;
 }
 
@@ -105,12 +115,14 @@ export function uniqueAssetPath(folder: string, name: string, taken: Iterable<st
 export function importProblem(name: string, bytes: Uint8Array): string | null {
   const expected = FORMATS[extension(name)];
   if (!expected) {
-    return `${name}: not a supported file (images: PNG, WebP, JPEG; sound: WAV, OGG, MP3)`;
+    return `${name}: not a supported file (images: PNG, WebP, JPEG; sound: WAV, OGG, MP3; fonts: TTF, OTF, WOFF, WOFF2)`;
   }
   if (bytes.length === 0) return `${name}: the file is empty`;
   const actual = sniffFormat(bytes);
   if (actual !== expected.format) {
-    return `${name}: the file's contents aren't ${expected.format.toUpperCase()}${actual ? ` (it looks like ${actual.toUpperCase()})` : ''}`;
+    const label = (format: string) =>
+      format === 'sfnt' ? 'a TrueType or OpenType font' : format.toUpperCase();
+    return `${name}: the file's contents aren't ${label(expected.format)}${actual ? ` (it looks like ${label(actual)})` : ''}`;
   }
   return null;
 }

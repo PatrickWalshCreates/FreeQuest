@@ -15,6 +15,7 @@ import {
   type SoundKey,
   type Tileset,
   faceImages,
+  resolveWindowLook,
 } from '@freequest/schema';
 import { Application, Container, Graphics, Text, type Texture } from 'pixi.js';
 import { BattleFlow } from './battle-flow.js';
@@ -29,7 +30,8 @@ import { TitleView } from './title-view.js';
 import { type CharacterGraphic, CharacterView } from './character-view.js';
 import { createDebugPanel } from './debug-panel.js';
 import { DialogController } from './dialog.js';
-import { DEFAULT_UI_THEME, DialogView, type UiTheme } from './dialog-view.js';
+import { DialogView, type UiTheme } from './dialog-view.js';
+import { colorNumber, loadWindowFont, themeFromLook } from './window-theme.js';
 import { EventViews, depthFor } from './event-views.js';
 import { createFaceSheets } from './faces.js';
 import { loadIconSheet } from './icons.js';
@@ -218,7 +220,11 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   };
 
   let dialog = new DialogController();
-  const theme = { ...DEFAULT_UI_THEME, ...options.ui };
+  // Every window's look: the project's (its font loaded first), then startGame's overrides.
+  const look = resolveWindowLook(project.database.system?.ui);
+  const fontLoaded = await loadWindowFont(look, (path) => project.assetUrl(path));
+  const theme: UiTheme = { ...themeFromLook(look, fontLoaded), ...options.ui };
+  const baseWindowColor = theme.windowColor;
   const dialogView = new DialogView(width, height, theme, icons, faces);
   app.stage.addChild(dialogView.container);
   const transfer = new TransferController(async (mapId) => {
@@ -529,6 +535,9 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   else toTitle();
 
   const render = (alpha: number) => {
+    // Change window colour lasts the rest of the game; windows read it as they draw.
+    theme.windowColor =
+      world.windowColor === null ? baseWindowColor : colorNumber(world.windowColor);
     if (shown?.map !== world.map) showCurrentMap();
     const { tileWidth, tileHeight } = world.tileset;
     const rx = prevX + (world.player.realX - prevX) * alpha;

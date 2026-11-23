@@ -571,6 +571,10 @@ export function describeCommand(command: Command, names: NameLookup = ID_NAMES):
       const background = command.background ? `, in front of ${fileName(command.background)}` : '';
       return `Battle: ${names.troop(command.troop)}${rules ? ` (${rules})` : ''}${background}`;
     }
+    case 'changeWindowColor':
+      return command.windowColor === null
+        ? 'Window colour: the project’s own'
+        : `Window colour: ${command.windowColor}`;
     case 'changeBattleBackground':
       return command.image === null
         ? 'Battle background: the map’s or the project’s own'
@@ -825,6 +829,7 @@ export const COMMAND_GROUPS: readonly {
       'tintScreen',
       'flashScreen',
       'shakeScreen',
+      'changeWindowColor',
       'scrollMap',
       'showPicture',
       'movePicture',
@@ -885,6 +890,7 @@ export const COMMAND_NAMES: Record<Command['type'], string> = {
   changeBattleMusic: 'Change battle music',
   movePartyMember: 'Move a party member',
   changeBattleBackground: 'Change battle background',
+  changeWindowColor: 'Change window colour',
   playBackgroundSound: 'Background sound',
   changeHp: 'Change HP',
   changeMp: 'Change MP',

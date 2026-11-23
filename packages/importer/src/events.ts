@@ -54,6 +54,8 @@ export interface EventsContext {
   /** A common event's id, or null. */
   readonly common: (n: number) => string | null;
   readonly textColor: (n: number) => string;
+  /** The window colour an MZ tone gives (null: the project's own). */
+  readonly windowColor: (tone: unknown) => string | null;
   /** MZ animation `n`'s id (marking it used), or null. */
   readonly animation: (n: number) => string | null;
   /** The switch that stands in for tests FreeQuest can't make (declared on first use). */
@@ -554,6 +556,8 @@ class Converter {
       case 312:
       case 313:
         return this.#actorChange(code, p);
+      case 138:
+        return [{ type: 'changeWindowColor', windowColor: this.ctx.windowColor(p[0]) }];
       case 283: {
         // Change battle background: MZ's two images (ground, walls or sky), one picture here.
         const image = await this.ctx.graphics.battleback(

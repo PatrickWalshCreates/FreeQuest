@@ -35,6 +35,7 @@ import {
 } from './events.js';
 import { asArray, asInt, asRecord, asString, isRecord } from './json.js';
 import { systemAudio } from './system-audio.js';
+import { importWindows } from './windows.js';
 import { readMzDatabase } from './mz-lists.js';
 import { SystemTypes } from './system-types.js';
 import { NumberedIds } from './ids.js';
@@ -157,6 +158,11 @@ export async function importMzProject(
   const audio = new AudioImporter(source, report);
   let redo: string | null = null;
   const mapById = new Map(maps.maps.map((m) => [m.mzId, m.data]));
+  const windows = await importWindows(
+    asRecord(await readMzJson(source, 'data/System.json')),
+    graphics,
+    report,
+  );
   const events: EventsContext = {
     report,
     graphics,
@@ -168,6 +174,7 @@ export async function importMzProject(
     mapSize: (mapId) => maps.maps.find((m) => m.data.id === mapId)?.data ?? null,
     common: (n) => (hasCommonEvent(commonRaw, n) ? commonIds.id(n) : null),
     textColor: await graphics.textColors(),
+    windowColor: windows.colorFor,
     animation: (n) => animations.use(n),
     redoSwitch: () => {
       if (!redo) {
@@ -264,6 +271,7 @@ export async function importMzProject(
           ? { titleScreen: { image: titleImage, showName: mz.system.titleScreen.showName } }
           : {}),
         ...(battleBackground ? { battleBackground } : {}),
+        ui: windows.ui,
       }),
     ],
   ]);

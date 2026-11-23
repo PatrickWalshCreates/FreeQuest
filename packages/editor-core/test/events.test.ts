@@ -300,6 +300,7 @@ describe('schema forms', () => {
         flag: 'opened',
         common: 'rest',
         color: '#ffffff',
+        windowColor: '#3a2030',
         state: 'poison',
         image: 'assets/pictures/sky.png',
         animation: 'sparkle',

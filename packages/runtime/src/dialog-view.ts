@@ -1,54 +1,13 @@
 import type { TextRun } from '@freequest/core';
 import type { TextColorName } from '@freequest/schema';
+import { DEFAULT_UI_THEME, type UiTheme } from './window-theme.js';
 import { CanvasTextMetrics, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import type { DialogController } from './dialog.js';
 import { type FaceSheets, NO_FACES } from './faces.js';
 import { type IconSheet, NO_ICONS, iconSprite } from './icons.js';
 import { type LinePiece, type RichLayout, layoutRuns, revealPiece } from './rich-text.js';
 
-/** Look of the message and choice windows. Swappable per game via `startGame({ ui })`. */
-export interface UiTheme {
-  fontFamily: string;
-  fontSize: number;
-  lineHeight: number;
-  textColor: number;
-  speakerColor: number;
-  windowColor: number;
-  windowAlpha: number;
-  borderColor: number;
-  /** Gap between windows and the screen edge, in pixels. */
-  margin: number;
-  /** Space between a window's border and its contents, in pixels. */
-  padding: number;
-  /** Minimum text lines in the message box, so its size doesn't jump between messages. */
-  minLines: number;
-  /** What `{color:…}` names in messages look like. */
-  textColors: Record<TextColorName, number>;
-}
-
-export const DEFAULT_UI_THEME: UiTheme = {
-  fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-  fontSize: 14,
-  lineHeight: 18,
-  textColor: 0xf4f1ea,
-  speakerColor: 0xffd479,
-  windowColor: 0x141a2e,
-  windowAlpha: 0.9,
-  borderColor: 0xe6dcc3,
-  margin: 8,
-  padding: 10,
-  minLines: 3,
-  textColors: {
-    white: 0xffffff,
-    gray: 0xa8a8b4,
-    red: 0xff6b6b,
-    orange: 0xffa94d,
-    yellow: 0xffd479,
-    green: 0x8ce99a,
-    blue: 0x74c0fc,
-    purple: 0xd0a2ff,
-  },
-};
+export { type UiTheme, DEFAULT_UI_THEME } from './window-theme.js';
 
 /** A `{color:…}` value as a colour: a theme name or #rrggbb (null = the text colour). */
 export function textColor(theme: UiTheme, color: string | null): number {

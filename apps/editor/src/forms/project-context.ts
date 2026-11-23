@@ -92,6 +92,8 @@ const LABELS: Record<string, string> = {
   events: 'Battle events',
   place: 'Place (1 = the leader)',
   battleBackground: 'Battle background',
+  ui: 'Windows',
+  windowColor: 'Window colour',
   background: 'Background (instead of the game’s)',
 };
 
@@ -333,6 +335,7 @@ export function projectFormContext(project: OpenedProject, lists: ProjectLists):
       if (field in NUMBER_DEFAULTS) return NUMBER_DEFAULTS[field];
       if (field === 'flag') return lists.flags?.[0] ?? 'done';
       if (field === 'color') return '#ffffff';
+      if (field === 'windowColor') return '#3a2030';
       const first = refs(field, null)?.[0];
       return first ? first.value : undefined;
     },

@@ -332,6 +332,8 @@ function EventEditor(props: {
           <RouteSteps steps={value as MoveStep[]} onChange={onChange} />
         ) : field === 'color' ? (
           <ColorField value={value} onChange={onChange} />
+        ) : field === 'windowColor' ? (
+          <ColorField value={value} onChange={onChange} noneLabel="The project’s own" />
         ) : field === 'balloon' ? (
           <BalloonField
             names={project.database.system?.data?.balloons?.names ?? []}

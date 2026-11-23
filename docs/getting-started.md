@@ -310,7 +310,7 @@ Add a door back the same way. If the arrival cell isn't walkable, the picker war
 ## 6. Your own art and sound
 
 Click **Assets** in the sidebar, then **Import…**, or drop files onto the panel. Images can be
-PNG, WebP or JPEG; sounds can be WAV, OGG or MP3. Files are copied into the project, so the
+PNG, WebP or JPEG; sounds can be WAV, OGG or MP3; fonts can be TTF, OTF, WOFF or WOFF2. Files are copied into the project, so the
 originals stay where they were. The panel shows where each file is used, lets you delete unused
 ones, and **Rename or move…** gives a file a new name or folder: everything that uses it follows,
 and the old file is removed when you save (until then, Undo puts everything back).
@@ -325,6 +325,13 @@ and the old file is removed when you save (until then, Undo puts everything back
   rearrange them under **Directions**.
 - **Title screen**: in **System**, turn on **Title screen** and choose a picture (any size: it's
   scaled to fill the screen) and whether the game's name is drawn over it.
+- **Windows and fonts**: in **System › Windows**, choose how the game's windows look (messages,
+  menus, battles, shops, the title): the window, border and text colours, how see-through
+  windows are, the text size and spacing, the colours `{color:…}` names in messages, and a font.
+  Import a font (TTF, OTF, WOFF or WOFF2) into the **Fonts** folder in Assets first, and check
+  its licence lets you put it in a game. The preview beside the settings shows a message and a
+  menu as the game draws them. The **Change window colour** command (in the Screen group)
+  changes the colour for the rest of the game, until it's changed back to the project's own.
 - **Music and sounds**: a map's music is in its settings. Title, battle and menu sounds are in
   **System** (in the database). The **Play music** and **Play sound** commands play them from
   events.

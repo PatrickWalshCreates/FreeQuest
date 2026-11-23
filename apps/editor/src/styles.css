@@ -2182,14 +2182,6 @@ h2.with-actions button {
 }
 
 .message-preview {
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 2px solid #e6dcc3;
-  font:
-    14px/18px system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
   white-space: pre-wrap;
   min-height: 54px;
 }
@@ -2541,4 +2533,65 @@ h2.with-actions button {
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   pointer-events: none;
+}
+
+/* Database › System › Windows: the fields beside a preview of the game's windows. */
+.window-look {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.window-look-fields {
+  display: grid;
+  gap: 6px;
+  min-width: 260px;
+  flex: 1 1 260px;
+}
+
+.window-look-fields .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.window-look-fields .field > span:first-child {
+  min-width: 120px;
+}
+
+.window-look-fields > button {
+  justify-self: start;
+}
+
+.window-look-text-colors {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.window-look-preview {
+  flex: 0 1 420px;
+  max-width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  background: linear-gradient(#7fb069, #5d8c4a);
+}
+
+.window-look-menu {
+  justify-self: start;
+  min-width: 55%;
+}
+
+.window-look-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 3px;
+}
+
+.window-look-detail {
+  margin-left: auto;
 }

@@ -5,7 +5,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 6
+      "const": 7
     },
     "attackSkill": {
       "type": "string",
@@ -248,6 +248,104 @@
         }
       },
       "required": ["image", "showName"]
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the game’s windows look (v7). Anything left out is FreeQuest’s own look.",
+      "properties": {
+        "borderColor": {
+          "type": "string",
+          "description": "A colour, #rrggbb.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "font": {
+          "type": "string",
+          "description": "Path relative to the project root, using \"/\" separators.",
+          "pattern": "^(?!/)(?![a-zA-Z]:)(?!.*\\\\)[^\\0]+$"
+        },
+        "fontSize": {
+          "type": "integer",
+          "maximum": 48,
+          "minimum": 6
+        },
+        "lineHeight": {
+          "type": "integer",
+          "maximum": 64,
+          "minimum": 6
+        },
+        "padding": {
+          "type": "integer",
+          "maximum": 32,
+          "minimum": 0
+        },
+        "speakerColor": {
+          "type": "string",
+          "description": "A colour, #rrggbb.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "textColor": {
+          "type": "string",
+          "description": "A colour, #rrggbb.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "textColors": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "blue": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "gray": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "green": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "orange": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "purple": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "red": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "white": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "yellow": {
+              "type": "string",
+              "description": "A colour, #rrggbb.",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          }
+        },
+        "windowColor": {
+          "type": "string",
+          "description": "A colour, #rrggbb.",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "windowOpacity": {
+          "type": "number",
+          "maximum": 1,
+          "minimum": 0
+        }
+      }
     }
   },
   "required": ["formatVersion", "currency", "elements", "equipmentSlots", "equipmentTypes", "skillTypes"],

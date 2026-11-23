@@ -1,7 +1,7 @@
 import Type, { type Static } from 'typebox';
 import { Direction, Id, NonNegativeInt, PositiveInt } from './common.js';
 
-export const SAVE_FORMAT_VERSION = 5;
+export const SAVE_FORMAT_VERSION = 6;
 
 const Counts = Type.Record(Type.String(), NonNegativeInt);
 
@@ -104,6 +104,8 @@ export const SaveFile = Type.Object(
     plugins: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
     /** The battle background an event chose for the rest of the game (v5). */
     battleBackground: Type.Optional(Type.String()),
+    /** The window colour an event chose for the rest of the game, #rrggbb (v6). */
+    windowColor: Type.Optional(Type.String()),
     /** Battle and victory music changed by events; null = none (v3). */
     battleMusic: Type.Optional(
       Type.Object(

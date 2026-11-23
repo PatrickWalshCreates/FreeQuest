@@ -89,6 +89,21 @@ describe('asset files', () => {
     for (const f of ASSET_FOLDERS) expect(f.path.startsWith('assets/')).toBe(true);
   });
 
+  it('takes fonts: TrueType and OpenType in either name, WOFF and WOFF2', () => {
+    const sfnt = bytes([0, 1, 0, 0], 'rest');
+    expect(assetType('assets/fonts/pixel.TTF')).toBe('font');
+    expect(sniffFormat(sfnt)).toBe('sfnt');
+    expect(sniffFormat(bytes('OTTO'))).toBe('sfnt');
+    expect(sniffFormat(bytes('wOF2'))).toBe('woff2');
+    expect(importProblem('pixel.ttf', sfnt)).toBeNull();
+    expect(importProblem('pixel.otf', sfnt)).toBeNull();
+    expect(importProblem('pixel.woff', bytes('wOFF'))).toBeNull();
+    expect(importProblem('pixel.ttf', png())).toMatch(
+      /aren't a TrueType or OpenType font \(it looks like PNG\)/,
+    );
+    expect(importFolderFor('pixel.woff2', 'assets/audio')).toBe('assets/fonts');
+  });
+
   it('sends each file to a folder for its type', () => {
     expect(importFolderFor('a.png', 'assets/characters')).toBe('assets/characters');
     expect(importFolderFor('a.wav', 'assets/characters')).toBe('assets/audio');

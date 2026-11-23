@@ -1948,6 +1948,30 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Change the colour of the game’s windows for the rest of the game. Kept in saves (v12).",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "changeWindowColor"
+            },
+            "windowColor": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "A colour, #rrggbb.",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["type", "windowColor"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "description": "A sound that loops beside the music (rain, wind, a crowd) (v9).",
           "properties": {
             "type": {
@@ -2472,7 +2496,7 @@
   "properties": {
     "formatVersion": {
       "type": "number",
-      "const": 6
+      "const": 7
     },
     "entries": {
       "type": "array",

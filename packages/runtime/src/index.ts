@@ -11,6 +11,13 @@ export * from './character-view.js';
 export * from './event-views.js';
 export * from './dialog.js';
 export * from './dialog-view.js';
+export {
+  SYSTEM_FONT,
+  WINDOW_FONT,
+  colorNumber,
+  loadWindowFont,
+  themeFromLook,
+} from './window-theme.js';
 export * from './faces.js';
 export * from './transfer.js';
 export * from './debug-text.js';

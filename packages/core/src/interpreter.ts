@@ -484,6 +484,9 @@ export class Interpreter {
       case 'changeBattleBackground':
         this.context.setBattleBackground?.(command.image);
         break;
+      case 'changeWindowColor':
+        this.context.setWindowColor?.(command.windowColor);
+        break;
       case 'changeBattleMusic':
         this.context.audio?.setBattleMusic?.(command.which, command.path);
         break;

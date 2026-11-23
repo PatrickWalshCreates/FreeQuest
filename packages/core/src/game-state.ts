@@ -229,6 +229,8 @@ export interface EventContext {
   readonly showBalloon?: (balloon: number, target: string) => () => boolean;
   /** Change the picture behind battles for the rest of the game (null: back to the map's or project's). */
   readonly setBattleBackground?: (image: string | null) => void;
+  /** Change the windows' colour for the rest of the game (#rrggbb; null: back to the project's). */
+  readonly setWindowColor?: (color: string | null) => void;
   /** Turn the menu or saving on or off. */
   readonly setAccess?: (what: 'menu' | 'saving' | 'formation', allowed: boolean) => void;
   /** Seconds played so far. */

@@ -194,8 +194,8 @@ Never the other way.
   step the order is `dialog.update` → `world.step` → `input.endStep`, so the dialog consumes the input
   that answers a request. A message stays up until the next request arrives (no flicker between
   messages) and stays visible under a following choice. Text is wrapped before revealing so words
-  never jump lines. Font/colors/spacing are a `UiTheme`, overridable via `startGame({ ui })`; the
-  default is the system font (no bundled font asset). Not yet in the project format.
+  never jump lines. Font/colors/spacing are a `UiTheme` made from the project's window look (see Window look),
+  overridable via `startGame({ ui })`.
 - **Screen effects** (map v7: `fadeScreen` out/in, `tintScreen` colour + strength,
   `flashScreen`, `shakeScreen` power in px, each with `seconds` and `wait`; `hideEvent`;
   save v2 `screen` = fade + tint): core `screen.ts` `ScreenEffects` (tweens advanced by
@@ -322,6 +322,29 @@ Never the other way.
   Importer: tpCost/tpGain/repeats, effects 13/31/32/44 (`common` lookup in
   `DatabaseContext`), `convertTroopEvents` (turn A → from A+1, enemy index among kept
   members, map commands → comments). Demo: the bridge wolf snarls on turn 1.
+- **Window look** (database v7 system `ui`, map v12 `changeWindowColor`, save v6 `windowColor`;
+  M17 step 1): schema `window-look.ts` (`WindowLook`: optional font file under `assets/fonts/`,
+  fontSize, lineHeight, padding, window/border/text/speaker colours, windowOpacity,
+  `textColors`; `resolveWindowLook` fills FreeQuest's own, `DEFAULT_WINDOW_LOOK`, a bigger font
+  without a line height keeps the proportion). Runtime `window-theme.ts` (PixiJS-free, tested):
+  `UiTheme` moved here, `themeFromLook`, `loadWindowFont` (fetches the bytes and makes a
+  `FontFace` from them, so no CSP needs font-src; checked under a strict CSP in Chromium and
+  WebKit; a font that fails warns and leaves the system font) under `WINDOW_FONT_FAMILY`. Every
+  view already shared one theme object; the game sets its `windowColor` each frame from
+  `World.windowColor` (the command's, saved, damaged values dropped) or the project's, and
+  windows read it as they draw (messages at once, menus when they open). Fonts are an asset
+  kind (`AssetKind` 'font', Assets folder Fonts, `sniffFormat` 'sfnt' for TTF/OTF either way,
+  woff, woff2; a missing font is an export warning; the index's `font` field; playtest MIME
+  types). Editor: `database/WindowLookField.tsx` for System's `ui` (font, sizes with the
+  defaults as placeholders, colours with "FreeQuest's", opacity, text colours, "Back to
+  FreeQuest's look", a preview at 2×), `forms/window-theme.ts` (`useWindowTheme`: the theme
+  with the font registered for the page under its own family per file; `windowStyle` CSS),
+  also used by the message preview; `ColorField` takes `noneLabel` (the command's null).
+  Importer `windows.ts`: the window skin's background square averaged
+  (`GraphicsImporter.windowBack`) plus `windowTone`, opacity 0.75 (MZ's back opacity), MZ's
+  font size (default 26, line height in proportion to 36), padding 12, the main font copied from
+  `fonts/` (`GraphicsImporter.font`), command 138 (null when it's the project's tone); one
+  "changed" item says the skin's pattern and frame don't come across.
 - Keep runtime UI logic testable the same way: put state machines in PixiJS-free modules.
 
 - **Shops**: the `shop` command (`goods`: item/equipment + optional `price`; `canSell`) is an
@@ -1143,9 +1166,9 @@ licenses list --prod --filter <pkg>...` (the `...` follows our workspace package
   map 10 (v3: party commands/conditions; v4: `encounters`, `battle` command; v5: `music`,
   `playMusic`/`playSound`; v6: page `movement`, `moveRoute`, `shop`; v7: event flags, fixed
   facing, `callCommon`, `loop`/`break`/`exitEvent`, screen effects, `hideEvent`; v8: message `face`; v9: `changeActor`, `hidePlayer`, route steps, the step-4 commands and branch tests, map
-  `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`), tileset 1, character 1, plugin 1, every database file 6 (v2: combat modifiers,
+  `backgroundSound`, pictures; v10: the `plugin` command; v11: `battleBackground`, the battle command's `background`, `changeBattleBackground`; v12: `changeWindowColor`), tileset 1, character 1, plugin 1, every database file 6 (v2: combat modifiers,
   troops, system attack/guard skills; v3: system `audio`; v4: enemy action `conditions`; v5:
-  animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`, troops' `places`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`). Additive bumps migrate as no-ops.
+  animations, skills'/items' `animation`, system `balloons`; v6: system `battleBackground`, troops' `places`; v7: system `ui`), save 5 (v2: `flags`, `{}` for older saves, and optional `screen`; v3: optional `playerHidden`, `party.looks`, `access`, `battleMusic`, `pictures`; v4: optional `plugins`; v5: optional `battleBackground`; v6: optional `windowColor`). Additive bumps migrate as no-ops.
 - Database: one file per category under `data/database/` (`system`, `actors`, `classes`, `skills`,
   `items`, `equipment`, `states`, `enemies`, `troops`, `commonEvents`), each `{ formatVersion, entries: [...] }` except
   `system.json` (type lists: elements, equipment slots/types, skill types, currency, iconset). Missing
@@ -1682,12 +1705,16 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
   Each step is a FreeQuest feature of its own (format, editor, runtime, tests, guide); the
   importer brings across what MZ games use. Behaviour may match MZ's; the design and names are
   ours (clean-room). Steps:
-  1. The look of windows in the project: system.json `ui` (window colour and opacity, border,
+  1. ~~The look of windows in the project: system.json `ui` (window colour and opacity, border,
      text and speaker colours, the `{color:…}` names, sizes, and a font: a file under
      `assets/fonts/` (.ttf/.otf/.woff2) or the system font), read into `UiTheme` by every
      window (messages, menus, battle, shop, title); a `changeWindowColor` command (saved).
      Editor: a "Windows" section in System with a live preview of a message and a menu.
-     Importer: the window tone and Change window colour.
+     Importer: the window tone and Change window colour.~~ (done; see Window look. The
+     command's field is `windowColor`, null = the project's. The importer also brings the
+     skin's colour, MZ's font and size. Tried in the editor (the preview follows every field)
+     and the dev player with a temporary font: messages and menus in it, Change window colour
+     at once. The demo gets its own look in step 7)
   2. Sharp text: windows' text drawn at the screen's real resolution (a high-resolution UI
      layer over the pixel-scaled game) when a project chooses it, so smooth fonts read well;
      pixel fonts keep the current crisp upscale. Measured on a small window and fullscreen.

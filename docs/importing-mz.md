@@ -69,6 +69,10 @@ freequest import mz <mz-project-folder> --out <new-folder> [--name "Game name"]
   battle. Flashes aren't brought across.
 - **The title screen**: its background with its frame drawn over it, as one picture, and
   whether the game's name shows (from 0.5).
+- **Windows** (from 0.8): their colour (the window skin's background, shifted by the window
+  tone), how solid MZ draws them, the main font (from the project's `fonts/` folder) and its
+  size, and **Change window colour**. A skin's pattern and frame don't come across: FreeQuest's
+  windows are one colour with a plain border.
 - **Music and sounds**: the title, battle, victory and game-over music, the system sounds, and
   each map's music and background sound. Only `.ogg` files are copied (FreeQuest doesn't play
   `.m4a`).

@@ -1,11 +1,12 @@
 // Extra controls in a command's dialog, for event pages and common events
 // alike: a map picker for transfers, a preview of messages and choices.
 import { type PreviewRun, type ProjectDocument, previewText } from '@freequest/editor-core';
-import { DEFAULT_UI_THEME, textColor } from '@freequest/runtime';
+import { textColor } from '@freequest/runtime';
 import { type Command, type MessageFace, TEXT_CODE_HELP } from '@freequest/schema';
 import { FaceImage, useFaceSheet } from './FaceField.js';
 import { IconImage, useIconset } from '../database/IconField.js';
 import { TransferTargetButton } from './TransferTargetButton.js';
+import { hex, useWindowTheme, windowStyle } from '../forms/window-theme.js';
 
 export function CommandExtras(props: {
   readonly doc: ProjectDocument;
@@ -27,8 +28,6 @@ export function CommandExtras(props: {
   return null;
 }
 
-const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
-
 /** The message as the game's window would show it, codes filled in. */
 function MessagePreview(props: {
   readonly doc: ProjectDocument;
@@ -41,7 +40,8 @@ function MessagePreview(props: {
   const project = doc.project;
   const loaded = useIconset(doc);
   const icons = loaded === 'missing' ? null : loaded;
-  const theme = DEFAULT_UI_THEME;
+  const look = useWindowTheme(doc);
+  const { theme } = look;
   const speaker = props.speaker
     ? previewText(props.speaker, project)
         .map((r) => (r.kind === 'text' ? r.text : ''))
@@ -51,10 +51,7 @@ function MessagePreview(props: {
   return (
     <div className="message-preview-block">
       <span className="muted">Preview (values only the game knows show in [brackets])</span>
-      <div
-        className="message-preview"
-        style={{ background: hex(theme.windowColor), color: hex(theme.textColor) }}
-      >
+      <div className="message-preview" style={windowStyle(look)}>
         {props.face && sheet.status === 'ready' && props.face.index < sheet.count && (
           <FaceImage image={sheet.image} index={props.face.index} />
         )}

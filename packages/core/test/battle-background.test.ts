@@ -1,6 +1,12 @@
 // M16 step 1: the picture behind battles: the battle command's own, else the
 // one an event chose (kept in saves), else the map's, else the project's.
-import { type Command, type GameMap, migrate, parseProjectFile } from '@freequest/schema';
+import {
+  type Command,
+  type GameMap,
+  SAVE_FORMAT_VERSION,
+  migrate,
+  parseProjectFile,
+} from '@freequest/schema';
 import { describe, expect, it } from 'vitest';
 import rawManifest from '../../../samples/demo-project/project.json' with { type: 'json' };
 import rawMap from '../../../samples/demo-project/data/maps/map001.json' with { type: 'json' };
@@ -92,7 +98,7 @@ describe('battle backgrounds', () => {
     run(loaded, [change(null)]);
     expect(loaded.toSave({ game: 'g', playSeconds: 1 }).battleBackground).toBeUndefined();
     expect(migrate('save', { formatVersion: 4, game: 'g' })).toEqual({
-      formatVersion: 5,
+      formatVersion: SAVE_FORMAT_VERSION,
       game: 'g',
     });
   });

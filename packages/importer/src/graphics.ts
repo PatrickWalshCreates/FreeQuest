@@ -256,12 +256,7 @@ export class GraphicsImporter {
    * squares (8 × 4 of 12 px, from (96, 144)); our own palette without one.
    */
   async textColors(): Promise<(n: number) => string> {
-    let skin: RgbaImage | null = null;
-    try {
-      skin = await this.codec.decode(await this.fs.readBytes('img/system/Window.png'));
-    } catch {
-      skin = null;
-    }
+    const skin = await this.#windowSkin();
     return (n) => {
       const fallback = FALLBACK_TEXT_COLORS[n % FALLBACK_TEXT_COLORS.length] ?? '#ffffff';
       if (!skin) return fallback;
@@ -338,6 +333,63 @@ export class GraphicsImporter {
     }
     this.#battlebacks.set(key, path);
     return path;
+  }
+
+  #skin: Promise<RgbaImage | null> | undefined = undefined;
+
+  /** MZ's window skin (img/system/Window.png), decoded once; null without one. */
+  #windowSkin(): Promise<RgbaImage | null> {
+    this.#skin ??= this.fs.readBytes('img/system/Window.png').then(
+      (bytes) => this.codec.decode(bytes),
+      () => null,
+    );
+    return this.#skin;
+  }
+
+  /**
+   * The average colour of the window skin's background (its top-left 96 × 96
+   * square), which MZ stretches behind every window; null without a skin.
+   */
+  async windowBack(): Promise<readonly [number, number, number] | null> {
+    const skin = await this.#windowSkin();
+    if (!skin || skin.width < 96 || skin.height < 96) return null;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let weight = 0;
+    for (let y = 0; y < 96; y++) {
+      for (let x = 0; x < 96; x++) {
+        const i = (y * skin.width + x) * 4;
+        const a = skin.data[i + 3] ?? 0;
+        r += (skin.data[i] ?? 0) * a;
+        g += (skin.data[i + 1] ?? 0) * a;
+        b += (skin.data[i + 2] ?? 0) * a;
+        weight += a;
+      }
+    }
+    return weight === 0 ? null : [r / weight, g / weight, b / weight];
+  }
+
+  /**
+   * The project's main font (fonts/<file>), copied to assets/fonts on first use.
+   * Null when it isn't there (reported).
+   */
+  async font(file: string, where: string): Promise<string | null> {
+    const name = file.split('/').pop() ?? '';
+    if (!/\.(ttf|otf|woff2?)$/i.test(name)) {
+      if (name) this.report.missing(where, `The font ${name} isn't a kind FreeQuest can use.`);
+      return null;
+    }
+    try {
+      const bytes = await this.fs.readBytes(`fonts/${name}`);
+      const path = `assets/fonts/${name.replace(/[^A-Za-z0-9._-]/g, '-')}`;
+      this.#out.files.push({ path, bytes });
+      return path;
+    } catch (error) {
+      if (!(error instanceof FileNotFoundError)) throw error;
+      this.report.missing(where, `fonts/${name} is missing, so windows use the system font.`);
+      return null;
+    }
   }
 
   #balloons: ImportedGraphics['balloons'] | undefined = undefined;

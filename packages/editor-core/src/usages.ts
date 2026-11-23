@@ -70,6 +70,7 @@ const ASSET_FIELDS = new Set<string>([
   'backgroundSound',
   'battleBackground',
   'background',
+  'font',
   'titleMusic',
   'battleMusic',
   'victoryMusic',

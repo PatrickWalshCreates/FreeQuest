@@ -95,6 +95,8 @@ export class World {
   readonly access = { menu: true, saving: true, formation: true };
   /** The battle background an event chose (`changeBattleBackground`); null: none chosen. Saved. */
   battleBackground: string | null = null;
+  /** The window colour an event chose (`changeWindowColor`, #rrggbb); null: the project's. Saved. */
+  windowColor: string | null = null;
   /** Battle and victory music events chose (undefined: the project's own; null: none). Saved. */
   readonly battleMusic: { battle?: string | null; victory?: string | null } = {};
   /** Seconds this game has been played on the map (and in what it opened), for events. */
@@ -330,6 +332,7 @@ export class World {
       ...(this.pictures.list.length > 0 ? { pictures: this.pictures.toData() } : {}),
       ...(Object.keys(this.battleMusic).length > 0 ? { battleMusic: { ...this.battleMusic } } : {}),
       ...(this.battleBackground !== null ? { battleBackground: this.battleBackground } : {}),
+      ...(this.windowColor !== null ? { windowColor: this.windowColor } : {}),
       ...(this.pluginData.size > 0
         ? {
             plugins: Object.fromEntries(
@@ -380,6 +383,10 @@ export class World {
     world.access.formation = save.access?.formation ?? true;
     Object.assign(world.battleMusic, save.battleMusic ?? {});
     world.battleBackground = save.battleBackground ?? null;
+    world.windowColor =
+      save.windowColor !== undefined && /^#[0-9a-fA-F]{6}$/.test(save.windowColor)
+        ? save.windowColor
+        : null;
     for (const [id, data] of Object.entries(save.plugins ?? {})) world.pluginData.set(id, data);
     world.playSeconds = save.playSeconds;
     return world;
@@ -709,6 +716,9 @@ export class World {
       },
       setBattleBackground: (image) => {
         this.battleBackground = image;
+      },
+      setWindowColor: (color) => {
+        this.windowColor = color;
       },
       playSeconds: () => this.playSeconds,
       random: this.random,

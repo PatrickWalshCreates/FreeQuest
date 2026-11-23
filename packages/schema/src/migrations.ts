@@ -108,6 +108,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 9, migrate: (d) => d },
     // v11: battle backgrounds (the map's, the battle command's, changeBattleBackground). Additive.
     { from: 10, migrate: (d) => d },
+    // v12: changeWindowColor. Additive.
+    { from: 11, migrate: (d) => d },
   ],
   character: [],
   plugin: [],
@@ -120,6 +122,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
     { from: 3, migrate: (d) => d },
     // v5: the battle background events chose (optional, so additive).
     { from: 4, migrate: (d) => d },
+    // v6: the window colour events chose (optional, so additive).
+    { from: 5, migrate: (d) => d },
   ],
   // Database v2: combat modifiers, troops, attack/guard skills. v3: system audio.
   // Both additive. v4: enemy action conditions (every action gets an empty list).
@@ -136,6 +140,8 @@ export const MIGRATIONS: Partial<Record<FileKind, Migration[]>> = {
         { from: 4, migrate: (d: Record<string, unknown>) => d },
         // v6: the system battle background. Additive.
         { from: 5, migrate: (d: Record<string, unknown>) => d },
+        // v7: the look of windows (system `ui`). Additive.
+        { from: 6, migrate: (d: Record<string, unknown>) => d },
       ],
     ]),
   ) as Record<DatabaseKind, Migration[]>),

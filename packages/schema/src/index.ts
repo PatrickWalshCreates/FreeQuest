@@ -5,6 +5,7 @@ export * from './map.js';
 export * from './character.js';
 export * from './condition.js';
 export * from './command.js';
+export * from './window-look.js';
 export * from './event.js';
 export * from './route.js';
 export * from './database/index.js';

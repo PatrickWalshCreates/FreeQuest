@@ -187,7 +187,7 @@ function ParamField(props: {
         </select>,
       );
     case 'color':
-      return wrap(<ColorField value={value} onChange={onChange} />);
+      return wrap(<ColorField value={value} onChange={(c) => onChange(c ?? undefined)} />);
     case 'reference':
     case 'asset': {
       const options =

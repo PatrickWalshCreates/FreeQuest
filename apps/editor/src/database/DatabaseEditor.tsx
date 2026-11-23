@@ -29,7 +29,14 @@ import { type FormContext, ObjectFields } from '../forms/SchemaField.js';
 import { projectFormContext, projectNames } from '../forms/project-context.js';
 import { CommandList, listActions } from '../events/CommandList.js';
 import { CommandExtras } from '../events/CommandExtras.js';
-import type { AnimationEntry, Command, MessageFace, TroopEntry } from '@freequest/schema';
+import type {
+  AnimationEntry,
+  Command,
+  MessageFace,
+  TroopEntry,
+  WindowLook,
+} from '@freequest/schema';
+import { FONT_FILE, WindowLookField } from './WindowLookField.js';
 import { TroopLayout } from './TroopLayout.js';
 import { BackgroundPicker } from '../forms/BackgroundPicker.js';
 import { FaceField } from '../events/FaceField.js';
@@ -88,6 +95,15 @@ export function DatabaseEditor({ doc, file }: Props) {
           />
         ) : field === 'color' ? (
           <ColorField value={value} onChange={onChange} />
+        ) : field === 'windowColor' ? (
+          <ColorField value={value} onChange={onChange} noneLabel="The project’s own" />
+        ) : field === 'ui' ? (
+          <WindowLookField
+            doc={doc}
+            fonts={(lists.assets ?? []).filter((p) => FONT_FILE.test(p))}
+            value={value as WindowLook | undefined}
+            onChange={onChange}
+          />
         ) : field === 'balloon' ? (
           <BalloonField
             names={project.database.system?.data?.balloons?.names ?? []}
@@ -140,8 +156,8 @@ function SystemEditor(props: {
     <div className="db-single" onBlur={() => doc.endCoalescing()}>
       <h1>System</h1>
       <p className="hint">
-        Elements, equipment slots and types, skill types, the system skills, and the music and
-        sounds of the engine’s own screens.
+        Elements, equipment slots and types, skill types, the system skills, the music and sounds of
+        the engine’s own screens, and how its windows look.
       </p>
       <Problems messages={problems.map((p) => p.message)} />
       <ObjectFields
