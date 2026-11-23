@@ -204,6 +204,14 @@ h2 {
   background: #000;
   border: 1px solid var(--line);
 }
+/* On touch screens the game stands upright, with its on-screen buttons under it. */
+@media (pointer: coarse) {
+  .game-frame {
+    aspect-ratio: 3 / 4;
+    max-height: 85vh;
+    margin: 0 auto;
+  }
+}
 .game-frame iframe {
   position: absolute;
   inset: 0;

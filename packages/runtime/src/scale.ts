@@ -3,9 +3,10 @@ export const SCALE_SLACK = 2;
 
 /**
  * The whole-number scale that fits a game of `width`×`height` in a space of
- * `viewWidth`×`viewHeight` (at least 1). Whole steps keep pixel art crisp; a
- * couple of pixels of slack stop a window that's a hair too small (window
- * borders, rounding) from halving the picture.
+ * `viewWidth`×`viewHeight`. Whole steps keep pixel art crisp; a couple of
+ * pixels of slack stop a window that's a hair too small (window borders,
+ * rounding) from halving the picture. A space smaller than the game itself (a
+ * phone held upright) gets the fraction that fits: a little softer, but whole.
  */
 export function fitScale(
   width: number,
@@ -15,6 +16,10 @@ export function fitScale(
 ): number {
   const fits = (scale: number) =>
     width * scale <= viewWidth + SCALE_SLACK && height * scale <= viewHeight + SCALE_SLACK;
+  if (!fits(1)) {
+    const fraction = Math.min(viewWidth / width, viewHeight / height);
+    return fraction > 0 ? fraction : 1;
+  }
   let scale = 1;
   while (fits(scale + 1)) scale += 1;
   return scale;

@@ -279,8 +279,9 @@ function landing(): string {
 <section id="demo" class="demo">
   <h2>Play the demo</h2>
   <p>Made in FreeQuest and exported for the web. Click the game, then use the arrow keys to walk,
-  Enter to talk and Escape for the menu.</p>
-  <div class="game-frame"><iframe src="play/index.html" title="The FreeQuest demo game" loading="lazy" allow="fullscreen; autoplay"></iframe></div>
+  Enter to talk and Escape for the menu, or a gamepad. On a phone or tablet, use the buttons
+  under the game, or <a href="play/index.html">open it on its own page</a>.</p>
+  <div class="game-frame"><iframe src="play/index.html" title="The FreeQuest demo game" loading="lazy" allow="fullscreen; autoplay; gamepad"></iframe></div>
 </section>
 
 <section class="features">${features}</section>

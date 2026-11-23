@@ -49,6 +49,12 @@ Things to know:
   files when a web server sends them. The game says so if you try.
 - Players' saves stay in their own browser, per game.
 - F11 or Alt+Enter toggles fullscreen.
+- **Phones and tablets** (from 0.8): web games show an on-screen direction pad and A (confirm),
+  B (cancel) and ☰ (menu) buttons on touch screens. Held upright, the game sits above the
+  buttons; turned sideways, the buttons are at the sides of the game. A screen narrower than the
+  game shrinks it to fit. On itch.io, tick _Mobile friendly_ (and pick an orientation, or leave
+  both). Sharp text (**System › Windows**) makes small text easier to read on a phone.
+- Gamepads work in every web game too.
 
 ## macOS apps
 

@@ -13,8 +13,10 @@ describe('fitScale', () => {
     expect(fitScale(480, 352, 960, 701)).toBe(1);
   });
 
-  it('never goes below 1', () => {
-    expect(fitScale(480, 352, 100, 100)).toBe(1);
+  it('shrinks to the fraction that fits a space smaller than the game', () => {
+    expect(fitScale(480, 352, 390, 600)).toBeCloseTo(390 / 480);
+    expect(fitScale(480, 352, 479, 352)).toBe(1); // within the slack
+    expect(fitScale(480, 352, 0, 0)).toBe(1); // not laid out yet
   });
 });
 

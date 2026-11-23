@@ -408,6 +408,22 @@ Never the other way.
   d-pad, Menu rebound to Y and saved. A real pad and the desktop apps (WebKit) are for the
   release's by-hand check.
 
+- **Touch controls** (M17 step 4; rules in `runtime/src/touch.ts`, tested; the layer in
+  `touch-controls.ts`): an HTML layer in the game's parent (made `relative` if static): a
+  direction pad (`padDirection`: the longer axis, `PAD_DEAD_ZONE` 0.25 of the radius; the pad
+  keeps the pointer, so a thumb sliding off still points) and A / B / ☰ buttons, holding actions
+  through `HeldInputs` (`touch:pad`, `touch:<action>`), safe-area insets, no page gestures
+  (touch-action none, touchstart prevented). Shown at start where `(pointer: coarse)` matches
+  (`wantsTouchControls`, `startGame({ touchControls: 'auto' | boolean })`), else on a first
+  touch; a touch unlocks audio. `fit()` keeps `touchReserve` (a strip of 170–250 px, 38% of the
+  height) under the game in portrait as the canvas's bottom margin, nothing in landscape (the
+  controls sit over the sides). `fitScale` now shrinks to the fraction that fits when the game
+  is bigger than the space (a phone upright). Player page: `viewport-fit=cover`, `#game` with
+  touch-action none. Site: the demo's frame is 3:4 on coarse pointers (the buttons under the
+  game) and a link to `play/`. Tried in the pane's phone size (portrait and landscape: A, the
+  pad, the menu) and the built site's demo on a phone-sized view; a real phone is for the
+  release check.
+
 ### Database and battlers (M3)
 
 - **Formulas** are FreeQuest's own expression language, never JavaScript. Grammar and validation in
@@ -1754,9 +1770,10 @@ rate)` with rate 2. Log lines in `battle-text.ts`. "No surprise attacks" was dro
      A/B/Start), held and pressed like keys in `InputState`; Options rebinds buttons beside
      keys (kept per game); works in the editor's playtest and every export.~~ (done; see
      Gamepads. Options' Controls… is now Keyboard… and Gamepad…)
-  4. Touch for web exports on phones and tablets: an on-screen direction pad and confirm /
+  4. ~~Touch for web exports on phones and tablets: an on-screen direction pad and confirm /
      cancel / menu buttons (shown on touch devices only), the canvas fitted to the screen in
-     portrait and landscape, and the site's demo playable on a phone.
+     portrait and landscape, and the site's demo playable on a phone.~~ (done; see Touch
+     controls)
   5. One-way tiles: passability per direction (tileset v2: a tile's `blocks` sides, migrated
      from `passable`); core's collision checks the side left and the side entered; the tileset
      editor gets a Directions mode (click a tile's edge). The importer brings MZ's four-way

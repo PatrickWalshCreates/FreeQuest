@@ -8,6 +8,7 @@ export * from './loader.js';
 export * from './keyboard.js';
 export * from './gamepad.js';
 export * from './held-inputs.js';
+export * from './touch.js';
 export * from './map-view.js';
 export * from './character-view.js';
 export * from './event-views.js';

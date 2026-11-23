@@ -43,6 +43,8 @@ import { ShopView } from './shop-view.js';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings, bindKeyboard } from './keyboard.js';
 import { GamepadInput } from './gamepad.js';
 import { HeldInputs } from './held-inputs.js';
+import { type TouchControls, createTouchControls } from './touch-controls.js';
+import { touchReserve, wantsTouchControls } from './touch.js';
 import { type LoadedProject, type ProjectSource, getOrThrow, loadProject } from './loader.js';
 import { type MapView, createMapView } from './map-view.js';
 import { PictureView } from './picture-view.js';
@@ -73,6 +75,11 @@ export interface StartGameOptions {
   keyBindings?: KeyBindings;
   /** Overrides for the message/choice window look (font, colors, spacing). */
   ui?: Partial<UiTheme>;
+  /**
+   * On-screen controls for touch screens: 'auto' (the default) shows them on
+   * phones and tablets, and on any device after its first touch.
+   */
+  touchControls?: 'auto' | boolean;
   /** Enable the developer debug panel (toggle with F9). */
   debug?: boolean;
   /** Where save slots live. Defaults to localStorage (or memory if it's unavailable). */
@@ -172,6 +179,8 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   });
   const canvas = app.canvas;
   canvas.style.imageRendering = 'pixelated';
+  // Touches on the game never scroll or zoom the page.
+  canvas.style.touchAction = 'none';
   canvas.tabIndex = 0;
   options.parent.appendChild(canvas);
 
@@ -296,9 +305,13 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   app.stage.addChild(fadeOverlay, gameOverScreen);
   let elapsed = 0;
 
+  // Touch controls, once made (below): in portrait the game sits above their strip.
+  let touch: TouchControls | null = null;
   const fit = () => {
     const { clientWidth, clientHeight } = options.parent;
-    const scale = fitScale(width, height, clientWidth, clientHeight);
+    const reserve = touch?.shown ? touchReserve(clientWidth, clientHeight) : 0;
+    const scale = fitScale(width, height, clientWidth, clientHeight - reserve);
+    canvas.style.marginBottom = `${reserve}px`;
     // Sharp text: render at the screen's resolution (texts redraw themselves when it changes).
     const resolution = renderResolution(scale, window.devicePixelRatio, look.sharpText);
     if (resolution !== app.renderer.resolution) app.renderer.resize(width, height, resolution);
@@ -330,6 +343,14 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
   // Audio ------------------------------------------------------------------
   const audio = new AudioPlayer((path) => project.assetUrl(path));
   const unlockAudio = () => audio.unlock();
+  touch = createTouchControls(options.parent, held, {
+    shown: wantsTouchControls(
+      options.touchControls ?? 'auto',
+      typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches,
+    ),
+    onChange: fit,
+    onTouch: unlockAudio,
+  });
   // Try at once: where sound is already allowed (a click on Play in the editor,
   // the desktop apps) the title music starts now; elsewhere the first key does it.
   audio.unlock();
@@ -741,6 +762,7 @@ export async function startGame(options: StartGameOptions): Promise<Game> {
       removeDebugPanel();
       resizeObserver.disconnect();
       window.removeEventListener('resize', fit);
+      touch?.dispose();
       pluginLayer?.destroy();
       // Not `destroy(true)`: that also releases PixiJS's global resources and breaks any
       // other PixiJS app on the page (the editor's map canvas behind a playtest).
